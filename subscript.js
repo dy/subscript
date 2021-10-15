@@ -65,7 +65,7 @@ export function parse (seq) {
 
 // lispy tree → output
 export function evaluate (seq, ctx) {
-
+  // TODO
 }
 
 // code → evaluator
