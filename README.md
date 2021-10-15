@@ -36,6 +36,13 @@ Or just check out alternatives:
 * [jsep](https://github.com/EricSmekens/jsep)
 * [string-math](https://github.com/devrafalko/string-math)
 
+## Default operators
+
+||
+---|---|---
+`` | |
+
+
 ## Lispy tree
 
 It reminds [frisk](https://npmjs.com/frisk):
@@ -56,16 +63,16 @@ Simply extend `operators` dict with needed operators.
 ```js
 import {operators, parse} from 'subscript.js'
 
-operators['|>'] = (a,b) => a.pipe(b)
-let evaluate = parse`
+operators = Object.assign(operators, {'|>': (a,b) => a.pipe(b)})
+let evaluate = parse(`
   interval(350)
   |> take(25)
   |> map(gaussian),
   |> map(num => "•".repeat(Math.floor(num * 65)))
-`
+`, operators)
 evaluate(env)
 ```
 
-Note that operator precedence follows keys order in `operators` object.
+Note that operator precedence follows keys order in `operators` object, so you may need to provide desired order manually.
 
 <p align=center>🕉 Hare Krishna</p>
