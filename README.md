@@ -21,7 +21,8 @@ evaluate({a:1, b:2, c:3}) // 0
 * extensible (any unary/binary operators/overloading)
 * and seemingly trivial to use...
 
-It can unfortunately be relatively slow on parsing, compared to LR algos. If you have desire to implement efficient parsing scheme, like [htm](https://ghub.io/htm) - you're welcome to contribute or fork.
+It can possibly be comparably slow at parsing, compared to efficient LR algos (needs benchmarking). But better something than nothing.<br/>
+If you have desire to implement efficient parsing scheme, like [htm](https://ghub.io/htm) - you're welcome to contribute or fork.
 
 ### Lispy tree
 
