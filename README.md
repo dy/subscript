@@ -38,7 +38,7 @@ evaluate(['+',1,['-',2, 3]]) // 0
 
 ### Default operators
 
-By default it comes with common operators for the listed languages:<br/> `! . * / % - + << >> < <= > >= == != & ^ | && || ,` and extra `~ ** in`
+It comes with common operators for the listed languages by default:<br/> `! . * / % - + << >> < <= > >= == != & ^ | && || ,` and extra `~ ** in`
 .
 <!--
 Op | Meaning
