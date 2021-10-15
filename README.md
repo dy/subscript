@@ -38,22 +38,22 @@ Or just check out alternatives:
 
 ## Lispy tree
 
-It reminds frisk:
+It reminds [frisk](https://npmjs.com/frisk):
 
 ```js
 import {evaluate} from 'subscript.js'
 evaluate(['+',1,['-',2, 3]]) // 0
 ```
 
-## Support JSON
+## Support JSONs
 
-TODO
+...
 
 ## Operator overloading
 
 ```js
-import {operators, parse} from 'subscript'
-.js
+import {operators, parse} from 'subscript.js'
+
 operators['|>'] = (a,b) => a.pipe(b)
 let evaluate = parse`
   interval(350)
