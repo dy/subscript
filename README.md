@@ -21,9 +21,6 @@ evaluate({a:1, b:2, c:3}) // 0
 * extensible (any unary/binary operators/overloading)
 * and seemingly trivial to use...
 
-It can possibly be slow at parsing, compared to efficient LR algos (needs benchmarking).<br/>
-If you have desire to implement efficient parsing - you're welcome to contribute or fork.
-
 ### Lispy tree
 
 It compiles code to lispy tree (see [frisk](https://npmjs.com/frisk)). Why?
