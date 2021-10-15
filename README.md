@@ -36,4 +36,32 @@ Or just check out alternatives:
 * [jsep](https://github.com/EricSmekens/jsep)
 * [string-math](https://github.com/devrafalko/string-math)
 
+## Lispy tree
+
+It reminds frisk:
+
+```js
+import {evaluate} from 'subscript.js'
+evaluate(['+',1,['-',2, 3]]) // 0
+```
+
+## Support JSON
+
+TODO
+
+## Operator overloading
+
+```js
+import {operators, parse} from 'subscript'
+.js
+operators['|>'] = (a,b) => a.pipe(b)
+let evaluate = parse`
+  interval(350)
+  |> take(25)
+  |> map(gaussian),
+  |> map(num => "•".repeat(Math.floor(num * 65)))
+`
+evaluate(env)
+```
+
 <p align=center>🕉 Hare Krishna</p>
