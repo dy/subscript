@@ -51,6 +51,8 @@ evaluate(['+',1,['-',2, 3]]) // 0
 
 ## Operator overloading
 
+Simply extend `operators` dict with needed operators.
+
 ```js
 import {operators, parse} from 'subscript.js'
 
@@ -63,5 +65,7 @@ let evaluate = parse`
 `
 evaluate(env)
 ```
+
+Note that operator precedence follows keys order in `operators` object.
 
 <p align=center>🕉 Hare Krishna</p>

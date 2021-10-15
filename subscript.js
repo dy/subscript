@@ -1,6 +1,3 @@
-
-// TODO: eval JSON, array objects
-
 // precedence order
 export const operators = {
   '!':(a,b)=>!a,
