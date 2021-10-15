@@ -2,3 +2,6 @@
 
 * [ ] ternary
 * [ ] eval JSON, array objects
+* [ ] ;
+
+
