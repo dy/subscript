@@ -30,7 +30,7 @@ It compiles code to lispy tree (see [frisk](https://npmjs.com/frisk)). Why?
 
 + clear precedence
 + easy to overload/extend operators
-+ mimic custom other langs subsets
++ mimic other langs/custom subsets
 + allows manual evaluation
 + conventional form.
 
