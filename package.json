@@ -1,0 +1,37 @@
+{
+  "name": "subscript",
+  "version": "0.1.0",
+  "description": "Subset of JS/C++/Python/Rust",
+  "main": "subscript.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/spectjs/subscript.git"
+  },
+  "keywords": [
+    "jexl",
+    "jsep",
+    "expression",
+    "evaluation",
+    "math",
+    "arithmetic",
+    "evaluator",
+    "justin",
+    "jessie",
+    "jessica",
+    "eval",
+    "dsl",
+    "json"
+  ],
+  "author": "Dmitry Iv.",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/spectjs/subscript/issues"
+  },
+  "homepage": "https://github.com/spectjs/subscript#readme"
+}
