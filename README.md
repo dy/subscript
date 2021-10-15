@@ -25,8 +25,15 @@ It can be used in:
 * simple playgrounds
 * custom DSL
 
-It is tiny (800bytes), extensible and ...
+It is tiny (800bytes), extensible (any unary/binary operators/overloading), and hopefully trivial to use...
 
-It can unfortunately be relatively slow on parsing. If you have desire to organize efficient lr parsing scheme, like [htm](https://ghub.io/htm) - you're welcome to fork.
+It can unfortunately be relatively slow on parsing, compared to LR parsing. If you have desire to implement efficient parsing scheme, like [htm](https://ghub.io/htm) - you're welcome to fork.
+
+Or just check out alternatives:
+
+* [jexl](https://github.com/TomFrost/Jexl)
+* [expr-eval](https://github.com/silentmatt/expr-eval)
+* [jsep](https://github.com/EricSmekens/jsep)
+* [string-math](https://github.com/devrafalko/string-math)
 
 <p align=center>🕉 Hare Krishna</p>
