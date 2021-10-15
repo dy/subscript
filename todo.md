@@ -4,5 +4,6 @@
 * [ ] eval JSON, array objects
 * [ ] ;
 * [ ] subscript`exp`
-* [ ] infinite unaries
-
+* [x] infinite unaries
+* [ ] #,: operator overloaded
+* [ ] word operators

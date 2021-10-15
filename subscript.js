@@ -28,17 +28,38 @@ export const operators = {
 
 // code → lispy tree
 export function parse (seq, od=operators) {
-  let op, c, v=[], g=[seq], u=[],
-    ops = Object.keys(od).reverse(),
-    og = ops.map(o=>o.replace(/./g,'\\$&')).join('|'),
-    ore = new RegExp(`(^|${og})(${og})(${og})?`,'g')
+  let op, c, v=[], g=[''], u=[],
+    ops = Object.keys(od).reverse(), op1=ops.filter(o=>o.length==1), op2=ops.filter(o=>o.length==2)
+    // og = [...op1,...op2].map(o=>o.replace(/./g,'\\$&')).join('|'),
+    // ore = new RegExp(`(^|${og})(${og})(${og})?`,'g')
 
   // literals
-  g[0]=g[0]
+  seq=seq
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]==='"'?m:parseFloat(m))-1}`)
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
     .replace(/\s+/g,'')
-    .replace(ore, (m,o0,o1,o2) => `${o0}${u.push(o2?[o2,o1]:[o1])-1}@`) // up to 2 unary ops
+    // .replace(ore, (m,o0,o1,o2) => console.log(o0,o1)||`${o0}${u.push(o2?[o2,o1]:[o1])-1}@`) // up to 2 unary ops
+
+  // unaries
+  let i = 0, buf='', uop=[]
+  for (; i < seq.length; ) {
+    let ch = seq[i]
+    // console.log(ch,g[0])
+    if (od[op=ch+seq[i+1]]||od[op=ch]) {
+      g[0]+=buf, buf=''
+      !uop ? (uop = [], g[0]+=op) : uop.unshift(op)
+      i+=op.length
+    }
+    else {
+      if (uop) {
+        if (uop.length) g[0] += `${u.push(uop)-1}@`
+        uop = null
+      }
+      buf += ch, i++
+    }
+  }
+  g[0]+=buf
+  // console.log(g[0], u)
 
   // groups
   while(g.length!=c) c=g.length, g[0]=g[0]
@@ -51,7 +72,7 @@ export function parse (seq, od=operators) {
   for (op of ops) g=g.map(oper)
 
   // unwrap
-  const deref = (s,c,r,i,m,n,un,uop) => Array.isArray(s) ? [s.shift(), ...s.map(deref)]
+  const deref = (s,c,r,i,m,n,un) => Array.isArray(s) ? [s.shift(), ...s.map(deref)]
     : ~(c = s.indexOf('#')) ? (
       i = s.slice(c+2), m=s[c+1], r= m=='v'?v[i]:deref(g[i]),
       n=s.slice(un=s.indexOf('@')+1, c),
