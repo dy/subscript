@@ -23,7 +23,7 @@ evaluate({a:1, b:2, c:3}) // 0
 
 ### Lispy tree
 
-It compiles code to lispy tree (see [frisk](https://npmjs.com/frisk)). Why?
+It compiles code to lispy tree (like [frisk](https://npmjs.com/frisk)). Why?
 
 + clear precedence
 + easy to overload/extend operators
