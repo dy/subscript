@@ -27,6 +27,6 @@ It can be used in:
 
 It is tiny (800bytes), extensible and ...
 
-It can unfortunately be relatively slow on parsing. If you have desire to organize efficient lr parsing scheme, like HTML - you're welcome to fork.
+It can unfortunately be relatively slow on parsing. If you have desire to organize efficient lr parsing scheme, like [htm](https://ghub.io/htm) - you're welcome to fork.
 
 <p align=center>🕉 Hare Krishna</p>
