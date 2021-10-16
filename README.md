@@ -1,4 +1,4 @@
-# sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
+# ![subscript](/subscript.svg)<!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
 Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust, Perl.<br/>
 Alternatively, that's superset of JSON with operators, parens and functions. Variation of [Justin](https://github.com/endojs/Jessie/issues/66).
