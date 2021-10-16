@@ -42,6 +42,7 @@ evaluate(['+',1,['-',2, 3]]) // 0
 
 It comes with common operators for the listed languages by default:<br/> `! * / % - + << >> < <= > >= == != & ^ | && || ,`
 and extra `~ ** in`.
+
 ### Reserved operators
 
 Some parts are non-configurable out of box:
