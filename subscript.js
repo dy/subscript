@@ -2,7 +2,8 @@
 export const operators = {
   '!':(a,b)=>!a,
   '~':(a,b)=>~a,
-  '.':(a,b)=>a[b],
+  // '.':(a,b)=>console.log(a,b)||a[b], // TODO: meld in
+  '[':(a,b)=>console.log(a,b)||a[b], // TODO: simplify code
   '**':(a,b)=>a**b,
   '*':(a,b)=>a*b,
   '/':(a,b)=>a/b,
@@ -64,7 +65,7 @@ export function parse (seq, ops=operators) {
       i = s.slice(c+2), m=s[c+1], r= m=='v'?v[i]:deref(g[i]),
       n=s.slice(un=s.indexOf('@')+1, c),
       r = m == 'g' ? (c ? [n,r] : r) // fn call or group
-      : m == 'p' ? ['.',n,r] // property
+      : m == 'p' ? ['[',n,r] // property
       : r, // id
       r = un ? u[s.slice(0,un-1)].reduce((r,op)=>[op, r],r) : r // unary op
     )
@@ -73,14 +74,14 @@ export function parse (seq, ops=operators) {
   return deref(g[0])
 }
 
+// tree → result
+export const evaluate = (seq, ctx={}, ops=operators, f) => Array.isArray(seq)
+  ? (f=ops[seq[0]] || ctx[seq[0]], seq=seq.slice(1).map(x=>evaluate(x,ctx,ops)), console.log(seq), seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f))
+  : typeof seq === 'string' ? (seq[0] === '"' ? seq.slice(1,-1) : ctx[seq])
+  : seq
+
 // code → evaluator
-export default function (seq, ops=operators) {
-  if (typeof seq === 'string') seq = parse(seq,ops)
-
-  const evaluate = seq => Array.isArray(seq)
-    ? seq.slice(1).map(evaluate).reduce(ops[seq[0]] || ctx[seq[0]])
-    : typeof seq === 'string' ? (seq[0] === '"' ? seq.slice(1,-1) : ctx[seq])
-    : seq
-
-  return ctx => evaluate(seq, ctx)
-}
+export default (seq, ops=operators) => (
+  seq = typeof seq === 'string' ? parse(seq, ops) : seq,
+  ctx => evaluate(seq, ctx, ops)
+)

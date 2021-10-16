@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import {parse} from '../subscript.js'
+  import {parse, evaluate} from '../subscript.js'
 
   test('parse: basic', t => {
     is(parse('0 + 1 + 2'), ['+', 0, 1, 2])
@@ -46,6 +46,13 @@
     is(parse('1-+~2'),['-',1,['+',['~',2]]])
   })
 
-  test('eval: basic', t => {
+  test.only('eval: basic', t => {
+    // is(evaluate(['+', 1, 2]), 3)
+    // is(evaluate(['+', 1, ['-', 3, 2]]), 2)
+    // is(evaluate(['-', 5, 2, 1, 1]), 1)
+    // is(evaluate(['+',['-',1]]), -1)
+    // is(evaluate(['-',['+',1],2]), -1)
+
+    is(evaluate(['.','a', 'b', 'c', 0], {a:{b:{c:[2]}}}), 2)
   })
 </script>
