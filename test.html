@@ -46,13 +46,15 @@
     is(parse('1-+~2'),['-',1,['+',['~',2]]])
   })
 
-  test.todo('eval: basic', t => {
-    // is(evaluate(['+', 1, 2]), 3)
-    // is(evaluate(['+', 1, ['-', 3, 2]]), 2)
-    // is(evaluate(['-', 5, 2, 1, 1]), 1)
-    // is(evaluate(['+',['-',1]]), -1)
-    // is(evaluate(['-',['+',1],2]), -1)
+  test('eval: basic', t => {
+    is(evaluate(['+', 1, 2]), 3)
+    is(evaluate(['+', 1, ['-', 3, 2]]), 2)
+    is(evaluate(['-', 5, 2, 1, 1]), 1)
+    is(evaluate(['+',['-',1]]), -1)
+    is(evaluate(['-',['+',1],2]), -1)
+  })
 
+  test.todo('prop accese', t => {
     is(evaluate(['.','a', 'b', 'c', 0], {a:{b:{c:[2]}}}), 2)
   })
 </script>

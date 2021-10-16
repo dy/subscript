@@ -75,7 +75,7 @@ export function parse (seq, ops=operators) {
 
 // tree → result
 export const evaluate = (seq, ctx={}, ops=operators, f) => Array.isArray(seq)
-  ? (f=ops[seq[0]] || ctx[seq[0]], seq=seq.slice(1).map(x=>evaluate(x,ctx,ops)), console.log(seq), seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f))
+  ? (f=ops[seq[0]] || ctx[seq[0]], seq=seq.slice(1).map(x=>evaluate(x,ctx,ops)), seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f))
   : typeof seq === 'string' ? (seq[0] === '"' ? seq.slice(1,-1) : ctx[seq])
   : seq
 
