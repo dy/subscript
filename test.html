@@ -54,7 +54,7 @@
     is(evaluate(['-',['+',1],2]), -1)
   })
 
-  test.todo('prop accese', t => {
-    is(evaluate(['.','a', 'b', 'c', 0], {a:{b:{c:[2]}}}), 2)
+  test('prop accese', t => {
+    is(evaluate('a.b.c.0', {a:{b:{c:[2]}}}), 2)
   })
 </script>

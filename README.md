@@ -1,5 +1,7 @@
-# <!--<img alt="subscript" src="/subscript2.svg" height=42/>-->sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
+<!--# sanscript-->
+<!-- Common root of all languages -->
 
+# <!--<img alt="subscript" src="/subscript2.svg" height=42/>-->sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust, Perl.<br/>
 Alternatively, that's superset of JSON with operators, parens and functions. Variation of [Justin](https://github.com/endojs/Jessie/issues/66).
 
