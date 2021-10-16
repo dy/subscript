@@ -1,8 +1,8 @@
 // precedence order
 export const operators = {
-  '!':(a,b)=>!a,
-  '~':(a,b)=>~a,
-  // '.':(a,b)=>console.log(a,b)||a[b], // TODO: meld in
+  '!':(a,b)=>!b,
+  '~':(a,b)=>~b,
+  // '.':(a,b)=>console.log(a,b)||a[b], // TODO: meld in code
   '[':(a,b)=>console.log(a,b)||a[b], // TODO: simplify code
   '**':(a,b)=>a**b,
   '*':(a,b)=>a*b,
@@ -24,7 +24,7 @@ export const operators = {
   '|':(a,b)=>a|b,
   '&&':(a,b)=>a&&b,
   '||':(a,b)=>a||b,
-  ',':(a,b)=>b,
+  ',':(a,b)=>b
 }
 
 // code → lispy tree
@@ -39,7 +39,6 @@ export function parse (seq, ops=operators) {
 
   // unaries
   for (; i < seq.length; g[0]+=c) {
-    // c = seq[i]
     if (ops[c=seq[i]+seq[i+1]] || ops[c=seq[i]]) {
       i+=c.length, uop ? (uop.unshift(c), c='') : (uop = [])
     }

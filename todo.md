@@ -8,4 +8,4 @@
 * [ ] #,: operator overloaded
 * [ ] word operators
 * [ ] . operator is not compatible with others, like a.+b.+c
-  - it's neither evaluable: actual handler '.':(a,b)=>a[b] needs to get `b` from context, not code, unless we patch context, which is bad
+  - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key

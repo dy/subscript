@@ -38,55 +38,38 @@ evaluate(['+',1,['-',2, 3]]) // 0
 
 ### Default operators
 
-It comes with common operators for the listed languages by default:<br/> `! . * / % - + << >> < <= > >= == != & ^ | && || ,` and extra `~ ** in`
-.
-<!--
-Op | Meaning
----|---
-`!` | Negate
-`~` | Inverse
-`.` | Property
-`**` | Power
-`*` | Multiply
-`/` | Divide
-`%` | Module
-`-` | Subtract
-`+` | Add
-`<<` | Left shift
-`>>` | Right shift
-`<` | Less
-`<=` | Less or equal
-`>` | Greater
-`>=` | Greater or equal
-`in` | 
-`==` | Equal
-`!=` | Not equal
-`&` | Binary and
-`^` | Binary xor
-`|` | Binary or
-`&&` | And
-`||` | Or
-`,` | Sequence
--->
+It comes with common operators for the listed languages by default:<br/> `! * / % - + << >> < <= > >= == != & ^ | && || ,`
+and extra `~ ** in`.
+### Reserved operators
+
+Some parts are non-configurable out of box:
+
+* `[` is reserved for arrays and property access, but the operator `[` can be redefined
+* `{` is reserved for objects, cannot be redefined
+* `(` is reserved for fn calls or groups, cannot be redefined
+* `.` is reserved for non-calculating property access
+* `#` is prohibited as operator
+* `?:` ternary operator
 
 ### Operator overloading
 
-Simply extend `operators` dict:
+All other operators can be redefined.
 
 ```js
 import {operators, parse} from 'subscript.js'
 
-operators = Object.assign(operators, {'|>': (a,b) => a.pipe(b)})
-let evaluate = parse(`
+let ops = Object.assign({}, operators, {'|>': (a,b) => a.pipe(b)})
+let tree = parse(`
   interval(350)
   |> take(25)
   |> map(gaussian)
   |> map(num => "•".repeat(Math.floor(num * 65)))
-`, operators)
-evaluate(env)
+`, ops)
 ```
 
-Operator precedence follows keys order in `operators` object, so you may need to provide desired order manually.
+Operator precedence follows keys order in `ops` object, so you may need to provide desired order manually (see [sort-keys](https://www.npmjs.com/package/sort-keys) and alike).
+Operators are binary by default, unary operators fall back to binary.
+Ternary operators are impossible (for now).
 
 ### Support JSON
 
