@@ -45,6 +45,12 @@
     is(parse('1-+-2'),['-',1,['+',['-',2]]])
     is(parse('1-+~2'),['-',1,['+',['~',2]]])
   })
+  test.only('parse: json', t => {
+    // is(parse('{x: 1, y:2}'), {x: 1})
+    is(parse('{x: 1, y:2}'), ['{',[',',[':','x',1],[':','y',2]]])
+    is(parse('[1,2,3]'), [',',1,2,3]) // no-op group means array
+    is(parse('(1,2,3)'), [',',1,2,3]) // FIXME: must differentiate with previous
+  })
 
   test('eval: basic', t => {
     is(evaluate(['+', 1, 2]), 3)
@@ -54,7 +60,12 @@
     is(evaluate(['-',['+',1],2]), -1)
   })
 
-  test('prop accese', t => {
+  test('prop access', t => {
     is(evaluate('a.b.c.0', {a:{b:{c:[2]}}}), 2)
+    is(evaluate('a["b"]["c"][0]', {a:{b:{c:[2]}}}), 2)
+  })
+
+  test('word operator', t => {
+    is(evaluate('inc in bin', {bin:{inc:1}}), true)
   })
 </script>

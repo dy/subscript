@@ -51,8 +51,9 @@ Some parts are non-configurable out of box:
 * `{` is reserved for objects, cannot be redefined
 * `(` is reserved for fn calls or groups, cannot be redefined
 * `.` is reserved for non-calculating property access
-* `#` is prohibited as operator
-* `?:` ternary operator
+* `:` is reserved for JSON
+* `?:`, `|>`, `, in` ternary operators
+*
 
 ### Operator overloading
 
