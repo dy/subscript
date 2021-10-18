@@ -2,17 +2,17 @@
   import test, {is} from './lib/test.js'
   import {parse, evaluate} from '../subscript.js'
 
-  test('parse: basic', t => {
+  test.only('parse: basic', t => {
     is(parse('0 + 1 + 2'), ['+', 0, 1, 2])
     is(parse('0 + 1 - 2'), ['+', 0, ['-',1, 2]])
     is(parse('0 + 1 - 2 * 3'), ['+', 0, ['-',1, ['*', 2, 3]]])
     is(parse('0 - 1 + 2'), ['+', ['-',0, 1], 2])
     is(parse('1 * 2 - 3'), ['-', ['*',1,2], 3])
-    is(parse('1 + a.b + 3.5'), ['+', 1, 'a.b', 3.5])
-    is(parse('1 + (a.b + 3.5)'), ['+', 1, ['+', 'a.b', 3.5]])
-    is(parse('1 + x(a.b + 3.5)'), ['+', 1, ['x', ['+', 'a.b', 3.5]]])
-    is(parse('1 + x(a[b] + 3.5)'), ['+', 1, ['x', ['+', ['[','a','b'], 3.5]]])
-    is(parse('x.y.z(123 + c[456]) + n'), ['+',['x.y.z',['+',123, ['[','c',456]]],'n'])
+    is(parse('1 + a.b + 3.5'), ['+', 1, ['.','a','b'], 3.5])
+    is(parse('1 + (a.b + 3.5)'), ['+', 1, ['+', ['.','a','b'], 3.5]])
+    is(parse('1 + x(a.b + 3.5)'), ['+', 1, ['x', ['+', ['.','a','b'], 3.5]]])
+    is(parse('1 + x(a[b] + 3.5)'), ['+', 1, ['x', ['+', ['.','a','b'], 3.5]]])
+    is(parse('x.y.z(123 + c[456]) + n'), ['+',[['.','x','y','z'],['+',123, ['.','c',456]]],'n'])
     // is(parse('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n'),
     //   ['||',['-',['*',['+',1],['-',['.','a','b'],3.5]], '"asdf"'], ['+',[],'n']]
     // )
@@ -45,11 +45,13 @@
     is(parse('1-+-2'),['-',1,['+',['-',2]]])
     is(parse('1-+~2'),['-',1,['+',['~',2]]])
   })
-  test.only('parse: json', t => {
-    // is(parse('{x: 1, y:2}'), {x: 1})
-    is(parse('{x: 1, y:2}'), ['{',[',',[':','x',1],[':','y',2]]])
-    is(parse('[1,2,3]'), [',',1,2,3]) // no-op group means array
-    is(parse('(1,2,3)'), [',',1,2,3]) // FIXME: must differentiate with previous
+  test('parse: json', t => {
+    is(parse('{}'), {})
+    is(parse('{x: 1}'), {x: 1})
+    is(parse('{x: 1, "y":2}'), {x:1, y:2})
+    is(parse('{x: 1+2, y:a(3)}'), {x:['+',1,2], y:['a',3]})
+    // is(parse('[1,2,3]'), [',',1,2,3]) // no-op group means array
+    // is(parse('(1,2,3)'), [',',1,2,3]) // FIXME: must differentiate with previous
   })
 
   test('eval: basic', t => {
@@ -60,12 +62,19 @@
     is(evaluate(['-',['+',1],2]), -1)
   })
 
-  test('prop access', t => {
-    is(evaluate('a.b.c.0', {a:{b:{c:[2]}}}), 2)
-    is(evaluate('a["b"]["c"][0]', {a:{b:{c:[2]}}}), 2)
+  test.only('prop access', t => {
+    is(parse('a["b"]["c"][0]'),['[',['[',['[','a','b'],'c'],0])
+    is(parse('a.b.c.0'), ['.','a','b','c',0])
+    is(evaluate(['.','a','b','c',0], {a:{b:{c:[2]}}}), 2)
+    is(evaluate(acc, {a:{b:{c:[2]}}}), 2)
+  })
+
+  test('chains', t => {
+    is(parse('a(1)(2)(3)'),[[['a', '1'], '2'], '3'])
   })
 
   test('word operator', t => {
-    is(evaluate('inc in bin', {bin:{inc:1}}), true)
+    is(parse('inc in bin'), [' in ', 'inc', 'bin'])
+    // is(evaluate('inc in bin', {bin:{inc:1}}), true)
   })
 </script>

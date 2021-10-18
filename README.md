@@ -13,8 +13,9 @@ evaluate({a:1, b:2, c:3}) // 0
 
 ### Useful in
 * templates (awesome match with [template parts](https://github.com/github/template-parts))
-* scoped languages / subsets
 * expressions evaluators (math, arithmetic)
+* scoped languages / subsets
+* prototyping language features
 * playgrounds
 * custom DSL
 
@@ -36,6 +37,15 @@ It compiles code to lispy tree (like [frisk](https://npmjs.com/frisk)). Why?
 ```js
 import {evaluate} from 'subscript.js'
 evaluate(['+',1,['-',2, 3]]) // 0
+```
+
+### JSON
+
+It parses JSON-ish objects out of box:
+
+```js
+import {parse} from 'subscript.js'
+subscript('{x: 1, "y": 1+2}')  // {x:1, y: ['+', 1, 2]}
 ```
 
 ### Default operators
