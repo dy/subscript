@@ -2,7 +2,7 @@
   import test, {is} from './lib/test.js'
   import {parse, evaluate} from '../subscript.js'
 
-  test.only('parse: basic', t => {
+  test('parse: basic', t => {
     is(parse('0 + 1 + 2'), ['+', 0, 1, 2])
     is(parse('0 + (1 + 2)'), ['+', 0, ['+', 1, 2]])
     is(parse('0 + 1 - 2'), ['+', 0, ['-',1, 2]])
@@ -75,11 +75,10 @@
     is(evaluate(acc, {a:{b:{c:[2]}}}), 2)
   })
 
-  test.only('chains & parens', t => {
-    // is(parse('a(1)(b)'),[['a',1],'b'])
-    // is(parse('a(1,2)(b)'),[['a',1,2],'b'])
-    // is(parse('+b'),['+',['+','b']])
-    // is(parse('+(b)'),['+',['+','b']])
+  test('parens', t => {
+    is(parse('+b'),['+','b'])
+    is(parse('+(b)'),['+','b'])
+    is(parse('+((b))'),['+','b'])
     is(parse('++(b)'),['+',['+','b']])
     // is(parse('++a(b)'),['+',['+',['a', 'b']]])
     // is(parse('++a(b)'),['+',['+',['a', 'b']]])
@@ -87,10 +86,16 @@
     // is(parse('1+(b)'),['+',1,[,'b']])
     // is(parse('1+((b))'),['+',1,[,'b']])
     // is(parse('1++(b)'),['+',1,['+',['b']])
-    // is(parse('a[1](b)["c"]'),['.', [['.', 'a', 1], 'b'], '"c"'])
-    // is(parse('a(1)[b]("c")'),[['.', ['a', 1], 'b'], '"c"'])
-    // is(parse('a[1][b]["c"]'),['.', 'a', 1, 'b', '"c"'])
-    // is(parse('a(1)(2)(3)'),[[['a', '1'], '2'], '3'])
+  })
+
+  test.only('chains & parens', t => {
+    is(parse('a(b)(c)'),[['a','b'],'c'])
+    is(parse('a(1,2)(b)'),[['a',1,2],'b'])
+    is(parse('a[b][c]'),['.',['.','a','b'],'c'])
+    is(parse('a[1](b)["c"]'),['.', [['.', 'a', 1], 'b'], '"c"'])
+    is(parse('a(1)[b]("c")'),[['.', ['a', 1], 'b'], '"c"'])
+    is(parse('a[1][b]["c"]'),['.',['.',['.', 'a', 1], 'b'], '"c"'])
+    is(parse('a(1)(b)("c")'),[[['a', 1], 'b'], '"c"'])
   })
 
   test('word operator', t => {

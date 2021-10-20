@@ -25,9 +25,10 @@ export const operators = {
   '|':(a,b)=>a|b,
   '&&':(a,b)=>a&&b,
   '||':(a,b)=>a||b,
-  ':':(a,b)=>a, // for JSON (!keyed arrays?)
-  ',':(a,b)=>b,
+  // ':':(a,b)=>a, // for JSON (!keyed arrays?)
+  // ',':(a,b)=>b,
 }
+const special = [',',':']
 
 // code → lispy tree
 export function parse (seq, opf=operators) {
@@ -48,7 +49,7 @@ export function parse (seq, opf=operators) {
     }
     else {
       if (op?.length) op=null
-      if (c=='('||c=='['||c=='{') g[cur[0]]+=`#${c}${cur.unshift(g.push('')-1)}`, op=[]
+      if (c=='('||c=='['||c=='{') g[cur[0]]+=`#${c}${g.push('')-1}`,cur.unshift(g.length-1), op=[]
       else if (c==')'||c==']'||c=='}') cur.shift()
       else g[cur[0]]+=c, op=null
       i++
@@ -58,21 +59,37 @@ export function parse (seq, opf=operators) {
   // binaries w/precedence
   // FIXME: create tree instead of groups, convert opf in-place
   const oper = (s, l) => Array.isArray(s) ? [s.shift(), ...s.map(oper)] : s.includes(op) ? [op, ...s.split(op)] : s.trim()
+  for (op of special) g = g.map(oper)
   for (op of opl) g = g.map(oper)
 
   // unwrap
-  const deref = (s,c,e,r,i,m,n,ui,a,uop) => {
-    if (Array.isArray(s)) return [s.shift(), ...s.map(deref)]
+  const deref = (s,c,e,r,i,m,n,ui,a,uop,ty,ref,res,args) => {
+    // console.group(s)
+    if (Array.isArray(s)) return console.log(123,s)||[s.shift(), ...s.map(deref)]
     if (~(ui=s.indexOf('@'))) {
       uop = u[s.slice(0,ui)]
       s = s.slice(ui+1)
     }
-    while (s[0]=='#') {
-      m = s[1]
-      s = s.slice(2)
-      if (m=='v') s=v[s]
+    if (s[0]=='#') { // 1, (), [], {}
+      ty=s[1], ref=s.slice(2)
+      s = ty=='v'?v[ref]
+          :ty=='('?deref(g[ref])
+          :ty=='['?[Array,...deref(g[ref])]
+          :console.log('TODO', ref)
+    }
+    else if (~(c=s.indexOf('#'))) { // a(), a[], a{}
+      // console.log('reduce',s)
+      s=s.split('#').reduce((a,b,i)=>{
+        ty=b[0], ref=g[b.slice(1)], args=ref[0]==','?ref.slice(1).map(deref):deref(ref)
+        res = (ty=='(' ? [a]:['.',a]).concat(args)
+        // console.log('part:',a,b, res)
+        return res
+      })
+      // s=s.length==1?s[0]:s
     }
     if (uop) s = uop.reduce((s,uop)=>[uop, s],s)
+    // console.log('result:',s)
+    // console.groupEnd()
     // ~(c = s.indexOf('#')) ? (
     //   e=s.indexOf('#',c+2), e = ~e?e:s.length,
     //   i = s.slice(c+2,e), m=s[c+1],
