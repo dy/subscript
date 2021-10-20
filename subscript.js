@@ -36,9 +36,9 @@ export function parse (seq, opf=operators) {
 
   // ref literals
   seq=seq
-    .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]==='"'?m:parseFloat(m))-1}`)
+    .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
-    .replace(/\.(\w+)*\b/g, `["$1"]`) // a.b → a["b"]
+    .replace(/\.(\w+)*\b/g, (m,n)=>`[#v${v.push(`"${n}"`)-1}]`) // a.b → a[#v]
 
   // ref groups/unaries
   for (i=0; i < seq.length;) {
@@ -56,8 +56,7 @@ export function parse (seq, opf=operators) {
     }
   }
 
-  // binaries w/precedence
-  // FIXME: create tree instead of groups, convert opf in-place
+  // split by op precedence
   const oper = (s, l) => Array.isArray(s) ? [s.shift(), ...s.map(oper)] : s.includes(op) ? [op, ...s.split(op)] : s.trim()
   for (op of opl) g = g.map(oper)
 
