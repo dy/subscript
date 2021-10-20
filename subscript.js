@@ -2,8 +2,8 @@
 export const operators = {
   '!':(a,b)=>!b,
   // '~':(a,b)=>~b,
-  '.':(a,b)=>console.log(a,b)||a[b],
-  // '{':(a,b)=>console.log(a,b),
+  '.':(a,b)=>a[b],
+  '(':(a,b)=>a(b),
   // '**':(a,b)=>a**b,
   '*':(a,b)=>a*b,
   '/':(a,b)=>a/b,
@@ -24,7 +24,7 @@ export const operators = {
   '|':(a,b)=>a|b,
   '&&':(a,b)=>a&&b,
   '||':(a,b)=>a||b,
-  ':':(a,b)=>a, // for JSON/keyed arrays
+  ':':(a,b)=>a, // JSON/keyed arrays
   ',':(a,b)=>b,
 }
 // code → lispy tree
@@ -38,7 +38,14 @@ export function parse (seq, opf=operators) {
   seq=seq
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
-    .replace(/\.(\w+)*\b/g, (m,n)=>`[#v${v.push(`"${n}"`)-1}]`) // a.b → a[#v]
+    .replace(/\.(\w+)\b/g, (m,n)=>`[#v${v.push(`"${n}"`)-1}]`) // a.b → a[#v]
+
+  // TODO: think about flattening groups: a["b"]["c"] → a.#0.#1, a(b,c)(d,e) → a ( #bc ( #de
+  // + that allows correct precedence detection, eg. a.#0.#1(#2 can be split as [(, [., a, #0, #1], #2]
+  // + that allows overloading these operators by user
+  // ~ ( operator implies [(, a, args] === [a, ...args]
+  // + that allows removing .\w shadowing ↑
+  // ~ maybe problematic to separate a[b] from just [b], a(b,c) from just (b,c)
 
   // ref groups/unaries
   for (i=0; i < seq.length;) {
