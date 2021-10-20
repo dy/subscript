@@ -2,8 +2,7 @@
 export const operators = {
   '!':(a,b)=>!b,
   // '~':(a,b)=>~b,
-  '.':(a,b)=>console.log(a,b)||a[b], // TODO: meld in code
-  // '.':(a,b)=>console.log(a,b)||b?a?.[b]:b,
+  '.':(a,b)=>console.log(a,b)||a[b],
   // '{':(a,b)=>console.log(a,b),
   // '**':(a,b)=>a**b,
   '*':(a,b)=>a*b,
@@ -25,13 +24,14 @@ export const operators = {
   '|':(a,b)=>a|b,
   '&&':(a,b)=>a&&b,
   '||':(a,b)=>a||b,
-  // ':':(a,b)=>a, // for JSON (!keyed arrays?)
-  // ',':(a,b)=>b,
+  ':':(a,b)=>a, // for JSON/keyed arrays
+  ',':(a,b)=>b,
 }
-const special = [',',':']
-
 // code → lispy tree
 export function parse (seq, opf=operators) {
+  // ensure special ops
+  opf[':']=opf[':']||true, opf[',']=opf[',']||true
+
   let op=[], b, c, v=[], u=[], g=[''], cur=[0], opl = Object.keys(opf).reverse(), i
 
   // ref literals
@@ -39,7 +39,6 @@ export function parse (seq, opf=operators) {
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]==='"'?m:parseFloat(m))-1}`)
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
     .replace(/\.(\w+)*\b/g, `["$1"]`) // a.b → a["b"]
-    // .replace(/\s+/g,'')
 
   // ref groups/unaries
   for (i=0; i < seq.length;) {
@@ -60,7 +59,6 @@ export function parse (seq, opf=operators) {
   // binaries w/precedence
   // FIXME: create tree instead of groups, convert opf in-place
   const oper = (s, l) => Array.isArray(s) ? [s.shift(), ...s.map(oper)] : s.includes(op) ? [op, ...s.split(op)] : s.trim()
-  for (op of special) g = g.map(oper)
   for (op of opl) g = g.map(oper)
 
   // unwrap
