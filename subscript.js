@@ -2,7 +2,7 @@
 export const operators = {
   '!':(a,b)=>!b,
   // '~':(a,b)=>~b,
-  // '.':(a,b)=>console.log(a,b)||a[b], // TODO: meld in code
+  '.':(a,b)=>console.log(a,b)||a[b], // TODO: meld in code
   // '.':(a,b)=>console.log(a,b)||b?a?.[b]:b,
   // '{':(a,b)=>console.log(a,b),
   // '**':(a,b)=>a**b,
@@ -38,6 +38,7 @@ export function parse (seq, opf=operators) {
   seq=seq
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]==='"'?m:parseFloat(m))-1}`)
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
+    .replace(/\.(\w+)*\b/g, `["$1"]`) // a.b → a["b"]
     // .replace(/\s+/g,'')
 
   // ref groups/unaries
@@ -65,7 +66,7 @@ export function parse (seq, opf=operators) {
   // unwrap
   const deref = (s,c,e,r,i,m,n,ui,a,uop,ty,ref,res,args) => {
     // console.group(s)
-    if (Array.isArray(s)) return console.log(123,s)||[s.shift(), ...s.map(deref)]
+    if (Array.isArray(s)) return [s.shift(), ...s.map(deref)]
     if (~(ui=s.indexOf('@'))) {
       uop = u[s.slice(0,ui)]
       s = s.slice(ui+1)
@@ -80,9 +81,15 @@ export function parse (seq, opf=operators) {
     else if (~(c=s.indexOf('#'))) { // a(), a[], a{}
       // console.log('reduce',s)
       s=s.split('#').reduce((a,b,i)=>{
-        ty=b[0], ref=g[b.slice(1)], args=ref[0]==','?ref.slice(1).map(deref):deref(ref)
-        res = (ty=='(' ? [a]:['.',a]).concat(args)
-        // console.log('part:',a,b, res)
+        ty=b[0], ref=g[b.slice(1)], args=deref(ref)
+        if (ty=='(') {
+          console.log(123,args);
+          res=[a], res.push(args)
+        }
+        else {
+          (res=['.']).push(a,args)
+        }
+        console.log(a,b,args,res)
         return res
       })
       // s=s.length==1?s[0]:s
