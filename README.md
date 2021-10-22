@@ -1,12 +1,12 @@
 <!--# sanscript-->
 <!-- Common root of all languages -->
 
-# <!--<img alt="subscript" src="/subscript2.svg" height=42/>--> <sub>sub͘</sub><em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
+# <!--<img alt="subscript" src="/subscript2.svg" height=42/>--> sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
 Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<br/>
 
-* Anyone with knowledge of any of the languages automatically knows _<sub>sub</sub>script_.
-* Any _<sub>sub</sub>script_ fragment can be copy-pasted to a target language and it will work.
+* Anyone with knowledge of any of the languages automatically knows _subscript_.
+* Any _subscript_ fragment can be copy-pasted to a target language and it will work.
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript?color=brightgreen&label=gzip)</sub>
 * It's extensible (any unary/binary operators overloading)
 * And seemingly trivial to use...
