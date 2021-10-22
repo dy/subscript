@@ -1,5 +1,6 @@
 // precedence order
 export const operators = {
+  // ',':(a,b)=>b,
   '||':(a,b)=>a||b,
   '&&':(a,b)=>a&&b,
   '|':(a,b)=>a|b,
@@ -24,15 +25,16 @@ export const operators = {
   // '~':(a,b)=>~b
   '.':(a,b)=>a[b]
 }
+const nil = Symbol('nil')
 // code → calltree
 export function parse (seq, ops=operators) {
-  let op=[], c, v=[], u=[], g=[''], cur=[0], i, ref
+  let op=[], c, i, ref, cur=[0], v=[], u=[], g=['']
 
   // ref literals
   seq=seq
-    // FIXME: quotes can be parsed via htm method
+    // FIXME: quotes can be parsed in loop via htm method
     // FIXME: number can be detected as \d|.\d - maybe parse linearly too? no need for values...
-    // or replace 1.xx with 1d12? (decimal fraction)
+    // or replace 1.xx with 1d12? or 1⅒12
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
     // FIXME: can be detected directly in deref
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
@@ -47,6 +49,7 @@ export function parse (seq, ops=operators) {
       i+=c.length, !op? (op=[], g[cur[0]]+=c) : (g[cur[0]]+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``)
     }
     // a[b][c] → a.#b.#c
+    // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [(, [',',b,c]] - too much hassle unwrapping it later
     else if (c=='('||c=='[') ref=g.push('')-1, g[cur[0]]+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`, cur.unshift(ref), op=[], i++
     else if (c==')'||c==']') cur.shift(), op=null, i++
     else g[cur[0]]+=c, op=null, i++
@@ -58,10 +61,17 @@ export function parse (seq, ops=operators) {
   // unwrap
   const deref = s => {
     let c,un
-    if (!s) return null
-    if (Array.isArray(s)) return s.map(deref)
+    if (Array.isArray(s)) return s
+      .map(deref)
+      .filter(x=>x!=nil) // [[a,nil]] → [[a]]
+      // FIXME: here is a conflict of a(1,2,3) vs +(1,2,3)
+      // ? possibly we need to avoid , operator and split , here... but not much difference with whan we have now.
+      // ? or split in unp, where we know that a is not an operator... we don't have deref there
+      // ? alternatively we combine deref and unp, eg. deref in unp... it's getting messy as if we do something wrong.
+      // ? alternatively just drop these attempts to fit calls and directly parse as \w+(.*)
+      // .map(x=>Array.isArray(x)&&x[1]&&x[1][0]==','?[x[0],...x[1].slice(1)]:x) // [a,[',',b,c]] → [a,b,c]
     if (~(c=s.indexOf('@'))) un = u[s.slice(0,c)], s = s.slice(c+1)
-    if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:deref(g[c])
+    if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
     if (un) s = un.reduce((s,u)=>[u,s],s)
     return s
   }
@@ -69,15 +79,16 @@ export function parse (seq, ops=operators) {
   return deref(g[0])
 }
 // FIXME: consolidate these 2 fns into one
+// FIXME: maybe still bring to extensibility?
 // operator groups
 const opx = (s, op) => Array.isArray(s) ? [s.shift(), ...s.map(s=>opx(s,op))]
     : s.includes(op) ? [op, ...s.split(op)]
     : s
 // call chains
-const unp = s => Array.isArray(s) ? [s.shift(), ...s.map(unp)] :
+const unp = (s) => Array.isArray(s) ? [s.shift(), ...s.map(unp)] :
     s.includes('(') ?
     // a(#1).b(#2) → [a,#1,b,#2 → [.,[a,...#1],b],  a(#1)(#2) → [a,#1,,#2 → [[a,...#1],b]
-    s.split(/\(|\)/).reduce((a,b,i) => i%2? [opx(a,'.'),b]: b ? ['.',a,...b.slice(1).split('.')] : a)
+    s.split(/\(|\)/).reduce((a,b,i) => i%2 ? [opx(a,'.'),b] : b ? ['.',a,...b.slice(1).split('.')] : a)
     : opx(s,'.')
 // remove quote
 const unq = s => s[0]=='"'?s.slice(1,-1):s

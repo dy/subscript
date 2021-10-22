@@ -11,6 +11,7 @@
       - not clear how a.b(c).d looks: should ['.', ['a.b', c], 'd'], but how?
     2. make () a splitting operator, mb end-bracket
       - any splitting attempt creates structure either [call, [.,a,b], c, [.,d,e]] or [[.,a],[]]
+  . Ok, now done as . ad-hoc
 * [x] ~~eval JSON, array objects~~ it's incompatible non-lispy syntax
   . `[`,`{`,`:` are not operators, they're built-in.
   . parser must return ready-object/array, not lispy json
@@ -50,10 +51,12 @@
 * [ ] word operators
 * [ ] subscript`exp`
 * [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`
+* [ ]
 * [ ] ;
 * [ ] comments
-* [ ] !keyed arrays? [a:1, b:2, c:3]
 * [ ] #,: operators overloaded (python comments for example)
 * [x] infinite unaries
 * [x] . operator is not compatible with others, like a.+b.+c
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
+* [ ] extension examples: Justin (+JSONs)
+  * [ ] !keyed arrays? [a:1, b:2, c:3]
