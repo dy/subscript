@@ -93,10 +93,7 @@ parse('{x:1, "y":2+2}') // {x:1, y: ['+', 2, 2]}
 ## See also
 
 * [Justin](https://github.com/endojs/Jessie/issues/66) − JSON with operators.
-* [Jessie]() − Minimal JS subset.
-
-## Alternatives
-
+* [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)
 * [jsep](https://github.com/EricSmekens/jsep)
