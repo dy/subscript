@@ -6,7 +6,12 @@
   ~ ( operator implies [(, a, args] === [a, ...args]
   + that allows removing .\w shadowing ↑
   ~ maybe problematic to separate a[b] from just [b], a(b,c) from just (b,c)
-* [ ] eval JSON, array objects
+  . There's a problem a.b(c).d → a.#b(c.d → [(, [., a, b], [., c, d]], but must be [.,[[.,a,b],c] d]
+    1. maybe we don't need to take .,( as operators. Just use dotprop after.
+      - not clear how a.b(c).d looks: should ['.', ['a.b', c], 'd'], but how?
+    2. make () a splitting operator, mb end-bracket
+      - any splitting attempt creates structure either [call, [.,a,b], c, [.,d,e]] or [[.,a],[]]
+* [x] ~~eval JSON, array objects~~ it's incompatible non-lispy syntax
   . `[`,`{`,`:` are not operators, they're built-in.
   . parser must return ready-object/array, not lispy json
   ? Array vs fn call
@@ -32,10 +37,16 @@
     3. `Array → [,'a','b','c']`, call → ['a', 'b', 'c']
       - undefined(a,b,c)
     4. `Array → ['a', 'b', 'c'], call → ['a', 'b', 'c'] if 'a' is a function` (frisk)
-    5. Prohibit arrays/JSONs?
+    5. ✔ Prohibit arrays/JSONs?
       + not cross-compatible - every lang has its own way defining them, but property access is same
       + expected to pass via context
       . not really good idea to mix lisp with arrays/objects
+      → better provide lispy constructors like ['[]', [',',1,2,3]] or ['{}', [',',[':',a,1],[':',b,2],[':',c,3]]]
+        . that gives a hint for end-catch operators, hm. like
+        ? '...[...]':(a,b)=>, '...(...)':(a,b)=>, '...?...:...':(a,b)=>
+          + same as in mdn https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
+          - lengthy
+          - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
 * [ ] word operators
 * [ ] subscript`exp`
 * [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`

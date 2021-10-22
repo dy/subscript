@@ -1,90 +1,87 @@
 // precedence order
 export const operators = {
-  '!':(a,b)=>!b,
-  // '~':(a,b)=>~b,
-  '.':(a,b)=>a[b],
-  '⁡':(a,b)=>a(b),
-  // '**':(a,b)=>a**b,
-  '*':(a,b)=>a*b,
-  '/':(a,b)=>a/b,
-  '%':(a,b)=>a%b,
-  '-':(a=0,b)=>a-b,
-  '+':(a=0,b)=>b+a,
-  '<<':(a,b)=>a<<b,
-  '>>':(a,b)=>a>>b,
-  '<':(a,b)=>a<b,
-  '<=':(a,b)=>a<=b,
-  '>':(a,b)=>a>b,
-  '>=':(a,b)=>a>=b,
-  // ' in ':(a,b)=>a in b,
-  '==':(a,b)=>a==b,
-  '!=':(a,b)=>a!=b,
-  '&':(a,b)=>a&b,
-  '^':(a,b)=>a^b,
-  '|':(a,b)=>a|b,
-  '&&':(a,b)=>a&&b,
   '||':(a,b)=>a||b,
-  // ':':(a,b)=>a,
-  ',':(a,b)=>b,
+  '&&':(a,b)=>a&&b,
+  '|':(a,b)=>a|b,
+  '^':(a,b)=>a^b,
+  '&':(a,b)=>a&b,
+  '!=':(a,b)=>a!=b,
+  '==':(a,b)=>a==b,
+  // ' in ':(a,b)=>a in b,
+  '>=':(a,b)=>a>=b,
+  '>':(a,b)=>a>b,
+  '<=':(a,b)=>a<=b,
+  '<':(a,b)=>a<b,
+  '>>':(a,b)=>a>>b,
+  '<<':(a,b)=>a<<b,
+  '+':(a=0,b)=>b+a,
+  '-':(a=0,b)=>a-b,
+  '%':(a,b)=>a%b,
+  '/':(a,b)=>a/b,
+  '*':(a,b)=>a*b,
+  // '**':(a,b)=>a**b,
+  '!':(a,b)=>!b,
+  // '~':(a,b)=>~b
+  '.':(a,b)=>a[b]
 }
 // code → calltree
-export function parse (seq, opf=operators) {
-  opf[':']=opf[':']||true, opf[',']=opf[',']||true // specials: args, json
-
-  let op=[], c, v=[], u=[], g=[''], cur=[0], opl = Object.keys(opf).reverse(), i, ref
+export function parse (seq, ops=operators) {
+  let op=[], c, v=[], u=[], g=[''], cur=[0], i, ref
 
   // ref literals
   seq=seq
+    // FIXME: quotes can be parsed via htm method
+    // FIXME: number can be detected as \d|.\d - maybe parse linearly too? no need for values...
+    // or replace 1.xx with 1d12? (decimal fraction)
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
+    // FIXME: can be detected directly in deref
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
-    .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b"
+    .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b" // FIXME: can technically
 
   // ref groups/unaries
+  // FIXME: redundant i, op assignments, g[cur[0]] vs buf
   for (i=0; i < seq.length;) {
     c=seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
-    else if (opf[c=seq[i]+seq[i+1]] || opf[c=seq[i]]) {
+    else if (ops[c=seq[i]+seq[i+1]] || ops[c=seq[i]]) {
       i+=c.length, !op? (op=[], g[cur[0]]+=c) : (g[cur[0]]+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``)
     }
-    else {
-      // a[b][c] → a.#b.#c, a(b)(c) → a(#b(#c
-      if (c=='('||c=='[') g[cur[0]]+=(op?'':c=='['?'.':'⁡')+`#g${ref=g.push('')-1}`, cur.unshift(ref), op=[]
-      else if (c==')'||c==']') cur.shift(), op=null
-      else g[cur[0]]+=c, op=null
-      i++
-    }
+    // a[b][c] → a.#b.#c
+    else if (c=='('||c=='[') ref=g.push('')-1, g[cur[0]]+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`, cur.unshift(ref), op=[], i++
+    else if (c==')'||c==']') cur.shift(), op=null, i++
+    else g[cur[0]]+=c, op=null, i++
   }
-console.log(...g)
 
   // split by precedence
-  // FIXME: make a separate function able to process any string
-  const oper = (s, l) => Array.isArray(s) ? [s.shift(), ...s.map(oper)] : s.includes(op) ? [op, ...s.split(op)] : s.trim()
-  for (op of opl) g = g.map(oper)
+  for (op in ops) g = g.map(op=='.'?unp:s=>opx(s,op))
 
   // unwrap
-  const deref = (s,c,e,r,i,m,n,a,un,ty,ref,res,args) => {
-    // console.group(s)
-    if (Array.isArray(s))
-      return s[0]=='⁡' ? s.slice(1).reduce((a,b)=>[a, deref(b)]) // [call, name, args1, args2] → [[name, ...args1], ...args2]
-        : [s.shift(), ...s.map(deref)]
-
-    if (~(c=s.indexOf('@'))) {
-      un = u[s.slice(0,c)]
-      s = s.slice(c+1)
-    }
-    if (s[0]=='#') { // 1, (), [], {}
-      ty=s[1], ref=s.slice(2)
-      s = ty=='v'?v[ref]:deref(g[ref])
-          // :ty=='['?[Array,...deref(g[ref])]
-          // :console.log('TODO', ref)
-    }
-    if (un) s = un.reduce((s,un)=>[un, s],s)
+  const deref = s => {
+    let c,un
+    if (!s) return null
+    if (Array.isArray(s)) return s.map(deref)
+    if (~(c=s.indexOf('@'))) un = u[s.slice(0,c)], s = s.slice(c+1)
+    if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:deref(g[c])
+    if (un) s = un.reduce((s,u)=>[u,s],s)
     return s
   }
 
   return deref(g[0])
 }
+// FIXME: consolidate these 2 fns into one
+// operator groups
+const opx = (s, op) => Array.isArray(s) ? [s.shift(), ...s.map(s=>opx(s,op))]
+    : s.includes(op) ? [op, ...s.split(op)]
+    : s
+// call chains
+const unp = s => Array.isArray(s) ? [s.shift(), ...s.map(unp)] :
+    s.includes('(') ?
+    // a(#1).b(#2) → [a,#1,b,#2 → [.,[a,...#1],b],  a(#1)(#2) → [a,#1,,#2 → [[a,...#1],b]
+    s.split(/\(|\)/).reduce((a,b,i) => i%2? [opx(a,'.'),b]: b ? ['.',a,...b.slice(1).split('.')] : a)
+    : opx(s,'.')
+// remove quote
 const unq = s => s[0]=='"'?s.slice(1,-1):s
+
 
 // calltree → result
 export const evaluate = (seq, ctx={}, opf=operators, f,k) => Array.isArray(seq)
