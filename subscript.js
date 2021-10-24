@@ -51,14 +51,15 @@ export function parse (seq, ops=operators) {
     // a[b][c] → a.#b.#c
     // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
     // but we don't have full fn name token a.b.c( here, since . is operator
-    // else if (c=='('||c=='[') ref=g.push('')-1, g[cur[0]]+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`, cur.unshift(ref), op=[], i++
-    // else if (c==')'||c==']') cur.shift(), op=null, i++
+    // FIXME: it seems my approach is generally misleading: it observes structure and tries to detect patterns
+    // whereas practical parsers just follow LTR by some set of rules.
+    // We should not detect cases like a(), () - first is possible, the second is not...
+    // Also - blank brackets still create empty argument to filter out later
     else if (c=='('||c=='[') {
-      ref=g.length,
-      b+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`,
-      g[cur[0]] += b, b='',
-      cur.unshift(ref), g[ref]='',
-      op=[], i++
+      ref=g.push('')-1,
+      g[cur[0]] += b+(c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`), b='',
+      cur.unshift(ref),
+      op=[], i++, b=''
     }
     else if (c==')'||c==']') {
       g[cur[0]] += b, b=''
