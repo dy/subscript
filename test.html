@@ -2,7 +2,7 @@
   import test, {is} from './lib/test.js'
   import {parse, evaluate} from '../subscript.js'
 
-  test('parse: basic', t => {
+  test.only('parse: basic', t => {
     is(parse('0 + 1 + 2'), ['+', 0, 1, 2])
     is(parse('0 + (1 + 2)'), ['+', 0, ['+', 1, 2]])
     is(parse('0 + 1 - 2'), ['+', 0, ['-',1, 2]])

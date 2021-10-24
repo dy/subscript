@@ -28,7 +28,7 @@ export const operators = {
 const nil = Symbol('nil')
 // code → calltree
 export function parse (seq, ops=operators) {
-  let op=[], c, i, ref, cur=[0], v=[], u=[], g=['']
+  let op=[], b, c, i, ref, cur=[0], v=[], u=[], g=['']
 
   // ref literals
   seq=seq
@@ -42,18 +42,31 @@ export function parse (seq, ops=operators) {
 
   // ref groups/unaries
   // FIXME: redundant i, op assignments, g[cur[0]] vs buf
-  for (i=0; i < seq.length;) {
+  for (i=0, b=''; i < seq.length;) {
     c=seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
     else if (ops[c=seq[i]+seq[i+1]] || ops[c=seq[i]]) {
-      i+=c.length, !op? (op=[], g[cur[0]]+=c) : (g[cur[0]]+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``)
+      i+=c.length, !op? (op=[], b+=c) : (b+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``)
     }
     // a[b][c] → a.#b.#c
-    // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [(, [',',b,c]] - too much hassle unwrapping it later
-    else if (c=='('||c=='[') ref=g.push('')-1, g[cur[0]]+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`, cur.unshift(ref), op=[], i++
-    else if (c==')'||c==']') cur.shift(), op=null, i++
-    else g[cur[0]]+=c, op=null, i++
+    // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
+    // but we don't have full fn name token a.b.c( here, since . is operator
+    // else if (c=='('||c=='[') ref=g.push('')-1, g[cur[0]]+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`, cur.unshift(ref), op=[], i++
+    // else if (c==')'||c==']') cur.shift(), op=null, i++
+    else if (c=='('||c=='[') {
+      ref=g.length,
+      b+=c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`,
+      g[cur[0]] += b, b='',
+      cur.unshift(ref), g[ref]='',
+      op=[], i++
+    }
+    else if (c==')'||c==']') {
+      g[cur[0]] += b, b=''
+      cur.shift(), op=null, i++
+    }
+    else b+=c, op=null, i++
   }
+  g[cur[0]]+=b
 
   // split by precedence
   for (op in ops) g = g.map(op=='.'?unp:s=>opx(s,op))
