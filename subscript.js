@@ -1,9 +1,8 @@
 // precedence order
-// FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
-// FIXME: rewrite operators as follows:
+// FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
 export const precedence = [
   ['.', '('],
-  '!'
+  '!',
   // ['!','~','+','-','++','--']
   // '**',
   ['*', '/', '%'],
@@ -16,9 +15,10 @@ export const precedence = [
   '|',
   '&&',
   '||',
-  ','
+  ',',
 ]
 
+// FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
 export const operators = {
   ',':(a,b)=>b,
   '||':(a,b)=>a||b,
@@ -50,7 +50,7 @@ export const operators = {
 const nil = Symbol('nil')
 
 // code → calltree
-export function parse (seq, ops=operators) {
+export function parse (seq) {
   let op=[], b, c, i, ref, cur=[0], v=[], u=[], g=['']
 
   // ref literals
@@ -68,12 +68,10 @@ export function parse (seq, ops=operators) {
   for (i=0, b=''; i < seq.length;) {
     c=seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
-    else if (ops[c=seq[i]+seq[i+1]] || ops[c=seq[i]]) {
-      i+=c.length, !op? (op=[], b+=c) : (b+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``), g[cur[0]]+=b, b=''
-    }
     // a[b][c] → a.#b.#c
     // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
     // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
+    // FIXME: ideally we'd merge it with psplit
     else if (c=='('||c=='[') {
       ref=g.push('')-1,
       g[cur[0]] += b + (c=='['?`.`:op?``:`(`) + `#g${ref}`
@@ -89,7 +87,7 @@ export function parse (seq, ops=operators) {
   g[cur[0]]+=b
 
   // split by precedence
-  // for (op in ops) g = g.map(op=='.'?unp:s=>opx(s,op))
+  g = g.map(psplit)
 
   // unwrap
   const deref = s => {
@@ -102,7 +100,6 @@ export function parse (seq, ops=operators) {
       // ? or split in unp, where we know that a is not an operator... we don't have deref there
       // ? alternatively we combine deref and unp, eg. deref in unp... it's getting messy as if we do something wrong.
       // ? alternatively just drop these attempts to fit calls and directly parse as \w+(.*)
-    if (~(c=s.indexOf('@'))) un = u[s.slice(0,c)], s = s.slice(c+1)
     if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
     if (un) s = un.reduce((s,u)=>[u,s],s)
     return s
@@ -110,47 +107,54 @@ export function parse (seq, ops=operators) {
 
   return deref(g[0])
 }
-// FIXME: consolidate these 2 fns into one
 // FIXME: maybe still bring to extensibility?
-// operator groups
-const opx = (s, op) => Array.isArray(s) ? [s.shift(), ...s.map(s=>opx(s,op))]
-    : s.includes(op) ? [op, ...s.split(op)]
-    : s
-// call chains
-const unp = (s) => Array.isArray(s) ? [s.shift(), ...s.map(unp)] :
-    s.includes('(') ?
-    // a(#1).b(#2) → [a,#1,b,#2 → [.,[a,...#1],b],  a(#1)(#2) → [a,#1,,#2 → [[a,...#1],b]
-    s.split(/\(|\)/).reduce((a,b,i) => i%2 ? [opx(a,'.'),b] : b ? ['.',a,...b.slice(1).split('.')] : a)
-    : opx(s,'.')
-// remove quote
-const unq = s => s[0]=='"'?s.slice(1,-1):s
-
-// split by same-precedence ops
-export const split = (s, ops) => {
-  let cur, op, i=0, i0=0, part
+// split by precedence
+const psplit = s => {
+  precedence.map(ops => s = Array.isArray(s) ? [s.shift(), ...s.map(psplit)] : split(s, ops))
+  return s
+}
+const split = (s, ops) => {
+  let cur, op, un=[], i=0, i0=0, tok, c
   for (;i<s.length;i++) {
     if (~(c=ops.indexOf(op=s[i]+s[i+1])) || ~(c=ops.indexOf(op=s[i]))) {
-      part = s.slice(i0,i),i0=i+op.length
-      if (!cur) cur = [op]
-      cur.push(part)
-      if (op != cur[0]) cur=[op, cur] // 1 + 2 - 3 → [-, [+, 1, 2], 3]   // a.b(c.d) → [[.,a,b],[.,c,d]]
+      if (i>i0) {
+        if (!cur) cur = [op]
+        cur.push(un.reduce((t,u)=>[u,t], s.slice(i0,i))) // 1 + 2 + 3 → [+,1,2,3]
+        un = []
+        if (op != cur[0]) cur=[op, cur] // 1 + 2 - 3 → [-, [+, 1, 2], 3]   // a.b(c.d) → [[.,a,b],[.,c,d]]
+      }
+      else un.push(op)
+      i0=i+op.length
     }
   }
-  if (i>i0) cur.push(s.slice(i0,i))
+  if (!cur) return s
+  // FIXME: it there a way to remove duplicate
+  if (i>i0) cur.push(un.reduce((t,u)=>[u,t], s.slice(i0,i)))
   return cur
 }
 
 // calltree → result
-export const evaluate = (seq, ctx={}, opf=operators, f,k) => Array.isArray(seq)
+export const evaluate = (seq, ctx={}, f,k) => Array.isArray(seq)
 // FIXME: possibly we have to reduce non-pairs but full opf
-  ? (f=opf[seq[0]]||ctx[seq[0]], seq=seq.slice(1).map(x=>seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f)))
+  ? (f=operators[seq[0]]||ctx[seq[0]], seq=seq.slice(1).map(x=>seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f)))
   : typeof seq === 'string' ? (seq[0] === '"' ? seq.slice(1,-1) : ctx[seq])
   : seq
 
 // code → evaluator
-export default (seq, opf=operators) => (
-  seq = typeof seq === 'string' ? parse(seq, opf) : seq,
-  ctx => evaluate(seq, ctx, opf)
-)
+export default (seq) => (seq = typeof seq === 'string' ? parse(seq) : seq, ctx => evaluate(seq, ctx))
 
-const dprop = (obj, key)=> key.split('.').reduce((a,b)=>b?a?.[b]:a, obj)
+// // operator groups
+// const opx = (s, op) => Array.isArray(s) ? [s.shift(), ...s.map(s=>opx(s,op))]
+//     : s.includes(op) ? [op, ...s.split(op)]
+//     : s
+
+// const dprop = (obj, key)=> key.split('.').reduce((a,b)=>b?a?.[b]:a, obj)
+
+// // call chains
+// const unp = (s) => Array.isArray(s) ? [s.shift(), ...s.map(unp)] :
+//     s.includes('(') ?
+//     // a(#1).b(#2) → [a,#1,b,#2 → [.,[a,...#1],b],  a(#1)(#2) → [a,#1,,#2 → [[a,...#1],b]
+//     s.split(/\(|\)/).reduce((a,b,i) => i%2 ? [opx(a,'.'),b] : b ? ['.',a,...b.slice(1).split('.')] : a)
+//     : opx(s,'.')
+// // remove quote
+// const unq = s => s[0]=='"'?s.slice(1,-1):s
