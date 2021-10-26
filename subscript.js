@@ -1,21 +1,21 @@
 // precedence order
 // FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
 export const precedence = [
-  ['.', '('],
-  '!',
-  // ['!','~','+','-','++','--']
-  // '**',
-  ['*', '/', '%'],
-  ['+', '-'],
-  ['<<','>>','>>>'],
-  ['<','<=','>','>=','in'],
-  ['==','!='],
-  '&',
-  '^',
-  '|',
-  '&&',
-  '||',
   ',',
+  '||',
+  '&&',
+  '|',
+  '^',
+  '&',
+  ['==','!='],
+  ['<','<=','>','>=','in'],
+  ['<<','>>','>>>'],
+  ['+', '-'],
+  ['*', '/', '%'],
+  // '**',
+  // ['!','~','+','-','++','--']
+  '!',
+  ['.', '('],
 ]
 
 // FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
@@ -63,7 +63,7 @@ export function parse (seq) {
     .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
     .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b" // FIXME: can technically
 
-  // ref groups/unaries
+  // ref groups
   // FIXME: redundant i, op assignments, g[cur[0]] vs buf
   for (i=0, b=''; i < seq.length;) {
     c=seq[i]
@@ -71,10 +71,10 @@ export function parse (seq) {
     // a[b][c] → a.#b.#c
     // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
     // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
-    // FIXME: ideally we'd merge it with psplit
+    // FIXME: ideally we'd merge it with psplit: make this first run is for (, [, . operators and call psplit from within, not after
     else if (c=='('||c=='[') {
       ref=g.push('')-1,
-      g[cur[0]] += b + (c=='['?`.`:op?``:`(`) + `#g${ref}`
+      g[cur[0]] += b + (c=='['?`.`: /\w$/.test(b) ?`(`:``) + `#g${ref}` // FIXME: this is redundant regex that's algorithm defect
       cur.unshift(ref),
       op=[], i++, b=''
     }
@@ -87,7 +87,7 @@ export function parse (seq) {
   g[cur[0]]+=b
 
   // split by precedence
-  g = g.map(psplit)
+  for (op of precedence) g = g.map(s=>psplit(s,op))
 
   // unwrap
   const deref = s => {
@@ -109,11 +109,9 @@ export function parse (seq) {
 }
 // FIXME: maybe still bring to extensibility?
 // split by precedence
-const psplit = s => {
-  precedence.map(ops => s = Array.isArray(s) ? [s.shift(), ...s.map(psplit)] : split(s, ops))
-  return s
-}
-const split = (s, ops) => {
+const psplit = (s, ops) => {
+  if (Array.isArray(s)) return [s.shift(), ...s.map(s=>psplit(s,ops))]
+
   let cur, op, un=[], i=0, i0=0, tok, c
   for (;i<s.length;i++) {
     if (~(c=ops.indexOf(op=s[i]+s[i+1])) || ~(c=ops.indexOf(op=s[i]))) {
@@ -121,7 +119,7 @@ const split = (s, ops) => {
         if (!cur) cur = [op]
         cur.push(un.reduce((t,u)=>[u,t], s.slice(i0,i))) // 1 + 2 + 3 → [+,1,2,3]
         un = []
-        if (op != cur[0]) cur=[op, cur] // 1 + 2 - 3 → [-, [+, 1, 2], 3]   // a.b(c.d) → [[.,a,b],[.,c,d]]
+        if (op != cur[0]) cur=[op, cur] // 1 + 2 - 3 → [-, [+, 1, 2], 3]
       }
       else un.push(op)
       i0=i+op.length
