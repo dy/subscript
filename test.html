@@ -5,6 +5,18 @@
   test.only('parse: basic', t => {
     is(parse('0 + 1 + 2'), ['+', 0, 1, 2])
     is(parse('0 + (1 + 2)'), ['+', 0, ['+', 1, 2]])
+
+    // works only because of ± associativity.
+    // it could as well be [+,[-,[+, 0, 1, 2], 1, 2], 1] if we considered ± same precedence
+    // eg. parse('a . b . c ( d , e ) . f') → [., a, b, [(, c, d, e], f] doesn't work like that
+    // I wonder if this assoc mixup can cause problems in &|^ ops, or in binaries
+    // []
+    is(parse('0 + 1 + 2 - 1 - 2 + 1'), ['+', 0, 1, ['-', 2, 1, 2], 1])
+    is(parse('0 - 1 - 2 + 1 + 2 - 1'), ['+', ['-', 0, 1, 2], 1, ['-', 2, 1]])
+    // is(parse('0 * 1 * 2 / 1 / 2 * 1'), ['*', 0, 1, ['/', 2, 1, 2], 1])
+    // is(parse('0 / 1 / 2 * 1 * 2 / 1'), ['/', 0, 1, ['*', 2, 1, 2], 1]) // ← WARNING: this is wrong!!!!
+    is(parse('0 / 1 / 2 * 1 * 2 / 1'), ['/', ['*', ['/', 0, 1, 2], 1, 2], 1]) // ← must be this
+
     is(parse('0 + 1 - 2'), ['+', 0, ['-',1, 2]])
     is(parse('0 + 1 - 2 * 3'), ['+', 0, ['-',1, ['*', 2, 3]]])
     is(parse('0 - 1 + 2'), ['+', ['-',0, 1], 2])

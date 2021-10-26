@@ -1,6 +1,26 @@
 // precedence order
+// FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
+// FIXME: rewrite operators as follows:
+export const precedence = [
+  ['.', '('],
+  '!'
+  // ['!','~','+','-','++','--']
+  // '**',
+  ['*', '/', '%'],
+  ['+', '-'],
+  ['<<','>>','>>>'],
+  ['<','<=','>','>=','in'],
+  ['==','!='],
+  '&',
+  '^',
+  '|',
+  '&&',
+  '||',
+  ','
+]
+
 export const operators = {
-  // ',':(a,b)=>b,
+  ',':(a,b)=>b,
   '||':(a,b)=>a||b,
   '&&':(a,b)=>a&&b,
   '|':(a,b)=>a|b,
@@ -22,10 +42,13 @@ export const operators = {
   '*':(a,b)=>a*b,
   // '**':(a,b)=>a**b,
   '!':(a,b)=>!b,
-  // '~':(a,b)=>~b
+  // '~':(a,b)=>~b,
+  '(':(a,b)=>a(b),
   '.':(a,b)=>a[b]
 }
+
 const nil = Symbol('nil')
+
 // code → calltree
 export function parse (seq, ops=operators) {
   let op=[], b, c, i, ref, cur=[0], v=[], u=[], g=['']
@@ -46,7 +69,7 @@ export function parse (seq, ops=operators) {
     c=seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
     else if (ops[c=seq[i]+seq[i+1]] || ops[c=seq[i]]) {
-      i+=c.length, !op? (op=[], b+=c) : (b+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``)
+      i+=c.length, !op? (op=[], b+=c) : (b+=op.unshift(c)<2 ? `${u.push(op)-1}@`:``), g[cur[0]]+=b, b=''
     }
     // a[b][c] → a.#b.#c
     // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
@@ -57,7 +80,7 @@ export function parse (seq, ops=operators) {
     // Also - blank brackets still create empty argument to filter out later
     else if (c=='('||c=='[') {
       ref=g.push('')-1,
-      g[cur[0]] += b+(c=='['?`.#g${ref}`:op?`#g${ref}`:`(#g${ref})`), b='',
+      g[cur[0]] += b + (c=='['?`.`:op?``:`(`) + `#g${ref}`
       cur.unshift(ref),
       op=[], i++, b=''
     }
@@ -83,7 +106,6 @@ export function parse (seq, ops=operators) {
       // ? or split in unp, where we know that a is not an operator... we don't have deref there
       // ? alternatively we combine deref and unp, eg. deref in unp... it's getting messy as if we do something wrong.
       // ? alternatively just drop these attempts to fit calls and directly parse as \w+(.*)
-      // .map(x=>Array.isArray(x)&&x[1]&&x[1][0]==','?[x[0],...x[1].slice(1)]:x) // [a,[',',b,c]] → [a,b,c]
     if (~(c=s.indexOf('@'))) un = u[s.slice(0,c)], s = s.slice(c+1)
     if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
     if (un) s = un.reduce((s,u)=>[u,s],s)
@@ -107,6 +129,20 @@ const unp = (s) => Array.isArray(s) ? [s.shift(), ...s.map(unp)] :
 // remove quote
 const unq = s => s[0]=='"'?s.slice(1,-1):s
 
+// split by same-precedence ops
+export const split = (s, ops) => {
+  let cur, op, i=0, i0=0, part
+  for (;i<s.length;i++) {
+    if (~(c=ops.indexOf(op=s[i]+s[i+1])) || ~(c=ops.indexOf(op=s[i]))) {
+      part = s.slice(i0,i),i0=i+op.length
+      if (!cur) cur = [op]
+      cur.push(part)
+      if (op != cur[0]) cur=[op, cur] // 1 + 2 - 3 → [-, [+, 1, 2], 3]   // a.b(c.d) → [[.,a,b],[.,c,d]]
+    }
+  }
+  if (i>i0) cur.push(s.slice(i0,i))
+  return cur
+}
 
 // calltree → result
 export const evaluate = (seq, ctx={}, opf=operators, f,k) => Array.isArray(seq)
