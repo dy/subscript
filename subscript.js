@@ -73,11 +73,7 @@ export function parse (seq, ops=operators) {
     }
     // a[b][c] → a.#b.#c
     // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
-    // but we don't have full fn name token a.b.c( here, since . is operator
-    // FIXME: it seems my approach is generally misleading: it observes structure and tries to detect patterns
-    // whereas practical parsers just follow LTR by some set of rules.
-    // We should not detect cases like a(), () - first is possible, the second is not...
-    // Also - blank brackets still create empty argument to filter out later
+    // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
     else if (c=='('||c=='[') {
       ref=g.push('')-1,
       g[cur[0]] += b + (c=='['?`.`:op?``:`(`) + `#g${ref}`
@@ -93,7 +89,7 @@ export function parse (seq, ops=operators) {
   g[cur[0]]+=b
 
   // split by precedence
-  for (op in ops) g = g.map(op=='.'?unp:s=>opx(s,op))
+  // for (op in ops) g = g.map(op=='.'?unp:s=>opx(s,op))
 
   // unwrap
   const deref = s => {

@@ -12,11 +12,11 @@
     2. make () a splitting operator, mb end-bracket
       - any splitting attempt creates structure either [call, [.,a,b], c, [.,d,e]] or [[.,a],[]]
   . Ok, now done as . ad-hoc
-  * [ ] the actual problem of a.b(c.d,e.f).g.h+1 is that ( and . has same precedence and are handled simultaneously, not in order
+  * [x] the actual problem of a.b(c.d,e.f).g.h+1 is that ( and . has same precedence and are handled simultaneously, not in order
     . correct (non-order) grouping would be #a(#b,#c).g.h+1 → #abc.g.h+1 → #abcg+1 → #abcg1
     . then unwrap → [+,#abcg,1] → [+,[.,#abc,g,h],1] → [+,[.,[#a,#b,#c],g,h],1] → ...
     → we cannot organize single object with order of operators, these two (/. must come same time therefore
-  + ok, with special split it seems to be possible now a ( #bc → [(, a, #bc, #de], needs unwrapping only
+    + ok, with precedence split it seems to be possible now a ( #bc → [(, a, #bc, #de], needs unwrapping only
 * [x] ~~eval JSON, array objects~~ it's incompatible non-lispy syntax
   . `[`,`{`,`:` are not operators, they're built-in.
   . parser must return ready-object/array, not lispy json
