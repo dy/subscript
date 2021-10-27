@@ -62,8 +62,7 @@ export function parse (seq) {
   seq=seq
     .replace(/\.(\w+)\b/g, `."$1"`) // a.b → a."b"
     .replace(/"[^"\\\n\r]*"/g, m => `#${v.push(m)-1}`) // "a" → #0
-    .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#${v.push(m[0]=='"'?m:parseFloat(m))-1}`) // .75e-12 → #1
-
+    .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#${v.push(parseFloat(m))-1}`) // .75e-12 → #1
   // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,[+,b],+,(,[c,+,d,(,[e],]]
   // FIXME: a+-(c) is a problem
   const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(1)] : literal[b] || b)), b='', un=[])
