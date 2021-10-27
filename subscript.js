@@ -55,22 +55,26 @@ export const operators = {
 // FIXME: try to remove
 const nil = Symbol('nil')
 
+const lit = {true:true, false:false, null:null, undefined:undefined}
+
 // code → calltree
 export function parse (seq) {
   let op=[], b='', c, i, br, cur=[], v=[], un=[]
 
-  // ref literals
+  // ref tokens
   seq=seq
-    // FIXME: number can be detected as \d|.\d - maybe parse linearly too? no need for values...
-    // or replace 1.xx with 1d12? or 1⅒12
-    .replace(/\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(parseFloat(m))-1}`)
-    // FIXME: can be detected directly in deref
-    // .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
-    .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b"
-
+    .replace(/\.(\w+)\b/g, m => `.#${v.push(`"${m}"`)-1}`) // a.b → a.#2
+    .replace(/\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#${v.push(parseFloat(m))-1}`) // .75e-12 → #1
+console.log(seq)
   // 1. tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,+,b,+,[(,c,+,d,[(,e,],]]
   // FIXME: a+-(c) is a problem
-  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t], b)), b='', un=[])
+  const commit = () => b && (cur.push(
+    un.reduce(
+      (t,u)=>[u,t],
+      b[0]=='#' ? v[b.slice(1)] : lit[b] || b
+    )
+  ), b='', un=[])
+
   for (i=0; i<seq.length; i++) {
     c = seq[i]
     if (br) b+=c, br==c && (br='');
@@ -82,11 +86,11 @@ export function parse (seq) {
     else b+=c
   }
   commit()
-console.log(cur)
+  console.log(cur)
 
   cur = prec(cur)
 
-  return cur.length>1?cur:cur[0]
+  return cur
 }
 
 // group seq of tokens into calltree nodes by operator precedence
@@ -110,7 +114,7 @@ const prec = (s) => {
     // console.log(res)
     // console.groupEnd()
   }
-  return s
+  return s.length>1?s:s[0]
 }
 
 // calltree → result
