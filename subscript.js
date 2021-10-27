@@ -97,9 +97,7 @@ export function parse (seq) {
       if (s[0]=='(') {
         if (s[1][0]=='#') return deref(s[1]) // (a,b) → [,a,b] or [',',a,b]
         // a(b,c)(d) → [(, a, #g1, #g2] → [[a, b, c], d]
-        console.log(s)
         return s.slice(1).reduce((a,b,c) => [deref(a), ...(c=deref(b),c[0]==','?c.slice(1):[c])]).filter(x=>x!=nil)
-        // return [s[1].slice(0,-1)||undefined, ...deref(s[2]).slice(1).map(deref)]
       }
       return s.map(deref).filter(x=>x!=nil) // [[a,nil]] → [[a]]
     }
@@ -127,7 +125,7 @@ const psplit = (s, ops) => {
         un = []
         if (op != cur[0]) cur=[op, cur] // 1+2-3 → [-,[+, 1, 2],3]
       }
-      else un.push(op)
+      else un.unshift(op)
       i0=i+op.length
     }
   }
