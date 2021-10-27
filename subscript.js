@@ -71,7 +71,7 @@ export function parse (seq) {
   for (i=0; i<seq.length; i++) {
     c = seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
-    else if (c=='('||c=='[') commit(), !(cur.length%1) && cur.push(c), cur=[cur] // `a(b)` → `a,(,[b`; `a)(b)` → `a],(,[b`
+    else if (c=='('||c=='[') commit(), cur.length%2 && cur.push(c), cur=[cur] // `a(b)` → `a,(,[b`; `a)(b)` → `a],(,[b`
     else if (c==')'||c==']') commit(), cur[0].push(prec(cur.slice(1))), cur=cur[0]
     else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)
     else b+=c
@@ -105,8 +105,8 @@ const prec = (s) => {
     }
     commit()
     s = p ? res
-      // flatten call op: [(,a,[',',b,c],d] → [[a, b, c],c]
-      : res.map(s => s&&s[0] == '(' ? s.slice(1).reduce((a,b)=>[a,...(b&&b[0]==','?b.slice(1):[b])]) : s)
+      // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
+      : res.map(s => s&&s[0] == '(' ? s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):b)) : s)
   })
 
   return s.length>1?s:s[0]
