@@ -54,9 +54,6 @@ operators = {
 
 literal = {true:true, false:false, null:null, undefined:undefined}
 
-// FIXME: try to remove
-const nil = Symbol('nil')
-
 // code → calltree
 export function parse (seq) {
   let op=[], b='', c, i, cur=[], v=[], un=[]
@@ -67,21 +64,19 @@ export function parse (seq) {
     .replace(/"[^"\\\n\r]*"/g, m => `#${v.push(m)-1}`) // "a" → #0
     .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#${v.push(m[0]=='"'?m:parseFloat(m))-1}`) // .75e-12 → #1
 
-  // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,+,b,+,[(,c,+,d,[(,e,],]]
+  // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,[+,b],+,(,[c,+,d,(,[e],]]
   // FIXME: a+-(c) is a problem
   const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(1)] : literal[b] || b)), b='', un=[])
 
   for (i=0; i<seq.length; i++) {
     c = seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
-    else if (c=='('||c=='[') commit() && cur.push(c), cur=[cur] // a(b) → a, (, [ b
-    else if (c==')'||c==']') commit(), cur[0].push(cur.length<3?cur[1]: prec(cur.slice(1))), cur=cur[0]
+    else if (c=='('||c=='[') commit(), !(cur.length%1) && cur.push(c), cur=[cur] // `a(b)` → `a,(,[b`; `a)(b)` → `a],(,[b`
+    else if (c==')'||c==']') commit(), cur[0].push(prec(cur.slice(1))), cur=cur[0]
     else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)
     else b+=c
   }
   commit()
-  console.log(cur)
-
   cur = prec(cur)
 
   return cur
@@ -89,23 +84,29 @@ export function parse (seq) {
 
 // group seq of tokens into calltree nodes by operator precedence
 const prec = (s) => {
+  if (!s.length) return ''
+  let cur, res, op, i
+
+  const commit = () => cur ? (
+    cur[0]=='(' && cur.shift(), // [(, a, b] → [a, b]
+    cur.push(s[i-1]),
+    res.push(cur), cur=null
+  ) : res.push(s[i-1])
   for (let ops of precedence) {
-    // console.group(ops)
-    let cur, res=[], op, i=1
+    // console.group(ops, s)
+    res=[], i=1
     for (;i<s.length;i+=2) {
       if (~ops.indexOf(op=s[i])) {
         // console.log('op found', op)
         if (!cur) cur = [op]
         cur.push(s[i-1])
-        if (op != cur[0]) cur=[op, cur], console.log(cur)
+        if (op != cur[0]) cur=[op, cur]
       }
-      else if (cur) cur.push(s[i-1]), res.push(cur, s[i]), cur=null
-      else res.push(s[i-1], s[i])
+      else commit(), res.push(s[i])
     }
-    if (cur) cur.push(s[i-1]), res.push(cur)
-    else res.push(s[i-1])
+    // console.log(res, s.length, i-1)
+    commit()
     s = res
-    // console.log(res)
     // console.groupEnd()
   }
   return s.length>1?s:s[0]
