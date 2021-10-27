@@ -4,17 +4,18 @@
 # <!--<img alt="subscript" src="/subscript2.svg" height=42/>--> sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
 Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<br/>
+<!-- Part-time it's also [Justin](https://github.com/endojs/Jessie/issues/66) (JSON with expressions). -->
 
-* Anyone with knowledge of any of the languages automatically knows _subscript_.
+* Everyone already knows _subscript_.
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work.
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript?color=brightgreen&label=gzip)</sub>
-* It's extensible (any unary/binary operators overloading)
-* And seemingly trivial to use...
+* It's extensible and allows operators overloading.
+* Trivial to use...
 
 ```js
 import subscript from 'subscript.js'
-let evaluate = subscript(`a + (b - c)`)
-evaluate({a:1, b:2, c:3}) // 0
+let fn = subscript(`a + (b - c)`)
+fn({a:1, b:2, c:3}) // 0
 ```
 
 ### Useful in
@@ -57,17 +58,32 @@ Some parts are non-configurable:
 
 ### Overloadable operators
 
-Default operators include common operators for the listed languages:<br/>
-`! . ( * / % - + << >> < <= > >= == != & ^ | && || ,`.
+Default operators include common operators for the listed languages in the following precedence:
 
-Extra operators like `~ ** in` can be included separately, but make code less compatible.
+* `. (`
+* `!`, (`~ + - ++ --` − Justin)
+* (`**` − Justin)
+* `* / %`
+* `+ -`
+* `<< >> >>>`
+* `< <= > >=`, (`in` − Justin)
+* `== !=`
+* `&`
+* `^`
+* `|`
+* `&&`
+* `||`
+* `,`
 
 All other operators can be redefined.
 
 ```js
 import {operators, parse, evaluate} from 'subscript.js'
 
-let ops = Object.assign({}, operators, {'|>': (a,b) => a.pipe(b), '=>': (args,fn) => /*eval fn with args*/ })
+// add operators to precedence groups
+operators[5]['|>'] = (a,...b) => a.pipe(...b)
+operators.unshift({'=>': (args,body) => evaluate(body, args) })
+
 let tree = parse(`
   interval(350)
   |> take(25)
@@ -76,9 +92,7 @@ let tree = parse(`
 `, ops)
 ```
 
-Operator precedence follows keys order in `ops` object, so you may need to provide desired order manually.
-Operators are binary by default, unary operators fall back to binary as follows: `a*-+-b` → `a*(-(+(-b)))`.
-Ternary operators are impossible (for now).
+<!-- Ternary operators are impossible (for now). -->
 
 <!--
 ### Support JSON
@@ -92,7 +106,6 @@ parse('{x:1, "y":2+2}') // {x:1, y: ['+', 2, 2]}
 
 ## See also
 
-* [Justin](https://github.com/endojs/Jessie/issues/66) − JSON with operators.
 * [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)

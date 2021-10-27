@@ -1,52 +1,58 @@
 // precedence order
 // FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
 export const precedence = [
-  ',',
-  ['||'],
-  ['&&'],
-  '|',
-  '^',
-  '&',
-  ['==','!='],
-  ['<','<=','>','>=','in'],
-  ['<<','>>','>>>'],
-  ['+', '-'],
-  ['*', '/', '%'],
+  ['.', '('],
+  '!',
   // '**',
   // ['!','~','+','-','++','--']
-  '!',
-  ['.', '('],
+  ['*', '/', '%'],
+  ['+', '-'],
+  ['<<','>>','>>>'],
+  ['<','<=','>','>=','in'],
+  ['==','!='],
+  '&',
+  '^',
+  '|',
+  ['&&'],
+  ['||'],
+  ','
 ]
 
-// FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
+// operators take full args, not pair
+// + directly map calltree nodes [op, ...args], not some reduce shchema
+// + that's useful as own lib, like dlv
+// + there are shortcuts or extensions for some ops
+// + simpler unary handling
+// + ternary handling
 export const operators = {
-  ',':(a,b)=>b,
-  '||':(a,b)=>a||b,
-  '&&':(a,b)=>a&&b,
+  ',':(a,...b)=>b[b.length-1],
+  '||':(...a)=>a.some(a=>a),
+  '&&':(...a)=>a.every(a=>a),
   '|':(a,b)=>a|b,
   '^':(a,b)=>a^b,
   '&':(a,b)=>a&b,
   '!=':(a,b)=>a!=b,
   '==':(a,b)=>a==b,
   // ' in ':(a,b)=>a in b,
-  '>=':(a,b)=>a>=b,
-  '>':(a,b)=>a>b,
-  '<=':(a,b)=>a<=b,
-  '<':(a,b)=>a<b,
+  '>=':(a,b,c)=>c!=null?(a>=b&&b>=c):(a>=b),
+  '>':(a,b,c)=>c!=null?(a>b&&b>c):(a>b),
+  '<=':(a,b,c)=>c!=null?(a<=b&&b=<c):(a<=b),
+  '<':(a,b,c)=>c!=null?(a<b&&b<c):(a<b),
   '>>':(a,b)=>a>>b,
   '<<':(a,b)=>a<<b,
-  '+':(a=0,b)=>b+a,
-  '-':(a=0,b)=>a-b,
-  '%':(a,b)=>a%b,
-  '/':(a,b)=>a/b,
-  '*':(a,b)=>a*b,
+  '+':(...b)=>a.reduce((a,b)=>a+b),
+  '-':(...b)=>a.reduce((a,b)=>a-b),
+  '%':(...a)=>a.reduce((a,b)=>a%b),
+  '/':(...a)=>a.reduce((a,b)=>a/b),
+  '*':(...a)=>a.reduce((a,b)=>a*b),
   // '**':(a,b)=>a**b,
-  '!':(a,b)=>!b,
-  // '~':(a,b)=>~b,
-  '(':(a,b)=>a(b),
-  '.':(a,b)=>a[b]
+  '!':(a)=>!a,
+  // '~':(a)=>~a,
+  '(':(a,...args)=>a(...args),
+  '.':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a)
 }
 
+// FIXME: try to remove
 const nil = Symbol('nil')
 
 // code → calltree
@@ -63,92 +69,42 @@ export function parse (seq) {
     // .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
     .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b"
 
-
   // 1. tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,+,b,+,[(,c,+,d,[(,e,],]]
-  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t], b)), un=[], b='')
+  // FIXME: a+-(c) is a problem
+  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t], b)), b='', un=[])
   for (i=0; i<seq.length; i++) {
     c = seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
-    else if (c=='('||c=='[') commit(), cur.push(cur=[cur,c])
-    else if (c==')'||c==']') commit(), cur=cur[0]
-    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) b ? (commit(), cur.push(op)) : un.push(op)
+    else if (c=='('||c=='[') commit() && cur.push(c), cur=[cur] // a(b) → a, (, [ b
+    else if (c==')'||c==']') commit(), cur[0].push(cur.length<3?cur[1]: prec(cur.slice(1))), cur=cur[0]
+    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)
     else b+=c
   }
-  commit()
+  commit(), cur = prec(cur)
+  // TODO: prec must create precedence groups
   console.log(cur)
-
-  // 2. unary ops, .[( : [a,*,+,b,+,[(,c,+,d,[(,e,],]] → [a,*,[+,b],+,[c,+,[d,e]]]
-  // const unun = (seq) => seq.reduce((a,b) => operators[a]&&operators[b])
-
-  // // ref groups
-  // // FIXME: redundant i, op assignments, g[cur[0]] vs buf
-  // for (i=0, b=''; i < seq.length;) {
-  //   c=seq[i]
-  //   if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
-  //   // a[b][c] → a.#b.#c
-  //   // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
-  //   // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
-  //   // FIXME: ideally we'd merge it with psplit: make this first run is for (, [, . operators and call psplit from within, not after
-  //   else if (c=='('||c=='[') {
-  //     ref=g.push('')-1,
-  //     g[cur[0]] += b + (c=='['? `.`: `(`) + `#g${ref}`
-  //     cur.unshift(ref),
-  //     op=[], i++, b=''
-  //   }
-  //   else if (c==')'||c==']') {
-  //     g[cur[0]] += b, b=''
-  //     cur.shift(), op=null, i++
-  //   }
-  //   else b+=c, op=null, i++
-  // }
-  // g[cur[0]]+=b
-
-  // // split by precedence
-  // for (op of precedence) g = g.map(s=>psplit(s,op))
-
-  // // unwrap
-  // const deref = s => {
-  //   let c
-  //   if (Array.isArray(s)) {
-  //     // NOTE: we have to handle (, specially: parsing complexity, special folding, inverse precedence order
-  //     if (s[0]=='(') {
-  //       if (s[1][0]=='#') return deref(s[1]) // (a,b) → [,a,b] or [',',a,b]
-  //       // a(b,c)(d) → [(, a, #g1, #g2] → [[a, b, c], d]
-  //       return s.slice(1).reduce((a,b,c) => [deref(a), ...(c=deref(b),c[0]==','?c.slice(1):[c])]).filter(x=>x!=nil)
-  //     }
-  //     return s.map(deref).filter(x=>x!=nil) // [[a,nil]] → [[a]]
-  //   }
-
-  //   if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
-  //   return s
-  // }
-
-  // return deref(g[0])
 }
-// FIXME: maybe still bring to extensibility?
-// split by precedence
-const psplit = (s, ops) => {
-  if (Array.isArray(s)) return [s.shift(), ...s.map(s=>psplit(s,ops))]
 
-  let cur, op, un=[], i=0, i0=0
+// group seq of tokens into calltree nodes by operator precedence
+const prec = (s) => {
+  for (let op of precedence) s = s.map(psplit)
+  return s
+}
 
-  const commit=() => un.reduce((t,u)=>[u,t], s.slice(i0,i))
-
-  for (;i<s.length;i++) {
-    if (~(ops.indexOf(op=s[i]+s[i+1])) || ~(ops.indexOf(op=s[i]))) {
-      if (i>i0) {
-        if (!cur) cur = [op]
-        cur.push(commit()) // 1+2+3 → [+,1,2,3]
-        un = []
-        if (op != cur[0]) cur=[op, cur] // 1+2-3 → [-,[+, 1, 2],3]
-      }
-      else un.unshift(op)
-      i0=i+op.length
+const split = (s, ops) => {
+  let cur, op, i=1, i0=0
+  for (;i<s.length;i+=2) {
+    if (~ops.indexOf(op=s[i])) {
+      if (!cur) cur = [op]
+      cur.push(s[i-1]) // 1+2+3 → [+,1,2,3]
+      if (op != cur[0]) cur=[op, cur] // 1+2-3 → [-,[+, 1, 2],3]
+    }
+    else {
+      s.splice()
+      cur = null
     }
   }
-  if (!cur) return commit()
-  if (i>i0) cur.push(commit())
-  return cur
+  return s
 }
 
 // calltree → result
@@ -161,7 +117,3 @@ export const evaluate = (seq, ctx={}, f,k) => Array.isArray(seq)
 // code → evaluator
 export default (seq) => (seq = typeof seq === 'string' ? parse(seq) : seq, ctx => evaluate(seq, ctx))
 
-// const dprop = (obj, key)=> key.split('.').reduce((a,b)=>b?a?.[b]:a, obj)
-
-// // remove quote
-// const unq = s => s[0]=='"'?s.slice(1,-1):s
