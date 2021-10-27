@@ -30,6 +30,12 @@
     //   ]
     // )
   })
+  test('parse: strings', t => {
+    is(parse('"a"'), '"a"')
+    is(parse('a + b'), ['+', 'a', 'b'])
+    is(parse('"a" + "b"'), ['+', '"a"', '"b"'])
+    is(parse('"a" + ("1" + "2")'), ['+', '"a"', ['+', '"1"', '"2"']])
+  })
   test('parse: intersecting operators', t => {
     is(parse('a | b'), ['|', 'a', 'b'], 'a|b')
     is(parse('a || b'), ['||', 'a', 'b'], 'a||b')

@@ -57,14 +57,13 @@ const nil = Symbol('nil')
 
 // code → calltree
 export function parse (seq) {
-  let op=[], b='', c, i, ref, cur=[], v=[], u=[], g=[''], un=[]
+  let op=[], b='', c, i, br, cur=[], v=[], un=[]
 
   // ref literals
   seq=seq
-    // FIXME: quotes can be parsed in loop via htm method
     // FIXME: number can be detected as \d|.\d - maybe parse linearly too? no need for values...
     // or replace 1.xx with 1d12? or 1⅒12
-    .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
+    .replace(/\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(parseFloat(m))-1}`)
     // FIXME: can be detected directly in deref
     // .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
     .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b"
@@ -74,13 +73,18 @@ export function parse (seq) {
   const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t], b)), b='', un=[])
   for (i=0; i<seq.length; i++) {
     c = seq[i]
-    if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
+    if (br) b+=c, br==c && (br='');
+    else if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
+    else if (c=='"'||c=="'") b+=br=c
     else if (c=='('||c=='[') commit() && cur.push(c), cur=[cur] // a(b) → a, (, [ b
     else if (c==')'||c==']') commit(), cur[0].push(cur.length<3?cur[1]: prec(cur.slice(1))), cur=cur[0]
     else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)
     else b+=c
   }
-  commit(), cur = prec(cur)
+  commit()
+console.log(cur)
+
+  cur = prec(cur)
 
   return cur.length>1?cur:cur[0]
 }
