@@ -1,7 +1,7 @@
 // precedence order
 // FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
 export const precedence = [
-  ['.', '('],
+  ['.', '(', '['],
   '!',
   // '**',
   // ['!','~','+','-','++','--']
@@ -49,6 +49,7 @@ operators = {
   '!':(a)=>!a,
   // '~':(a)=>~a,
   '(':(a,...args)=>a(...args),
+  '[':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a),
   '.':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a)
 },
 
@@ -56,13 +57,13 @@ literal = {true:true, false:false, null:null, undefined:undefined}
 
 // code → calltree
 export function parse (seq) {
-  let op=[], b='', c, i, cur=[], v=[], un=[]
+  let op=[], b='', c, i, cur=[null], v=[], un=[]
 
   // ref literals
   seq=seq
-    .replace(/\.(\w+)\b/g, `."$1"`) // a.b → a."b"
     .replace(/"[^"\\\n\r]*"/g, m => `#v${v.push(m)-1}`) // "a" → #0; in loop would be too late
     .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#v${v.push(parseFloat(m))-1}`) // .75e-12 → #1
+    .replace(/\.(\w+)\b/g, `."$1"`) // a.b → a."b"
 
   // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,[+,b],+,(,[c,+,d,(,[e],]]
   // FIXME: a+-(c) is a problem
@@ -71,14 +72,15 @@ export function parse (seq) {
   for (i=0; i<seq.length; i++) {
     c = seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
-    else if (c=='('||c=='[') commit(), cur.length%2 && cur.push(c), cur=[cur] // `a(b)` → `a,(,[b`; `a)(b)` → `a],(,[b`
+    else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
     else if (c==')'||c==']') commit(), cur[0].push(prec(cur.slice(1))), cur=cur[0]
-    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)
+    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.push(op)
     else b+=c
   }
+    console.log(cur)
 
-  commit()
-  cur = prec(cur)
+  // commit()
+  // cur = prec(cur.slice(1))
 
   return cur
 }
