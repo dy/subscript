@@ -61,11 +61,12 @@ export function parse (seq) {
   // ref literals
   seq=seq
     .replace(/\.(\w+)\b/g, `."$1"`) // a.b → a."b"
-    .replace(/"[^"\\\n\r]*"/g, m => `#${v.push(m)-1}`) // "a" → #0
-    .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#${v.push(parseFloat(m))-1}`) // .75e-12 → #1
+    .replace(/"[^"\\\n\r]*"/g, m => `#v${v.push(m)-1}`) // "a" → #0; in loop would be too late
+    .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#v${v.push(parseFloat(m))-1}`) // .75e-12 → #1
+
   // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,[+,b],+,(,[c,+,d,(,[e],]]
   // FIXME: a+-(c) is a problem
-  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(1)] : literal[b] || b)), b='', un=[])
+  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(2)] : literal[b] || b)), b='', un=[])
 
   for (i=0; i<seq.length; i++) {
     c = seq[i]
@@ -75,6 +76,7 @@ export function parse (seq) {
     else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)
     else b+=c
   }
+
   commit()
   cur = prec(cur)
 
@@ -105,7 +107,7 @@ const prec = (s) => {
     commit()
     s = p ? res
       // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
-      : res.map(s => s&&s[0] == '(' ? s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):b)) : s)
+      : res.map(s => s&&s[0] == '(' ? s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])) : s)
   })
 
   return s.length>1?s:s[0]
