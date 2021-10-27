@@ -16,7 +16,7 @@ export const precedence = [
   ['&&'],
   ['||'],
   ','
-]
+],
 
 // operators take full args, not pair
 // + directly map calltree nodes [op, ...args], not some reduce shchema
@@ -24,7 +24,7 @@ export const precedence = [
 // + there are shortcuts or extensions for some ops
 // + simpler unary handling
 // + ternary handling
-export const operators = {
+operators = {
   ',':(a,...b)=>b[b.length-1],
   '||':(...a)=>a.some(a=>a),
   '&&':(...a)=>a.every(a=>a),
@@ -50,36 +50,30 @@ export const operators = {
   // '~':(a)=>~a,
   '(':(a,...args)=>a(...args),
   '.':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a)
-}
+},
+
+literal = {true:true, false:false, null:null, undefined:undefined}
 
 // FIXME: try to remove
 const nil = Symbol('nil')
 
-const lit = {true:true, false:false, null:null, undefined:undefined}
-
 // code → calltree
 export function parse (seq) {
-  let op=[], b='', c, i, br, cur=[], v=[], un=[]
+  let op=[], b='', c, i, cur=[], v=[], un=[]
 
-  // ref tokens
+  // ref literals
   seq=seq
-    .replace(/\.(\w+)\b/g, m => `.#${v.push(`"${m}"`)-1}`) // a.b → a.#2
-    .replace(/\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#${v.push(parseFloat(m))-1}`) // .75e-12 → #1
-console.log(seq)
-  // 1. tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,+,b,+,[(,c,+,d,[(,e,],]]
+    .replace(/\.(\w+)\b/g, `."$1"`) // a.b → a."b"
+    .replace(/"[^"\\\n\r]*"/g, m => `#${v.push(m)-1}`) // "a" → #0
+    .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#${v.push(m[0]=='"'?m:parseFloat(m))-1}`) // .75e-12 → #1
+
+  // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,+,b,+,[(,c,+,d,[(,e,],]]
   // FIXME: a+-(c) is a problem
-  const commit = () => b && (cur.push(
-    un.reduce(
-      (t,u)=>[u,t],
-      b[0]=='#' ? v[b.slice(1)] : lit[b] || b
-    )
-  ), b='', un=[])
+  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(1)] : literal[b] || b)), b='', un=[])
 
   for (i=0; i<seq.length; i++) {
     c = seq[i]
-    if (br) b+=c, br==c && (br='');
-    else if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
-    else if (c=='"'||c=="'") b+=br=c
+    if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
     else if (c=='('||c=='[') commit() && cur.push(c), cur=[cur] // a(b) → a, (, [ b
     else if (c==')'||c==']') commit(), cur[0].push(cur.length<3?cur[1]: prec(cur.slice(1))), cur=cur[0]
     else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit() ? cur.push(op) : un.push(op)

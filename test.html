@@ -30,7 +30,7 @@
     //   ]
     // )
   })
-  test.only('parse: strings', t => {
+  test('parse: strings', t => {
     is(parse('"a"'), '"a"')
     is(parse('a + b'), ['+', 'a', 'b'])
     is(parse('"a" + "b"'), ['+', '"a"', '"b"'])
