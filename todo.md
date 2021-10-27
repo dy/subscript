@@ -2,7 +2,7 @@
 
 * [ ] unaries must be collected in generic fashion, not per-precedence...
   ? Is there a generic blocker doing tokenization?
-    . a*+b+(c+d(e)) → [a,*,+,b,+,(,c,+,d,(,e,),)] → [a,*,[+,b],+,[c,+,[d,e]]] → precedence [+,[*,a,[+,b]],[+,c,[d,e]]]
+    .  → precedence [+,[*,a,[+,b]],[+,c,[d,e]]]
 * [x] think about flatten groups: a["b"]["c"] → a.#0.#1, a(b,c)(d,e) → a ( #bc ( #de
   + that allows correct precedence detection, eg. a.#0.#1(#2 can be split as [(, [., a, #0, #1], #2]
   + that allows overloading these operators by user

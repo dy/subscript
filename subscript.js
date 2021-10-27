@@ -51,7 +51,7 @@ const nil = Symbol('nil')
 
 // code → calltree
 export function parse (seq) {
-  let op=[], b, c, i, ref, cur=[0], v=[], u=[], g=['']
+  let op=[], b='', c, i, ref, cur=[], v=[], u=[], g=[''], un=[]
 
   // ref literals
   seq=seq
@@ -60,53 +60,70 @@ export function parse (seq) {
     // or replace 1.xx with 1d12? or 1⅒12
     .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
     // FIXME: can be detected directly in deref
-    .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
-    .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b" // FIXME: can technically
+    // .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
+    .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b"
 
-  // ref groups
-  // FIXME: redundant i, op assignments, g[cur[0]] vs buf
-  for (i=0, b=''; i < seq.length;) {
-    c=seq[i]
-    if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
-    // a[b][c] → a.#b.#c
-    // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
-    // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
-    // FIXME: ideally we'd merge it with psplit: make this first run is for (, [, . operators and call psplit from within, not after
-    else if (c=='('||c=='[') {
-      ref=g.push('')-1,
-      g[cur[0]] += b + (c=='['? `.`: `(`) + `#g${ref}`
-      cur.unshift(ref),
-      op=[], i++, b=''
-    }
-    else if (c==')'||c==']') {
-      g[cur[0]] += b, b=''
-      cur.shift(), op=null, i++
-    }
-    else b+=c, op=null, i++
+
+  // 1. tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,+,b,+,[(,c,+,d,[(,e,],]]
+  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t], b)), un=[], b='')
+  for (i=0; i<seq.length; i++) {
+    c = seq[i]
+    if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
+    else if (c=='('||c=='[') commit(), cur.push(cur=[cur,c])
+    else if (c==')'||c==']') commit(), cur=cur[0]
+    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) b ? (commit(), cur.push(op)) : un.push(op)
+    else b+=c
   }
-  g[cur[0]]+=b
+  commit()
+  console.log(cur)
 
-  // split by precedence
-  for (op of precedence) g = g.map(s=>psplit(s,op))
+  // 2. unary ops, .[( : [a,*,+,b,+,[(,c,+,d,[(,e,],]] → [a,*,[+,b],+,[c,+,[d,e]]]
+  // const unun = (seq) => seq.reduce((a,b) => operators[a]&&operators[b])
 
-  // unwrap
-  const deref = s => {
-    let c
-    if (Array.isArray(s)) {
-      // NOTE: we have to handle (, specially: parsing complexity, special folding, inverse precedence order
-      if (s[0]=='(') {
-        if (s[1][0]=='#') return deref(s[1]) // (a,b) → [,a,b] or [',',a,b]
-        // a(b,c)(d) → [(, a, #g1, #g2] → [[a, b, c], d]
-        return s.slice(1).reduce((a,b,c) => [deref(a), ...(c=deref(b),c[0]==','?c.slice(1):[c])]).filter(x=>x!=nil)
-      }
-      return s.map(deref).filter(x=>x!=nil) // [[a,nil]] → [[a]]
-    }
+  // // ref groups
+  // // FIXME: redundant i, op assignments, g[cur[0]] vs buf
+  // for (i=0, b=''; i < seq.length;) {
+  //   c=seq[i]
+  //   if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
+  //   // a[b][c] → a.#b.#c
+  //   // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
+  //   // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
+  //   // FIXME: ideally we'd merge it with psplit: make this first run is for (, [, . operators and call psplit from within, not after
+  //   else if (c=='('||c=='[') {
+  //     ref=g.push('')-1,
+  //     g[cur[0]] += b + (c=='['? `.`: `(`) + `#g${ref}`
+  //     cur.unshift(ref),
+  //     op=[], i++, b=''
+  //   }
+  //   else if (c==')'||c==']') {
+  //     g[cur[0]] += b, b=''
+  //     cur.shift(), op=null, i++
+  //   }
+  //   else b+=c, op=null, i++
+  // }
+  // g[cur[0]]+=b
 
-    if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
-    return s
-  }
+  // // split by precedence
+  // for (op of precedence) g = g.map(s=>psplit(s,op))
 
-  return deref(g[0])
+  // // unwrap
+  // const deref = s => {
+  //   let c
+  //   if (Array.isArray(s)) {
+  //     // NOTE: we have to handle (, specially: parsing complexity, special folding, inverse precedence order
+  //     if (s[0]=='(') {
+  //       if (s[1][0]=='#') return deref(s[1]) // (a,b) → [,a,b] or [',',a,b]
+  //       // a(b,c)(d) → [(, a, #g1, #g2] → [[a, b, c], d]
+  //       return s.slice(1).reduce((a,b,c) => [deref(a), ...(c=deref(b),c[0]==','?c.slice(1):[c])]).filter(x=>x!=nil)
+  //     }
+  //     return s.map(deref).filter(x=>x!=nil) // [[a,nil]] → [[a]]
+  //   }
+
+  //   if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
+  //   return s
+  // }
+
+  // return deref(g[0])
 }
 // FIXME: maybe still bring to extensibility?
 // split by precedence
