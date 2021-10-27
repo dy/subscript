@@ -2,8 +2,8 @@
 // FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
 export const precedence = [
   ',',
-  '||',
-  '&&',
+  ['||'],
+  ['&&'],
   '|',
   '^',
   '&',
@@ -15,7 +15,7 @@ export const precedence = [
   // '**',
   // ['!','~','+','-','++','--']
   '!',
-  // ['.', '('],
+  ['.', '('],
 ]
 
 // FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
@@ -73,11 +73,8 @@ export function parse (seq) {
     // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
     // FIXME: ideally we'd merge it with psplit: make this first run is for (, [, . operators and call psplit from within, not after
     else if (c=='('||c=='[') {
-      // NOTE: we have to handle .[(, specially: besides parsing complexity we still need special folding for them, also it comes before precedence order
-      // a(b) → [a,b];     a(b,c)(d) → [[a, b, c], d]
-      // (a) → a;          (a,b) → [,a,b] or [',',a,b]
       ref=g.push('')-1,
-      g[cur[0]] += b + (c=='['?`.`: `@(`) + `#g${ref}`
+      g[cur[0]] += b + (c=='['? `.`: `(`) + `#g${ref}`
       cur.unshift(ref),
       op=[], i++, b=''
     }
@@ -95,10 +92,18 @@ export function parse (seq) {
   // unwrap
   const deref = s => {
     let c
-    if (Array.isArray(s)) return s.map(deref)
-      // .filter(x=>x!=nil) // [[a,nil]] → [[a]]
-      // FIXME: here is a conflict of a(1,2,3) vs +(1,2,3)
-      // ? possibly we need to avoid , operator and split , here... but not much difference with whan we have now.
+    if (Array.isArray(s)) {
+      // NOTE: we have to handle (, specially: parsing complexity, special folding, inverse precedence order
+      if (s[0]=='(') {
+        if (s[1][0]=='#') return deref(s[1]) // (a,b) → [,a,b] or [',',a,b]
+        // a(b,c)(d) → [(, a, #g1, #g2] → [[a, b, c], d]
+        console.log(s)
+        return s.slice(1).reduce((a,b,c) => [deref(a), ...(c=deref(b),c[0]==','?c.slice(1):[c])]).filter(x=>x!=nil)
+        // return [s[1].slice(0,-1)||undefined, ...deref(s[2]).slice(1).map(deref)]
+      }
+      return s.map(deref).filter(x=>x!=nil) // [[a,nil]] → [[a]]
+    }
+
     if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
     return s
   }
@@ -110,12 +115,15 @@ export function parse (seq) {
 const psplit = (s, ops) => {
   if (Array.isArray(s)) return [s.shift(), ...s.map(s=>psplit(s,ops))]
 
-  let cur, op, un=[], i=0, i0=0, tok, c
+  let cur, op, un=[], i=0, i0=0
+
+  const commit=() => un.reduce((t,u)=>[u,t], s.slice(i0,i))
+
   for (;i<s.length;i++) {
-    if (~(c=ops.indexOf(op=s[i]+s[i+1])) || ~(c=ops.indexOf(op=s[i]))) {
+    if (~(ops.indexOf(op=s[i]+s[i+1])) || ~(ops.indexOf(op=s[i]))) {
       if (i>i0) {
         if (!cur) cur = [op]
-        cur.push(un.reduce((t,u)=>[u,t], s.slice(i0,i))) // 1+2+3 → [+,1,2,3]
+        cur.push(commit()) // 1+2+3 → [+,1,2,3]
         un = []
         if (op != cur[0]) cur=[op, cur] // 1+2-3 → [-,[+, 1, 2],3]
       }
@@ -123,9 +131,8 @@ const psplit = (s, ops) => {
       i0=i+op.length
     }
   }
-  if (!cur) return s
-  // FIXME: it there a way to remove duplicate?
-  if (i>i0) cur.push(un.reduce((t,u)=>[u,t], s.slice(i0,i)))
+  if (!cur) return commit()
+  if (i>i0) cur.push(commit())
   return cur
 }
 
