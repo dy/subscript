@@ -36,7 +36,7 @@ export const operators = {
   // ' in ':(a,b)=>a in b,
   '>=':(a,b,c)=>c!=null?(a>=b&&b>=c):(a>=b),
   '>':(a,b,c)=>c!=null?(a>b&&b>c):(a>b),
-  '<=':(a,b,c)=>c!=null?(a<=b&&b=<c):(a<=b),
+  '<=':(a,b,c)=>c!=null?(a<=b&&b<=c):(a<=b),
   '<':(a,b,c)=>c!=null?(a<b&&b<c):(a<b),
   '>>':(a,b)=>a>>b,
   '<<':(a,b)=>a<<b,
@@ -81,28 +81,30 @@ export function parse (seq) {
     else b+=c
   }
   commit(), cur = prec(cur)
-  // TODO: prec must create precedence groups
-  console.log(cur)
+
+  return cur.length>1?cur:cur[0]
 }
 
 // group seq of tokens into calltree nodes by operator precedence
 const prec = (s) => {
-  for (let op of precedence) s = s.map(psplit)
-  return s
-}
-
-const split = (s, ops) => {
-  let cur, op, i=1, i0=0
-  for (;i<s.length;i+=2) {
-    if (~ops.indexOf(op=s[i])) {
-      if (!cur) cur = [op]
-      cur.push(s[i-1]) // 1+2+3 → [+,1,2,3]
-      if (op != cur[0]) cur=[op, cur] // 1+2-3 → [-,[+, 1, 2],3]
+  for (let ops of precedence) {
+    // console.group(ops)
+    let cur, res=[], op, i=1
+    for (;i<s.length;i+=2) {
+      if (~ops.indexOf(op=s[i])) {
+        // console.log('op found', op)
+        if (!cur) cur = [op]
+        cur.push(s[i-1])
+        if (op != cur[0]) cur=[op, cur], console.log(cur)
+      }
+      else if (cur) cur.push(s[i-1]), res.push(cur, s[i]), cur=null
+      else res.push(s[i-1], s[i])
     }
-    else {
-      s.splice()
-      cur = null
-    }
+    if (cur) cur.push(s[i-1]), res.push(cur)
+    else res.push(s[i-1])
+    s = res
+    // console.log(res)
+    // console.groupEnd()
   }
   return s
 }
