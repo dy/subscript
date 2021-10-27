@@ -85,14 +85,13 @@ export function parse (seq) {
 // group seq of tokens into calltree nodes by operator precedence
 const prec = (s) => {
   if (!s.length) return ''
-  let cur, res, op, i
+  let cur, res, op, i, ops
 
   const commit = () => cur ? (
-    cur[0]=='(' && cur.shift(), // [(, a, b] → [a, b]
-    cur.push(s[i-1]),
-    res.push(cur), cur=null
+    cur.push(s[i-1]), res.push(cur), cur=null
   ) : res.push(s[i-1])
-  for (let ops of precedence) {
+
+  precedence.forEach((ops,p)=> {
     // console.group(ops, s)
     res=[], i=1
     for (;i<s.length;i+=2) {
@@ -104,11 +103,12 @@ const prec = (s) => {
       }
       else commit(), res.push(s[i])
     }
-    // console.log(res, s.length, i-1)
     commit()
-    s = res
-    // console.groupEnd()
-  }
+    s = p ? res
+      // flatten call op: [(,a,[',',b,c],d] → [[a, b, c],c]
+      : res.map(s => s&&s[0] == '(' ? s.slice(1).reduce((a,b)=>[a,...(b&&b[0]==','?b.slice(1):[b])]) : s)
+  })
+
   return s.length>1?s:s[0]
 }
 
