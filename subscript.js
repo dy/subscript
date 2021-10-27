@@ -1,6 +1,7 @@
 // precedence order
 // FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
 export const precedence = [
+  // FIXME: is that posible to generalize algo, to detect ternaries/brackets declaratively?
   ['.', '(', '['],
   '!',
   // '**',
@@ -73,20 +74,18 @@ export function parse (seq) {
     c = seq[i]
     if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
     else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
-    else if (c==')'||c==']') commit(), cur[0].push(prec(cur.slice(1))), cur=cur[0]
-    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.push(op)
+    else if (c==')'||c==']') commit(), cur[0].push(group(cur.slice(1))), cur=cur[0]
+    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.unshift(op)
     else b+=c
   }
-    console.log(cur)
-
-  // commit()
-  // cur = prec(cur.slice(1))
+  commit()
+  cur = group(cur.slice(1))
 
   return cur
 }
 
 // group seq of tokens into calltree nodes by operator precedence
-const prec = (s) => {
+const group = (s) => {
   if (!s.length) return ''
   let cur, res, op, i, ops
 
