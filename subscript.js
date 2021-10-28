@@ -1,72 +1,76 @@
-// precedence order
-// FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
-export const precedence = [
-  // FIXME: is that posible to generalize algo, to detect ternaries/brackets declaratively?
-  ['.', '(', '['],
-  '!',
+// operators in precedence order
+// number of arguments:
+// + indicates unary, binary or ternary
+// + directly map calltree nodes [op, ...args] (not reduce heuristic)
+// + makes ops fns useful on its own (like dlv)
+// + there are shortcuts or extensions for ||, && etc
+// + makes simpler unary handling
+// + same unaries/binaries ops can reside in different precedence
+export const operators = [
+  {
+    '(':(a,...args)=>a(...args),
+    '[':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a),
+    '.':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a)
+  },
+  {
+    '!':a=>!a,
+    '~':a=>~a,
+    '+':a=>+a,
+    '-':a=>-a,
+    '++':a=>++a,
+    '--':a=>--a
+  },
   // '**',
-  // ['!','~','+','-','++','--']
-  ['*', '/', '%'],
-  ['+', '-'],
-  ['<<','>>','>>>'],
-  ['<','<=','>','>=','in'],
-  ['==','!='],
-  '&',
-  '^',
-  '|',
-  ['&&'],
-  ['||'],
-  ','
+  {
+    '%':(a,...b)=>b.reduce((a,b)=>a%b,a),
+    '/':(a,...b)=>b.reduce((a,b)=>a/b,a),
+    '*':(a,...b)=>b.reduce((a,b)=>a*b,a),
+  },
+  {
+    '+':(a,...b)=>b.reduce((a,b)=>a+b,a),
+    '-':(a,...b)=>b.reduce((a,b)=>a-b,a),
+  },
+  {
+    '>>>':(a,b)=>a>>>b,
+    '>>':(a,b)=>a>>b,
+    '<<':(a,b)=>a<<b,
+  },
+  {
+    // ' in ':(a,b)=>a in b,
+    '>=':(a,b)=>a>=b,
+    '>':(a,b)=>a>b,
+    '<=':(a,b)=>a<=b,
+    '<':(a,b)=>a<b,
+  },
+  {
+    '!=':(a,b)=>a!=b,
+    '==':(a,b)=>a==b,
+  },
+  {'&':(a,b)=>a&b},
+  {'^':(a,b)=>a^b},
+  {'|':(a,b)=>a|b},
+  {'&&':(a,...b)=>a&&b.every(Boolean)},
+  {'||':(a,...b)=>a||b.some(Boolean)},
+  {'?:':(a,b,c)=>a?b:c},
+  {',':(a,...b)=>b.length ? b[b.length-1] : a},
 ],
 
-// operators take full args, not pair
-// + directly map calltree nodes [op, ...args], not some reduce shchema
-// + that's useful as own lib, like dlv
-// + there are shortcuts or extensions for some ops
-// + simpler unary handling
-// + ternary handling
-operators = {
-  ',':(a,...b)=>b[b.length-1],
-  '||':(...a)=>a.some(a=>a),
-  '&&':(...a)=>a.every(a=>a),
-  '|':(a,b)=>a|b,
-  '^':(a,b)=>a^b,
-  '&':(a,b)=>a&b,
-  '!=':(a,b)=>a!=b,
-  '==':(a,b)=>a==b,
-  // ' in ':(a,b)=>a in b,
-  '>=':(a,b,c)=>c!=null?(a>=b&&b>=c):(a>=b),
-  '>':(a,b,c)=>c!=null?(a>b&&b>c):(a>b),
-  '<=':(a,b,c)=>c!=null?(a<=b&&b<=c):(a<=b),
-  '<':(a,b,c)=>c!=null?(a<b&&b<c):(a<b),
-  '>>':(a,b)=>a>>b,
-  '<<':(a,b)=>a<<b,
-  '+':(...b)=>a.reduce((a,b)=>a+b),
-  '-':(...b)=>a.reduce((a,b)=>a-b),
-  '%':(...a)=>a.reduce((a,b)=>a%b),
-  '/':(...a)=>a.reduce((a,b)=>a/b),
-  '*':(...a)=>a.reduce((a,b)=>a*b),
-  // '**':(a,b)=>a**b,
-  '!':(a)=>!a,
-  // '~':(a)=>~a,
-  '(':(a,...args)=>a(...args),
-  '[':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a),
-  '.':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a)
-},
+literal = {true:true, false:false, null:null, undefined:undefined},
 
-literal = {true:true, false:false, null:null, undefined:undefined}
+operator = op => operators.find(o=>op in o)?.[op]
 
 // code → calltree
 export function parse (s) {
-  let i=0
+  let i=0,
 
-  const tokenize = (op, b='', n, q, c, cur=[], un=[]) => {
+  tokenize = (op, b='', n, q, c, cur=[]) => {
     const commit = (v, op) => {
-      if (v) cur.push(un.reduceRight((t,u)=>[u,t], n ? parseFloat(v) : v in literal ? literal[v] : v)), un=[]
-      if (op) (cur.length%2 ? cur : un).push(op)
+      if (v) cur.push(n ? parseFloat(v) : v in literal ? literal[v] : v)
+      if (op) cur.push(op)
       n=b=c=''
     }
 
+    // FIXME: maybe commit operators as functions, not as string tokens?
     for (; i<=s.length; b+=c) {
       c = s[i++]
       if (q && c==q) q=''
@@ -76,12 +80,10 @@ export function parse (s) {
       else if (!b && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
       else if (c=='('||c=='[') commit(b, c), commit(tokenize())
       else if (!c||c==')'||c==']') return commit(b), group(cur)
-      else if (operators[op=c+s[i]]||operators[op=c]) commit(b, op)
+      else if (operator(op=c+s[i])||operator(op=c)) commit(b, op)
     }
   }
-
   s=tokenize(s)
-  // console.log(s)
 
   return s
 }
@@ -89,29 +91,47 @@ export function parse (s) {
 // group seq of tokens into calltree nodes by operator precedence
 const group = (s) => {
   if (!s.length) return ''
-  let cur, res, op, i, ops
+  let g, res, op, i, ops, tok, un
 
-  const commit = () => cur ? (
-    cur.push(s[i-1]), res.push(cur), cur=null
-  ) : res.push(s[i-1])
+  console.group('Group',s)
+  const commit = tok => (g ? (console.log('commit', g, tok, un), g.push(tok), res.push(un.reduceRight((t,u)=>[u,t],g)), g=null) : res.push(...un, tok), un=null)
 
-  precedence.forEach((ops,p)=> {
-    // console.group(ops, s)
-    res=[], i=1
-    for (;i<s.length;i+=2) {
-      if (~ops.indexOf(op=s[i])) {
-        // console.log('op found', op)
-        if (!cur) cur = [op]
-        cur.push(s[i-1])
-        if (op != cur[0]) cur=[op, cur]
+  operators.forEach((ops,p)=> {
+    res=[], i=0, un=[]
+    console.group(ops)
+    for (;i<s.length;) {
+      tok = s[i++]
+      if (operator(op=tok)) { // operator
+        if (!un) un = [], res.push(op)
+        else un.push(op)
       }
-      else commit(), res.push(s[i])
+      else { // literal
+        console.log('literal', tok, un)
+        if (i>=s.length) console.log('end', un), commit(tok)
+        else if (~ops[op=s[i]]) { // a +
+          if (!g) g = [op, tok]
+          else if (op == g[0]) g.push(tok)
+          else g.push(tok), g = [op, g]
+          i++
+        }
+        else commit(tok)
+      }
     }
-    commit()
-    s = p ? res
-      // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
-      : res.map(s => s&&s[0] == '(' ? s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])) : s)
+    console.log('grouping result:',[...res])
+    console.groupEnd()
+    s=res
+    // s = p ? res
+    //   : res.map(s =>
+    //     // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
+    //     s&&s[0] == '(' ?
+    //       s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])) :
+    //     s&&s[0] == '.' ?
+    //       [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] :
+    //     s
+    //   )
   })
+
+  console.groupEnd()
 
   return s.length>1?s:s[0]
 }
