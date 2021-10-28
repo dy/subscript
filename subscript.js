@@ -57,28 +57,30 @@ operators = {
 literal = {true:true, false:false, null:null, undefined:undefined}
 
 // code → calltree
-export function parse (seq) {
-  let op=[], b='', c, i, cur=[null], v=[], un=[]
+export function parse (s) {
+  let op=[], b='', n, q, c, c1, i, cur=[]//, un=[]
 
-  // ref literals
-  seq=seq
-    .replace(/"[^"\\\n\r]*"/g, m => `#v${v.push(m)-1}`) // "a" → #0; in loop would be too late
-    .replace(/\d*\.\d+(?:[eE][+\-]?\d+)?|\b\d+/g, m => `#v${v.push(parseFloat(m))-1}`) // .75e-12 → #1
-    .replace(/\.(\w+)\b/g, `."$1"`) // a.b → a."b"
-
-  // tokenize + groups + unaries: a*+b+(c+d(e)) → [a,*,[+,b],+,(,[c,+,d,(,[e],]]
+  // tokenize
   // FIXME: a+-(c) is a problem
-  const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(2)] : literal[b] || b)), b='', un=[])
+  // const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(2)] : literal[b] || b)), b='', un=[])
+  const commit = () => (b && cur.push(n ? parseFloat(b) : b in literal ? literal[b] : b), n=b=c='', b='')
 
-  for (i=0; i<seq.length; i++) {
-    c = seq[i]
-    if (c==' '||c=='\r'||c=='\n'||c=='\t') ;
-    else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
-    else if (c==')'||c==']') commit(), cur[0].push(group(cur.slice(1))), cur=cur[0]
-    else if (operators[op=c+seq[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.unshift(op)
-    else b+=c
+  for (i=0; i<s.length; b+=c) {
+    c = s[i++]
+    if (q && c==q) q=''
+    else if (n && (c=='e'||c=='E')) c+=s[i++]
+    else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
+    else if (c=='"'||c=="'") q=c
+    else if (c=='.' &&  s[i]>='0' && s[i]<='9') n=1
+    // else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
+    // else if (c==')'||c==']') commit(), cur[0].push(group(cur.slice(1))), cur=cur[0]
+    // else if (operators[op=c+s[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.unshift(op)
+    else if (operators[op=c+s[i]]||operators[op=c]) commit(), cur.push(op)
   }
   commit()
+
+  // coagulate operators
+
   cur = group(cur.slice(1))
 
   return cur
