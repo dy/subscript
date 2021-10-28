@@ -75,19 +75,15 @@ export function parse (s) {
       else if (c=='"'||c=="'") q=c
       else if (!b && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
       else if (c=='('||c=='[') commit(b, c), commit(tokenize())
-      else if (!c||c==')'||c==']') return commit(b), cur//, group(cur)
+      else if (!c||c==')'||c==']') return commit(b), group(cur)
       else if (operators[op=c+s[i]]||operators[op=c]) commit(b, op)
     }
   }
 
   s=tokenize(s)
-  console.log(s)
+  // console.log(s)
 
-  // coagulate operators
-
-  // cur = group(cur.slice(1))
-
-  // return cur
+  return s
 }
 
 // group seq of tokens into calltree nodes by operator precedence
