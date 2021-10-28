@@ -58,32 +58,36 @@ literal = {true:true, false:false, null:null, undefined:undefined}
 
 // code → calltree
 export function parse (s) {
-  let op=[], b='', n, q, c, c1, i, cur=[]//, un=[]
+  let i=0
+  const tokenize = (op, b='', n, q, c, cur=[]) => {
+    // FIXME: a+-(c) is a problem
+    // const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(2)] : literal[b] || b)), b='', un=[])
+    const commit = a => (b && cur.push(n ? parseFloat(b) : b in literal ? literal[b] : b), a && cur.push(a), n=b=c='')
 
-  // tokenize
-  // FIXME: a+-(c) is a problem
-  // const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(2)] : literal[b] || b)), b='', un=[])
-  const commit = () => (b && cur.push(n ? parseFloat(b) : b in literal ? literal[b] : b), n=b=c='', b='')
-
-  for (i=0; i<s.length; b+=c) {
-    c = s[i++]
-    if (q && c==q) q=''
-    else if (n && (c=='e'||c=='E')) c+=s[i++]
-    else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
-    else if (c=='"'||c=="'") q=c
-    else if (c=='.' &&  s[i]>='0' && s[i]<='9') n=1
-    // else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
-    // else if (c==')'||c==']') commit(), cur[0].push(group(cur.slice(1))), cur=cur[0]
-    // else if (operators[op=c+s[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.unshift(op)
-    else if (operators[op=c+s[i]]||operators[op=c]) commit(), cur.push(op)
+    for (; i<=s.length; b+=c) {
+      c = s[i++]
+      if (q && c==q) q=''
+      else if (n && (c=='e'||c=='E')) c+=s[i++]
+      else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
+      else if (c=='"'||c=="'") q=c
+      else if (c=='.' && s[i]>='0' && s[i]<='9') n=1
+      // else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
+      // else if (c==')'||c==']') commit(), cur[0].push(group(cur.slice(1))), cur=cur[0]
+      // else if (operators[op=c+s[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.unshift(op)
+      else if (c=='('||c=='[') commit(c), cur.push(tokenize())
+      else if (!c||c==')'||c==']') return commit(), cur//, group(cur.slice(1))
+      else if (operators[op=c+s[i]]||operators[op=c]) commit(op)
+    }
   }
-  commit()
+
+  s=tokenize(s)
+  console.log(s)
 
   // coagulate operators
 
-  cur = group(cur.slice(1))
+  // cur = group(cur.slice(1))
 
-  return cur
+  // return cur
 }
 
 // group seq of tokens into calltree nodes by operator precedence
