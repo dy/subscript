@@ -59,10 +59,13 @@ literal = {true:true, false:false, null:null, undefined:undefined}
 // code → calltree
 export function parse (s) {
   let i=0
-  const tokenize = (op, b='', n, q, c, cur=[]) => {
-    // FIXME: a+-(c) is a problem
-    // const commit = () => b && (cur.push(un.reduce((t,u)=>[u,t],  b[0]=='#' ? v[b.slice(2)] : literal[b] || b)), b='', un=[])
-    const commit = a => (b && cur.push(n ? parseFloat(b) : b in literal ? literal[b] : b), a && cur.push(a), n=b=c='')
+
+  const tokenize = (op, b='', n, q, c, cur=[], un=[]) => {
+    const commit = (v, op) => {
+      if (v) cur.push(un.reduceRight((t,u)=>[u,t], n ? parseFloat(v) : v in literal ? literal[v] : v)), un=[]
+      if (op) (cur.length%2 ? cur : un).push(op)
+      n=b=c=''
+    }
 
     for (; i<=s.length; b+=c) {
       c = s[i++]
@@ -70,13 +73,10 @@ export function parse (s) {
       else if (n && (c=='e'||c=='E')) c+=s[i++]
       else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
       else if (c=='"'||c=="'") q=c
-      else if (c=='.' && s[i]>='0' && s[i]<='9') n=1
-      // else if (c=='('||c=='[') commit(), !(cur.length%2) && cur.push(c), cur=[cur] // `a(b)`→`a,(,[b`; `a)(b)`→`a],(,[b`; `a[b`→`a,.,b`
-      // else if (c==')'||c==']') commit(), cur[0].push(group(cur.slice(1))), cur=cur[0]
-      // else if (operators[op=c+s[++i]]||operators[--i,op=c]) commit(), !(cur.length%2) ? cur.push(op) : un.unshift(op)
-      else if (c=='('||c=='[') commit(c), cur.push(tokenize())
-      else if (!c||c==')'||c==']') return commit(), cur//, group(cur.slice(1))
-      else if (operators[op=c+s[i]]||operators[op=c]) commit(op)
+      else if (!b && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
+      else if (c=='('||c=='[') commit(b, c), commit(tokenize())
+      else if (!c||c==')'||c==']') return commit(b), cur//, group(cur)
+      else if (operators[op=c+s[i]]||operators[op=c]) commit(b, op)
     }
   }
 
