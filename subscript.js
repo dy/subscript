@@ -45,6 +45,8 @@ export const operator = [
 ],
 
 literal = {true:true, false:false, null:null, undefined:undefined},
+group = {'(':')','[':']'},
+quote = {'"':'"'},
 
 transform = {
   // [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
@@ -60,7 +62,7 @@ getop = (s,o,i) => {
 
 // code → calltree
 parse = (s, i=0) => {
-  const tokenize = (op, b='', n, q, c, cur=[]) => {
+  const tokenize = (end, op, b='', n, q, c, cur=[]) => {
     const commit = (v, op) => {
       if (v) cur.push(n ? parseFloat(v) : v in literal ? literal[v] : v)
       if (op) cur.push(op)
@@ -73,10 +75,10 @@ parse = (s, i=0) => {
       if (q && c==q) q=''
       else if (n && (c=='e'||c=='E')) c+=s[i++]
       else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
-      else if (c=='"'||c=="'") q=c
+      else if (quote[c]) q=c
       else if (!b && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
-      else if (c=='('||c=='[') commit(b, c), commit(tokenize())
-      else if (!c||c==')'||c==']') return commit(b), group(cur)
+      else if (group[c]) commit(b, c), commit(tokenize(group[c]))
+      else if (c==end) return commit(b), group(cur)
       else if (getop(op=c+s[i])||getop(op=c)) commit(b, op)
     }
   },
@@ -100,7 +102,7 @@ parse = (s, i=0) => {
           else if (getop(a)) {
             // TODO: detect postfix unary
             // ,+,-,b → ,[+,[-,b]]
-            unary
+            // unary
           }
         }
         i++
@@ -114,7 +116,7 @@ parse = (s, i=0) => {
     // TODO: take a node and flatten, if necessary
   }
 
-  s=tokenize(s)
+  s=tokenize()
   return s
 },
 

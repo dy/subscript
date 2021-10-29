@@ -6,7 +6,7 @@ Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<b
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript?color=brightgreen&label=gzip)</sub>
 * Enables easy operators overloading
-* Highly extensible
+* Fully configurable/extensible
 * Performant?
 * Trivial to use...
 
@@ -20,22 +20,24 @@ fn({a:1, b:2, c:3}) // 0
 
 * templates (awesome match with [template parts](https://github.com/github/template-parts))
 * expressions evaluators (math, arithmetic)
-* subsets of languages <!-- see sonr -->
-* prototyping language features (eg. pipe operator etc)
-* playgrounds
+* subsets of languages (eg. jessie, justin) <!-- see sonr -->
+* prototyping language features (eg. pipe operator)
+* simulating languages (eg. glsl-transform)
+* sandboxes, playgrounds
 * custom DSL
 
 ### Lispy tree
 
 It compiles code to lispy calltree (like [frisk](https://npmjs.com/frisk)). Why?
 
++ minimal possible AST
 + no operators precedence issue
-+ easy to overload/extend operators
++ easy to overload operators
 + easy to mimic other lang subsets
 + easy manual evaluation
 + easy debugging
-+ conventional form.
-+ no AST complexities
++ conventional form
++ no need in docs
 
 ```js
 import {evaluate} from 'subscript.js'
@@ -43,17 +45,13 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
 ```
 
 
-### Literals
+### Core primitives
 
-Some parts are non-configurable:
+* `[]`, `()` groups
+* `true`, `false`, `null` literals
+* `"` quotes.
 
-* `[` is reserved for property access
-* `(` is reserved for calls or groups
-* `.` is reserved for non-calculating property access
-* `,` is reserved for sequencing (doesn't create groups)
-* `"` is reserved for strings.
-<!-- * `:` is reserved for key separator -->
-<!-- * `?:`, `|>`, `, in` ternary operators -->
+All primitives are extensible.
 
 ### Operators
 
@@ -77,11 +75,11 @@ Default operators include common operators for the listed languages in the follo
 All other operators can be redefined.
 
 ```js
-import {operators, parse, evaluate} from 'subscript.js'
+import {operator, parse, evaluate} from 'subscript.js'
 
 // set operators by precedence
-operators[0]['=>'] = (args, body) => evaluate(body, args)
-operators[5]['|'] = (a,...b) => a.pipe(...b)
+operator[0]['=>'] = (args, body) => evaluate(body, args)
+operator[5]['|'] = (a,...b) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -94,8 +92,8 @@ evaluate(tree, {Math, map, take, interval, gaussian})
 
 Operator arity is detected from number of arguments:
 ```js
-operators[9]['|'] = (a,b)=>a.pipe(b)  // binary
-operators[1]['&'] = (a)=>address(a)   // unary (both prefix or postfix notation)
+operator[9]['|'] = (a,b)=>a.pipe(b)  // binary
+operator[1]['&'] = (a)=>address(a)   // unary (both prefix or postfix notation)
 ```
 
 ### Transforms
@@ -108,11 +106,11 @@ Some rules are applied to parsed nodes, simplifying resulting calltree:
 They can be used to organize ternary/combining operators:
 
 ```js
-import {parse, transforms, operators} from 'subscript.js'
+import {parse, transform, operator} from 'subscript.js'
 
-operators[12][':']=(a,b)=>[a,b]
-operators[12]['?']=(a,b)=>a??b
-transforms[':'] = node => node[1]==='?' ? ['?:',node[1][0],node[1][1],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+operator[12][':']=(a,b)=>[a,b]
+operator[12]['?']=(a,b)=>a??b
+transform[':'] = node => node[1]==='?' ? ['?:',node[1][0],node[1][1],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
 parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 
 // bonus side-effect:
@@ -151,6 +149,10 @@ These are some snippets for custom DSL operators:
 * `1 to 10 by 2`
 * `a if b else c`
 * `a, b in c`
+* `a.xyz` swizzles
+* vector operators
+* polynomial operators
+* etc.
 
 -->
 
