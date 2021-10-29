@@ -6,7 +6,7 @@ Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<b
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript?color=brightgreen&label=gzip)</sub>
 * Enables easy operators overloading
-* Fully configurable/extensible
+* Configurable & extensible
 * Performant?
 * Trivial to use...
 
@@ -22,7 +22,7 @@ fn({a:1, b:2, c:3}) // 0
 * expressions evaluators (math, arithmetic)
 * subsets of languages (eg. jessie, justin) <!-- see sonr -->
 * prototyping language features (eg. pipe operator)
-* simulating languages (eg. glsl-transform)
+* simulating languages (eg. glsl-transform <!--, FORTRAN?, COBOL?-->)
 * sandboxes, playgrounds
 * custom DSL
 
@@ -91,9 +91,10 @@ evaluate(tree, {Math, map, take, interval, gaussian})
 ```
 
 Operator arity is detected from number of arguments:
+
 ```js
-operator[9]['|'] = (a,b)=>a.pipe(b)  // binary
-operator[1]['&'] = (a)=>address(a)   // unary (both prefix or postfix notation)
+operator[9]['|'] = (a,b)=>a.pipe(b)  // binary or unary postfix:  a|b, a|
+operator[1]['&'] = (a)=>address(a)   // unary prefix:  &a
 ```
 
 ### Transforms

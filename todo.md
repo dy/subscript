@@ -71,10 +71,12 @@
 * [ ] ;
 * [ ] comments
 * [ ] #,: operators overloaded (python comments for example)
-* [ ] unaries
-  * [ ] infinite unaries? -+-+a
-  * [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
-  * [ ] example: `int 5` (typecast), `$a` (param expansion)
+* [ ] infinite unaries? -+-+a
+* [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
+  . Lisp tree doesn't make difference between unary/binary operator.
+  . Seems that postfix operator === binary operator without second argument.
+  - We don't have cases in pure subscript for postfix operators: a--, b++ don't make sense in evaluator.
+* [ ] ideas snippets: `int 5` (typecast), `$a` (param expansion)
 * [x] . operator is not compatible with others, like a.+b.+c
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
 * [ ] extension: Justin (+JSONs)
