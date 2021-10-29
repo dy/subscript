@@ -1,12 +1,4 @@
-// operators in precedence order
-// number of arguments:
-// + indicates unary, binary or ternary
-// + directly map calltree nodes [op, ...args] (not reduce heuristic)
-// + makes ops fns useful on its own (like dlv)
-// + there are shortcuts or extensions for ||, && etc
-// + makes simpler unary handling
-// + same unaries/binaries ops can reside in different precedence
-export const operators = [
+export const operator = [
   {
     '(':(a,...args)=>a(...args),
     '[':(a,...b)=>b.reduce((a,b)=>a?a[b]:a, a),
@@ -20,7 +12,6 @@ export const operators = [
     '++':a=>++a,
     '--':a=>--a
   },
-  // '**',
   {
     '%':(a,...b)=>b.reduce((a,b)=>a%b,a),
     '/':(a,...b)=>b.reduce((a,b)=>a/b,a),
@@ -36,7 +27,6 @@ export const operators = [
     '<<':(a,b)=>a<<b,
   },
   {
-    // ' in ':(a,b)=>a in b,
     '>=':(a,b)=>a>=b,
     '>':(a,b)=>a>b,
     '<=':(a,b)=>a<=b,
@@ -51,22 +41,28 @@ export const operators = [
   {'|':(a,b)=>a|b},
   {'&&':(a,...b)=>a&&b.every(Boolean)},
   {'||':(a,...b)=>a||b.some(Boolean)},
-  {'?:':(a,b,c)=>a?b:c},
   {',':(a,...b)=>b.length ? b[b.length-1] : a},
 ],
 
-literals = {true:true, false:false, null:null, undefined:undefined},
+literal = {true:true, false:false, null:null, undefined:undefined},
+
+transform = {
+  // [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
+  '(': s => s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
+  // [.,a,b → [.,a,'"b"'
+  '.': s => [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)]
+},
 
 getop = (s,o,i) => {
   if (typeof s != 'string' || s[0]=='"') return
-  for (i=operators.length;i--;) if (o=operators[i][s]) return o
+  for (i=operator.length;i--;) if (o=operator[i][s]) return o
 },
 
 // code → calltree
 parse = (s, i=0) => {
   const tokenize = (op, b='', n, q, c, cur=[]) => {
     const commit = (v, op) => {
-      if (v) cur.push(n ? parseFloat(v) : v in literals ? literals[v] : v)
+      if (v) cur.push(n ? parseFloat(v) : v in literal ? literal[v] : v)
       if (op) cur.push(op)
       n=b=c=''
     }
@@ -90,64 +86,32 @@ parse = (s, i=0) => {
     if (!s.length) return ''
     let g, prec, op, i, a,b,c,x,y
 
-    // console.group('Group',s)
-    // const commit = tok => (g ? (console.log('commit', g, tok, un), g.push(tok), res.push(un.reduceRight((t,u)=>[u,t],g)), g=null) : res.push(...un, tok), un=null)
-
-    for (prec of operators) {
+    for (prec of operator) {
       for (i=0;i<s.length;) {
         [a,x,b,y,c] = s.slice(i,i+5)
 
         for (op in prec) {
-          if (prec[op].length<3) {
-            if (x===op && !getop(b)) {
-              if (getop(a)) { // ,+,-,b → ,[+,[-,b]]
-                unary
-              }
-              else { // ,a,+,b, → ,[+,a,b],
-                s.splice(i,3,[x,a,b])
-              }
+          if (prec[op].length>1) {
+            if (x===op && !getop(a) && !getop(b)) {
+              // ,a,+,b, → ,[+,a,b],
+              s.splice(i,3,[x,a,b])
             }
           }
-          else if (x===op[0] && y===op[1]) { // ,a,?,b,:,c → [?:,a,b,c]
-            ternary
+          else if (getop(a)) {
+            // TODO: detect postfix unary
+            // ,+,-,b → ,[+,[-,b]]
+            unary
           }
         }
         i++
-
-
-        // if (operator(op=tok)) { // operator
-        //   if (!un) un = [], res.push(op)
-        //   else un.push(op)
-        // }
-        // else { // literals
-        //   console.log('literals', tok, un)
-        //   if (i>=s.length) console.log('end', un), commit(tok)
-        //   else if (~ops[op=s[i]]) { // a +
-        //     if (!g) g = [op, tok]
-        //     else if (op == g[0]) g.push(tok)
-        //     else g.push(tok), g = [op, g]
-        //     i++
-        //   }
-        //   else commit(tok)
-        // }
       }
-      // console.log('grouping result:',[...res])
-      // console.groupEnd()
-      // s = p ? res
-      //   : res.map(s =>
-      //     // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
-      //     s&&s[0] == '(' ?
-      //       s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])) :
-      //     s&&s[0] == '.' ?
-      //       [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] :
-      //     s
-      //   )
     }
 
-    console.groupEnd()
-
-
     return s.length>1?s:s[0]
+  },
+
+  map=s=>{
+    // TODO: take a node and flatten, if necessary
   }
 
   s=tokenize(s)

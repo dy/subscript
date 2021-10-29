@@ -1,8 +1,12 @@
 # todo
 
-* [ ] unaries must be collected in generic fashion, not per-precedence...
-  ? Is there a generic blocker doing tokenization?
-    .  → precedence [+,[*,a,[+,b]],[+,c,[d,e]]]
+* [x] store operators in precedence order
+  + indicates unary, binary or ternary
+  + directly map calltree nodes [op, ...args] (not reduce heuristic)
+  + makes ops fns useful on its own (like dlv)
+  + there are shortcuts or extensions for ||, && etc
+  + makes simpler unary handling
+  + same unaries/binaries ops can reside in different precedence
 * [x] think about flatten groups: a["b"]["c"] → a.#0.#1, a(b,c)(d,e) → a ( #bc ( #de
   + that allows correct precedence detection, eg. a.#0.#1(#2 can be split as [(, [., a, #0, #1], #2]
   + that allows overloading these operators by user
@@ -14,7 +18,7 @@
       - not clear how a.b(c).d looks: should ['.', ['a.b', c], 'd'], but how?
     2. make () a splitting operator, mb end-bracket
       - any splitting attempt creates structure either [call, [.,a,b], c, [.,d,e]] or [[.,a],[]]
-  . Ok, now done as . ad-hoc
+  → strategy of unwrapping brackets worked, but it's not generic operator but an exceptional cases for {, [, (
   * [x] the actual problem of a.b(c.d,e.f).g.h+1 is that ( and . has same precedence and are handled simultaneously, not in order
     . correct (non-order) grouping would be #a(#b,#c).g.h+1 → #abc.g.h+1 → #abcg+1 → #abcg1
     . then unwrap → [+,#abcg,1] → [+,[.,#abc,g,h],1] → [+,[.,[#a,#b,#c],g,h],1] → ...
@@ -58,13 +62,20 @@
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
 * [ ] word operators
 * [ ] subscript`exp`
-* [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`
-* [ ]
+* [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
+  * [ ] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
+    + [?,a], [?a,[:b,c]], [in,[,a,b],c], [to,a,b], [to,a,[by,b,c]], [if,a,[else,b,c]]
+    . for that we would need to create transform groups
+    + that would enable Justin extension
+    + that would allow flattening fn calls by default
 * [ ] ;
 * [ ] comments
 * [ ] #,: operators overloaded (python comments for example)
-* [x] infinite unaries
+* [ ] unaries
+  * [ ] infinite unaries? -+-+a
+  * [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
+  * [ ] example: `int 5` (typecast), `$a` (param expansion)
 * [x] . operator is not compatible with others, like a.+b.+c
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
-* [ ] extension examples: Justin (+JSONs)
+* [ ] extension: Justin (+JSONs)
   * [ ] !keyed arrays? [a:1, b:2, c:3]

@@ -1,15 +1,13 @@
-<!--# sanscript-->
-<!-- Common root of all languages -->
-
 # <!--<img alt="subscript" src="/subscript2.svg" height=42/>--> sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
 Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<br/>
-<!-- Part-time it's also [Justin](https://github.com/endojs/Jessie/issues/66) (JSON with expressions). -->
 
-* Everyone already knows _subscript_.
-* Any _subscript_ fragment can be copy-pasted to a target language and it will work.
+* You already know _subscript_
+* Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript?color=brightgreen&label=gzip)</sub>
-* It's extensible and allows operators overloading.
+* Enables easy operators overloading
+* Highly extensible
+* Performant?
 * Trivial to use...
 
 ```js
@@ -22,8 +20,8 @@ fn({a:1, b:2, c:3}) // 0
 
 * templates (awesome match with [template parts](https://github.com/github/template-parts))
 * expressions evaluators (math, arithmetic)
-* scoped languages / subsets <!-- see sonr -->
-* prototyping language features
+* subsets of languages <!-- see sonr -->
+* prototyping language features (eg. pipe operator etc)
 * playgrounds
 * custom DSL
 
@@ -37,14 +35,15 @@ It compiles code to lispy calltree (like [frisk](https://npmjs.com/frisk)). Why?
 + easy manual evaluation
 + easy debugging
 + conventional form.
++ no AST complexities
 
 ```js
 import {evaluate} from 'subscript.js'
-evaluate(['+',1,['*',2, 3]]) // 0
+evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
 ```
 
 
-### Reserved operators
+### Literals
 
 Some parts are non-configurable:
 
@@ -56,12 +55,12 @@ Some parts are non-configurable:
 <!-- * `:` is reserved for key separator -->
 <!-- * `?:`, `|>`, `, in` ternary operators -->
 
-### Overloadable operators
+### Operators
 
 Default operators include common operators for the listed languages in the following precedence:
 
-* `. (`
-* `!`, (`~ + - ++ --` − Justin)
+* `. ( [`
+* `! + - ++ --` unary, (`~` − Justin)
 * (`**` − Justin)
 * `* / %`
 * `+ -`
@@ -80,29 +79,86 @@ All other operators can be redefined.
 ```js
 import {operators, parse, evaluate} from 'subscript.js'
 
-// add operators to precedence groups
-operators[5]['|>'] = (a,...b) => a.pipe(...b)
-operators.unshift({'=>': (args,body) => evaluate(body, args) })
+// set operators by precedence
+operators[0]['=>'] = (args, body) => evaluate(body, args)
+operators[5]['|'] = (a,...b) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
-  |> take(25)
-  |> map(gaussian)
-  |> map(num => "•".repeat(Math.floor(num * 65)))
-`, ops)
+  | take(25)
+  | map(gaussian)
+  | map(num => "•".repeat(Math.floor(num * 65)))
+`)
+evaluate(tree, {Math, map, take, interval, gaussian})
 ```
 
-<!-- Ternary operators are impossible (for now). -->
+Operator arity is detected from number of arguments:
+```js
+operators[9]['|'] = (a,b)=>a.pipe(b)  // binary
+operators[1]['&'] = (a)=>address(a)   // unary (both prefix or postfix notation)
+```
 
-<!--
-### Support JSON
+### Transforms
 
-JSON objects are parsed as tokens. Keys are not necessarily strings:
+Some rules are applied to parsed nodes, simplifying resulting calltree:
+
+* Calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
+* Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
+
+They can be used to organize ternary/combining operators:
 
 ```js
-parse('{x:1, "y":2+2}') // {x:1, y: ['+', 2, 2]}
+import {parse, transforms, operators} from 'subscript.js'
+
+operators[12][':']=(a,b)=>[a,b]
+operators[12]['?']=(a,b)=>a??b
+transforms[':'] = node => node[1]==='?' ? ['?:',node[1][0],node[1][1],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+parse('a ? b : c') // ['?:', 'a', 'b', 'c']
+
+// bonus side-effect:
+parse('a ? b') // ['?', 'a', 'b']
+parse('a : b') // [':', 'a', 'b']
+```
+
+<!--
+### Justin
+
+[Justin](https://github.com/endojs/Jessie/issues/66) is JSON with expressions extension.
+
++ ** operator
++ ~ operator
++ ?: ternary operator
++ [] Array literal
++ {} Object literal
++ in operator
+
+```js
+parse('{x:1, "y":2+2}['x']') // ['[', {x:1, y: ['+', 2, 2]}, 'x']
 ```
 -->
+
+<!--
+### Ideas
+
+These are some snippets for custom DSL operators:
+
+* `7!` (factorial)
+* `5s` (units),
+* `exist?`
+* `arrᵀ` - transpose,
+* `int 5` (typecast)
+* `$a` (param expansion)
+* `1 to 10 by 2`
+* `a if b else c`
+* `a, b in c`
+
+-->
+
+<!--
+### Performance
+
+Compare against js eval, Function, quickjs, SES, jscan, alternatives from see-also
+--->
 
 ## See also
 
