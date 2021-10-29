@@ -55,17 +55,18 @@ export const operators = [
   {',':(a,...b)=>b.length ? b[b.length-1] : a},
 ],
 
-literal = {true:true, false:false, null:null, undefined:undefined},
+literals = {true:true, false:false, null:null, undefined:undefined},
 
-operator = op => operators.find(o=>op in o)?.[op]
+getop = (s,o,i) => {
+  if (typeof s != 'string' || s[0]=='"') return
+  for (i=operators.length;i--;) if (o=operators[i][s]) return o
+},
 
 // code → calltree
-export function parse (s) {
-  let i=0,
-
-  tokenize = (op, b='', n, q, c, cur=[]) => {
+parse = (s, i=0) => {
+  const tokenize = (op, b='', n, q, c, cur=[]) => {
     const commit = (v, op) => {
-      if (v) cur.push(n ? parseFloat(v) : v in literal ? literal[v] : v)
+      if (v) cur.push(n ? parseFloat(v) : v in literals ? literals[v] : v)
       if (op) cur.push(op)
       n=b=c=''
     }
@@ -80,69 +81,86 @@ export function parse (s) {
       else if (!b && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
       else if (c=='('||c=='[') commit(b, c), commit(tokenize())
       else if (!c||c==')'||c==']') return commit(b), group(cur)
-      else if (operator(op=c+s[i])||operator(op=c)) commit(b, op)
+      else if (getop(op=c+s[i])||getop(op=c)) commit(b, op)
     }
-  }
-  s=tokenize(s)
+  },
 
-  return s
-}
+  // group into calltree nodes by precedence
+  group = (s) => {
+    if (!s.length) return ''
+    let g, prec, op, i, a,b,c,x,y
 
-// group seq of tokens into calltree nodes by operator precedence
-const group = (s) => {
-  if (!s.length) return ''
-  let g, res, op, i, ops, tok, un
+    // console.group('Group',s)
+    // const commit = tok => (g ? (console.log('commit', g, tok, un), g.push(tok), res.push(un.reduceRight((t,u)=>[u,t],g)), g=null) : res.push(...un, tok), un=null)
 
-  console.group('Group',s)
-  const commit = tok => (g ? (console.log('commit', g, tok, un), g.push(tok), res.push(un.reduceRight((t,u)=>[u,t],g)), g=null) : res.push(...un, tok), un=null)
+    for (prec of operators) {
+      for (i=0;i<s.length;) {
+        [a,x,b,y,c] = s.slice(i,i+5)
 
-  operators.forEach((ops,p)=> {
-    res=[], i=0, un=[]
-    console.group(ops)
-    for (;i<s.length;) {
-      tok = s[i++]
-      if (operator(op=tok)) { // operator
-        if (!un) un = [], res.push(op)
-        else un.push(op)
-      }
-      else { // literal
-        console.log('literal', tok, un)
-        if (i>=s.length) console.log('end', un), commit(tok)
-        else if (~ops[op=s[i]]) { // a +
-          if (!g) g = [op, tok]
-          else if (op == g[0]) g.push(tok)
-          else g.push(tok), g = [op, g]
-          i++
+        for (op in prec) {
+          if (prec[op].length<3) {
+            if (x===op && !getop(b)) {
+              if (getop(a)) { // ,+,-,b → ,[+,[-,b]]
+                unary
+              }
+              else { // ,a,+,b, → ,[+,a,b],
+                s.splice(i,3,[x,a,b])
+              }
+            }
+          }
+          else if (x===op[0] && y===op[1]) { // ,a,?,b,:,c → [?:,a,b,c]
+            ternary
+          }
         }
-        else commit(tok)
+        i++
+
+
+        // if (operator(op=tok)) { // operator
+        //   if (!un) un = [], res.push(op)
+        //   else un.push(op)
+        // }
+        // else { // literals
+        //   console.log('literals', tok, un)
+        //   if (i>=s.length) console.log('end', un), commit(tok)
+        //   else if (~ops[op=s[i]]) { // a +
+        //     if (!g) g = [op, tok]
+        //     else if (op == g[0]) g.push(tok)
+        //     else g.push(tok), g = [op, g]
+        //     i++
+        //   }
+        //   else commit(tok)
+        // }
       }
+      // console.log('grouping result:',[...res])
+      // console.groupEnd()
+      // s = p ? res
+      //   : res.map(s =>
+      //     // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
+      //     s&&s[0] == '(' ?
+      //       s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])) :
+      //     s&&s[0] == '.' ?
+      //       [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] :
+      //     s
+      //   )
     }
-    console.log('grouping result:',[...res])
+
     console.groupEnd()
-    s=res
-    // s = p ? res
-    //   : res.map(s =>
-    //     // fix call op: [(,a,[',',b,c],d] → [[a, b, c],c],  [(,a,''] → [a]
-    //     s&&s[0] == '(' ?
-    //       s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])) :
-    //     s&&s[0] == '.' ?
-    //       [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] :
-    //     s
-    //   )
-  })
 
-  console.groupEnd()
 
-  return s.length>1?s:s[0]
-}
+    return s.length>1?s:s[0]
+  }
+
+  s=tokenize(s)
+  return s
+},
 
 // calltree → result
-export const evaluate = (seq, ctx={}, f,k) => Array.isArray(seq)
-// FIXME: possibly we have to reduce not pairs but full args
-  ? (f=ctx[seq[0]]||operators[seq[0]], seq=seq.slice(1).map(x=>seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f)))
-  : typeof seq === 'string' ? (seq[0] === '"' ? seq.slice(1,-1) : ctx[seq])
-  : seq
+evaluate = (s, ctx={}) => Array.isArray(s)
+  ? (Array.isArray(s[0]) ? evaluate(s[0]) : ctx[s[0]]||getop(s[0]))(...s.slice(1).map(a=>evaluate(a,ctx)))
+  : typeof s == 'string'
+  ? s[0] === '"' ? s.slice(1,-1) : ctx[s]
+  : s
 
 // code → evaluator
-export default (seq) => (seq = typeof seq === 'string' ? parse(seq) : seq, ctx => evaluate(seq, ctx))
+export default s => (s = typeof s == 'string' ? parse(s) : s, ctx => evaluate(s, ctx))
 
