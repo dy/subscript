@@ -90,7 +90,7 @@ parse = (s, i=0) => {
   group = (s) => {
     if (!s.length) return ''
     console.group(s)
-    let g, prec, op, i, a,b,x
+    let g, prec, op, i, a,b
 
     // FIXME: we have to find a moment when group is finished, to apply transform
     // that was possible with commit, hard now
@@ -102,16 +102,16 @@ parse = (s, i=0) => {
           if (!getop(b)) {
             if (~i&&!getop(a)) { // binary: a+b
               console.log('binary',a,op,b)
-              if (isnode(a) && a[0]==op) a.push(b),s.splice(i+1,2) // ,[+,a,b],+,c → ,[+,a,b]
-              else s.splice(i,3,[op,a,b]) // ,a,+,b, → ,[+,a,b],
+              if (isnode(a) && a[0]==op && a.length>2) a.push(b), s.splice(i+1,2) // ,[+,a,b],+,c → ,[+,a,b]
+              else s.splice(i,3,g=[op,a,b]) // ,a,+,b, → ,[+,a,b],
             }
             else { // unary prefix: +b, -+b
               // FIXME: do we need to check for unary-only operator, or any binary can be unary as well?
               console.log('unary', op)
-              s.splice(i+1,2,[op,b]) // _,-,b → _,[-,b]
+              s.splice(i+1,2,g=[op,b]) // _,-,b → _,[-,b]
             }
             // TODO: detect postfix unary
-          } else i++
+          } else i++ // FIXME: here - if g - apply transform to it
         } else i++
       }
     }
