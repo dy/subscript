@@ -93,8 +93,9 @@ evaluate(tree, {Math, map, take, interval, gaussian})
 Operator arity is detected from number of arguments:
 
 ```js
-operator[9]['|'] = (a,b)=>a.pipe(b)  // binary or unary postfix:  a|b, a|
-operator[1]['&'] = (a)=>address(a)   // unary prefix:  &a
+operator[1]['&'] = a=>address(a)   // unary prefix:  &a
+operator[9]['|'] = (...a)=>a[0].pipe(...)  // binary:  a|b, a|
+// TODO: unary postfix
 ```
 
 ### Transforms
