@@ -53,7 +53,7 @@ quotes = {'"':'"'},
 
 transforms = {
   // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
-  '(': s => console.log(...s)||s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),//.map(transform),
+  '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),//.map(transform),
   '.': s => [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] // [.,a,b → [.,a,'"b"'
 },
 transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
@@ -64,7 +64,7 @@ isnode = a=>Array.isArray(a)&&a.length&&a[0],
 parse = (s, i=0) => {
   const tokenize = (end, op, buf='', n, q, c, b, cur=[]) => {
     const commit = (v, op) => {
-      if (v) cur.push(n ? parseFloat(v) : v in literals ? literals[v] : v)
+      if (v!=='') cur.push(n ? parseFloat(v) : v in literals ? literals[v] : v)
       if (op) cur.push(op)
       n=buf=c=''
     }
@@ -78,7 +78,7 @@ parse = (s, i=0) => {
       else if (quotes[c]) q=c
       else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
       else if (b=blocks[c]) commit(buf, c), commit(tokenize(b))
-      else if (c==end) return commit(buf), group(cur)
+      else if (c==end) return commit(buf),group(cur)
       else if (operator(op=c+s[i])||operator(op=c)) i+=op.length-1, commit(buf, op)
     }
   },
