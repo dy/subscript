@@ -88,36 +88,34 @@ parse = (s, i=0) => {
   // group into calltree nodes by precedence
   group = (s) => {
     if (!s.length) return ''
-    // console.group(s)
-    let prec, i, gi, a,b,op
+
+    let prec, i, gi, a,b,op, opf
+
+    const commit=(t,prev,n) => { // apply transforms
+      if(~gi) while(t = isnode(n=s[gi])&&prev!=n[0]&&transform[prev=n[0]]) s[gi]=t(n)
+      gi=-1, i++
+    }
 
     for (prec of operator) {
       for (gi=i=-1;i<s.length;) {
-        a=s[i],op=s[i+1],b=s[i+2]
-        // console.log(op)
-        if (typeof op === 'string' && prec[op] && !getop(b)) {
-          // console.log('DETECTED',op,prec[op])
-          if (~i&&!getop(a)) { // binary: a+b
-            // console.log('binary',a,op,b)
-            if (gi===i&&a[0]==op) a.push(b), s.splice(i+1,2) // ,[+,a,b],+,c → ,[+,a,b]
-            else s.splice(gi=i,3,[op,a,b]) // ,a,+,b, → ,[+,a,b],
-          }
-          else { // unary prefix: +b, -+b
-            // FIXME: do we need to check for unary-only operator, or any binary can be unary as well?
-            // console.log('unary', op)
-            s.splice(gi=(~i?i:i--)+1,2,[op,b]) // _,-,b → _,[-,b] (we shift left also to consume prefix)
-          }
-          // TODO: detect postfix unary
-        } else { if(~gi) s[gi]=flat(s[gi]); gi=-1, i++ }
+        a=s[i],op=s[i+1],b=s[i+2], opf = typeof op === 'string' && prec[op]
+        // console.log(prec, a,op,b, opf?.length)
+        if (opf && !getop(b) && ~i&&!getop(a)) { // binary: a+b
+          // console.log('binary',a,op,b)
+          if (prec[op].length==1) commit() // skip non-binary op
+          else if (gi===i&&a[0]==op) a.push(b), s.splice(i+1,2) // ,[+,a,b],+,c → ,[+,a,b]
+          else s.splice(gi=i,3,[op,a,b]) // ,a,+,b, → ,[+,a,b],
+        }
+        else if (opf && !getop(b)) { // unary prefix: +b, -+b
+          // console.log('unary', op)
+          s.splice(gi=(~i?i:i--)+1,2,[op,b]) // _,-,b → _,[-,b] (shift left to consume prefix)
+        }
+        // TODO: detect postfix unary
+        else commit()
       }
     }
-    // console.groupEnd()
-    return s.length>1?s:s[0]
-  },
 
-  flat=(s,t,prev)=>{ // apply transforms
-    while (t=isnode(s) && prev!=s && transform[s[0]]) s = t(prev=s)
-    return s
+    return s.length>1?s:s[0]
   }
 
   s=tokenize()
