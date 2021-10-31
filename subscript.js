@@ -87,24 +87,32 @@ parse = (s, i=0) => {
   group = (s) => {
     if (!s.length) return ''
 
-    let prec, i, gi, a,b,op, opf
+    let prec, i, gi, a,b,op, opf ,x
 
     const commit=() => ~gi && (s[gi]=transform(s[gi]), gi=-1)
 
     for (prec of operators) {
-      for (gi=i=-1;i<s.length;) {
-        a=s[i],op=s[i+1],b=s[i+2], opf = typeof op === 'string' && prec[op]
-        if (opf && !operator(b) && ~i&&!operator(a)) { // binary: a+b
+      // console.log(prec)
+      for (gi=-1,i=1;i<s.length;) {
+        if (x++>100) throw Error('xxx')
+        a=s[i-2],op=s[i-1],b=s[i], opf = typeof op === 'string' && prec[op]
+        if (opf && !operator(b) && i>1&&!operator(a)) { // binary: a+b
+          // console.log('binary',a,op,b, s)
           if (prec[op].length==1) commit(), i++ // skip non-binary op
-          else if (gi===i&&a[0]==op) a.push(b), s.splice(i+1,2) // ,[+,a,b],+,c → ,[+,a,b]
-          else commit(), s.splice(gi=i,3,[op,s[i],b]) // ,a,+,b, → ,[+,a,b],
+          else if (gi===i-2&&a[0]==op) a.push(b), s.splice(i-1,2) // ,[+,a,b],+,c → ,[+,a,b]
+          else commit(), s.splice(gi=i-2,3,[op,s[gi],b]) // ,a,+,b, → ,[+,a,b],
+          // console.log(s,i,gi)
         }
         else if (opf && !operator(b)) { // unary prefix: +b, -+b
-          s.splice(gi=(~i?i:i--)+1,2,[op,b]) // _,-,b → _,[-,b] (shift left to consume prefix)
+          // console.log('unary',a,op,b, s)
+          s.splice(gi=i-1,2,[op,b]) // _,-,b → _,[-,b] (shift left by 2 to consume prefix)
+          i--
+          // console.log(s,i,gi)
         }
         // TODO: detect postfix unary
         else commit(),i++
       }
+      commit() // if last groups was detected, it can be hanging
     }
 
     return s.length>1?s:s[0]
