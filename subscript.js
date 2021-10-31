@@ -85,7 +85,7 @@ parse = (s, i=0) => {
 
   // group into calltree nodes by precedence
   group = (s) => {
-    if (!s.length) return ''
+    if (!s.length) return undefined
 
     let prec, i, gi, a,b,op, opf ,x
 
