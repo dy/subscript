@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import {parse, evaluate, operators} from '../subscript.js'
+  import {parse, evaluate, operators, transforms} from '../subscript.js'
 
   test('parse: basic', t => {
     is(parse('0 + 1 + 2.0'), ['+', 0, 1, 2])
@@ -104,9 +104,9 @@
   })
 
   test('parse: parens', t => {
-    // is(parse('1+(b)()'),['+',1,['b']])
-    // is(parse('1++(b)'),['+',1,['+',['b']]])
-    // is(parse('(1)+-b()'),['+',1,['-',['b']]])
+    // is(parse('1++(b)'),['+',1,['+','b']]) // NOTE: not supported by JS either
+    is(parse('1+(b)()'),['+',1,['b']])
+    is(parse('(1)+-b()'),['+',1,['-',['b']]])
     is(parse('1+a(b)'),['+',1,['a','b']])
     is(parse('1+(b)'),['+',1,'b'])
     is(parse('1+-(b)'),['+',1,['-','b']])
@@ -175,10 +175,12 @@
     is(evaluate(['-',['+',1],2]), -1)
   })
 
-  test('ext: word operator', t => {
+  test('ext: in operator', t => {
     operators[5]['in'] = (a,b)=>a in b
-    is(parse('inc in bin'), [' in ', 'inc', 'bin'])
-    // is(evaluate('inc in bin', {bin:{inc:1}}), true)
+    transforms['in'] = n => (n[1]=`"${n[1]}"`, n)
+
+    is(parse('inc in bin'), ['in', '"inc"', 'bin'])
+    is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
   })
 
   test('ext: ternary', t => {
