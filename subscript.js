@@ -88,21 +88,20 @@ parse = (s, i=0) => {
   group = (s) => {
     if (!s.length) return undefined
 
-    let prec, i, gi, a,b,op, opf, max
+    let prec, i, gi, a,b,x, f
 
     const commit=() => ~gi && (s[gi]=transform(s[gi]), gi=-1)
 
     for (prec of operators) {
       for (gi=-1,i=1;i<s.length;) {
-        if (++max>1e3) throw Error('Dangerous syntax. Please preport a bug.')
-        a=s[i-2],op=s[i-1],b=s[i], opf = typeof op === 'string' && prec[op]
-        if (opf && !operator(b) && i>1&&!operator(a)) { // binary: a+b
-          if (prec[op].length==1) commit(), i++ // skip non-binary op
-          else if (gi===i-2&&a[0]==op) a.push(b), s.splice(i-1,2) // ,[+,a,b],+,c → ,[+,a,b]
-          else commit(), s.splice(gi=i-2,3,[op,s[gi],b]) // ,a,+,b, → ,[+,a,b],
+        a=s[i-2],x=s[i-1],b=s[i], f = typeof x === 'string' && prec[x]
+        if (f && !operator(b) && i>1&&!operator(a)) { // binary: a+b
+          if (prec[x].length==1) commit(), i++ // skip non-binary op
+          else if (gi==i-2 && a[0]==x) a.push(b), s.splice(i-1,2) // ,[+,a,b],+,c → ,[+,a,b]
+          else commit(), s.splice(gi=i-2,3,[x,s[gi],b]) // ,a,+,b, → ,[+,a,b],
         }
-        else if (opf && !operator(b)) { // unary prefix: +b, -+b
-          s.splice(gi=i-1,2,[op,b]) // _,-,b → _,[-,b]
+        else if (f && !operator(b)) { // unary prefix: +b, -+b
+          s.splice(gi=i-1,2,[x,b]) // _,-,b → _,[-,b]
           i-- // (shift left to consume prefix unary or binary)
         }
         // TODO: detect postfix unary

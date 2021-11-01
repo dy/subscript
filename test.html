@@ -184,6 +184,19 @@
   })
 
   test('ext: ternary', t => {
+    let comma = operators.pop()
+    operators.push({':':(a,b)=>[a,b], '?':(a,b)=>a??b, '?:':(a,b,c)=>a?b:c})
+    operators.push(comma)
+
+    transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+    is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
+
+    // bonus side-effect:
+    is(parse('a ? b'), ['?', 'a', 'b'])
+    is(parse('a : b'), [':', 'a', 'b'])
+
+    is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
+    is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
   })
 
 </script>

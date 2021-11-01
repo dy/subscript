@@ -60,10 +60,10 @@
           + same as in mdn https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
           - lengthy
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
-* [ ] word operators
+* [x] word operators
 * [ ] subscript`exp`
-* [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
-  * [ ] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
+* [x] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
+  * [x] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
     + [?,a], [?a,[:b,c]], [in,[,a,b],c], [to,a,b], [to,a,[by,b,c]], [if,a,[else,b,c]]
     . for that we would need to create transform groups
     + that would enable Justin extension
@@ -71,7 +71,7 @@
 * [ ] ;
 * [ ] comments
 * [ ] #,: operators overloaded (python comments for example)
-* [ ] infinite unaries? -+-+a
+* [x] infinite unaries? -+-+a
 * [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
   . Lisp tree doesn't make difference between unary/binary operator.
   . Seems that postfix operator === binary operator without second argument.
@@ -81,3 +81,4 @@
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
 * [ ] extension: Justin (+JSONs)
   * [ ] !keyed arrays? [a:1, b:2, c:3]
+* [ ] Strings with fields ` ${} 1 ${} `

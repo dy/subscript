@@ -51,7 +51,7 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
 * `true`, `false`, `null` literals
 * `"` quotes.
 
-All primitives are extensible.
+All primitives are extensible via `literals`, `quotes`, `groups` dicts.
 
 ### Operators
 
@@ -75,11 +75,11 @@ Default operators include common operators for the listed languages in the follo
 All other operators can be redefined.
 
 ```js
-import {operator, parse, evaluate} from 'subscript.js'
+import {operators, parse, evaluate} from 'subscript.js'
 
 // set operators by precedence
-operator[0]['=>'] = (args, body) => evaluate(body, args)
-operator[5]['|'] = (a,...b) => a.pipe(...b)
+operators[0]['=>'] = (args, body) => evaluate(body, args)
+operators[5]['|'] = (a,...b) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -93,26 +93,30 @@ evaluate(tree, {Math, map, take, interval, gaussian})
 Operator arity is detected from number of arguments:
 
 ```js
-operator[1]['&'] = a=>address(a)   // unary prefix:  &a
-operator[9]['|'] = (...a)=>a[0].pipe(...)  // binary:  a|b, a|
+operators[1]['&'] = a=>address(a)   // unary prefix:  &a
+operators[9]['U'] = (a,b)=>a.union(b)  // binary:  a U b
+operators[9]['|'] = (...a)=>a[0].pipe(...)  // also binary: a | b
 // TODO: unary postfix
 ```
 
 ### Transforms
 
-Some rules are applied to parsed nodes, simplifying resulting calltree:
+Transform rules are applied to parsed operator groups, modifying resulting calltree, eg.:
 
 * Calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
 * Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
 
-They can be used to organize ternary/combining operators:
+That can be used to organize ternary/combining operators:
 
 ```js
-import {parse, transform, operator} from 'subscript.js'
+import {parse, transforms, operators} from 'subscript.js'
 
-operator[12][':']=(a,b)=>[a,b]
-operator[12]['?']=(a,b)=>a??b
-transform[':'] = node => node[1]==='?' ? ['?:',node[1][0],node[1][1],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+Object.assign(operators[11],{
+  ':':(a,b)=>[a,b],
+  '?':(a,b)=>a??b,
+  '?:':(a,b)=>a?b:c
+})
+transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
 parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 
 // bonus side-effect:
