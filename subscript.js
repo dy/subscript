@@ -1,150 +1,129 @@
-// precedence order
-// FIXME: rewrite operators as follows: (eventually [{.:args=>, (:args=>}, {!:args=>},...])
-export const precedence = [
-  ',',
-  ['||'],
-  ['&&'],
-  '|',
-  '^',
-  '&',
-  ['==','!='],
-  ['<','<=','>','>=','in'],
-  ['<<','>>','>>>'],
-  ['+', '-'],
-  ['*', '/', '%'],
-  // '**',
-  // ['!','~','+','-','++','--']
-  '!',
-  ['.', '('],
-]
+export const operators = [
+  {
+    '(':(...a)=>a(...args),
+    '[':(...a)=>a.reduce((a,b)=>a?a[b]:a),
+    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a)
+  },
+  {
+    '!':a=>!a,
+    '~':a=>~a,
+    '+':a=>+a,
+    '-':a=>-a,
+    '++':a=>++a,
+    '--':a=>--a
+  },
+  {
+    '%':(...a)=>a.reduce((a,b)=>a%b),
+    '/':(...a)=>a.reduce((a,b)=>a/b),
+    '*':(...a)=>a.reduce((a,b)=>a*b),
+  },
+  {
+    '+':(...a)=>a.reduce((a,b)=>a+b),
+    '-':(...a)=>a.reduce((a,b)=>a-b),
+  },
+  {
+    '>>>':(a,b)=>a>>>b,
+    '>>':(a,b)=>a>>b,
+    '<<':(a,b)=>a<<b,
+  },
+  {
+    '>=':(a,b)=>a>=b,
+    '>':(a,b)=>a>b,
+    '<=':(a,b)=>a<=b,
+    '<':(a,b)=>a<b,
+  },
+  {
+    '!=':(a,b)=>a!=b,
+    '==':(a,b)=>a==b,
+  },
+  {'&':(a,b)=>a&b},
+  {'^':(a,b)=>a^b},
+  {'|':(a,b)=>a|b},
+  {'&&':(...a)=>a.every(Boolean)},
+  {'||':(...a)=>a.some(Boolean)},
+  {',':(...a)=>a[a.length-1]},
+],
+operator = (s,l,o,i) => {
+  if (!s || typeof s != 'string' || quotes[s[0]]) return
+  for (i=operators.length;i--;) if (o=operators[i][s], o&&l==1?o.length==l:o) return o
+},
+literals = {true:true, false:false, null:null, undefined:undefined},
+blocks = {'(':')','[':']'},
+quotes = {'"':'"'},
+transforms = {
+  // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
+  '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
+  '.': s => [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] // [.,a,b → [.,a,'"b"'
+},
+transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
 
-// FIXME: operators must take full args, not just pair: to directly map lisp constructs [op, ...args], not some reduce shchema
-export const operators = {
-  ',':(a,b)=>b,
-  '||':(a,b)=>a||b,
-  '&&':(a,b)=>a&&b,
-  '|':(a,b)=>a|b,
-  '^':(a,b)=>a^b,
-  '&':(a,b)=>a&b,
-  '!=':(a,b)=>a!=b,
-  '==':(a,b)=>a==b,
-  // ' in ':(a,b)=>a in b,
-  '>=':(a,b)=>a>=b,
-  '>':(a,b)=>a>b,
-  '<=':(a,b)=>a<=b,
-  '<':(a,b)=>a<b,
-  '>>':(a,b)=>a>>b,
-  '<<':(a,b)=>a<<b,
-  '+':(a=0,b)=>b+a,
-  '-':(a=0,b)=>a-b,
-  '%':(a,b)=>a%b,
-  '/':(a,b)=>a/b,
-  '*':(a,b)=>a*b,
-  // '**':(a,b)=>a**b,
-  '!':(a,b)=>!b,
-  // '~':(a,b)=>~b,
-  '(':(a,b)=>a(b),
-  '.':(a,b)=>a[b]
-}
-
-const nil = Symbol('nil')
+isnode = a=>Array.isArray(a)&&a.length&&a[0],
+space = ' \r\n\t',
 
 // code → calltree
-export function parse (seq) {
-  let op=[], b, c, i, ref, cur=[0], v=[], u=[], g=['']
-
-  // ref literals
-  seq=seq
-    // FIXME: quotes can be parsed in loop via htm method
-    // FIXME: number can be detected as \d|.\d - maybe parse linearly too? no need for values...
-    // or replace 1.xx with 1d12? or 1⅒12
-    .replace(/"[^"\\\n\r]*"|\b\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?\b/g, m => `#v${v.push(m[0]=='"'?m:parseFloat(m))-1}`)
-    // FIXME: can be detected directly in deref
-    .replace(/\b(?:true|false|null)\b/g, m => `#v${v.push(m=='null'?null:m=='true')-1}`)
-    .replace(/\.(\w+)\b/g, '."$1"') // a.b → a."b" // FIXME: can technically
-
-  // ref groups
-  // FIXME: redundant i, op assignments, g[cur[0]] vs buf
-  for (i=0, b=''; i < seq.length;) {
-    c=seq[i]
-    if (c==' '||c=='\r'||c=='\n'||c=='\t') i++
-    // a[b][c] → a.#b.#c
-    // FIXME: seems like we have to create groups here: a(b,c) → [a, b, c], not [apply, a, [',',b,c]] - too much hassle unwrapping it later
-    // FIXME: is it possible to enable recursion somehow? seems like group refs could be solved simpler
-    // FIXME: ideally we'd merge it with psplit: make this first run is for (, [, . operators and call psplit from within, not after
-    else if (c=='('||c=='[') {
-      ref=g.push('')-1,
-      g[cur[0]] += b + (c=='['? `.`: `(`) + `#g${ref}`
-      cur.unshift(ref),
-      op=[], i++, b=''
+parse = (s, i=0) => {
+  const tokenize = (end, buf='', n, q, c, br, cur=[]) => {
+    const commit = op => {
+      if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
+      if (op) cur.push(op)
+      n=buf=c=''
     }
-    else if (c==')'||c==']') {
-      g[cur[0]] += b, b=''
-      cur.shift(), op=null, i++
+
+    for (; i<=s.length; buf+=c) {
+      c = s[i++]
+      if (q && c==q) q=''
+      else if (n && (c=='e'||c=='E')) c+=s[i++]
+      else if (space.includes(c)) commit()
+      else if (quotes[c]) q=c
+      else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
+      else if (br=blocks[c]) commit(c), cur.push(tokenize(br))
+      else if (c==end) return commit(), group(cur)
+      else if (operator(c+=s[i++])||operator(c=(i--,c[0])))
+        if (c.toLowerCase()==c.toUpperCase() || !buf&&space.includes(s[i])) // word operators
+        commit(c)
     }
-    else b+=c, op=null, i++
-  }
-  g[cur[0]]+=b
+  },
 
-  // split by precedence
-  for (op of precedence) g = g.map(s=>psplit(s,op))
+  // group into calltree nodes by precedence
+  group = (s) => {
+    if (!s.length) return undefined
 
-  // unwrap
-  const deref = s => {
-    let c
-    if (Array.isArray(s)) {
-      // NOTE: we have to handle (, specially: parsing complexity, special folding, inverse precedence order
-      if (s[0]=='(') {
-        if (s[1][0]=='#') return deref(s[1]) // (a,b) → [,a,b] or [',',a,b]
-        // a(b,c)(d) → [(, a, #g1, #g2] → [[a, b, c], d]
-        return s.slice(1).reduce((a,b,c) => [deref(a), ...(c=deref(b),c[0]==','?c.slice(1):[c])]).filter(x=>x!=nil)
+    let prec, i, gi, a,b,x, f
+
+    const commit=() => ~gi && (s[gi]=transform(s[gi]), gi=-1)
+
+    for (prec of operators) {
+      for (gi=-1,i=1;i<s.length;) {
+        a=s[i-2],x=s[i-1],b=s[i], f = typeof x === 'string' && prec[x]
+        if (f && !operator(b) && i>1&&!operator(a)) { // binary: a+b
+          if (prec[x].length==1) commit(), i++ // skip non-binary op
+          else if (gi==i-2 && a[0]==x) a.push(b), s.splice(i-1,2) // ,[+,a,b],+,c → ,[+,a,b]
+          else commit(), s.splice(gi=i-2,3,[x,s[gi],b]) // ,a,+,b, → ,[+,a,b],
+        }
+        else if (f && !operator(b)) { // unary prefix: +b, -+b
+          s.splice(gi=i-1,2,[x,b]) // _,-,b → _,[-,b]
+          i-- // (shift left to consume prefix unary or binary)
+        }
+        // TODO: detect postfix unary
+        else commit(),i++
       }
-      return s.map(deref).filter(x=>x!=nil) // [[a,nil]] → [[a]]
+      commit() // last binary can be hanging
     }
 
-    if (s[0]=='#') c=s.slice(2), s = s[1]=='v'?v[c]:!g[c]?nil:deref(g[c])
-    return s
+    return s.length>1?s:s[0]
   }
 
-  return deref(g[0])
-}
-// FIXME: maybe still bring to extensibility?
-// split by precedence
-const psplit = (s, ops) => {
-  if (Array.isArray(s)) return [s.shift(), ...s.map(s=>psplit(s,ops))]
-
-  let cur, op, un=[], i=0, i0=0
-
-  const commit=() => un.reduce((t,u)=>[u,t], s.slice(i0,i))
-
-  for (;i<s.length;i++) {
-    if (~(ops.indexOf(op=s[i]+s[i+1])) || ~(ops.indexOf(op=s[i]))) {
-      if (i>i0) {
-        if (!cur) cur = [op]
-        cur.push(commit()) // 1+2+3 → [+,1,2,3]
-        un = []
-        if (op != cur[0]) cur=[op, cur] // 1+2-3 → [-,[+, 1, 2],3]
-      }
-      else un.unshift(op)
-      i0=i+op.length
-    }
-  }
-  if (!cur) return commit()
-  if (i>i0) cur.push(commit())
-  return cur
-}
+  s=tokenize()
+  return s
+},
 
 // calltree → result
-export const evaluate = (seq, ctx={}, f,k) => Array.isArray(seq)
-// FIXME: possibly we have to reduce not pairs but full args
-  ? (f=ctx[seq[0]]||operators[seq[0]], seq=seq.slice(1).map(x=>seq.length<2 ? f(void 0,seq[0]) : seq.reduce(f)))
-  : typeof seq === 'string' ? (seq[0] === '"' ? seq.slice(1,-1) : ctx[seq])
-  : seq
+evaluate = (s, ctx={},x) => isnode(s)
+  ? (isnode(s[0]) ? evaluate(s[0]) : ctx[s[0]]||operator(s[0],s.length-1))(...s.slice(1).map(a=>evaluate(a,ctx)))
+  : typeof s == 'string'
+  ? s[0] === '"' ? s.slice(1,-1) : ctx[s]
+  : s
 
 // code → evaluator
-export default (seq) => (seq = typeof seq === 'string' ? parse(seq) : seq, ctx => evaluate(seq, ctx))
+export default s => (s = typeof s == 'string' ? parse(s) : s, ctx => evaluate(s, ctx))
 
-// const dprop = (obj, key)=> key.split('.').reduce((a,b)=>b?a?.[b]:a, obj)
-
-// // remove quote
-// const unq = s => s[0]=='"'?s.slice(1,-1):s
