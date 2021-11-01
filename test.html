@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import subscript, {parse, evaluate, operators, transforms, quotes} from '../subscript.js'
+  import subscript, {parse, evaluate, operators, transforms, quotes, isnode} from '../subscript.js'
 
   test('readme', t => {
     let fn = subscript(`a.b + c(d-1)`)
@@ -92,17 +92,14 @@
     is(parse('1-+!2'),['-',1,['+',['!',2]]])
     is(parse('1 * -1'),['*',1,['-',1]])
   })
-  test.skip('parse: json', t => {
-    is(parse('{}'), {})
-    is(parse('{x: 1}'), {x: 1})
-    is(parse('{x: 1, "y":2}'), {x:1, y:2})
-    is(parse('{x: 1+2, y:a(3)}'), {x:['+',1,2], y:['a',3]})
-    // is(parse('[1,2,3]'), [Array,1,2,3]) // no-op group means array
-    // is(parse('(1,2,3)'), [',',1,2,3]) // FIXME: must differentiate with previous
-  })
-
-  test.skip('parse: list', t => {
-    is(parse('[1,,2,3]'),['[',[',',1,undefined,2,3]])
+  test.todo('parse: postfix unaries', t => {
+    is(parse('2-'),['-',2])
+    is(parse('2-+'),['+',['-',2]])
+    is(parse('2-+-'),['-',['+',['-',2]]])
+    is(parse('2!+-'),['-',['+',['!',2]]])
+    is(parse('1---2'),['-',['--',1], 2])
+    is(parse('1!+2'),['+',['!',1],2])
+    is(parse('1 * -1'),['*',1,['-',1]])
   })
 
   test('parse: prop access', t => {
@@ -132,7 +129,6 @@
     is(parse('x[+-1]'),['[','x',['+',['-',1]]])
     is(parse('(+-1)'),['+',['-',1]])
     is(parse('x(+-1)'),['x',['+',['-',1]]])
-
   })
 
   test('parse: functions', t => {
@@ -206,6 +202,33 @@
     is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
     is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
   })
+
+  test('ext: list', t => {
+    operators.unshift({'[':a=>Array(...a)})
+    transforms['['] = s => s.length > 2 ? s
+      : s[1] === undefined
+      ? [Array]
+      // ['[',[',',a,[',',b],c]] → ['[',[',',a,,b,c]]
+      : [Array].concat(isnode(s[1]) ? s[1].slice(1).reduce((a,b)=>a.push(...(isnode(b)&&b[0]==','?(b[0]=undefined,b):[b]))&&a,[])
+      : s[1])
+
+    is(parse('[]'),[Array])
+    is(parse('[1]'),[Array,1])
+    is(parse('[1,,2,b]'),[Array,1,undefined,2,'b'])
+    is(parse('[1]+[2]'),['+',[Array,1],[Array,2]])
+    is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
+  })
+
+  test.skip('ext: object', t => {
+    is(parse('{}'), {})
+    is(parse('{x: 1}'), {x: 1})
+    is(parse('{x: 1, "y":2}'), {x:1, y:2})
+    is(parse('{x: 1+2, y:a(3)}'), {x:['+',1,2], y:['a',3]})
+    // is(parse('[1,2,3]'), [Array,1,2,3]) // no-op group means array
+    // is(parse('(1,2,3)'), [',',1,2,3]) // FIXME: must differentiate with previous
+  })
+
+
 
 
 </script>
