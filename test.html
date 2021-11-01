@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import subscript, {parse, evaluate, operators, transforms, quotes} from '../subscript.min.js'
+  import subscript, {parse, evaluate, operators, transforms, quotes} from '../subscript.js'
 
   test('readme', t => {
     let fn = subscript(`a.b + c(d-1)`)
@@ -108,9 +108,7 @@
   test('parse: prop access', t => {
     is(parse('a["b"]["c"][0]'),['[','a','"b"','"c"',0])
     // is(parse('a.b.c.0'), ['.','a','"b"','"c"',0])
-    // is(evaluate(['.','a','b','c',0], {a:{b:{c:[2]}}}), 2)
     is(evaluate(['.','a','"b"','"c"',0], {a:{b:{c:[2]}}}), 2)
-    // is(evaluate(acc, {a:{b:{c:[2]}}}), 2)
   })
 
   test('parse: parens', t => {
