@@ -63,8 +63,8 @@ isnode = a=>Array.isArray(a)&&a.length&&a[0],
 // code → calltree
 parse = (s, i=0) => {
   const tokenize = (end, op, buf='', n, q, c, b, cur=[]) => {
-    const commit = (v, op) => {
-      if (v!=='') cur.push(n ? parseFloat(v) : v in literals ? literals[v] : v)
+    const commit = op => {
+      if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
       if (op) cur.push(op)
       n=buf=c=''
     }
@@ -77,9 +77,11 @@ parse = (s, i=0) => {
       else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
       else if (quotes[c]) q=c
       else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
-      else if (b=blocks[c]) commit(buf, c), commit(tokenize(b))
-      else if (c==end) return commit(buf),group(cur)
-      else if (operator(op=c+s[i])||operator(op=c)) i+=op.length-1, commit(buf, op)
+      else if (b=blocks[c]) commit(c), cur.push(tokenize(b))
+      else if (c==end) return commit(), group(cur)
+      else if (operator(op=c+s[i])||operator(op=c))
+        // if (op.toLowerCase()==op.toUpperCase()||s[i+op.length])
+        i+=op.length-1, commit(op)
     }
   },
 

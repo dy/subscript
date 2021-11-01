@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import {parse, evaluate} from '../subscript.js'
+  import {parse, evaluate, operators} from '../subscript.js'
 
   test('parse: basic', t => {
     is(parse('0 + 1 + 2.0'), ['+', 0, 1, 2])
@@ -39,6 +39,12 @@
     is(parse('a + b'), ['+', 'a', 'b'])
     is(parse('"a" + "b"'), ['+', '"a"', '"b"'])
     is(parse('"a" + ("1" + "2")'), ['+', '"a"', ['+', '"1"', '"2"']])
+  })
+  test('parse: literals', t=> {
+    is(parse('null'), null)
+    is(parse('(undefined)'), undefined)
+    is(parse('true||((false))'), ['||', true, false])
+    is(parse('a(true)'), ['a', true])
   })
   test('parse: intersecting operators', t => {
     is(parse('a | b'), ['|', 'a', 'b'], 'a|b')
@@ -161,17 +167,21 @@
     is(parse('a(1)(b)("c")'),[[['a', 1], 'b'], '"c"'])
   })
 
-  test('parse: word operator', t => {
-    is(parse('inc in bin'), [' in ', 'inc', 'bin'])
-    // is(evaluate('inc in bin', {bin:{inc:1}}), true)
-  })
-
   test('eval: basic', t => {
     is(evaluate(['+', 1, 2]), 3)
     is(evaluate(['+', 1, ['-', 3, 2]]), 2)
     is(evaluate(['-', 5, 2, 1, 1]), 1)
     is(evaluate(['+',['-',1]]), -1)
     is(evaluate(['-',['+',1],2]), -1)
+  })
+
+  test('ext: word operator', t => {
+    operators[5]['in'] = (a,b)=>a in b
+    is(parse('inc in bin'), [' in ', 'inc', 'bin'])
+    // is(evaluate('inc in bin', {bin:{inc:1}}), true)
+  })
+
+  test('ext: ternary', t => {
   })
 
 </script>
