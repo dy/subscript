@@ -8,6 +8,8 @@
 
     quotes["'"] = "'"
     is(parse("'a' + 'b'"), ['+', "'a'", "'b'"])
+
+    is(evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}), "300sec")
   })
 
   test('parse: basic', t => {

@@ -48,7 +48,7 @@ It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)). Why?
 
 ```js
 import {evaluate} from 'subscript.js'
-evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
+evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // min*60 + "sec" == "300sec"
 ```
 
 ## Core primitives
@@ -70,12 +70,11 @@ parse("'a' + 'b'") // ['+', "'a'", "'b'"]
 Default operators include common operators for the listed languages in the following precedence:
 
 * `. ( [`
-* `! + - ++ --` unary, (`~` − Justin)
-* (`**` − Justin)
+* `! + - ++ --` unary
 * `* / %`
 * `+ -`
 * `<< >> >>>`
-* `< <= > >=`, (`in` − Justin)
+* `< <= > >=`
 * `== !=`
 * `&`
 * `^`
@@ -84,12 +83,12 @@ Default operators include common operators for the listed languages in the follo
 * `||`
 * `,`
 
-All other operators can be redefined.
+All other operators can be extended.
 
 ```js
 import {operators, parse, evaluate} from 'subscript.js'
 
-// set operators by precedence
+// add operators to precedence groups
 operators[0]['=>'] = (args, body) => evaluate(body, args)
 operators[5]['|'] = (a,...b) => a.pipe(...b)
 
@@ -108,14 +107,16 @@ Operator arity is detected from number of arguments:
 operators[1]['&'] = a=>address(a)   // unary prefix:  &a
 operators[9]['U'] = (a,b)=>a.union(b)  // binary:  a U b
 operators[9]['|'] = (...a)=>a[0].pipe(...)  // also binary: a | b
-// TODO: unary postfix
 ```
+
+TODO: postfix unary operators are not yet supported.
+
 
 ## Transforms
 
-Transform rules are applied to parsed operator groups, modifying resulting calltree, eg.:
+Transform rules are applied to raw parsed operator groups, eg.:
 
-* Calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
+* Flatten calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
 * Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
 
 That can be used to organize ternary/combining operators:
