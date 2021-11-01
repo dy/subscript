@@ -1,8 +1,9 @@
 {
   "name": "subscript",
   "version": "0.1.0",
-  "description": "Subset of JS/C++/Python/Rust",
+  "description": "Microlanguage with common syntax for JS/C++/Python/Rust",
   "main": "subscript.js",
+  "files": "subscript.min.js",
   "directories": {
     "lib": "lib"
   },
@@ -29,7 +30,7 @@
     "json"
   ],
   "author": "Dmitry Iv.",
-  "license": "ISC",
+  "license": "??",
   "bugs": {
     "url": "https://github.com/spectjs/subscript/issues"
   },
