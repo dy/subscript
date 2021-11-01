@@ -27,7 +27,9 @@
     "jessica",
     "eval",
     "dsl",
-    "json"
+    "json",
+    "calculator",
+    "calc"
   ],
   "author": "Dmitry Iv.",
   "license": "??",
