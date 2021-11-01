@@ -140,7 +140,7 @@ parse('a : b') // [':', 'a', 'b']
 <!--
 ## Justin
 
-Subscript provides _justin_ extension (original [thread]((https://github.com/endojs/Jessie/issues/66))). Justin is minimal JS subset − JSON with JS expressions. Adds support for:
+Subscript provides _justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)). Justin is minimal JS subset − JSON with JS expressions. Adds support for:
 
 + `**` operator
 + `~` operator
@@ -150,6 +150,8 @@ Subscript provides _justin_ extension (original [thread]((https://github.com/end
 + `in` binary operator
 + `...x` unary operator
 + strings interpolation
++ ; expression separator
++ //, /* */ comments
 
 ```js
 parse('{x:1, "y":2+2}['x']') // ['[', {x:1, y: ['+', 2, 2]}, 'x']

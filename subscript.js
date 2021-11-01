@@ -49,6 +49,7 @@ operator = (s,l,o,i) => {
 literals = {true:true, false:false, null:null, undefined:undefined},
 blocks = {'(':')','[':']'},
 quotes = {'"':'"'},
+comments = {},
 transforms = {
   // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
   '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
