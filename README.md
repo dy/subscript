@@ -2,7 +2,7 @@
 
 Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<br/>
 
-* You already know _subscript_
+* Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript?color=brightgreen&label=gzip)</sub>
 * Enables easy operators overloading
@@ -12,25 +12,41 @@ Subscript is micro-language, common subset of C++, JS, Java, Python, Go, Rust.<b
 
 ```js
 import subscript from 'subscript.js'
-let fn = subscript(`a + (b - c)`)
-fn({a:1, b:2, c:3}) // 0
+let fn = subscript(`a.b + c(d - 1)`)
+fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 ```
 
-### Useful in
+### Useful in:
 
 * templates (awesome match with [template parts](https://github.com/github/template-parts))
+
+```html
+<!-- template-parts proposal -->
+<template id="timer">
+  <time datetime="{{ date.toUTCString() }}">{{ date.toLocaleTimeString() }}</time>
+</template>
+```
+
 * expressions evaluators (math, arithmetic)
 * subsets of languages (eg. jessie, justin) <!-- see sonr -->
 * prototyping language features (eg. pipe operator)
-* simulating languages (eg. glsl-transform <!--, FORTRAN?, COBOL?-->)
+* simulating languages (eg. glsl <!--, FORTRAN?, COBOL?-->)
 * sandboxes, playgrounds
 * custom DSL
 
+
 ### Lispy tree
 
-It compiles code to lispy calltree (like [frisk](https://npmjs.com/frisk)). Why?
+It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)).
 
-+ minimal possible AST
+```js
+import {evaluate} from 'subscript.js'
+evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
+```
+
+Why?
+
++ minimal possible AST overhead
 + no operators precedence issue
 + easy to overload operators
 + easy to mimic other lang subsets
@@ -38,11 +54,6 @@ It compiles code to lispy calltree (like [frisk](https://npmjs.com/frisk)). Why?
 + easy debugging
 + conventional form
 + no need in docs
-
-```js
-import {evaluate} from 'subscript.js'
-evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
-```
 
 
 ### Core primitives

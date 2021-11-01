@@ -82,3 +82,4 @@
 * [ ] extension: Justin (+JSONs)
   * [ ] !keyed arrays? [a:1, b:2, c:3]
 * [ ] Strings with fields ` ${} 1 ${} `
+* [ ] Bench

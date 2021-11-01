@@ -1,6 +1,11 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import {parse, evaluate, operators, transforms} from '../subscript.js'
+  import subscript, {parse, evaluate, operators, transforms} from '../subscript.js'
+
+  test('readme', t => {
+    let fn = subscript(`a.b + c(d-1)`)
+    is(fn({a:{b:1}, c:x=>x*2, d:3}), 5)
+  })
 
   test('parse: basic', t => {
     is(parse('0 + 1 + 2.0'), ['+', 0, 1, 2])
@@ -198,5 +203,6 @@
     is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
     is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
   })
+
 
 </script>

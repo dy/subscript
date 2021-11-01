@@ -6,7 +6,6 @@ export const operators = [
   },
   {
     '!':a=>!a,
-    '~':a=>~a,
     '+':a=>+a,
     '-':a=>-a,
     '++':a=>++a,
