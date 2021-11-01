@@ -50,7 +50,6 @@ operator = (s,l,o,i) => {
 literals = {true:true, false:false, null:null, undefined:undefined},
 blocks = {'(':')','[':']'},
 quotes = {'"':'"'},
-
 transforms = {
   // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
   '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
@@ -59,29 +58,29 @@ transforms = {
 transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
 
 isnode = a=>Array.isArray(a)&&a.length&&a[0],
+space = ' \r\n\t',
 
 // code → calltree
 parse = (s, i=0) => {
-  const tokenize = (end, op, buf='', n, q, c, b, cur=[]) => {
+  const tokenize = (end, buf='', n, q, c, br, cur=[]) => {
     const commit = op => {
       if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
       if (op) cur.push(op)
       n=buf=c=''
     }
 
-    // FIXME: maybe commit operatorss as functions, not as string tokens?
     for (; i<=s.length; buf+=c) {
       c = s[i++]
       if (q && c==q) q=''
       else if (n && (c=='e'||c=='E')) c+=s[i++]
-      else if (c==' '||c=='\r'||c=='\n'||c=='\t') c=''
+      else if (space.includes(c)) commit()
       else if (quotes[c]) q=c
       else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
-      else if (b=blocks[c]) commit(c), cur.push(tokenize(b))
+      else if (br=blocks[c]) commit(c), cur.push(tokenize(br))
       else if (c==end) return commit(), group(cur)
-      else if (operator(op=c+s[i])||operator(op=c))
-        // if (op.toLowerCase()==op.toUpperCase()||s[i+op.length])
-        i+=op.length-1, commit(op)
+      else if (operator(c+=s[i++])||operator(c=(i--,c[0])))
+        if (c.toLowerCase()==c.toUpperCase() || !buf&&space.includes(s[i])) // word operators
+        commit(c)
     }
   },
 
@@ -120,7 +119,7 @@ parse = (s, i=0) => {
 },
 
 // calltree → result
-evaluate = (s, ctx={}) => isnode(s)
+evaluate = (s, ctx={},x) => isnode(s)
   ? (isnode(s[0]) ? evaluate(s[0]) : ctx[s[0]]||operator(s[0],s.length-1))(...s.slice(1).map(a=>evaluate(a,ctx)))
   : typeof s == 'string'
   ? s[0] === '"' ? s.slice(1,-1) : ctx[s]
