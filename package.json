@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Microlanguage with common syntax for JS/C++/Python/Rust",
   "main": "subscript.js",
-  "files": "subscript.min.js",
+  "files": ["subscript.min.js"],
   "directories": {
     "lib": "lib"
   },
