@@ -1,10 +1,13 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import subscript, {parse, evaluate, operators, transforms} from '../subscript.js'
+  import subscript, {parse, evaluate, operators, transforms, quotes} from '../subscript.js'
 
   test('readme', t => {
     let fn = subscript(`a.b + c(d-1)`)
     is(fn({a:{b:1}, c:x=>x*2, d:3}), 5)
+
+    quotes["'"] = "'"
+    is(parse("'a' + 'b'"), ['+', "'a'", "'b'"])
   })
 
   test('parse: basic', t => {

@@ -16,9 +16,15 @@ let fn = subscript(`a.b + c(d - 1)`)
 fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 ```
 
-### Useful in:
+## Useful in:
 
 * templates (awesome match with [template parts](https://github.com/github/template-parts))
+* expressions evaluators (math, arithmetic)
+* subsets of languages (eg. jessie, justin) <!-- see sonr -->
+* prototyping language features (eg. pipe operator)
+* simulating languages (eg. glsl <!--, FORTRAN?, COBOL?-->)
+* sandboxes, playgrounds
+* custom DSL
 
 ```html
 <!-- template-parts proposal -->
@@ -27,36 +33,25 @@ fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 </template>
 ```
 
-* expressions evaluators (math, arithmetic)
-* subsets of languages (eg. jessie, justin) <!-- see sonr -->
-* prototyping language features (eg. pipe operator)
-* simulating languages (eg. glsl <!--, FORTRAN?, COBOL?-->)
-* sandboxes, playgrounds
-* custom DSL
+## Lispy tree
 
+It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)). Why?
 
-### Lispy tree
-
-It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)).
++ minimal possible AST overhead
++ clear operators precedence
++ easy to overload operators
++ easy to mimic other lang subsets
++ easy manual evaluation
++ easy debugging
++ conventional form
++ one-liner docs...
 
 ```js
 import {evaluate} from 'subscript.js'
 evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // 300sec
 ```
 
-Why?
-
-+ minimal possible AST overhead
-+ no operators precedence issue
-+ easy to overload operators
-+ easy to mimic other lang subsets
-+ easy manual evaluation
-+ easy debugging
-+ conventional form
-+ no need in docs
-
-
-### Core primitives
+## Core primitives
 
 * `[]`, `()` groups
 * `true`, `false`, `null` literals
@@ -64,7 +59,13 @@ Why?
 
 All primitives are extensible via `literals`, `quotes`, `groups` dicts.
 
-### Operators
+```js
+import {quotes, parse} from 'subscript.js'
+quotes["'"] = "'"
+parse("'a' + 'b'") // ['+', "'a'", "'b'"]
+```
+
+## Operators
 
 Default operators include common operators for the listed languages in the following precedence:
 
@@ -110,7 +111,7 @@ operators[9]['|'] = (...a)=>a[0].pipe(...)  // also binary: a | b
 // TODO: unary postfix
 ```
 
-### Transforms
+## Transforms
 
 Transform rules are applied to parsed operator groups, modifying resulting calltree, eg.:
 

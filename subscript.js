@@ -120,7 +120,7 @@ parse = (s, i=0) => {
 evaluate = (s, ctx={},x) => isnode(s)
   ? (isnode(s[0]) ? evaluate(s[0]) : ctx[s[0]]||operator(s[0],s.length-1))(...s.slice(1).map(a=>evaluate(a,ctx)))
   : typeof s == 'string'
-  ? s[0] === '"' ? s.slice(1,-1) : ctx[s]
+  ? quotes[s[0]] ? s.slice(1,-1) : ctx[s]
   : s
 
 // code → evaluator
