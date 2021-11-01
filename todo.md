@@ -81,5 +81,6 @@
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
 * [ ] extension: Justin (+JSONs)
   * [ ] !keyed arrays? [a:1, b:2, c:3]
-* [ ] Strings with fields ` ${} 1 ${} `
+* [ ] string interpolation ` ${} 1 ${} `
 * [ ] Bench
+* [ ] unary word

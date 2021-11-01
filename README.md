@@ -138,16 +138,18 @@ parse('a : b') // [':', 'a', 'b']
 ```
 
 <!--
-### Justin
+## Justin
 
-[Justin](https://github.com/endojs/Jessie/issues/66) is JSON with expressions extension.
+Subscript provides _justin_ extension (original [thread]((https://github.com/endojs/Jessie/issues/66))). Justin is minimal JS subset − JSON with JS expressions. Adds support for:
 
-+ ** operator
-+ ~ operator
-+ ?: ternary operator
-+ [] Array literal
-+ {} Object literal
-+ in operator
++ `**` operator
++ `~` operator
++ `?:` ternary operator
++ `[...]` Array literal
++ `{...}` Object literal
++ `in` binary operator
++ `...x` unary operator
++ strings interpolation
 
 ```js
 parse('{x:1, "y":2+2}['x']') // ['[', {x:1, y: ['+', 2, 2]}, 'x']
@@ -155,13 +157,13 @@ parse('{x:1, "y":2+2}['x']') // ['[', {x:1, y: ['+', 2, 2]}, 'x']
 -->
 
 <!--
-### Ideas
+## Ideas
 
-These are some snippets for custom DSL operators:
+These are custom DSL operators snippets for your inspiration:
 
 * `7!` (factorial)
-* `5s` (units),
-* `exist?`
+* `5s`, `5rem` (units)
+* `?`, `?.`, `??`
 * `arrᵀ` - transpose,
 * `int 5` (typecast)
 * `$a` (param expansion)
@@ -170,13 +172,13 @@ These are some snippets for custom DSL operators:
 * `a, b in c`
 * `a.xyz` swizzles
 * vector operators
+* set operators
 * polynomial operators
 * etc.
-
 -->
 
 <!--
-### Performance
+## Performance
 
 Compare against js eval, Function, quickjs, SES, jscan, alternatives from see-also
 --->
