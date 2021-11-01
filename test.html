@@ -167,9 +167,9 @@
   })
 
   test('eval: basic', t => {
-    // is(evaluate(['+', 1, 2]), 3)
-    // is(evaluate(['+', 1, ['-', 3, 2]]), 2)
-    // is(evaluate(['-', 5, 2, 1, 1]), 1)
+    is(evaluate(['+', 1, 2]), 3)
+    is(evaluate(['+', 1, ['-', 3, 2]]), 2)
+    is(evaluate(['-', 5, 2, 1, 1]), 1)
     is(evaluate(['+',['-',1]]), -1)
     is(evaluate(['-',['+',1],2]), -1)
   })

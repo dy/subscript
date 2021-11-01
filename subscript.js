@@ -43,9 +43,9 @@ export const operators = [
   {'||':(...a)=>a.some(Boolean)},
   {',':(...a)=>a[a.length-1]},
 ],
-operator = (s,o,i) => {
+operator = (s,l,o,i) => {
   if (!s || typeof s != 'string' || quotes[s[0]]) return
-  for (i=operators.length;i--;) if (o=operators[i][s]) return o
+  for (i=operators.length;i--;) if (o=operators[i][s], o&&l==1?o.length==l:o) return o
 },
 literals = {true:true, false:false, null:null, undefined:undefined},
 blocks = {'(':')','[':']'},
@@ -53,7 +53,7 @@ quotes = {'"':'"'},
 
 transforms = {
   // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
-  '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),//.map(transform),
+  '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
   '.': s => [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] // [.,a,b → [.,a,'"b"'
 },
 transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
@@ -87,32 +87,27 @@ parse = (s, i=0) => {
   group = (s) => {
     if (!s.length) return undefined
 
-    let prec, i, gi, a,b,op, opf ,x
+    let prec, i, gi, a,b,op, opf, max
 
     const commit=() => ~gi && (s[gi]=transform(s[gi]), gi=-1)
 
     for (prec of operators) {
-      // console.log(prec)
       for (gi=-1,i=1;i<s.length;) {
-        if (x++>100) throw Error('xxx')
+        if (++max>1e3) throw Error('Dangerous syntax. Please preport a bug.')
         a=s[i-2],op=s[i-1],b=s[i], opf = typeof op === 'string' && prec[op]
         if (opf && !operator(b) && i>1&&!operator(a)) { // binary: a+b
-          // console.log('binary',a,op,b, s)
           if (prec[op].length==1) commit(), i++ // skip non-binary op
           else if (gi===i-2&&a[0]==op) a.push(b), s.splice(i-1,2) // ,[+,a,b],+,c → ,[+,a,b]
           else commit(), s.splice(gi=i-2,3,[op,s[gi],b]) // ,a,+,b, → ,[+,a,b],
-          // console.log(s,i,gi)
         }
         else if (opf && !operator(b)) { // unary prefix: +b, -+b
-          // console.log('unary',a,op,b, s)
-          s.splice(gi=i-1,2,[op,b]) // _,-,b → _,[-,b] (shift left by 2 to consume prefix)
-          i--
-          // console.log(s,i,gi)
+          s.splice(gi=i-1,2,[op,b]) // _,-,b → _,[-,b]
+          i-- // (shift left to consume prefix unary or binary)
         }
         // TODO: detect postfix unary
         else commit(),i++
       }
-      commit() // if last groups was detected, it can be hanging
+      commit() // last binary can be hanging
     }
 
     return s.length>1?s:s[0]
@@ -124,7 +119,7 @@ parse = (s, i=0) => {
 
 // calltree → result
 evaluate = (s, ctx={}) => isnode(s)
-  ? (isnode(s[0]) ? evaluate(s[0]) : ctx[s[0]]||operator(s[0]))(...s.slice(1).map(a=>evaluate(a,ctx)))
+  ? (isnode(s[0]) ? evaluate(s[0]) : ctx[s[0]]||operator(s[0],s.length-1))(...s.slice(1).map(a=>evaluate(a,ctx)))
   : typeof s == 'string'
   ? s[0] === '"' ? s.slice(1,-1) : ctx[s]
   : s
