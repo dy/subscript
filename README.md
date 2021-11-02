@@ -40,8 +40,8 @@ It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)). Why?
 
 + minimal possible AST overhead
 + clear operators precedence
-+ easy to overload operators, mimic lang subsets
-+ manual evaluation, debugging
++ overloading operators by context 
++ simple manual evaluation, debugging
 + conventional form
 + one-liner docs...
 
