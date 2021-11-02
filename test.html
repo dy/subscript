@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import subscript, {parse, evaluate, operators, transforms, quotes, isnode} from '../subscript.js'
+  import subscript, {parse, evaluate, operators, transforms, quotes, isnode, blocks, operator} from '../subscript.js'
 
   test('readme', t => {
     let fn = subscript(`a.b + c(d-1)`)
@@ -129,6 +129,7 @@
     is(parse('x[+-1]'),['[','x',['+',['-',1]]])
     is(parse('(+-1)'),['+',['-',1]])
     is(parse('x(+-1)'),['x',['+',['-',1]]])
+    is(parse('(1,2,3)'),[',',1,2,3])
   })
 
   test('parse: functions', t => {
@@ -219,13 +220,22 @@
     is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
   })
 
-  test.skip('ext: object', t => {
+  test('ext: object', t => {
+    blocks['{']='}'
+    operators.unshift({'{':a=>Object.fromEntries(a)})
+    if (!operator(':')) operators[operators.length-2][':']=(a,b)=>[a,b]
+    transforms['{'] = (s,entries) => {
+      if (s[1]===undefined) return {}
+      if (s[1][0]==':') entries = [s[1].slice(1)]
+      else entries = s[1].slice(1).map(n=>n.slice(1))
+      entries = entries.map(n=>quotes[n[0][0]]?[n[0].slice(1,-1),n[1]]:n)
+      return Object.fromEntries(entries)
+    }
+
     is(parse('{}'), {})
     is(parse('{x: 1}'), {x: 1})
     is(parse('{x: 1, "y":2}'), {x:1, y:2})
     is(parse('{x: 1+2, y:a(3)}'), {x:['+',1,2], y:['a',3]})
-    // is(parse('[1,2,3]'), [Array,1,2,3]) // no-op group means array
-    // is(parse('(1,2,3)'), [',',1,2,3]) // FIXME: must differentiate with previous
   })
 
 

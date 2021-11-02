@@ -11,6 +11,10 @@ export const operators = [
     '++':a=>++a,
     '--':a=>--a
   },
+  // {
+  //   '++':a=>a++,
+  //   '--':a=>a--
+  // },
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -119,7 +123,8 @@ parse = (s, i=0) => {
 
 // calltree → result
 evaluate = (s, ctx={}) => isnode(s)
-  ? (isnode(s[0]) ? evaluate(s[0]) : typeof s[0]==='string'?ctx[s[0]]||operator(s[0],s.length-1):s[0])(...s.slice(1).map(a=>evaluate(a,ctx)))
+  ? (isnode(s[0]) ? evaluate(s[0]) : typeof s[0]==='string' ? ctx[s[0]]||operator(s[0],s.length-1) : s[0])
+    (...s.slice(1).map(a=>evaluate(a,ctx)))
   : typeof s == 'string'
   ? quotes[s[0]] ? s.slice(1,-1) : ctx[s]
   : s

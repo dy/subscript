@@ -24,6 +24,7 @@ fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 * prototyping language features (eg. pipe operator)
 * simulating languages (eg. glsl <!--, FORTRAN?, COBOL?-->)
 * sandboxes, playgrounds
+* safe, secure eval
 * custom DSL
 
 ```html
@@ -137,26 +138,27 @@ parse('a ? b') // ['?', 'a', 'b']
 parse('a : b') // [':', 'a', 'b']
 ```
 
-<!--
 ## Justin
 
-Subscript provides _justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)). Justin is minimal JS subset − JSON with JS expressions. Adds support for:
+_Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.
+Adds support for:
 
-+ `**` operator
-+ `~` operator
++ `**` binary operator
++ `~` unary operator
 + `?:` ternary operator
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary operator
 + `...x` unary operator
 + strings interpolation
-+ ; expression separator
-+ //, /* */ comments
++ `;` expression separator
++ `//, /* */` comments
 
 ```js
-parse('{x:1, "y":2+2}['x']') // ['[', {x:1, y: ['+', 2, 2]}, 'x']
+import {parse} from 'subscript/justin.js'
+
+let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
 ```
--->
 
 <!--
 ## Ideas
