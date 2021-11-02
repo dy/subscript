@@ -1,11 +1,12 @@
 {
   "name": "subscript",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "Microlanguage with common syntax for JS/C++/Python/Rust",
   "main": "subscript.js",
   "files": [
     "subscript.min.js",
-    "justin.js", "justin.min.js"
+    "justin.js",
+    "justin.min.js"
   ],
   "directories": {
     "lib": "lib"
