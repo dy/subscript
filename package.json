@@ -4,7 +4,8 @@
   "description": "Microlanguage with common syntax for JS/C++/Python/Rust",
   "main": "subscript.js",
   "files": [
-    "subscript.min.js"
+    "subscript.min.js",
+    "justin.js", "justin.min.js"
   ],
   "directories": {
     "lib": "lib"
