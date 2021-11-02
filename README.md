@@ -40,10 +40,8 @@ It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)). Why?
 
 + minimal possible AST overhead
 + clear operators precedence
-+ easy to overload operators
-+ easy to mimic other lang subsets
-+ easy manual evaluation
-+ easy debugging
++ easy to overload operators, mimic lang subsets
++ manual evaluation, debugging
 + conventional form
 + one-liner docs...
 
@@ -54,10 +52,11 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // min*60 + "sec" == "300se
 
 ## Core primitives
 
+By default subscript reserves:
+
 * `[]`, `()` groups
 * `true`, `false`, `null` literals
 * `"` quotes.
-* comments
 
 All primitives are extensible via `literals`, `quotes`, `groups`, `comments` dicts.
 
@@ -155,6 +154,7 @@ It adds support for:
 + `in` binary operator
 + `;` expression separator
 + `//, /* */` comments
++ `undefined` literal
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 

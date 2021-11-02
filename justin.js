@@ -1,5 +1,8 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import sub, {operators, transforms, blocks, comments, quotes} from './subscript.js'
+import {operators, transforms, blocks, comments, quotes, literals} from './subscript.js'
+
+// undefined
+literals['undefined'] = undefined
 
 // **
 operators.splice(2,0,{'**': (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))})
