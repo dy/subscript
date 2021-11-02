@@ -49,6 +49,9 @@
     is(parse('a + b'), ['+', 'a', 'b'])
     is(parse('"a" + "b"'), ['+', '"a"', '"b"'])
     is(parse('"a" + ("1" + "2")'), ['+', '"a"', ['+', '"1"', '"2"']])
+
+    quotes['##']='##'
+    is(parse('"abc" + ##js\nxyz##'), ['+','"abc"','##js\nxyz##'])
   })
   test('parse: literals', t=> {
     is(parse('null'), null)

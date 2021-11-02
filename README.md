@@ -140,8 +140,8 @@ parse('a : b') // [':', 'a', 'b']
 
 ## Justin
 
-_Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.
-Adds support for:
+_Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.<br/>
+It adds support for:
 
 + `**` binary operator
 + `~` unary operator
@@ -149,10 +149,10 @@ Adds support for:
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary operator
-+ `...x` unary operator
-+ strings interpolation
 + `;` expression separator
 + `//, /* */` comments
+<!-- + `...x` unary operator -->
+<!-- + strings interpolation -->
 
 ```js
 import {parse} from 'subscript/justin.js'
@@ -160,32 +160,107 @@ import {parse} from 'subscript/justin.js'
 let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
 ```
 
-<!--
 ## Ideas
 
 These are custom DSL operators snippets for your inspiration:
 
-* `7!` (factorial)
-* `5s`, `5rem` (units)
-* `?`, `?.`, `??`
-* `arrᵀ` - transpose,
-* `int 5` (typecast)
-* `$a` (param expansion)
-* `1 to 10 by 2`
-* `a if b else c`
-* `a, b in c`
-* `a.xyz` swizzles
-* vector operators
-* set operators
-* polynomial operators
-* etc.
--->
+<details>
+  <summary>`7!` (factorial)</summary>
 
-<!--
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`5s`, `5rem` (units)</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`?`, `?.`, `??`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`arrᵀ` - transpose,</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`int 5` (typecast)</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`$a` (param expansion)</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`1 to 10 by 2`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`a if b else c`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`a, b in c`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`a.xyz` swizzles</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>vector operators</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>set operators</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>polynomial operators</summary>
+
+  ```js
+  ```
+
+</details>
+
+
 ## Performance
 
 Compare against js eval, Function, quickjs, SES, jscan, alternatives from see-also
---->
+
 
 ## See also
 

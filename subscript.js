@@ -63,26 +63,25 @@ transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
 
 isnode = a=>Array.isArray(a)&&a.length&&a[0],
 space = ' \r\n\t',
+err = m=>{throw Error(m)},
 
 // code → calltree
 parse = (s, i=0) => {
-  const tokenize = (end, buf='', n, q, c, br, cur=[]) => {
+  const tokenize = (end, buf='', n, q, c, c2, to, m, cur=[]) => {
     const commit = op => {
       if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
       if (op) cur.push(op)
-      n=buf=c=''
+      q=n=buf=c=''
     }
-
     for (; i<=s.length; buf+=c) {
-      c = s[i++]
-      if (q && c==q) q=''
-      else if (n && (c=='e'||c=='E')) c+=s[i++]
+      c = s[i++], c2=c+s[i]
+      if (n && (c=='e'||c=='E')) c+=s[i++]
       else if (space.includes(c)) commit()
-      else if (quotes[c]) q=c
+      else if (q=(quotes[c]||quotes[c2])) (to=s.indexOf(q,i))<0 ? err('Bad quotes') : buf=c+s.slice(i,i=to+q.length),commit()
       else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
-      else if (br=blocks[c]) commit(c), cur.push(tokenize(br))
+      else if (to=blocks[c]) commit(c), cur.push(tokenize(to))
       else if (c==end) return commit(), group(cur)
-      else if (operator(c+=s[i++])||operator(c=(i--,c[0])))
+      else if ((operator(c=c2)&&++i)||operator(c=c[0]))
         if (c.toLowerCase()==c.toUpperCase() || !buf&&space.includes(s[i])) // word operators
         commit(c)
     }

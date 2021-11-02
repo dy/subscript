@@ -1,16 +1,26 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {operators, transforms, blocks} from './subscript.js'
 
-operators[x]['**']=(...args)=>args.reduceRight((a,b)=>Math.pow(a,b))
-operators[x]['~']=a=>~a
-operators[x][':']
-operators[x]['...']
+// **
+operators.splice(2,0,{'**': (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))})
 
-operators.push({':':(a,b)=>[a,b], '?':(a,b)=>a??b, '?:':(a,b,c)=>a?b:c})
-operators.push(comma)
+// ~
+operators[1]['~'] = a=>~a
 
+// ...
+// operators[1]['...']=true
+
+// ;
+operators[operators.length-1][';'] = operators[operators.length-1][',']
+
+// ?:
+operators.splice(operators.length-2,0, {':':(a,b)=>[a,b], '?':(a,b)=>a??b, '?:':(a,b,c)=>a?b:c})
 transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+
+// {}
 blocks['{']='}'
+
+// comments
 comments['/*']='*/'
 comments['//']='\n'
 transforms['{'] = ...//Object literal
