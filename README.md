@@ -24,6 +24,7 @@ fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 * prototyping language features (eg. pipe operator)
 * simulating languages (eg. glsl <!--, FORTRAN?, COBOL?-->)
 * sandboxes, playgrounds
+* safe, secure eval
 * custom DSL
 
 ```html
@@ -56,13 +57,17 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // min*60 + "sec" == "300se
 * `[]`, `()` groups
 * `true`, `false`, `null` literals
 * `"` quotes.
+* comments
 
-All primitives are extensible via `literals`, `quotes`, `groups` dicts.
+All primitives are extensible via `literals`, `quotes`, `groups`, `comments` dicts.
 
 ```js
-import {quotes, parse} from 'subscript.js'
+import {quotes, comments, parse} from 'subscript.js'
+
 quotes["'"] = "'"
-parse("'a' + 'b'") // ['+', "'a'", "'b'"]
+comments["//"] = "\n"
+
+parse(`'a' + 'b' // concat`) // ['+', "'a'", "'b'"]
 ```
 
 ## Operators
@@ -137,51 +142,129 @@ parse('a ? b') // ['?', 'a', 'b']
 parse('a : b') // [':', 'a', 'b']
 ```
 
-<!--
 ## Justin
 
-Subscript provides _justin_ extension (original [thread]((https://github.com/endojs/Jessie/issues/66))). Justin is minimal JS subset − JSON with JS expressions. Adds support for:
+_Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.<br/>
+It adds support for:
 
-+ `**` operator
-+ `~` operator
++ `**` binary operator
++ `~` unary operator
 + `?:` ternary operator
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary operator
-+ `...x` unary operator
-+ strings interpolation
++ `;` expression separator
++ `//, /* */` comments
+<!-- + `...x` unary operator -->
+<!-- + strings interpolation -->
 
 ```js
-parse('{x:1, "y":2+2}['x']') // ['[', {x:1, y: ['+', 2, 2]}, 'x']
-```
--->
+import {parse} from 'subscript/justin.js'
 
-<!--
+let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
+```
+
 ## Ideas
 
 These are custom DSL operators snippets for your inspiration:
 
-* `7!` (factorial)
-* `5s`, `5rem` (units)
-* `?`, `?.`, `??`
-* `arrᵀ` - transpose,
-* `int 5` (typecast)
-* `$a` (param expansion)
-* `1 to 10 by 2`
-* `a if b else c`
-* `a, b in c`
-* `a.xyz` swizzles
-* vector operators
-* set operators
-* polynomial operators
-* etc.
--->
+<details>
+  <summary>`7!` (factorial)</summary>
 
-<!--
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`5s`, `5rem` (units)</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`?`, `?.`, `??`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`arrᵀ` - transpose,</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`int 5` (typecast)</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`$a` (param expansion)</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`1 to 10 by 2`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`a if b else c`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`a, b in c`</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>`a.xyz` swizzles</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>vector operators</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>set operators</summary>
+
+  ```js
+  ```
+
+</details>
+<details>
+  <summary>polynomial operators</summary>
+
+  ```js
+  ```
+
+</details>
+
+
 ## Performance
 
 Compare against js eval, Function, quickjs, SES, jscan, alternatives from see-also
---->
+
 
 ## See also
 

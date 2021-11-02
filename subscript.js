@@ -11,6 +11,10 @@ export const operators = [
     '++':a=>++a,
     '--':a=>--a
   },
+  // {
+  //   '++':a=>a++,
+  //   '--':a=>a--
+  // },
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -40,7 +44,7 @@ export const operators = [
   {'|':(a,b)=>a|b},
   {'&&':(...a)=>a.every(Boolean)},
   {'||':(...a)=>a.some(Boolean)},
-  {',':(...a)=>a[a.length-1]},
+  {',':(...a)=>a.reduce((a,b)=>(a,b))},
 ],
 operator = (s,l,o,i) => {
   if (!s || typeof s != 'string' || quotes[s[0]]) return
@@ -49,10 +53,11 @@ operator = (s,l,o,i) => {
 literals = {true:true, false:false, null:null, undefined:undefined},
 blocks = {'(':')','[':']'},
 quotes = {'"':'"'},
+comments = {},
 transforms = {
   // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
   '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
-  '.': s => [s[0],s[1], ...s.slice(2).map(a=>`"${a}"`)] // [.,a,b → [.,a,'"b"'
+  '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
 transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
 
@@ -61,27 +66,27 @@ space = ' \r\n\t',
 
 // code → calltree
 parse = (s, i=0) => {
-  const tokenize = (end, buf='', n, q, c, br, cur=[]) => {
+  const tokenize = (end, buf='', n, c, c2, c3, to, cur=[]) => {
     const commit = op => {
       if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
       if (op) cur.push(op)
       n=buf=c=''
     }
-
     for (; i<=s.length; buf+=c) {
-      c = s[i++]
-      if (q && c==q) q=''
-      else if (n && (c=='e'||c=='E')) c+=s[i++]
+      c = s[i++], c2=c+s[i], c3=c2+s[i+1]
+      if (n && (c=='e'||c=='E')) c+=s[i++]
       else if (space.includes(c)) commit()
-      else if (quotes[c]) q=c
+      else if (to=comments[c2]||comments[c]) commit(),skip(s,to)
+      else if (to=(quotes[c3]||quotes[c2]||quotes[c])) buf=c+s.slice(i,skip(s,to)),commit()
+      else if (to=blocks[c]) commit(c), cur.push(tokenize(to))
       else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
-      else if (br=blocks[c]) commit(c), cur.push(tokenize(br))
       else if (c==end) return commit(), group(cur)
-      else if (operator(c+=s[i++])||operator(c=(i--,c[0])))
-        if (c.toLowerCase()==c.toUpperCase() || !buf&&space.includes(s[i])) // word operators
+      else if (operator(c=c3)||operator(c=c2)||operator(c=c[0]))
+        if (i+=c.length-1, c.toLowerCase()==c.toUpperCase() || !buf&&space.includes(s[i])) // word operators
         commit(c)
     }
   },
+  skip = (s,tok,n)=>(i= (i=s.indexOf(tok,i),i)<0 ? s.length : i+tok.length),
 
   // group into calltree nodes by precedence
   group = (s) => {
@@ -117,8 +122,9 @@ parse = (s, i=0) => {
 },
 
 // calltree → result
-evaluate = (s, ctx={},x) => isnode(s)
-  ? (isnode(s[0]) ? evaluate(s[0]) : ctx[s[0]]||operator(s[0],s.length-1))(...s.slice(1).map(a=>evaluate(a,ctx)))
+evaluate = (s, ctx={}) => isnode(s)
+  ? (isnode(s[0]) ? evaluate(s[0]) : typeof s[0]==='string' ? ctx[s[0]]||operator(s[0],s.length-1) : s[0])
+    (...s.slice(1).map(a=>evaluate(a,ctx)))
   : typeof s == 'string'
   ? quotes[s[0]] ? s.slice(1,-1) : ctx[s]
   : s
