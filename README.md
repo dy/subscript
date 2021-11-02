@@ -1,6 +1,6 @@
 # <!--<img alt="subscript" src="/subscript2.svg" height=42/>--> sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
-Subscript is micro-language with syntax common subset of C++, JS, Java, Python, Go, Rust.<br/>
+_Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust.<br/>
 
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
