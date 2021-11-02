@@ -69,8 +69,8 @@
     + that would enable Justin extension
     + that would allow flattening fn calls by default
 * [ ] ;
-* [ ] comments
-* [ ] #,: operators overloaded (python comments for example)
+* [x] comments
+* [x] # operators overloaded (python comments for example)
 * [x] infinite unaries? -+-+a
 * [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
   . Lisp tree doesn't make difference between unary/binary operator.
@@ -82,10 +82,10 @@
     + allows accessing unaries directly
     - can be complicated extension, unless we reference group immediately, not by index
 * [ ] ideas snippets
+  * [ ] !keyed arrays? [a:1, b:2, c:3]
 * [x] . operator is not compatible with others, like a.+b.+c
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
-* [ ] extension: Justin (+JSONs)
-  * [ ] !keyed arrays? [a:1, b:2, c:3]
+* [x] extension: Justin (+JSONs)
 * [ ] string interpolation ` ${} 1 ${} `
 * [ ] Bench
 * [ ] unary word

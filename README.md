@@ -164,9 +164,18 @@ import {parse} from 'subscript/justin.js'
 let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
 ```
 
+<!--
 ## Ideas
 
 These are custom DSL operators snippets for your inspiration:
+
+<details>
+  <summary>Keyed arrays <code>[a:1, b:2, c:3]</code></summary>
+
+  ```js
+
+  ```
+</details>
 
 <details>
   <summary>`7!` (factorial)</summary>
@@ -259,7 +268,7 @@ These are custom DSL operators snippets for your inspiration:
   ```
 
 </details>
-
+-->
 
 ## Performance
 
