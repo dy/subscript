@@ -57,13 +57,17 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // min*60 + "sec" == "300se
 * `[]`, `()` groups
 * `true`, `false`, `null` literals
 * `"` quotes.
+* comments
 
-All primitives are extensible via `literals`, `quotes`, `groups` dicts.
+All primitives are extensible via `literals`, `quotes`, `groups`, `comments` dicts.
 
 ```js
-import {quotes, parse} from 'subscript.js'
+import {quotes, comments, parse} from 'subscript.js'
+
 quotes["'"] = "'"
-parse("'a' + 'b'") // ['+', "'a'", "'b'"]
+comments["//"] = "\n"
+
+parse(`'a' + 'b' // concat`) // ['+', "'a'", "'b'"]
 ```
 
 ## Operators

@@ -1,5 +1,5 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import {operators, transforms, blocks} from './subscript.js'
+import sub, {operators, transforms, blocks, comments} from './subscript.js'
 
 // **
 operators.splice(2,0,{'**': (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))})
@@ -20,11 +20,9 @@ transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]]
 // {}
 blocks['{']='}'
 
-// comments
+// /**/, //
 comments['/*']='*/'
 comments['//']='\n'
-transforms['{'] = ...//Object literal
-transforms['['] = ...//Array literal
 
 // in operator
 operators[5]['in'] = (a,b)=>a in b

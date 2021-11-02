@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import subscript, {parse, evaluate, operators, transforms, quotes, isnode, blocks, operator} from '../subscript.js'
+  import subscript, {parse, evaluate, operators, transforms, quotes, isnode, blocks, operator, comments} from '../subscript.js'
 
   test('readme', t => {
     let fn = subscript(`a.b + c(d-1)`)
@@ -55,6 +55,13 @@
 
     quotes['<--']='-->'
     is(parse('"abc" + <--js\nxyz-->'), ['+','"abc"','<--js\nxyz-->'])
+  })
+  test('parse: comments', t => {
+    comments['//']='\n'
+    is(parse(`a /
+      // abc
+      b`), ['/', 'a', 'b'])
+    is(parse(`'a' + 'b' // concat`),['+',"'a'","'b'"])
   })
   test('parse: literals', t=> {
     is(parse('null'), null)
