@@ -45,7 +45,7 @@
     )
   })
 
-  test('parse: interpolate string', t => {
+  test.skip('parse: interpolate string', t => {
     is(parse`a+1`, ['+','a',1])
     is(subscript`a+1`({a:1}), 2)
   })

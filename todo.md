@@ -61,7 +61,7 @@
           - lengthy
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
 * [x] word operators
-* [x] subscript`exp`
+* [x] ~~subscript`exp`~~ no need for tpl tag unless fields have special meaning
 * [x] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
   * [x] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
     + [?,a], [?a,[:b,c]], [in,[,a,b],c], [to,a,b], [to,a,[by,b,c]], [if,a,[else,b,c]]
