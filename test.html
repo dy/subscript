@@ -285,7 +285,7 @@
     console.time('jsep')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
-      jsep.eval(ast, args)
+      // jsep.eval(ast, args)
     }
     console.timeEnd('jsep')
 
