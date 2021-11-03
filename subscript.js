@@ -68,7 +68,7 @@ space = ' \r\n\t',
 
 // code → calltree
 parse = (s, i=0) => {
-  const tokenize = (end, buf='', n, c, c2, c3, to, cur=[]) => {
+  const tokenize = (end, buf='', n, op, c, c2, c3, to, cur=[]) => {
     const commit = op => {
       if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
       if (op) cur.push(op)
@@ -78,14 +78,16 @@ parse = (s, i=0) => {
       c = s[i++], c2=c+s[i], c3=c2+s[i+1]
       if (n && (c=='e'||c=='E')) c+=s[i++]
       else if (space.includes(c)) commit()
-      else if (to=comments[c2]||comments[c]) commit(),skip(s,to)
-      else if (to=(quotes[c3]||quotes[c2]||quotes[c])) buf=c+s.slice(i,skip(s,to)),commit()
-      else if (to=blocks[c]) commit(c), cur.push(tokenize(to))
+      else if (to=comments[c3]||comments[c2]||comments[c]) commit(),skip(s,to)
+      else if (to=quotes[c3]||quotes[c2]||quotes[c]) buf=c+s.slice(i,skip(s,to)),commit()
+      else if (to=blocks[op=c2]||blocks[op=c]) commit(op), cur.push(tokenize(to))
       else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
       else if (c==end) return commit(), group(cur)
-      else if (operator(c=c3)||operator(c=c2)||operator(c=c[0]))
-        if (i+=c.length-1, c.toLowerCase()==c.toUpperCase() || !buf&&space.includes(s[i])) // word operators
-        commit(c)
+      else if (
+        (operator(op=c3)||operator(op=c2)||operator(op=c[0]))
+        &&(op.toLowerCase()==op.toUpperCase() || !buf&&space.includes(s[i])) // word op
+      )
+        i+=op.length-1,commit(op)
     }
   },
   skip = (s,tok,n)=>(i= (i=s.indexOf(tok,i),i)<0 ? s.length : i+tok.length),

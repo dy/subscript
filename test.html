@@ -267,7 +267,7 @@
   })
 
 
-  test('perf', async t => {
+  test.skip('perf', async t => {
     const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
     const args = {a:3,b:4}
 
