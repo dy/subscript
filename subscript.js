@@ -65,8 +65,10 @@ isnode = a=>Array.isArray(a)&&a.length&&a[0],
 space = ' \r\n\t',
 
 // code → calltree
-parse = (s, i=0) => {
-  const tokenize = (end, buf='', n, c, c2, c3, to, cur=[]) => {
+parse = (s, ...subs) => {
+  if (s.raw) s=String.raw(s, ...subs)
+
+  let i=0, tokenize = (end, buf='', n, c, c2, c3, to, cur=[]) => {
     const commit = op => {
       if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
       if (op) cur.push(op)
@@ -117,8 +119,7 @@ parse = (s, i=0) => {
     return s.length>1?s:s[0]
   }
 
-  s=tokenize()
-  return s
+  return tokenize()
 },
 
 // calltree → result
@@ -130,5 +131,4 @@ evaluate = (s, ctx={}) => isnode(s)
   : s
 
 // code → evaluator
-export default s => (s = typeof s == 'string' ? parse(s) : s, ctx => evaluate(s, ctx))
-
+export default (s, ...subs) => (s = typeof s == 'string' || s.raw ? parse(s, ...subs) : s,  ctx => evaluate(s, ctx))
