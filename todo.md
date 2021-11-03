@@ -94,7 +94,10 @@
 * [ ] Optimizations
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
   - [x] preparate jsep - [x] remove noise, [x] flatten, [x] lispify
-    → fastest so far (10 times faster than justin), size is only 300 bytes more, lacks generic extensions though
+    + fastest so far (10 times faster than justin)
+    + size is only 300 bytes more
+    + supports errors better
+    - lacks generic extensions
   - try handling unaries in advance
     ? turn . operator to transform
       ? a.b(c.d).e.f
