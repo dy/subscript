@@ -277,14 +277,6 @@
     }
     console.timeEnd('new Function')
 
-    const {default:justin} = await import('./justin.js');
-    console.time('justin')
-    for (let i = 0; i < 1e4; i++){
-      let f = justin(src(i))
-      f(args)
-    }
-    console.timeEnd('justin')
-
 
     const {Parser} = await import('./lib/expr-eval.js');
     console.time('expr-eval')
@@ -311,6 +303,22 @@
       jexl.eval(src(i), args)
     }
     console.timeEnd('jexl')
+
+    const {default:justin} = await import('./justin.js');
+    console.time('justin')
+    for (let i = 0; i < 1e4; i++){
+      let f = justin(src(i))
+      f(args)
+    }
+    console.timeEnd('justin')
+
+    // const {default:subscript} = await import('./subscript.js');
+    // console.time('subscript')
+    // for (let i = 0; i < 1e4; i++){
+    //   let f = subscript(src(i))
+    //   f(args)
+    // }
+    // console.timeEnd('subscript')
 
 
     const {default:sm} = await import('./lib/string-math.js');
