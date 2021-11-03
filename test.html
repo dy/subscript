@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import subscript, {parse, evaluate, operators, transforms, quotes, isnode, blocks, operator, comments} from '../subscript.js'
+  import subscript, {parse, evaluate, operators, transforms, quotes, isnode, blocks, comments} from '../subscript.js'
 
   test('readme', t => {
     let fn = subscript(`a.b + c(d-1)`)
@@ -245,7 +245,7 @@
   test('ext: object', t => {
     blocks['{']='}'
     operators.unshift({'{':a=>Object.fromEntries(a)})
-    if (!operator(':')) operators[operators.length-2][':']=(a,b)=>[a,b]
+    operators[operators.length-2][':']=(a,b)=>[a,b]
     transforms['{'] = (s,entries) => {
       if (s[1]===undefined) return {}
       if (s[1][0]==':') entries = [s[1].slice(1)]
@@ -266,19 +266,12 @@
     is(parse('{x:1, "y":2+2}["x"]'), ['[', {x:1, y: ['+', 2, 2]}, '"x"'])
   })
 
-  test.only('perf', async t => {
+
+  test('perf', async t => {
     const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
     const args = {a:3,b:4}
 
-    console.time('new Function')
-    for (let i = 0; i < 1e4; i++){
-      let f = new Function('a','b', 'return '+src(i))
-      // f(3, 4)
-    }
-    console.timeEnd('new Function')
-
-
-    const {Parser} = await import('./lib/expr-eval.js');
+    const {Parser} = await import('./lib/expr-eval.min.js');
     console.time('expr-eval')
     const parser = new Parser();
     for (let i = 0; i < 1e4; i++){
@@ -289,20 +282,34 @@
 
 
     const ee = await import('./lib/expression-eval.module.js');
-    console.time('expression-eval')
+    console.time('jsep')
     for (let i = 0; i < 1e4; i++){
       let ast = ee.parse(src(i));
       ee.eval(ast, args)
     }
-    console.timeEnd('expression-eval')
+    console.timeEnd('jsep')
 
-    const {Jexl} = await import('./lib/jexl.js');
+    const {Jexl} = await import('./lib/jexl.min.js');
     console.time('jexl')
     let jexl = new Jexl
     for (let i = 0; i < 1e4; i++){
       jexl.eval(src(i), args)
     }
     console.timeEnd('jexl')
+
+    const {default:sm} = await import('./lib/string-math.js');
+    console.time('string-math')
+    for (let i = 0; i < 1e4; i++){
+      sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
+    }
+    console.timeEnd('string-math')
+
+    console.time('new Function')
+    for (let i = 0; i < 1e4; i++){
+      let f = new Function('a','b', 'return '+src(i))
+      f(3, 4)
+    }
+    console.timeEnd('new Function')
 
     const {default:justin} = await import('./justin.js');
     console.time('justin')
@@ -311,22 +318,6 @@
       f(args)
     }
     console.timeEnd('justin')
-
-    // const {default:subscript} = await import('./subscript.js');
-    // console.time('subscript')
-    // for (let i = 0; i < 1e4; i++){
-    //   let f = subscript(src(i))
-    //   f(args)
-    // }
-    // console.timeEnd('subscript')
-
-
-    const {default:sm} = await import('./lib/string-math.js');
-    console.time('string-math')
-    for (let i = 0; i < 1e4; i++){
-      sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
-    }
-    console.timeEnd('string-math')
 
   })
 

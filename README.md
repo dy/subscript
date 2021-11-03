@@ -105,7 +105,7 @@ let tree = parse(`
 evaluate(tree, {Math, map, take, interval, gaussian})
 ```
 
-Operator arity is detected from number of arguments:
+Operators are defined in by precedence index. _0_ is reserved for groups, _1_ for unary operators.
 
 ```js
 operators[1]['&'] = a=>address(a)   // unary prefix:  &a
@@ -272,7 +272,7 @@ These are custom DSL operators snippets for your inspiration:
 
 ## Performance
 
-Parser is slow, compared to alternatives:
+Parser is slower than anything else and needs optimization.
 
 ```
 new Function: 321.511962890625 ms

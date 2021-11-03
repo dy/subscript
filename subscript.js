@@ -1,16 +1,18 @@
-export const operators = [
+export const unary =
+{
+  '!':a=>!a,
+  '+':a=>+a,
+  '-':a=>-a,
+  '++':a=>++a,
+  '--':a=>--a
+},
+operators = [
   {
     '(':(...a)=>a(...args),
     '[':(...a)=>a.reduce((a,b)=>a?a[b]:a),
     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a)
   },
-  {
-    '!':a=>!a,
-    '+':a=>+a,
-    '-':a=>-a,
-    '++':a=>++a,
-    '--':a=>--a
-  },
+  unary,
   // {
   //   '++':a=>a++,
   //   '--':a=>a--

@@ -81,6 +81,7 @@
     + removes arguments limitation
     + allows accessing unaries directly
     - can be complicated extension, unless we reference group immediately, not by index
+    + allows faster search for unaries
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
 * [x] . operator is not compatible with others, like a.+b.+c
@@ -90,3 +91,4 @@
 * [ ] Bench
 * [ ] unary word
 * [ ] Demo
+* [ ] Optimizations
