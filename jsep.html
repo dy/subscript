@@ -3,6 +3,7 @@
   import parse from './lib/jsep.strip.js'
 
   test.only('jsep strip', t => {
+    console.log(parse(`"abcd" + 'efgh'`))
     console.log(parse(`0 + 1 - 2`))
     console.log(parse(`a.b(c.d).e.f`))
     console.log(parse(`(a + 2) * 3 / 2 + b * 2 - 1`))

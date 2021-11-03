@@ -90,7 +90,7 @@ parse = (s, i=0) => {
         i+=op.length-1,commit(op)
     }
   },
-  skip = (s,tok,n)=>(i= (i=s.indexOf(tok,i),i)<0 ? s.length : i+tok.length),
+  skip = (s,tok)=>(i= (i=s.indexOf(tok,i),i)<0 ? s.length : i+tok.length),
 
   // group into calltree nodes by precedence
   group = (s) => {
