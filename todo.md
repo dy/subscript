@@ -88,7 +88,9 @@
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
 * [x] extension: Justin (+JSONs)
 * [ ] string interpolation ` ${} 1 ${} `
-* [ ] Bench
+* [x] Bench
 * [ ] unary word
 * [ ] Demo
 * [ ] Optimizations
+  - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
+  -

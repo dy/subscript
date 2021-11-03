@@ -8,7 +8,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Enables easy operators overloading
 * Configurable & extensible
 * Trivial to use...
-<!-- * Performant? Not -->
+* It is SLOW  (see performance)
 
 ```js
 import subscript from 'subscript.js'
