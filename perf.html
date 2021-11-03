@@ -45,13 +45,13 @@
     // }
     // console.timeEnd('string-math')
 
-    // const {default:justin} = await import('./justin.js');
-    // console.time('justin')
-    // for (let i = 0; i < 1e4; i++){
-    //   let f = justin(src(i))
-    //   f(args)
-    // }
-    // console.timeEnd('justin')
+    const {default:justin} = await import('./justin.js');
+    console.time('justin')
+    for (let i = 0; i < 1e4; i++){
+      let f = justin(src(i))
+      f(args)
+    }
+    console.timeEnd('justin')
 
 
     // const {default:dislex,parse:dparse} = await import('./lib/dislex.js');
@@ -63,12 +63,12 @@
     // console.timeEnd('dislex')
 
 
-    // console.time('new Function')
-    // for (let i = 0; i < 1e4; i++){
-    //   let f = new Function('a','b', 'return '+src(i))
-    //   f(3, 4)
-    // }
-    // console.timeEnd('new Function')
+    console.time('new Function')
+    for (let i = 0; i < 1e4; i++){
+      let f = new Function('a','b', 'return '+src(i))
+      f(3, 4)
+    }
+    console.timeEnd('new Function')
 
 
   })
