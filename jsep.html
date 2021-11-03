@@ -3,10 +3,10 @@
   import parse from './lib/jsep.strip.js'
 
   test.only('jsep strip', t => {
-    console.log(parse(`"abcd" + 'efgh'`))
-    console.log(parse(`   0.1   +   1.0 -  2.3 `))
-    console.log(parse(`a.b (  ccc. d ) . e . f`))
-    console.log(parse(`(a + 2) * 3 / 2 + b * 2 - 1`))
+    is(parse(`"abcd" + 'efgh'`), ['+','abcd','efgh'])
+    is(parse(`   0.1   +   -1.0 -  2.3 `), ['-', ['+', .1, ['-',1]], 2.3])
+    is(parse(`a.b (  ccc. d, , -+1.0 ) . e`), ['.',[['.', 'a', 'b'], ['.', 'ccc', 'd'], null, ['-',['+',1]]], 'e'])
+    is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ['-',['+',['/',['*',['+', 'a', '2'],3],2],['*', 'b', 2]],1])
   })
 
   test('readme', t => {
