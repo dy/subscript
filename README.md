@@ -7,8 +7,8 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
 * Enables easy operators overloading
 * Configurable & extensible
-* Performant?
 * Trivial to use...
+<!-- * Performant? Not -->
 
 ```js
 import subscript from 'subscript.js'
@@ -272,14 +272,23 @@ These are custom DSL operators snippets for your inspiration:
 
 ## Performance
 
-Compare against js eval, Function, quickjs, SES, jscan, alternatives from see-also
+Parser is slow, compared to alternatives:
 
+```
+new Function: 321.511962890625 ms
+justin: 562.35791015625 ms
+expr-eval: 140.34423828125 ms
+expression-eval: 87.680908203125 ms
+jexl: 92.960205078125 ms
+string-math: 106.323974609375 ms
+```
 
 ## See also
 
 * [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)
+* [expression-eval](https://github.com/donmccurdy/expression-eval)
 * [jsep](https://github.com/EricSmekens/jsep)
 * [string-math](https://github.com/devrafalko/string-math)
 

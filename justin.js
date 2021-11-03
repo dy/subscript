@@ -50,4 +50,5 @@ transforms['{'] = (s,entries) => {
 
 // TODO: strings interpolation
 
+export { default } from './subscript.js';
 export * from './subscript.js'

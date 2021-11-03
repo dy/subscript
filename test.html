@@ -266,5 +266,65 @@
     is(parse('{x:1, "y":2+2}["x"]'), ['[', {x:1, y: ['+', 2, 2]}, '"x"'])
   })
 
+  test.only('perf', async t => {
+    const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
+    const args = {a:3,b:4}
+
+    console.time('new Function')
+    for (let i = 0; i < 1e4; i++){
+      let f = new Function('a','b', 'return '+src(i))
+      // f(3, 4)
+    }
+    console.timeEnd('new Function')
+
+    const {default:justin} = await import('./justin.js');
+    console.time('justin')
+    for (let i = 0; i < 1e4; i++){
+      let f = justin(src(i))
+      f(args)
+    }
+    console.timeEnd('justin')
+
+
+    const {Parser} = await import('./lib/expr-eval.js');
+    console.time('expr-eval')
+    const parser = new Parser();
+    for (let i = 0; i < 1e4; i++){
+      let expr = parser.parse(src(i));
+      expr.evaluate(args);
+    }
+    console.timeEnd('expr-eval')
+
+
+    const ee = await import('./lib/expression-eval.module.js');
+    console.time('expression-eval')
+    for (let i = 0; i < 1e4; i++){
+      let ast = ee.parse(src(i));
+      ee.eval(ast, args)
+    }
+    console.timeEnd('expression-eval')
+
+    const {Jexl} = await import('./lib/jexl.js');
+    console.time('jexl')
+    let jexl = new Jexl
+    for (let i = 0; i < 1e4; i++){
+      jexl.eval(src(i), args)
+    }
+    console.timeEnd('jexl')
+
+
+    const {default:sm} = await import('./lib/string-math.js');
+    console.time('string-math')
+    for (let i = 0; i < 1e4; i++){
+      sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
+    }
+    console.timeEnd('string-math')
+
+  })
+
+  test('eval: edge cases', t => {
+    is(evaluate(parse('Math.pow(a, 3) / 2 + b * 2 - 1'), {Math, a:1, b:1}), 1.5)
+  })
+
 
 </script>
