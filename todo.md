@@ -95,3 +95,8 @@
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
   - preparate jsep - remove noise, flatten, lispify
   - try handling unaries in advance
+    ? turn . operator to transform
+      ? a.b(c.d).e.f
+  - dislex version (operators split) was faster than now.
+  - seems many redundant checks come from operator call at the time when we just consume a token
+  . it is meaningful to track perf tests from the beginning of development?

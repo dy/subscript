@@ -267,7 +267,7 @@
   })
 
 
-  test.skip('perf', async t => {
+  test('perf', async t => {
     const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
     const args = {a:3,b:4}
 
@@ -311,6 +311,16 @@
       f(args)
     }
     console.timeEnd('justin')
+
+
+    const {default:dislex,parse:dparse} = await import('./lib/dislex.js');
+    console.time('dislex')
+    for (let i = 0; i < 1e4; i++){
+      let tree = dparse(src(i))
+      evaluate(tree,args)
+    }
+    console.timeEnd('dislex')
+
 
     console.time('new Function')
     for (let i = 0; i < 1e4; i++){
