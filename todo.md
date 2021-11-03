@@ -94,13 +94,15 @@
 * [ ] Optimizations
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
   - [x] preparate jsep - [x] remove noise, [x] flatten, [x] lispify
-    + fastest so far (10 times faster than justin)
+    + fastest 10 times than justin
     + size is only 300 bytes more
     + supports errors better
-    - lacks generic extensions
+    * [ ] make generic extensions as subscript
+    * [ ] fold gobbling groups with gobbling arguments/properties
+    * [ ] make simpler identifiers consumption
   - try handling unaries in advance
     ? turn . operator to transform
       ? a.b(c.d).e.f
-  - dislex version (operators split) was faster than now.
+  . dislex version (operators split) was faster than now.
   - seems many redundant checks come from operator call at the time when we just consume a token
   . it is meaningful to track perf tests from the beginning of development?
