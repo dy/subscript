@@ -1,0 +1,75 @@
+<script type="module">
+  import test, {is} from './lib/test.js'
+
+  test('perf', async t => {
+    const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
+    const args = {a:3,b:4}
+
+    const {Parser} = await import('./lib/expr-eval.min.js');
+    console.time('expr-eval')
+    const parser = new Parser();
+    for (let i = 0; i < 1e4; i++){
+      let expr = parser.parse(src(i));
+      expr.evaluate(args);
+    }
+    console.timeEnd('expr-eval')
+
+
+    const jsep = await import('./lib/expression-eval.module.js');
+    console.time('jsep')
+    for (let i = 0; i < 1e4; i++){
+      let ast = jsep.parse(src(i));
+      // jsep.eval(ast, args)
+    }
+    console.timeEnd('jsep')
+
+    const {default:jseparse} = await import('./lib/jsep.strip.js');
+    console.time('jsep-strip')
+    for (let i = 0; i < 1e4; i++){
+      let ast = jsep.parse(src(i));
+    }
+    console.timeEnd('jsep-strip')
+
+    // const {Jexl} = await import('./lib/jexl.min.js');
+    // console.time('jexl')
+    // let jexl = new Jexl
+    // for (let i = 0; i < 1e4; i++){
+    //   jexl.eval(src(i), args)
+    // }
+    // console.timeEnd('jexl')
+
+    // const {default:sm} = await import('./lib/string-math.js');
+    // console.time('string-math')
+    // for (let i = 0; i < 1e4; i++){
+    //   sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
+    // }
+    // console.timeEnd('string-math')
+
+    // const {default:justin} = await import('./justin.js');
+    // console.time('justin')
+    // for (let i = 0; i < 1e4; i++){
+    //   let f = justin(src(i))
+    //   f(args)
+    // }
+    // console.timeEnd('justin')
+
+
+    // const {default:dislex,parse:dparse} = await import('./lib/dislex.js');
+    // console.time('dislex')
+    // for (let i = 0; i < 1e4; i++){
+    //   let tree = dparse(src(i))
+    //   evaluate(tree,args)
+    // }
+    // console.timeEnd('dislex')
+
+
+    // console.time('new Function')
+    // for (let i = 0; i < 1e4; i++){
+    //   let f = new Function('a','b', 'return '+src(i))
+    //   f(3, 4)
+    // }
+    // console.timeEnd('new Function')
+
+
+  })
+</script>
