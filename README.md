@@ -5,10 +5,10 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* Enables easy operators overloading
+* It's fast (~10 times faster than eval)
+* Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
-* It is SLOW  (see performance)
 
 ```js
 import subscript from 'subscript.js'
@@ -116,6 +116,7 @@ operators[9]['|'] = (...a)=>a[0].pipe(...)  // also binary: a | b
 TODO: postfix unary operators are not yet supported.
 
 
+<!--
 ## Transforms
 
 Transform rules are applied to raw parsed operator groups, eg.:
@@ -140,6 +141,7 @@ parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 parse('a ? b') // ['?', 'a', 'b']
 parse('a : b') // [':', 'a', 'b']
 ```
+-->
 
 ## Justin
 
@@ -272,15 +274,13 @@ These are custom DSL operators snippets for your inspiration:
 
 ## Performance
 
-Parser is slower than anything else and needs optimization.
+Parser is faster than anything else.
 
 ```
-new Function: 321.511962890625 ms
-justin: 562.35791015625 ms
-expr-eval: 140.34423828125 ms
-expression-eval: 87.680908203125 ms
-jexl: 92.960205078125 ms
-string-math: 106.323974609375 ms
+expr-eval: 105.9462890625 ms
+jsep: 66.3828125 ms
+subscript: 35.796142578125 ms
+new Function: 341.558837890625 ms
 ```
 
 ## See also
