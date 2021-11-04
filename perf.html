@@ -23,7 +23,7 @@
     }
     console.timeEnd('jsep')
 
-    const {default:jseparse} = await import('./lib/jsep.strip.js');
+    const {parse:jseparse} = await import('./lib/jsep.strip.js');
     console.time('jsep-strip')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));

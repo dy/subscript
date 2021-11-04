@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is} from './lib/test.js'
-  import parse from './lib/jsep.strip.js'
+  import {parse} from './lib/jsep.strip.js'
 
   test.only('jsep strip', t => {
     is(parse(`+-+1+-!1`), ['+', ['+',['-',['+',1]]],   ['-',['!',1]]])
