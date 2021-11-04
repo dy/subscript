@@ -98,8 +98,10 @@
     + size is only 300 bytes more
     + supports errors better
     * [ ] make generic extensions as subscript
-    * [ ] fold gobbling groups with gobbling arguments/properties
-    * [ ] make simpler identifiers consumption
+    * [x] fold gobbling groups with gobbling arguments/properties
+    * [x] make simpler identifiers consumption
+    * [ ] fix subscript tests for jsep stripped
+    * [ ] simplify eval: no need for first arg cases, just op or fn
     + no flattening: makes precedence more clear, ops reduce-less: in js there's still binary ops
       - can be hard to organize right-assoc operators like **
   - try handling unaries in advance
