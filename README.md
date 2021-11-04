@@ -116,10 +116,9 @@ operators[9]['|'] = (...a)=>a[0].pipe(...)  // also binary: a | b
 TODO: postfix unary operators are not yet supported.
 
 
-<!--
 ## Transforms
 
-Transform rules are applied to raw parsed operator groups, eg.:
+Transform rules are applied to raw parsed calltree groups, eg.:
 
 * Flatten calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
 * Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
@@ -141,7 +140,7 @@ parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 parse('a ? b') // ['?', 'a', 'b']
 parse('a : b') // [':', 'a', 'b']
 ```
--->
+
 
 ## Justin
 
