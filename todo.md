@@ -97,7 +97,7 @@
     + fastest 10 times than justin
     + size is only 300 bytes more
     + supports errors better
-    * [ ] make generic extensions as subscript
+    * [x] make generic extensions as subscript
     * [x] fold gobbling groups with gobbling arguments/properties
     * [x] make simpler identifiers consumption
     * [ ] fix subscript tests for jsep stripped
@@ -110,3 +110,7 @@
   . dislex version (operators split) was faster than now.
   - seems many redundant checks come from operator call at the time when we just consume a token
   . it is meaningful to track perf tests from the beginning of development?
+* [ ] Passing array literals is a problem
+  - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
+  ? Maybe we should prohibit evaluate exports to simplify internal logic?
+* [ ] calltree nodes could stash static values (as in HTM)
