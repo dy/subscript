@@ -100,6 +100,8 @@
     * [ ] make generic extensions as subscript
     * [ ] fold gobbling groups with gobbling arguments/properties
     * [ ] make simpler identifiers consumption
+    + no flattening: makes precedence more clear, ops reduce-less: in js there's still binary ops
+      - can be hard to organize right-assoc operators like **
   - try handling unaries in advance
     ? turn . operator to transform
       ? a.b(c.d).e.f

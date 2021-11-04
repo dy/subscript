@@ -3,6 +3,7 @@
   import parse from './lib/jsep.strip.js'
 
   test.only('jsep strip', t => {
+    is(parse(`+-+1+-!1`), ['+', ['+',['-',['+',1]]],   ['-',['!',1]]])
     is(parse(`"abcd" + 'efgh'`), ['+','abcd','efgh'])
     is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
     is(parse(`a.b (  ccc. d, , -+1.0 ) . e`), ['.',[['.', 'a', 'b'], ['.', 'ccc', 'd'], null, ['-',['+',1]]], 'e'])
