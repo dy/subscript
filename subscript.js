@@ -194,18 +194,22 @@ parse = (expr, index=0, len=expr.length) => {
 },
 
 // calltree → result
-evaluate = (s, ctx={}, c, args, p) => {
+evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
+    // FIXME: move to transforms
     if ((c=s[0])=='.') return oper(c,binary,true)(evaluate(s[1], ctx),...s.slice(2))
 
-    c = isCmd(c) ? evaluate(c, ctx)
-        : (c in ctx) ? ctx[c]
-        : oper(c, s.length<3?unary:binary, true) || c
+    if (typeof c === 'string') op = oper(c, s.length<3?unary:binary, true)
+    c = op || evaluate(c, ctx)
+    if (typeof c !== 'function') return c
 
     return c.call(...s.map(a=>evaluate(a,ctx)))
   }
 
-  if (s && typeof s === 'string') return quotes[s[0]] ? s.slice(1,-1) : ctx[s]
+  if (s && typeof s === 'string')
+    return quotes[s[0]] ? s.slice(1,-1)
+          : s[0]==='@' ? s.slice(1)
+          : s in ctx ? ctx[s] : s
 
   return s
 }

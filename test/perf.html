@@ -1,11 +1,11 @@
 <script type="module">
-  import test, {is} from './lib/test.js'
+  import test, {is} from '../lib/test.js'
 
   test('perf', async t => {
     const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
     const args = {a:3,b:4}
 
-    const {Parser} = await import('./lib/expr-eval.min.js');
+    const {Parser} = await import('../lib/expr-eval.min.js');
     console.time('expr-eval')
     const parser = new Parser();
     for (let i = 0; i < 1e4; i++){
@@ -15,7 +15,7 @@
     console.timeEnd('expr-eval')
 
 
-    const jsep = await import('./lib/expression-eval.module.js');
+    const jsep = await import('../lib/expression-eval.module.js');
     console.time('jsep')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
@@ -23,14 +23,14 @@
     }
     console.timeEnd('jsep')
 
-    const {parse:jseparse} = await import('./subscript.js');
+    const {parse:jseparse} = await import('../subscript.js');
     console.time('subscript')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
     }
     console.timeEnd('subscript')
 
-    const {Jexl} = await import('./lib/jexl.min.js');
+    const {Jexl} = await import('../lib/jexl.min.js');
     console.time('jexl')
     let jexl = new Jexl
     for (let i = 0; i < 1e4; i++){
@@ -38,7 +38,7 @@
     }
     console.timeEnd('jexl')
 
-    const {default:sm} = await import('./lib/string-math.js');
+    const {default:sm} = await import('../lib/string-math.js');
     console.time('string-math')
     for (let i = 0; i < 1e4; i++){
       sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
@@ -54,7 +54,7 @@
     // console.timeEnd('justin')
 
 
-    // const {default:dislex,parse:dparse} = await import('./lib/dislex.js');
+    // const {default:dislex,parse:dparse} = await import('../lib/dislex.js');
     // console.time('dislex')
     // for (let i = 0; i < 1e4; i++){
     //   let tree = dparse(src(i))

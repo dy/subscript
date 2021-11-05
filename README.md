@@ -36,7 +36,7 @@ fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 
 ## Lispy tree
 
-It compiles code to lispy calltree (compatible to [frisk](https://npmjs.com/frisk)). Why?
+It compiles code to lispy calltree (compatible with [frisk](https://npmjs.com/frisk)). Why?
 
 + minimal possible AST overhead
 + clear operators precedence
