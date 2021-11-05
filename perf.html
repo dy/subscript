@@ -19,39 +19,39 @@
     console.time('jsep')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
-      // jsep.eval(ast, args)
+      jsep.eval(ast, args)
     }
     console.timeEnd('jsep')
 
-    const {parse:jseparse} = await import('./lib/jsep.strip.js');
-    console.time('jsep-strip')
+    const {parse:jseparse} = await import('./subscript.js');
+    console.time('subscript')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
     }
-    console.timeEnd('jsep-strip')
+    console.timeEnd('subscript')
 
-    // const {Jexl} = await import('./lib/jexl.min.js');
-    // console.time('jexl')
-    // let jexl = new Jexl
-    // for (let i = 0; i < 1e4; i++){
-    //   jexl.eval(src(i), args)
-    // }
-    // console.timeEnd('jexl')
-
-    // const {default:sm} = await import('./lib/string-math.js');
-    // console.time('string-math')
-    // for (let i = 0; i < 1e4; i++){
-    //   sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
-    // }
-    // console.timeEnd('string-math')
-
-    const {default:justin} = await import('./justin.js');
-    console.time('justin')
+    const {Jexl} = await import('./lib/jexl.min.js');
+    console.time('jexl')
+    let jexl = new Jexl
     for (let i = 0; i < 1e4; i++){
-      let f = justin(src(i))
-      f(args)
+      jexl.eval(src(i), args)
     }
-    console.timeEnd('justin')
+    console.timeEnd('jexl')
+
+    const {default:sm} = await import('./lib/string-math.js');
+    console.time('string-math')
+    for (let i = 0; i < 1e4; i++){
+      sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
+    }
+    console.timeEnd('string-math')
+
+    // const {default:justin} = await import('./justin.js');
+    // console.time('justin')
+    // for (let i = 0; i < 1e4; i++){
+    //   let f = justin(src(i))
+    //   f(args)
+    // }
+    // console.timeEnd('justin')
 
 
     // const {default:dislex,parse:dparse} = await import('./lib/dislex.js');
