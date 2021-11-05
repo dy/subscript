@@ -1,6 +1,6 @@
 {
   "name": "subscript",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Microlanguage with common syntax for JS/C++/Python/Rust",
   "main": "subscript.js",
   "files": [
