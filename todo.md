@@ -68,9 +68,10 @@
     . for that we would need to create transform groups
     + that would enable Justin extension
     + that would allow flattening fn calls by default
-* [ ] ;
-* [x] comments
-* [x] # operators overloaded (python comments for example)
+* [x] ; solved as seq parser
+* [ ] comments
+* [ ] # operators overloaded (python comments for example)
+* [ ] all extension tests
 * [x] infinite unaries? -+-+a
 * [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
   . Lisp tree doesn't make difference between unary/binary operator.
@@ -91,12 +92,27 @@
 * [x] Bench
 * [ ] unary word
 * [ ] Demo
-* [ ] Optimizations
+* [x] Optimizations
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
-  - preparate jsep - remove noise, flatten, lispify
-  - try handling unaries in advance
+  - [x] preparate jsep - [x] remove noise, [x] flatten, [x] lispify
+    + fastest 10 times than justin
+    + size is only 300 bytes more
+    + supports errors better
+    * [x] make generic extensions as subscript
+    * [x] fold gobbling groups with gobbling arguments/properties
+    * [x] make simpler identifiers consumption
+    * [x] fix subscript tests for jsep stripped
+    * [x] ~~simplify eval: no need for first arg cases, just op or fn~~ decided to have long evals
+      + no flattening: makes precedence more clear, ops reduce-less: in js there's still binary ops
+        - can be hard to organize right-assoc operators like **
+        - long calls allow easier manual evals, frisk-compatible, fns still require args, enables screenshots
+  - ~~try handling unaries in advance~~ direct parser solves that
     ? turn . operator to transform
       ? a.b(c.d).e.f
-  - dislex version (operators split) was faster than now.
+  . dislex version (operators split) was faster than now.
   - seems many redundant checks come from operator call at the time when we just consume a token
   . it is meaningful to track perf tests from the beginning of development?
+* [ ] Passing array literals is a problem
+  - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
+  ? Maybe we should prohibit evaluate exports to simplify internal logic?
+* [ ] calltree nodes could stash static values (as in HTM)

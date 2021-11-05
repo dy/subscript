@@ -5,10 +5,10 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* Enables easy operators overloading
+* It's fast ([~10 times faster than eval](#performance))
+* Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
-* It is SLOW  (see performance)
 
 ```js
 import subscript from 'subscript.js'
@@ -36,7 +36,7 @@ fn({a:{b:1}, c:x=>x*2, d:3}) // 5
 
 ## Lispy tree
 
-It compiles code to lispy calltree (\~[frisk](https://npmjs.com/frisk)). Why?
+It compiles code to lispy calltree (compatible to [frisk](https://npmjs.com/frisk)). Why?
 
 + minimal possible AST overhead
 + clear operators precedence
@@ -66,7 +66,7 @@ import {quotes, comments, parse} from 'subscript.js'
 quotes["'"] = "'"
 comments["//"] = "\n"
 
-parse(`'a' + 'b' // concat`) // ['+', "'a'", "'b'"]
+parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 ```
 
 ## Operators
@@ -118,7 +118,7 @@ TODO: postfix unary operators are not yet supported.
 
 ## Transforms
 
-Transform rules are applied to raw parsed operator groups, eg.:
+Transform rules are applied to raw parsed calltree groups, eg.:
 
 * Flatten calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
 * Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
@@ -140,6 +140,7 @@ parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 parse('a ? b') // ['?', 'a', 'b']
 parse('a : b') // [':', 'a', 'b']
 ```
+
 
 ## Justin
 
@@ -272,15 +273,15 @@ These are custom DSL operators snippets for your inspiration:
 
 ## Performance
 
-Parser is slower than anything else and needs optimization.
+Subscript shows fastest known performance within other evaluators:
 
 ```
-new Function: 321.511962890625 ms
-justin: 562.35791015625 ms
-expr-eval: 140.34423828125 ms
-expression-eval: 87.680908203125 ms
-jexl: 92.960205078125 ms
-string-math: 106.323974609375 ms
+expr-eval: 105.385986328125 ms
+jsep: 71.583251953125 ms
+subscript: 34.6259765625 ms
+jexl: 88.382080078125 ms
+string-math: 107.573974609375 ms
+new Function: 354.0400390625 ms
 ```
 
 ## See also

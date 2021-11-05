@@ -1,35 +1,54 @@
-export const unary =
-{
+const isDigit = c => c >= 48 && c <= 57, // 0...9,
+  isIdentifierStart = c => (c >= 65 && c <= 90) || // A...Z
+      (c >= 97 && c <= 122) || // a...z
+      (c == 36 || c == 95) || // $, _,
+      c >= 192, // any non-ASCII
+  isIdentifierPart = c => isIdentifierStart(c) || isDigit(c),
+  isSpace = c => c <= 32,
+  isNotQuote = c => !quotes[String.fromCharCode(c)],
+
+  oper = (op, ops=binary, f, res, i) => { for (i=ops.length;i--;) if (res=ops[i][op]) return f?res:i+1 }, // get precedence
+  isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])), // is calltree node
+
+  unlist = l => l.length<2?l[0]:l,
+  nil = Symbol.for('nil'),
+
+  Err = e => {throw new Error(e)}
+
+export const literals = {
+  true: true,
+  false: false,
+  null: null
+},
+
+blocks = {'(':')','[':']'},
+quotes = {'"':'"'},
+comments = {},
+
+unary = [{ // prefix
   '!':a=>!a,
   '+':a=>+a,
   '-':a=>-a,
   '++':a=>++a,
   '--':a=>--a
-},
-operators = [
+}, { // postfix
+}],
+
+// binaries take multiple args because
+// + that allows shortcuts
+// + that's lisp/frisk compatible
+// + that allows simpler manual evaluator calls
+// + functions anyways take multiple arguments
+// parser still generates binary groups - it's safer and clearer
+binary = [
+  {'||':(...a)=>a.some(Boolean)},
+  {'&&':(...a)=>a.every(Boolean)},
+  {'|':(a,b)=>a|b},
+  {'^':(a,b)=>a^b},
+  {'&':(a,b)=>a&b},
   {
-    '(':(...a)=>a(...args),
-    '[':(...a)=>a.reduce((a,b)=>a?a[b]:a),
-    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a)
-  },
-  unary,
-  // {
-  //   '++':a=>a++,
-  //   '--':a=>a--
-  // },
-  {
-    '%':(...a)=>a.reduce((a,b)=>a%b),
-    '/':(...a)=>a.reduce((a,b)=>a/b),
-    '*':(...a)=>a.reduce((a,b)=>a*b),
-  },
-  {
-    '+':(...a)=>a.reduce((a,b)=>a+b),
-    '-':(...a)=>a.reduce((a,b)=>a-b),
-  },
-  {
-    '>>>':(a,b)=>a>>>b,
-    '>>':(a,b)=>a>>b,
-    '<<':(a,b)=>a<<b,
+    '!=':(a,b)=>a!=b,
+    '==':(a,b)=>a==b,
   },
   {
     '>=':(a,b)=>a>=b,
@@ -38,99 +57,158 @@ operators = [
     '<':(a,b)=>a<b,
   },
   {
-    '!=':(a,b)=>a!=b,
-    '==':(a,b)=>a==b,
+    '>>>':(a,b)=>a>>>b,
+    '>>':(a,b)=>a>>b,
+    '<<':(a,b)=>a<<b,
   },
-  {'&':(a,b)=>a&b},
-  {'^':(a,b)=>a^b},
-  {'|':(a,b)=>a|b},
-  {'&&':(...a)=>a.every(Boolean)},
-  {'||':(...a)=>a.some(Boolean)},
-  {',':(...a)=>a.reduce((a,b)=>(a,b))},
+  {
+    '+':(...a)=>a.reduce((a,b)=>a+b),
+    '-':(...a)=>a.reduce((a,b)=>a-b),
+  },
+  {
+    '%':(...a)=>a.reduce((a,b)=>a%b),
+    '/':(...a)=>a.reduce((a,b)=>a/b),
+    '*':(...a)=>a.reduce((a,b)=>a*b),
+  },
+  {
+    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a)
+  }
 ],
-operator = (s,l,o,i) => {
-  if (!s || typeof s != 'string' || quotes[s[0]]) return
-  for (i=operators.length;i--;) if (o=operators[i][s], o&&l==1?o.length==l:o) return o
-},
-literals = {true:true, false:false, null:null, undefined:undefined},
-blocks = {'(':')','[':']'},
-quotes = {'"':'"'},
-comments = {},
+
 transforms = {
+  // Array literal
+  // Object literal
+  // Ternary
   // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
-  '(': s => s.length < 2 ? s[1] : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
-  '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
+  '(': s => s.length < 3 ? s[1] : s // : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
+  // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
-transform = (n, t) => (t = isnode(n)&&transforms[n[0]], t?t(n):n),
+transform = (n, t) => (t = isCmd(n)&&transforms[n[0]], t?t(n):n),
 
-isnode = a=>Array.isArray(a)&&a.length&&a[0],
-space = ' \r\n\t',
 
-// code → calltree
-parse = (s, i=0) => {
-  const tokenize = (end, buf='', n, op, c, c2, c3, to, cur=[]) => {
-    const commit = op => {
-      if (buf!=='') cur.push(n ? parseFloat(buf) : buf in literals ? literals[buf] : buf)
-      if (op) cur.push(op)
-      n=buf=c=''
+parse = (expr, index=0, len=expr.length) => {
+  const char = () => expr.charAt(index),
+  code = () => expr.charCodeAt(index),
+  err = message => Err(message + ' at character ' + index),
+
+  // skip index until condition matches
+  skip = (f, c=code()) => { while (index < len && f(c)) c=expr.charCodeAt(++index); return index },
+
+  // skip index, returning skipped part
+  gobble = f => expr.slice(index, skip(f)),
+
+  gobbleSequence = (end) => {
+    let list = [], c;
+    while (index < len && (c=char()) !== end) {
+      if (c === ';' || c === ',') index++; // ignore separators
+      else list.push(gobbleExpression()), skip(isSpace)
     }
-    for (; i<=s.length; buf+=c) {
-      c = s[i++], c2=c+s[i], c3=c2+s[i+1]
-      if (n && (c=='e'||c=='E')) c+=s[i++]
-      else if (space.includes(c)) commit()
-      else if (to=comments[c3]||comments[c2]||comments[c]) commit(),skip(s,to)
-      else if (to=quotes[c3]||quotes[c2]||quotes[c]) buf=c+s.slice(i,skip(s,to)),commit()
-      else if (to=blocks[op=c2]||blocks[op=c]) commit(op), cur.push(tokenize(to))
-      else if (!buf && c>='0' && c<='9' || c=='.' && s[i]>='0' && s[i]<='9') n=1
-      else if (c==end) return commit(), group(cur)
-      else if (
-        (operator(op=c3)||operator(op=c2)||operator(op=c[0]))
-        &&(op.toLowerCase()==op.toUpperCase() || !buf&&space.includes(s[i])) // word op
-      )
-        i+=op.length-1,commit(op)
-    }
+    if (end) index++
+
+    return list;
   },
-  skip = (s,tok,n)=>(i= (i=s.indexOf(tok,i),i)<0 ? s.length : i+tok.length),
 
-  // group into calltree nodes by precedence
-  group = (s) => {
-    if (!s.length) return undefined
+  gobbleOp = (ops=binary, op, l=3) => {
+    skip(isSpace);
+    while (!oper(op=expr.substr(index, l--),ops)) if (!l) return
+    index+=op.length
+    return op
+  },
 
-    let prec, i, gi, a,b,x, f
+  // `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
+  gobbleExpression = () => {
+    let node, op, prec, stack, op_info, left, right, i, curOp;
 
-    const commit=() => ~gi && (s[gi]=transform(s[gi]), gi=-1)
+    if (nil==(left = gobbleToken())) return;
+    if (!(op = gobbleOp())) return left;
+    if (nil==(right = gobbleToken())) err("Expected expression after " + op);
 
-    for (prec of operators) {
-      for (gi=-1,i=1;i<s.length;) {
-        a=s[i-2],x=s[i-1],b=s[i], f = typeof x === 'string' && prec[x]
-        if (f && !operator(b) && i>1&&!operator(a)) { // binary: a+b
-          if (prec[x].length==1) commit(), i++ // skip non-binary op
-          else if (gi==i-2 && a[0]==x) a.push(b), s.splice(i-1,2) // ,[+,a,b],+,c → ,[+,a,b]
-          else commit(), s.splice(gi=i-2,3,[x,s[gi],b]) // ,a,+,b, → ,[+,a,b],
-        }
-        else if (f && !operator(b)) { // unary prefix: +b, -+b
-          s.splice(gi=i-1,2,[x,b]) // _,-,b → _,[-,b]
-          i-- // (shift left to consume prefix unary or binary)
-        }
-        // TODO: detect postfix unary
-        else commit(),i++
+    // Otherwise, start a stack to properly place the binary operations in their precedence structure
+    stack = [left, [ op, oper(op)||0 ], right];
+
+    // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
+    // Stripped from jsep, not much mind given optimizing, but good enough
+    while ((curOp = gobbleOp()) && (prec = oper(curOp))) {
+      // Reduce: make a binary expression from the three topmost entries.
+      while ((stack.length > 2) && stack[stack.length-2][1] >= prec) {
+        right = stack.pop(), op = stack.pop()[0], left = stack.pop();
+        stack.push([op, left, right]); // BINARY_EXP
       }
-      commit() // last binary can be hanging
+      if (nil==(node = gobbleToken())) err("Expected expression after " + curOp);
+      stack.push([curOp, prec], node);
     }
 
-    return s.length>1?s:s[0]
+    i = stack.length - 1, node = stack[i];
+    while (i > 1) { node = [stack[i-1][0], stack[i-2], node], i-=2 } // BINARY_EXP
+
+    return node;
+  },
+
+  // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
+  gobbleToken = () => {
+    let cc, c, op, node;
+    skip(isSpace);
+
+    cc = code(), c = char()
+
+    // `.` can start off a numeric literal
+    if (isDigit(cc) || c === '.') node = new Number(gobbleNumber());
+    else if (!isNotQuote(cc)) index++, node = new String(gobble(isNotQuote)), index++
+    else if (blocks[c]) index++, node = transform([c, ...gobbleSequence(blocks[c])])
+    else if (isIdentifierStart(cc)) node = (node = gobble(isIdentifierPart)) in literals ? literals[node] : node
+    else if (op = gobbleOp(unary)) return nil==(node = gobbleToken()) ? err('missing unaryOp argument') : [op, node];
+    else return nil
+
+    // a.b[c](d)
+    // FIXME: that's heuristic of more generic something, like transform
+    // FIXME: optimize condition
+    while (skip(isSpace), c=char(), c === '.' || c === '[' || c === '(') {
+      index++, skip(isSpace)
+      if (c === '[') (node = ['.',node]).push(unlist(gobbleSequence(']'))) // MEMBER_EXP
+      else if (c === '(') node = [node, ...gobbleSequence(')')] // CALL_EXP
+      else if (c === '.') (node = ['.',node]).push(gobble(isIdentifierPart)) // MEMBER_EXP
+    }
+
+    return node;
+  },
+
+  // `12`, `3.4`, `.5`
+  gobbleNumber = () => {
+    let number = '', c = char();
+
+    number += gobble(isDigit)
+    if (char() === '.') number += expr.charAt(index++) + gobble(isDigit) // .1
+
+    c = char();
+    if (c === 'e' || c === 'E') { // exponent marker
+      number += c, index++
+      c = char();
+      if (c === '+' || c === '-') number += c, index++; // exponent sign
+      number += gobble(isDigit)
+    }
+
+    return number //  LITERAL
   }
 
-  return tokenize()
+  return unlist(gobbleSequence())
 },
 
 // calltree → result
-evaluate = (s, ctx={},x) => isnode(s)
-  ? (x=isnode(s[0]) ? evaluate(s[0], ctx) : typeof s[0]==='string' ? ctx[s[0]]||operator(s[0],s.length-1) : s[0],x)
-    (...s.slice(1).map(a=>evaluate(a,ctx)))
-  : typeof s == 'string'
-  ? quotes[s[0]] ? s.slice(1,-1) : ctx[s]
-  : s
+evaluate = (s, ctx={}, c, args, p) => {
+  if (isCmd(s)) {
+    if ((c=s[0])=='.') return oper(c,binary,true)(evaluate(s[1], ctx),...s.slice(2))
+
+    c = isCmd(c) ? evaluate(c, ctx)
+        : (c in ctx) ? ctx[c]
+        : oper(c, s.length<3?unary:binary, true) || c
+
+    return c.call(...s.map(a=>evaluate(a,ctx)))
+  }
+
+  if (s && typeof s === 'string') return quotes[s[0]] ? s.slice(1,-1) : ctx[s]
+
+  return s
+}
 
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
