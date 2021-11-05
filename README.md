@@ -66,7 +66,7 @@ import {quotes, comments, parse} from 'subscript.js'
 quotes["'"] = "'"
 comments["//"] = "\n"
 
-parse(`'a' + 'b' // concat`) // ['+', "'a'", "'b'"]
+parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 ```
 
 ## Operators
