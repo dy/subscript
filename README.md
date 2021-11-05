@@ -73,7 +73,7 @@ parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 
 Default operators include common operators for the listed languages in the following precedence:
 
-* `. ( [`
+* `.`
 * `! + - ++ --` unary
 * `* / %`
 * `+ -`
@@ -85,16 +85,15 @@ Default operators include common operators for the listed languages in the follo
 * `|`
 * `&&`
 * `||`
-* `,`
 
 All other operators can be extended.
 
 ```js
-import {operators, parse, evaluate} from 'subscript.js'
+import {binary, parse, evaluate} from 'subscript.js'
 
 // add operators to precedence groups
-operators[0]['=>'] = (args, body) => evaluate(body, args)
-operators[5]['|'] = (a,...b) => a.pipe(...b)
+binary[0]['=>'] = (args, body) => evaluate(body, args)
+binary[5]['|'] = (a,...b) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -105,15 +104,14 @@ let tree = parse(`
 evaluate(tree, {Math, map, take, interval, gaussian})
 ```
 
-Operators are defined in by precedence index. _0_ is reserved for groups, _1_ for unary operators.
+Operators are defined in by precedence index.
 
 ```js
-operators[1]['&'] = a=>address(a)   // unary prefix:  &a
-operators[9]['U'] = (a,b)=>a.union(b)  // binary:  a U b
-operators[9]['|'] = (...a)=>a[0].pipe(...)  // also binary: a | b
+unary[0]['&'] = a => address(a)   // unary prefix:  &a
+unary[1]['!'] = a => factorial(a) // TODO: unary postfix: a!
+binary[9]['U'] = (a,b) => a.union(b)  // binary:  a U b
+binary[9]['|'] = (...a) => a[0].pipe(...)  // also binary: a | b
 ```
-
-TODO: postfix unary operators are not yet supported.
 
 
 ## Transforms
