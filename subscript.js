@@ -128,7 +128,7 @@ parse = (expr, index=0, len=expr.length) => {
 
     // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
     // Stripped from jsep, not much mind given optimizing, but good enough
-    while ((curOp = gobbleOp()) && (prec = oper(curOp))) {
+    while ((curOp = gobbleOp()) && (prec = oper(curOp))) { // FIXME: duplicate oper call
       // Reduce: make a binary expression from the three topmost entries.
       while ((stack.length > 2) && stack[stack.length-2][1] >= prec) {
         right = stack.pop(), op = stack.pop()[0], left = stack.pop();
@@ -159,8 +159,11 @@ parse = (expr, index=0, len=expr.length) => {
     else if (op = gobbleOp(unary)) return nil==(node = gobbleToken()) ? err('missing unaryOp argument') : [op, node];
     else return nil
 
-    // a.b[c](d)
     // FIXME: that's heuristic of more generic something, like transform
+    // what if gobbleToken would gobble group also, so that a . b ( c ) . d would be parsed as binary expression
+    // a , . , b , ( , [c] , . , d and handled by same algorithm?
+    // that would allow merging gobbleToken with gobbleSequence
+    // a.b[c](d)
     // FIXME: optimize condition
     while (skip(isSpace), c=char(), c === '.' || c === '[' || c === '(') {
       index++, skip(isSpace)

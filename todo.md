@@ -116,3 +116,6 @@
   - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
   ? Maybe we should prohibit evaluate exports to simplify internal logic?
 * [ ] calltree nodes could stash static values (as in HTM)
+* [ ] Minifications
+  * [ ] ( [ . can be folded to operators, can they?...
+  * [ ] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
