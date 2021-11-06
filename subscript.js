@@ -112,11 +112,11 @@ parse = (expr, index=0, len=expr.length) => {
     return list;
   },
 
-  gobbleOp = (ops=binary, op, l=3) => {
+  gobbleOp = (ops=binary, op, l=3, prec) => {
     skip(isSpace);
-    while (!oper(op=expr.substr(index, l--),ops)) if (!l) return
+    while (!(prec=oper(op=expr.substr(index, l--),ops))) if (!l) return
     if (!blocks[op]) index+=op.length // if op is a ( b - step back to let right token parse group
-    return op
+    return [op, prec]
   },
 
   // `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
@@ -128,18 +128,18 @@ parse = (expr, index=0, len=expr.length) => {
     if (nil==(right = gobbleToken())) err("Expected expression after " + op);
 
     // Otherwise, start a stack to properly place the binary operations in their precedence structure
-    stack = [left, [ op, oper(op)||0 ], right];
+    stack = [left, op, right];
 
     // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
     // Stripped from jsep, not much mind given optimizing, but good enough
-    while ((curOp = gobbleOp()) && (prec = oper(curOp))) { // FIXME: duplicate oper call (return op info in gobbleOp)
+    while (curOp = gobbleOp()) { // FIXME: duplicate oper call (return op info in gobbleOp)
       // Reduce: make a binary expression from the three topmost entries.
-      while (stack.length > 2 && stack[stack.length-2][1] >= prec) {
-        right = stack.pop(), op = stack.pop()[0], left = stack.pop();
-        stack.push([op, left, right]); // BINARY_EXP
+      while (stack.length > 2 && stack[stack.length-2][1] >= curOp[1]) {
+        right = stack.pop(), op = stack.pop(), left = stack.pop();
+        stack.push([op[0], left, right]); // BINARY_EXP
       }
       if (nil==(node = gobbleToken())) err("Expected expression after " + curOp);
-      stack.push([curOp, prec], node);
+      stack.push(curOp, node);
     }
 
     i = stack.length - 1, node = stack[i];
