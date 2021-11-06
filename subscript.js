@@ -40,6 +40,7 @@ unary = [{ // prefix
 // + that allows simpler manual evaluator calls
 // + functions anyways take multiple arguments
 // parser still generates binary groups - it's safer and clearer
+// FIXME: invert precedence order, possibly make unary part of that precedence order
 binary = [
   {'||':(...a)=>a.some(Boolean)},
   {'&&':(...a)=>a.every(Boolean)},
@@ -71,7 +72,9 @@ binary = [
     '*':(...a)=>a.reduce((a,b)=>a*b),
   },
   {
-    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a)
+    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
+    '(':(a,args)=>a(...args),
+    '[':(a,args)=>a[args.pop()]
   }
 ],
 
@@ -87,6 +90,7 @@ transform = (n, t) => (t = isCmd(n)&&transforms[n[0]], t?t(n):n),
 
 
 parse = (expr, index=0, len=expr.length) => {
+  let  x= 0
   const char = () => expr.charAt(index),
   code = () => expr.charCodeAt(index),
   err = message => Err(message + ' at character ' + index),
@@ -111,7 +115,7 @@ parse = (expr, index=0, len=expr.length) => {
   gobbleOp = (ops=binary, op, l=3) => {
     skip(isSpace);
     while (!oper(op=expr.substr(index, l--),ops)) if (!l) return
-    index+=op.length
+    if (!blocks[op]) index+=op.length // if op is a ( b - step back to let right token parse group
     return op
   },
 
@@ -128,9 +132,9 @@ parse = (expr, index=0, len=expr.length) => {
 
     // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
     // Stripped from jsep, not much mind given optimizing, but good enough
-    while ((curOp = gobbleOp()) && (prec = oper(curOp))) { // FIXME: duplicate oper call
+    while ((curOp = gobbleOp()) && (prec = oper(curOp))) { // FIXME: duplicate oper call (return op info in gobbleOp)
       // Reduce: make a binary expression from the three topmost entries.
-      while ((stack.length > 2) && stack[stack.length-2][1] >= prec) {
+      while (stack.length > 2 && stack[stack.length-2][1] >= prec) {
         right = stack.pop(), op = stack.pop()[0], left = stack.pop();
         stack.push([op, left, right]); // BINARY_EXP
       }
@@ -145,7 +149,8 @@ parse = (expr, index=0, len=expr.length) => {
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  gobbleToken = () => {
+  gobbleToken = (end) => {
+      if (x++>1e2) err('Whoops')
     let cc, c, op, node;
     skip(isSpace);
 
@@ -154,9 +159,10 @@ parse = (expr, index=0, len=expr.length) => {
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(gobbleNumber());
     else if (!isNotQuote(cc)) index++, node = new String(gobble(isNotQuote)), index++
-    else if (blocks[c]) index++, node = transform([c, ...gobbleSequence(blocks[c])])
+    // TODO: these are groups or fn args
+    else if (blocks[c]) index++, node = gobbleSequence(blocks[c])
     else if (isIdentifierStart(cc)) node = (node = gobble(isIdentifierPart)) in literals ? literals[node] : node
-    else if (op = gobbleOp(unary)) return nil==(node = gobbleToken()) ? err('missing unaryOp argument') : [op, node];
+    // else if (op = gobbleOp(unary)) return nil==(node = gobbleToken()) ? err('missing unaryOp argument') : [op, node];
     else return nil
 
     // FIXME: that's heuristic of more generic something, like transform
@@ -165,12 +171,12 @@ parse = (expr, index=0, len=expr.length) => {
     // that would allow merging gobbleToken with gobbleSequence
     // a.b[c](d)
     // FIXME: optimize condition
-    while (skip(isSpace), c=char(), c === '.' || c === '[' || c === '(') {
-      index++, skip(isSpace)
-      if (c === '[') (node = ['.',node]).push(unlist(gobbleSequence(']'))) // MEMBER_EXP
-      else if (c === '(') node = [node, ...gobbleSequence(')')] // CALL_EXP
-      else if (c === '.') (node = ['.',node]).push(gobble(isIdentifierPart)) // MEMBER_EXP
-    }
+    // while (skip(isSpace), c=char(), c === '.' || c === '[' || c === '(') {
+    //   index++, skip(isSpace)
+    //   if (c === '[') (node = ['.',node]).push(unlist(gobbleSequence(']'))) // MEMBER_EXP
+    //   else if (c === '(') node = [node, ...gobbleSequence(')')] // CALL_EXP
+    //   else if (c === '.') (node = ['.',node]).push(gobble(isIdentifierPart)) // MEMBER_EXP
+    // }
 
     return node;
   },
