@@ -7,7 +7,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isSpace = c => c <= 32,
   isNotQuote = c => !quotes[String.fromCharCode(c)],
 
-  oper = (op, ops=binary, f, res, i) => { for (i=ops.length;i--;) if (res=ops[i][op]) return f?res:i+1 }, // get precedence
+  oper = (op, ops=binary, f, res, i) => { for (i=0;i<ops.length;) if (res=ops[i++][op]) return f?res:i }, // get precedence
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])), // is calltree node
 
   unlist = l => l.length<2?l[0]:l,
@@ -38,22 +38,27 @@ unary = [{ // prefix
 }, { // postfix
 }],
 
-// binaries take multiple args because
-// + that allows shortcuts
-// + that's lisp/frisk compatible
-// + that allows simpler manual evaluator calls
-// + functions anyways take multiple arguments
+// multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
 // parser still generates binary groups - it's safer and clearer
-// FIXME: invert precedence order, possibly make unary part of that precedence order
 binary = [
-  {'||':(...a)=>a.some(Boolean)},
-  {'&&':(...a)=>a.every(Boolean)},
-  {'|':(a,b)=>a|b},
-  {'^':(a,b)=>a^b},
-  {'&':(a,b)=>a&b},
   {
-    '!=':(a,b)=>a!=b,
-    '==':(a,b)=>a==b,
+    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
+    '(':(a,args)=>a(...args),
+    '[':(a,args)=>a[args.pop()]
+  },
+  {
+    '%':(...a)=>a.reduce((a,b)=>a%b),
+    '/':(...a)=>a.reduce((a,b)=>a/b),
+    '*':(...a)=>a.reduce((a,b)=>a*b),
+  },
+  {
+    '+':(...a)=>a.reduce((a,b)=>a+b),
+    '-':(...a)=>a.reduce((a,b)=>a-b),
+  },
+  {
+    '>>>':(a,b)=>a>>>b,
+    '>>':(a,b)=>a>>b,
+    '<<':(a,b)=>a<<b,
   },
   {
     '>=':(a,b)=>a>=b,
@@ -62,24 +67,14 @@ binary = [
     '<':(a,b)=>a<b,
   },
   {
-    '>>>':(a,b)=>a>>>b,
-    '>>':(a,b)=>a>>b,
-    '<<':(a,b)=>a<<b,
+    '!=':(a,b)=>a!=b,
+    '==':(a,b)=>a==b,
   },
-  {
-    '+':(...a)=>a.reduce((a,b)=>a+b),
-    '-':(...a)=>a.reduce((a,b)=>a-b),
-  },
-  {
-    '%':(...a)=>a.reduce((a,b)=>a%b),
-    '/':(...a)=>a.reduce((a,b)=>a/b),
-    '*':(...a)=>a.reduce((a,b)=>a*b),
-  },
-  {
-    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
-    '(':(a,args)=>a(...args),
-    '[':(a,args)=>a[args.pop()]
-  }
+  {'&':(a,b)=>a&b},
+  {'^':(a,b)=>a^b},
+  {'|':(a,b)=>a|b},
+  {'&&':(...a)=>a.every(Boolean)},
+  {'||':(...a)=>a.some(Boolean)},
 ],
 
 transforms = {
@@ -133,7 +128,7 @@ parse = (expr, index=0, len=expr.length) => {
     // Deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
     while (curOp = gobbleOp()) {
       // Reduce: make a binary expression from the three topmost entries.
-      while (stack.length > 2 && stack[stack.length-2][1] >= curOp[1]) {
+      while (stack.length > 2 && stack[stack.length-2][1] <= curOp[1]) {
         right = stack.pop(), op = stack.pop(), left = stack.pop();
         stack.push(tr([op[0], left, right])); // BINARY_EXP
       }
@@ -163,19 +158,6 @@ parse = (expr, index=0, len=expr.length) => {
     else if (isIdentifierStart(cc)) node = (node = gobble(isIdentifierPart)) in literals ? literals[node] : node
     // else if (op = gobbleOp(unary)) return nil==(node = gobbleToken()) ? err('missing unaryOp argument') : [op, node];
     else return nil
-
-    // FIXME: that's heuristic of more generic something, like transform
-    // what if gobbleToken would gobble group also, so that a . b ( c ) . d would be parsed as binary expression
-    // a , . , b , ( , [c] , . , d and handled by same algorithm?
-    // that would allow merging gobbleToken with gobbleSequence
-    // a.b[c](d)
-    // FIXME: optimize condition
-    // while (skip(isSpace), c=char(), c === '.' || c === '[' || c === '(') {
-    //   index++, skip(isSpace)
-    //   if (c === '[') (node = ['.',node]).push(unlist(gobbleSequence(']'))) // MEMBER_EXP
-    //   else if (c === '(') node = [node, ...gobbleSequence(')')] // CALL_EXP
-    //   else if (c === '.') (node = ['.',node]).push(gobble(isIdentifierPart)) // MEMBER_EXP
-    // }
 
     return node;
   },

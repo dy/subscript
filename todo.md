@@ -105,7 +105,7 @@
     * [x] ~~simplify eval: no need for first arg cases, just op or fn~~ decided to have long evals
       + no flattening: makes precedence more clear, ops reduce-less: in js there's still binary ops
         - can be hard to organize right-assoc operators like **
-        - long calls allow easier manual evals, frisk-compatible, fns still require args, enables screenshots
+        → long calls (multiple args) allow easier manual evals, frisk-compatible, fns still require args, enables shortcuts
   - ~~try handling unaries in advance~~ direct parser solves that
     ? turn . operator to transform
       ? a.b(c.d).e.f
@@ -115,7 +115,8 @@
 * [ ] Passing array literals is a problem
   - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
   ? Maybe we should prohibit evaluate exports to simplify internal logic?
+  → transform keeping raw literal or turn into constructors
 * [ ] calltree nodes could stash static values (as in HTM)
 * [ ] Minifications
-  * [ ] ( [ . can be folded to operators, can they?...
+  * [x] ( [ . can be folded to operators, can they?...
   * [ ] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
