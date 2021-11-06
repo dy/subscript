@@ -13,6 +13,8 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   unlist = l => l.length<2?l[0]:l,
   nil = Symbol.for('nil'),
 
+  Node = (node, t) => (t = isCmd(node)&&transforms[node[0]], t?t(node):node), // create new node by applying transforms
+
   Err = e => {throw new Error(e)}
 
 export const literals = {
@@ -82,11 +84,10 @@ transforms = {
   // Array literal
   // Object literal
   // Ternary
-  // [(, a] → a, [(,a,''] → [a], [(,a,[',',b,c],d] → [[a,b,c],d]
-  '(': s => s.length < 3 ? s[1] : s // : s.slice(1).reduce((a,b)=>[a].concat(!b?[]:b[0]==','?b.slice(1):[b])),
+  // [(,a,args] → [a,...args]
+  '(': n => [n[1], ...n[2]]
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
-transform = (n, t) => (t = isCmd(n)&&transforms[n[0]], t?t(n):n),
 
 
 parse = (expr, index=0, len=expr.length) => {
@@ -130,20 +131,19 @@ parse = (expr, index=0, len=expr.length) => {
     // Otherwise, start a stack to properly place the binary operations in their precedence structure
     stack = [left, op, right];
 
-    // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
-    // Stripped from jsep, not much mind given optimizing, but good enough
+    // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
     while (curOp = gobbleOp()) { // FIXME: duplicate oper call (return op info in gobbleOp)
       // Reduce: make a binary expression from the three topmost entries.
       while (stack.length > 2 && stack[stack.length-2][1] >= curOp[1]) {
         right = stack.pop(), op = stack.pop(), left = stack.pop();
-        stack.push([op[0], left, right]); // BINARY_EXP
+        stack.push(Node([op[0], left, right])); // BINARY_EXP
       }
       if (nil==(node = gobbleToken())) err("Expected expression after " + curOp);
       stack.push(curOp, node);
     }
 
     i = stack.length - 1, node = stack[i];
-    while (i > 1) { node = [stack[i-1][0], stack[i-2], node], i-=2 } // BINARY_EXP
+    while (i > 1) { node = Node([stack[i-1][0], stack[i-2], node]), i-=2 } // BINARY_EXP
 
     return node;
   },
