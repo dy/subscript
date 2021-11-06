@@ -7,16 +7,22 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isSpace = c => c <= 32,
   isNotQuote = c => !quotes[String.fromCharCode(c)],
 
-  oper = (op, ops=binary, f, res, i) => { for (i=0;i<ops.length;) if (res=ops[i++][op]) return f?res:i }, // get precedence
-  isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])), // is calltree node
+  // get precedence
+  oper = (op, ops=binary, f, res, i) => { for (i=0;i<ops.length;) if (res=ops[i++][op]) return f?res:i },
 
-  unlist = l => l.length<2?l[0]:l,
+  // is calltree node
+  isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
+
+  // indicates "nothing gobbled", since undefined means 'undefined' gobbled
   nil = Symbol.for('nil'),
 
-  // apply transforms
-  Node = (op, a, b, t, n) => (n = [op, unlist(a), unlist(b)], t = transforms[op])?t(n):n,
+  // if single argument - return it
+  unlist = l => l.length<2?l[0]:l,
 
-  // throw error
+  // create calltree node from opInfo, a, b with transforms
+  Node = (op, a, b, t, n) => (n = [op[0], unlist(a), unlist(b)], t = transforms[op[0]])?t(n):n,
+
+  // unblocked throw error
   err = e => {throw new Error(e)}
 
 export const literals = {
@@ -29,13 +35,12 @@ blocks = {'(':')','[':']'},
 quotes = {'"':'"'},
 comments = {},
 
-unary = [{ // prefix
+unary = [{},{ // prefix
   '!':a=>!a,
   '+':a=>+a,
   '-':a=>-a,
   '++':a=>++a,
   '--':a=>--a
-}, { // postfix
 }],
 
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
@@ -45,8 +50,7 @@ binary = [
     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
     '(':(a,args)=>a(...args),
     '[':(a,args)=>a[args.pop()]
-  },
-  unary,
+  },{},
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -96,6 +100,7 @@ parse = (expr, index=0, len=expr.length) => {
   // skip index, returning skipped part
   gobble = f => expr.slice(index, skip(f)),
 
+  // FIXME: is that possible to make comma a part of expression?
   gobbleSequence = (end) => {
     let list = [], c;
     while (index < len && (c=char()) !== end) {
@@ -121,18 +126,22 @@ parse = (expr, index=0, len=expr.length) => {
     // if (left==nil) return
 
     // Deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
-    while (curOp = gobbleOp()) {
+    // FIXME: if left==nil - we're at unary scope
+    // detect precedence of unary op, not binary
+    while (curOp = gobbleOp(left==nil?unary:binary)) {
+      // NOTE: we can do gobblePrecedence for consuming same-precedence expressions faster & flat to a single group
       // Reduce: make a binary expression from the three topmost entries.
       while (stack.length > 2 && curOp[1] >= stack[stack.length-2][1]) {
         right = stack.pop(), op = stack.pop(), left = stack.pop();
-        stack.push(Node(op[0], left, right)); // BINARY_EXP
+        stack.push(Node(op, left, right)); // BINARY_EXP
       }
-      if (nil==(node = gobbleToken())) err(`Expected expression after ${curOp[0]} at ${index}`);
-      stack.push(curOp, node);
+      right = gobbleToken()
+      // if (left==nil && nil==right) err(`Expected expression after ${curOp[0]} at ${index}`);
+      stack.push(curOp, left=right);
     }
 
     i = stack.length - 1, node = stack[i];
-    while (i > 1) { node = Node(stack[i-1][0], stack[i-2], node), i-=2 } // BINARY_EXP
+    while (i > 1) { node = Node(stack[i-1], stack[i-2], node), i-=2 } // BINARY_EXP
 
     return node;
   },
