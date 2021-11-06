@@ -13,9 +13,11 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   unlist = l => l.length<2?l[0]:l,
   nil = Symbol.for('nil'),
 
-  Node = (node, t) => (t = isCmd(node)&&transforms[node[0]], t?t(node):node), // create new node by applying transforms
+  // create new node by applying transforms
+  Node = (node, t) => (t = isCmd(node)&&transforms[node[0]], t?t(node):node),
 
-  Err = e => {throw new Error(e)}
+  // throw error
+  err = e => {throw new Error(e)}
 
 export const literals = {
   true: true,
@@ -94,7 +96,6 @@ parse = (expr, index=0, len=expr.length) => {
   let  x= 0
   const char = () => expr.charAt(index),
   code = () => expr.charCodeAt(index),
-  err = message => Err(message + ' at character ' + index),
 
   // skip index until condition matches
   skip = (f, c=code()) => { while (index < len && f(c)) c=expr.charCodeAt(++index); return index },
@@ -126,7 +127,7 @@ parse = (expr, index=0, len=expr.length) => {
 
     if (nil==(left = gobbleToken())) return;
     if (!(op = gobbleOp())) return left;
-    if (nil==(right = gobbleToken())) err("Expected expression after " + op);
+    if (nil==(right = gobbleToken())) err(`Expected expression after ${op[0]} at ${index}`);
 
     // Otherwise, start a stack to properly place the binary operations in their precedence structure
     stack = [left, op, right];
@@ -138,7 +139,7 @@ parse = (expr, index=0, len=expr.length) => {
         right = stack.pop(), op = stack.pop(), left = stack.pop();
         stack.push(Node([op[0], left, right])); // BINARY_EXP
       }
-      if (nil==(node = gobbleToken())) err("Expected expression after " + curOp);
+      if (nil==(node = gobbleToken())) err(`Expected expression after ${curOp[0]} at ${index}`);
       stack.push(curOp, node);
     }
 
