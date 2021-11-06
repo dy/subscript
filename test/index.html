@@ -2,17 +2,18 @@
   import test, {is, any} from '../lib/test.js'
   import subscript, {parse, evaluate, quotes, binary, blocks, literals, transforms} from '../subscript.js'
 
-  test('jsep strip', t => {
-    any(parse('a.b.c(d)'), [['.', ['.','a','b'],'c'],'d'], [['.','a','b','c'],'d'])
+  test.only('jsep strip', t => {
+    is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
+    is(parse('a.b.c(d).e'), ['.',[['.', ['.','a','b'],'c'],'d'],'e'])
     is(parse(`+-+1+-!1`), ['+', ['+',['-',['+',1]]],   ['-',['!',1]]])
-    quotes["'"]="'"
-    is(parse(`"abcd" + 'efgh'`), ['+','abcd','efgh'])
-    is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
-    is(parse(`a.b (  ccc. d, , -+1.0 ) . e`), ['.',[['.', 'a', 'b'], ['.', 'ccc', 'd'], null, ['-',['+',1]]], 'e'])
-    is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ['-',['+',['/',['*',['+', 'a', 2],3],2],['*', 'b', 2]],1])
-    is(parse('a()()()'),[[['a']]])
-    is(parse('a(b)(c)'),[['a', 'b'],'c'])
-    any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
+    // quotes["'"]="'"
+    // is(parse(`"abcd" + 'efgh'`), ['+','abcd','efgh'])
+    // is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
+    // is(parse(`a.b (  ccc. d, , -+1.0 ) . e`), ['.',[['.', 'a', 'b'], ['.', 'ccc', 'd'], null, ['-',['+',1]]], 'e'])
+    // is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ['-',['+',['/',['*',['+', 'a', 2],3],2],['*', 'b', 2]],1])
+    // is(parse('a()()()'),[[['a']]])
+    // is(parse('a(b)(c)'),[['a', 'b'],'c'])
+    // any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
   })
 
   test('readme', t => {
@@ -25,7 +26,7 @@
     is(evaluate(['+', ['*', 'min', 60], new String('sec')], {min: 5}), "300sec")
   })
 
-  test('parse: basic', t => {
+  test.only('parse: basic', t => {
     is(parse('0 + 1 + 2.0'), ['+', ['+', 0, 1], 2])
     is(parse('0 + (1 + 2)'), ['+', 0, ['+', 1, 2]])
     is(parse('-2 - 2'), ['-', ['-', 2], 2])

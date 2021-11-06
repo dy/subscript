@@ -14,7 +14,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   nil = Symbol.for('nil'),
 
   // apply transforms
-  tr = (node, t) => (t = isCmd(node)&&transforms[node[0]], t?t(node):node),
+  Node = (op, a, b, t, n) => (n = [op, unlist(a), unlist(b)], t = transforms[op])?t(n):n,
 
   // throw error
   err = e => {throw new Error(e)}
@@ -46,6 +46,7 @@ binary = [
     '(':(a,args)=>a(...args),
     '[':(a,args)=>a[args.pop()]
   },
+  unary,
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -117,34 +118,27 @@ parse = (expr, index=0, len=expr.length) => {
   gobbleExpression = () => {
     let node, op, left, right, i, curOp, stack=[left=gobbleToken()];
 
-    if (left==nil) return
-    // if (nil==(left = gobbleToken())) return;
-    // FIXME: these two conditions can be first step of the cycle
-    // if (!(op = gobbleOp())) return left;
-    // if (nil==(right = gobbleToken())) err(`Expected expression after ${op[0]} at ${index}`);
-
-    // Otherwise, start a stack to properly place the binary operations in their precedence structure
-    // stack = [left, op, right];
+    // if (left==nil) return
 
     // Deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
     while (curOp = gobbleOp()) {
       // Reduce: make a binary expression from the three topmost entries.
       while (stack.length > 2 && curOp[1] >= stack[stack.length-2][1]) {
         right = stack.pop(), op = stack.pop(), left = stack.pop();
-        stack.push(tr([op[0], left, right])); // BINARY_EXP
+        stack.push(Node(op[0], left, right)); // BINARY_EXP
       }
       if (nil==(node = gobbleToken())) err(`Expected expression after ${curOp[0]} at ${index}`);
       stack.push(curOp, node);
     }
 
     i = stack.length - 1, node = stack[i];
-    while (i > 1) { node = tr([stack[i-1][0], stack[i-2], node]), i-=2 } // BINARY_EXP
+    while (i > 1) { node = Node(stack[i-1][0], stack[i-2], node), i-=2 } // BINARY_EXP
 
     return node;
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  gobbleToken = (end) => {
+  gobbleToken = () => {
       if (x++>1e2) err('Whoops')
     let cc, c, op, node;
     skip(isSpace);
