@@ -13,8 +13,8 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   unlist = l => l.length<2?l[0]:l,
   nil = Symbol.for('nil'),
 
-  // create new node by applying transforms
-  Node = (node, t) => (t = isCmd(node)&&transforms[node[0]], t?t(node):node),
+  // apply transforms
+  tr = (node, t) => (t = isCmd(node)&&transforms[node[0]], t?t(node):node),
 
   // throw error
   err = e => {throw new Error(e)}
@@ -83,11 +83,8 @@ binary = [
 ],
 
 transforms = {
-  // Array literal
-  // Object literal
-  // Ternary
-  // [(,a,args] → [a,...args]
-  '(': n => [n[1], ...n[2]]
+  '(': n => [n[1], ...n[2]], // [(,a,args] → [a,...args]
+  '[': n => ['.', n[1], n[2][n[2].length-1]] // [(,a,args] → ['.', a, args[-1]]
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
 
@@ -126,25 +123,26 @@ parse = (expr, index=0, len=expr.length) => {
     let node, op, prec, stack, op_info, left, right, i, curOp;
 
     if (nil==(left = gobbleToken())) return;
+    // FIXME: these two conditions can be first step of the cycle
     if (!(op = gobbleOp())) return left;
     if (nil==(right = gobbleToken())) err(`Expected expression after ${op[0]} at ${index}`);
 
     // Otherwise, start a stack to properly place the binary operations in their precedence structure
     stack = [left, op, right];
 
-    // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
-    while (curOp = gobbleOp()) { // FIXME: duplicate oper call (return op info in gobbleOp)
+    // Deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
+    while (curOp = gobbleOp()) {
       // Reduce: make a binary expression from the three topmost entries.
       while (stack.length > 2 && stack[stack.length-2][1] >= curOp[1]) {
         right = stack.pop(), op = stack.pop(), left = stack.pop();
-        stack.push(Node([op[0], left, right])); // BINARY_EXP
+        stack.push(tr([op[0], left, right])); // BINARY_EXP
       }
       if (nil==(node = gobbleToken())) err(`Expected expression after ${curOp[0]} at ${index}`);
       stack.push(curOp, node);
     }
 
     i = stack.length - 1, node = stack[i];
-    while (i > 1) { node = Node([stack[i-1][0], stack[i-2], node]), i-=2 } // BINARY_EXP
+    while (i > 1) { node = tr([stack[i-1][0], stack[i-2], node]), i-=2 } // BINARY_EXP
 
     return node;
   },
