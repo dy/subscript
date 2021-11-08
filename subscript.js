@@ -127,49 +127,8 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     return lastOp = [op, prec]
   },
 
-  // `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
-  consumeExpression = (curOp) => {
-    let node = consumeToken();
-
-    // if (char() == end) index++
-
-    if (!(lastOp=consumeOp(binary))) return node // FIXME: is this closing group? end? or not found unary?
-
-    // + a *
-    while (lastOp && lastOp[1] < curOp[1]) node = [lastOp[0], node, consumeExpression(lastOp)]
-
-    return node
-
-    // if (left==nil) return
-    // if (curOp = consumeOp(left==nil?unary:binary)) stack.push(consumePrecedence(curOp))
-
-
-    // // Deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm) (jsep strip)
-    // // FIXME: if left==nil - we're at unary scope, that's perfectly valid scheme
-    // // we only have to find a way to consume multiple unaries as expression steps
-    // // fold right within this cycle
-    // while (curOp = consumeOp(left==nil?unary:binary)) {
-    //   // NOTE: we can do consumePrecedence for consuming same-precedence expressions faster & flat to a single group
-    //   // Reduce: make a binary expression from the three topmost entries.
-    //   while (stack.length > 2 && curOp[1] >= stack[stack.length-2][1]) {
-    //     right = stack.pop(), op = stack.pop(), left = stack.pop();
-    //     stack.push(Node(op, left, right)); // BINARY_EXP
-    //   }
-    //   right = consumeToken()
-    //   // if (left==nil && nil==right) err(`Expected expression after ${curOp[0]} at ${index}`);
-    //   stack.push(curOp, left=right);
-    // }
-    // console.log(stack)
-
-    // // reduce stack to nodes
-    // i = stack.length - 1, node = stack[i];
-    // while (i > 1) { node = Node(stack[i-1], stack[i-2], node), i-=2 } // BINARY_EXP
-
-    return node;
-  },
-
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeToken = () => {
+  consumeLevel = (curOp) => {
       if (x++>1e2) err('Whoops')
     let cc, c, op, node;
     skip(isSpace);
@@ -184,6 +143,12 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // else if (op = consumeOp(unary)) return nil==(node = consumeToken()) ? err('missing unaryOp argument') : [op, node];
     else return nil
+
+    // if (char() == end) index++
+    if (!(lastOp=consumeOp(binary))) return node // FIXME: is this closing group? end? or not found unary?
+
+    // parse into expression
+    while (lastOp && lastOp[1] < curOp[1]) node = [lastOp[0], node, consumeLevel(lastOp)]
 
     return node;
   },
@@ -206,7 +171,7 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     return number //  LITERAL
   }
 
-  return consumeExpression([',',binary.length])//unlist(consumeSequence())
+  return consumeLevel([',',binary.length])//unlist(consumeSequence())
 },
 
 // calltree → result
