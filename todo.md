@@ -120,3 +120,5 @@
 * [ ] Minifications
   * [x] ( [ . can be folded to operators, can they?...
   * [ ] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
+* [ ] Examples
+  * https://github.com/gajus/liqe
