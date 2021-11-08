@@ -55,6 +55,7 @@ binary = [
     '(':(a,args)=>a(...args),
     '[':(a,args)=>a[args.pop()]
   },{},
+  {'**':true},
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -116,24 +117,26 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     return list;
   },
 
-  nextOp = (ops=binary, op, l=3, prec) => {
+  consumeOp = (ops=binary, op, l=3, prec) => {
     skip(isSpace);
-    while (!(prec=oper(op=expr.substr(index, l--),ops))) if (!l) return lastOp=null
+    while (!(prec=oper(op=expr.substr(index, l--),ops))) if (!l) return lastOp = null
     // if (!blocks[op]) index+=op.length // if op is a ( b - step back to let right token parse group
     index += op.length
     // FIXME: likely we have to turn it into unary sequence here and in node constructor unwrap unary sequence
-    // if (ops==unary) nextOp() // consume all subsequent unaries
-    lastOp = [op, prec]
+    // if (ops==unary) consumeOp() // consume all subsequent unaries
+    return lastOp = [op, prec]
   },
 
   // `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
   consumeExpression = (curOp) => {
     let node = consumeToken();
 
-    nextOp(binary); if (!lastOp) return node // FIXME: is this ever possible? closing group? end? or not found unary?
+    // if (char() == end) index++
+
+    if (!(lastOp=consumeOp(binary))) return node // FIXME: is this closing group? end? or not found unary?
 
     // + a *
-    if (lastOp[1] < curOp[1]) while (lastOp) node = [lastOp[0], node, consumeExpression(lastOp)]
+    while (lastOp && lastOp[1] < curOp[1]) node = [lastOp[0], node, consumeExpression(lastOp)]
 
     return node
 
