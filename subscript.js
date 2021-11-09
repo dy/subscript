@@ -90,7 +90,7 @@ binary = [
 ],
 
 transforms = {
-  '(': n => [n[1], ...n[2]], // [(,a,args] → [a,...args]
+  '(': n => [n[1], ...(n[2]||[])], // [(,a,args] → [a,...args]
   '[': n => ['.', n[1], n[2][n[2].length-1]] // [(,a,args] → ['.', a, args[-1]]
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
@@ -140,13 +140,16 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     // FIXME: +(a+b) - can be consumed as unary ( in fact
-    else if (blocks[c]) index++, node = consumeSequence(blocks[c])
+    // else if (blocks[c]) index++, node = consumeSequence(blocks[c])
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    // else if (op = consumeOp(unary)) return nil==(node = consumeLevel()) ? err('missing unaryOp argument') : [op, node];
-    else return nil
+    else if (consumeOp(unary)) node = tr([lastOp[0], consumeLevel(lastOp)]);
+    else return nil // FIXME: actually mb throw here
 
     if (blocks[curOp[0]] == char()) index++
-    if (!(lastOp=consumeOp(binary))) return node // FIXME: is this closing group? end? or not found unary?
+
+    // lastOp can be consumed by internal (hi-precedence) groups, but can affect outer groups (low-precedence)
+    // like a + b * c ** d | e: pipe here belongs to outer wrapper
+    if (!consumeOp(binary)) return node // FIXME: is this closing group? end? or not found unary?
 
     // parse into expression
     while (lastOp && lastOp[1] < curOp[1]) node = tr([lastOp[0], node, consumeLevel(lastOp)])
