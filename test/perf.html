@@ -38,6 +38,21 @@
   })
 
 
+  test('parse: jsep-strip', async t => {
+    const {default:parse} = await import('../lib/parser/jsep-strip.js');
+    console.time('jsep-strip')
+    for (let i = 0; i < 1e4; i++){
+      let ast = parse(src(i));
+    }
+    console.timeEnd('jsep-strip')
+    console.time('jsep-strip2')
+    for (let i = 0; i < 1e4; i++){
+      let ast = parse(src(i));
+    }
+    console.timeEnd('jsep-strip2')
+  })
+
+
   test.skip('parse: justin', async t => {
     const {default:justin} = await import('../justin.js');
     console.time('justin')
@@ -72,7 +87,7 @@
   })
 
 
-  test.skip('parse: jexl', async t => {
+  test('parse: jexl', async t => {
     const {Jexl} = await import('../lib/parser/jexl.min.js');
     console.time('jexl')
     let jexl = new Jexl
