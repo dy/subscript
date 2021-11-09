@@ -32,7 +32,7 @@ export const literals = {
   null: null
 },
 
-blocks = {'(':')','[':']'},
+groups = {'(':')','[':']'},
 quotes = {'"':'"'},
 comments = {},
 
@@ -55,8 +55,7 @@ binary = [
     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
     '(':(a,args)=>a(...args),
     '[':(a,args)=>a[args.pop()]
-  },{},
-  {'**':true},
+  },{},{},
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -106,53 +105,35 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
   // skip index, returning skipped part
   consume = f => expr.slice(index, skip(f)),
 
-  // FIXME: is that possible to make comma a part of expression?
-  consumeSequence = (end) => {
-    let list = [], c;
-    while (index < len && (c=char()) !== end) {
-      if (c === ';' || c === ',') index++; // ignore separators
-      else list.push(consumeExpression([',', binary.length])), skip(isSpace)
-    }
-    if (end) index++
-
-    return list;
-  },
-
-  consumeOp = (ops=binary, op, l=3, prec) => {
-    skip(isSpace);
-    while (!(prec=oper(op=expr.substr(index, l--),ops))) if (!l) return lastOp = null
-    // if (!blocks[op]) index+=op.length // if op is a ( b - step back to let right token parse group
-    index += op.length
-    // FIXME: likely we have to turn it into unary sequence here and in node constructor unwrap unary sequence
-    // if (ops==unary) consumeOp() // consume all subsequent unaries
-    return lastOp = [op, prec]
+  parseOp = (ops, l=3, op, prec) => {
+    while (!(prec=oper(op=expr.substr(index, l--),ops))) if (!l) return
+    return [op, prec]
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeLevel = (curOp) => {
-      if (x++>1e2) err('Whoops')
-    let cc, c, op, node;
+  consumeGroup = (curOp) => {
+    if (x++>1e2) err('Whoops')
+
     skip(isSpace);
 
-    cc = code(), c = char()
+    let cc = code(), c = char(), node, op
 
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
-    // FIXME: +(a+b) - can be consumed as unary ( in fact
-    // else if (blocks[c]) index++, node = consumeSequence(blocks[c])
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    else if (consumeOp(unary)) node = tr([lastOp[0], consumeLevel(lastOp)]);
-    else return nil // FIXME: actually mb throw here
+    else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)]);
+    else err(`Unknown ${c} at ${index}`)
 
-    if (blocks[curOp[0]] == char()) index++
+    skip(isSpace)
 
-    // lastOp can be consumed by internal (hi-precedence) groups, but can affect outer groups (low-precedence)
-    // like a + b * c ** d | e: pipe here belongs to outer wrapper
-    if (!consumeOp(binary)) return node // FIXME: is this closing group? end? or not found unary?
+    // consume expression
+    while ((op = parseOp(binary)) && op[1] < curOp[1]) index+=op[0].length, node = tr([op[0], node, consumeGroup(op)])
 
-    // parse into expression
-    while (lastOp && lastOp[1] < curOp[1]) node = tr([lastOp[0], node, consumeLevel(lastOp)])
+    skip(isSpace)
+
+    // if we're at end of group-operator, bail out
+    if (groups[curOp[0]] == char()) index++
 
     return node;
   },
@@ -175,7 +156,7 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     return number //  LITERAL
   }
 
-  return consumeLevel([',',binary.length])//unlist(consumeSequence())
+  return consumeGroup([',',binary.length])
 },
 
 // calltree → result
