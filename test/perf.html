@@ -1,10 +1,10 @@
 <script type="module">
   import test, {is} from '../lib/test.js'
 
-  test('perf', async t => {
-    const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
-    const args = {a:3,b:4}
+  const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
+  const args = {a:3,b:4}
 
+  test('parse: expr-eval', async t => {
     const {Parser} = await import('../lib/parser/expr-eval.min.js');
     console.time('expr-eval')
     let eeparser = new Parser();
@@ -20,9 +20,10 @@
       // expr.evaluate(args);
     }
     console.timeEnd('expr-eval2')
+  })
 
 
-
+  test('parse: subscript', async t => {
     const {parse} = await import('../subscript.js');
     console.time('subscript')
     for (let i = 0; i < 1e4; i++){
@@ -34,7 +35,10 @@
       let ast = parse(src(i));
     }
     console.timeEnd('subscript2')
+  })
 
+
+  test('parse: justin', async t => {
     const {default:justin} = await import('../justin.js');
     console.time('justin')
     for (let i = 0; i < 1e4; i++){
@@ -48,8 +52,10 @@
       // f(args)
     }
     console.timeEnd('justin2')
+  })
 
 
+  test('parse: jsep', async t => {
     const jsep = await import('../lib/parser/expression-eval.module.js');
     console.time('jsep')
     for (let i = 0; i < 1e4; i++){
@@ -63,8 +69,10 @@
       // jsep.eval(ast, args)
     }
     console.timeEnd('jsep2')
+  })
 
 
+  test.skip('parse: jexl', async t => {
     const {Jexl} = await import('../lib/parser/jexl.min.js');
     console.time('jexl')
     let jexl = new Jexl
@@ -78,7 +86,9 @@
       jexl.eval(src(i), args)
     }
     console.timeEnd('jexl2')
+  })
 
+  test('parse: string-math', async t => {
     const {default:sm} = await import('../lib/parser/string-math.js');
     console.time('string-math')
     for (let i = 0; i < 1e4; i++){
@@ -90,8 +100,9 @@
       sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
     }
     console.timeEnd('string-math2')
+  })
 
-
+  test.skip('parse: subscript-dislex', async t => {
     const {default:dislex,parse:dparse} = await import('../lib/parser/subscript-dislex.js');
     console.time('dislex')
     for (let i = 0; i < 1e4; i++){
@@ -105,8 +116,10 @@
       // evaluate(tree,args)
     }
     console.timeEnd('dislex2')
+  })
 
 
+  test.skip('parse: subscript-v1', async t => {
     const {default:v1,parse:v1parse} = await import('../lib/parser/subscript.1.0.js');
     console.time('subscript1')
     for (let i = 0; i < 1e4; i++){
@@ -120,8 +133,10 @@
       // evaluate(tree,args)
     }
     console.timeEnd('subscript12')
+  })
 
 
+  test.skip('parse: new Function', async t => {
     console.time('new Function')
     for (let i = 0; i < 1e4; i++){
       let f = new Function('a','b', 'return '+src(i))
@@ -134,7 +149,6 @@
       // f(3, 4)
     }
     console.timeEnd('new Function2')
-
-
   })
+
 </script>
