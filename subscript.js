@@ -13,9 +13,6 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   // is calltree node
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
 
-  // if single argument - return it
-  // unlist = l => l.length<2?l[0]:l,
-
   // apply transform to node
   tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
 
@@ -35,7 +32,6 @@ comments = {},
 unary = [
   {
     '(':a=>a[a.length-1], // +(a+b)
-    '[':a=>[...a] // +[a,b,c...]
   },
   {},
   {
@@ -60,8 +56,8 @@ binary = [
   {},
   {
     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
-    '(':(a,args)=>a(...args),
-    '[':(a,args)=>a[args.pop()]
+    '(':(a,...args)=>a(...args),
+    '[':(a,...args)=>a[args.pop()]
   },
   {},
   {
@@ -99,7 +95,7 @@ binary = [
 transforms = {
   // [(,a,args] → [a,...args]
   '(': n => n.length < 3 ? n[1] :
-    [n[1]].concat(n[2]==='' ? [] : isCmd(n[2])&&n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
+    [n[1]].concat(n[2]==='' ? [] : n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
   '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
   // ',': n => n.filter(),
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'

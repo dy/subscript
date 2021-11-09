@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is, any} from '../lib/test.js'
-  import subscript, {parse, evaluate, quotes, binary, groups, literals, transforms} from '../subscript.js'
+  import subscript, {parse, evaluate, quotes, binary, unary, groups, literals, transforms} from '../subscript.js'
 
   test('jsep strip', t => {
     binary[2]['**']=true
@@ -241,9 +241,10 @@
 
   test('ext: in operator', t => {
     binary[5]['in'] = (a,b)=>a in b
-    transforms['in'] = n => (n[1]=`"${n[1]}"`, n)
+    transforms['in'] = n => (n[1]=`${n[1]}`, n)
 
     is(parse('inc in bin'), ['in', 'inc', 'bin'])
+    is(parse('bin in inc'), ['in', 'bin', 'inc'])
     is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
   })
 
@@ -264,23 +265,19 @@
   })
 
   test('ext: list', t => {
-    binary.unshift({'[':a=>Array(...a)})
-    transforms['['] = s => s.length > 2 ? s
-      : s[1] === undefined
-      ? [Array]
-      // ['[',[',',a,[',',b],c]] → ['[',[',',a,,b,c]]
-      : [Array].concat(isnode(s[1]) ? s[1].slice(1).reduce((a,b)=>a.push(...(isnode(b)&&b[0]==','?(b[0]=undefined,b):[b]))&&a,[])
-      : s[1])
+    unary[0]['['] = binary[0]['['] = (...args) => Array(...args)
+    transforms['['] = n => n.length > 2 ? ['.',n[1],n[2]] :
+      n[1]==='' ? [n[0]] : [n[0], ...(n[1][0]===','?n[1].slice(1).map(x=>x===''?undefined:x):[n[1]])]
 
-    is(parse('[]'),[Array])
-    is(parse('[1]'),[Array,1])
-    is(parse('[1,,2,b]'),[Array,1,undefined,2,'b'])
-    is(parse('[1]+[2]'),['+',[Array,1],[Array,2]])
+    is(parse('[]'),['['])
+    is(parse('[1]'),['[',1])
+    is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
+    is(parse('[1]+[2]'),['+',['[',1],['[',2]])
     is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
   })
 
   test('ext: object', t => {
-    blocks['{']='}'
+    groups['{']='}'
     binary.unshift({'{':a=>Object.fromEntries(a)})
     binary[binary.length-2][':']=(a,b)=>[a,b]
     transforms['{'] = (s,entries) => {
