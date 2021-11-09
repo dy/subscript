@@ -118,7 +118,7 @@ parse = (expr, index=0, len=expr.length, x=0) => {
   consume = is => expr.slice(index, skip(is)),
 
   parseOp = (ops, l=3, op) => {
-    while (!(op=oper(expr.substr(index, l--),ops))) if (!l) return
+    while (l&&!op) op=oper(expr.substr(index, l--),ops)
     return op
   },
 
@@ -132,7 +132,7 @@ parse = (expr, index=0, len=expr.length, x=0) => {
 
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
-    else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
+    else if (quotes[c]) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
     else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
