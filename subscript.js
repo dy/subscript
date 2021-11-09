@@ -17,7 +17,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   nil = Symbol.for('nil'),
 
   // if single argument - return it
-  unlist = l => l.length<2?l[0]:l,
+  // unlist = l => l.length<2?l[0]:l,
 
   // create calltree node from opInfo, a, b with transforms
   // Node = (op, a, b, t, n) => (n = [op[0], unlist(a), unlist(b)], t = transforms[op[0]])?t(n):n,
@@ -37,25 +37,31 @@ quotes = {'"':'"'},
 comments = {},
 
 // prefix
-unary = [{},{
-  '(':a=>a[a.length-1], // +(a+b)
-  '[':a=>[...a] // +[a,b,c...]
-},{
-  '!':a=>!a,
-  '+':a=>+a,
-  '-':a=>-a,
-  '++':a=>++a,
-  '--':a=>--a
-}],
+unary = [
+  {
+    '(':a=>a[a.length-1], // +(a+b)
+    '[':a=>[...a] // +[a,b,c...]
+  },
+  {},
+  {
+    '!':a=>!a,
+    '+':a=>+a,
+    '-':a=>-a,
+    '++':a=>++a,
+    '--':a=>--a
+  }
+],
 
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
 // parser still generates binary groups - it's safer and clearer
 binary = [
+  {},
   {
     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
     '(':(a,args)=>a(...args),
     '[':(a,args)=>a[args.pop()]
-  },{},{},
+  },
+  {},
   {
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
@@ -89,15 +95,15 @@ binary = [
 ],
 
 transforms = {
-  '(': n => [n[1], ...(n[2]||[])], // [(,a,args] → [a,...args]
-  '[': n => ['.', n[1], n[2][n[2].length-1]] // [(,a,args] → ['.', a, args[-1]]
+  '(': n => n.length < 3 ? n[1] : [n[1], n[2]], // [(,a,args] → [a,...args]
+  '[': n => ['.', n[1], n[2][n[2].length-1]], // [(,a,args] → ['.', a, args[-1]]
+  // ',': n => console.log(n)||n,
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
 
 
-parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
-  const char = () => expr.charAt(index),
-  code = () => expr.charCodeAt(index),
+parse = (expr, index=0, len=expr.length, x=0) => {
+  const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
 
   // skip index until condition matches
   skip = (f, c=code()) => { while (index < len && f(c)) c=expr.charCodeAt(++index); return index },
@@ -122,17 +128,17 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)]);
-    else err(`Unknown ${c} at ${index}`)
+    // FIXME: is that possible to merge that into a while loop?
+    else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
+    // else err(`Unknown ${c} at ${index}`)
 
     skip(isSpace)
 
-    // consume expression
-    while ((op = parseOp(binary)) && op[1] < curOp[1]) index+=op[0].length, node = tr([op[0], node, consumeGroup(op)])
+    // consume expression for current precedence or group (highest precedence)
+    while ((op = parseOp(binary)) && (op[1] < curOp[1] || groups[curOp[0]]))
+      index+=op[0].length, node = tr([op[0], node, consumeGroup(op)]), skip(isSpace)
 
-    skip(isSpace)
-
-    // if we're at end of group-operator, bail out
+    // if we're at end of group-operator
     if (groups[curOp[0]] == char()) index++
 
     return node;
