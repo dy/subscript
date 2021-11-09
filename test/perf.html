@@ -7,12 +7,20 @@
 
     const {Parser} = await import('../lib/expr-eval.min.js');
     console.time('expr-eval')
-    const parser = new Parser();
+    let eeparser = new Parser();
     for (let i = 0; i < 1e4; i++){
-      let expr = parser.parse(src(i));
+      let expr = eeparser.parse(src(i));
       expr.evaluate(args);
     }
     console.timeEnd('expr-eval')
+    console.time('expr-eval2')
+    eeparser = new Parser();
+    for (let i = 0; i < 1e4; i++){
+      let expr = eeparser.parse(src(i));
+      expr.evaluate(args);
+    }
+    console.timeEnd('expr-eval2')
+
 
 
     const {parse} = await import('../subscript.js');
@@ -27,13 +35,19 @@
     }
     console.timeEnd('subscript2')
 
-    // const {default:justin} = await import('../justin.js');
-    // console.time('justin')
-    // for (let i = 0; i < 1e4; i++){
-    //   let f = justin(src(i))
-    //   f(args)
-    // }
-    // console.timeEnd('justin')
+    const {default:justin} = await import('../justin.js');
+    console.time('justin')
+    for (let i = 0; i < 1e4; i++){
+      let f = justin(src(i))
+      // f(args)
+    }
+    console.timeEnd('justin')
+    console.time('justin2')
+    for (let i = 0; i < 1e4; i++){
+      let f = justin(src(i))
+      // f(args)
+    }
+    console.timeEnd('justin2')
 
 
     const jsep = await import('../lib/expression-eval.module.js');
@@ -50,6 +64,7 @@
     }
     console.timeEnd('jsep2')
 
+
     const {Jexl} = await import('../lib/jexl.min.js');
     console.time('jexl')
     let jexl = new Jexl
@@ -57,6 +72,12 @@
       jexl.eval(src(i), args)
     }
     console.timeEnd('jexl')
+    console.time('jexl2')
+    jexl = new Jexl
+    for (let i = 0; i < 1e4; i++){
+      jexl.eval(src(i), args)
+    }
+    console.timeEnd('jexl2')
 
     const {default:sm} = await import('../lib/string-math.js');
     console.time('string-math')
@@ -64,6 +85,11 @@
       sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
     }
     console.timeEnd('string-math')
+    console.time('string-math2')
+    for (let i = 0; i < 1e4; i++){
+      sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
+    }
+    console.timeEnd('string-math2')
 
 
     const {default:dislex,parse:dparse} = await import('../lib/dislex.js');
@@ -73,6 +99,12 @@
       // evaluate(tree,args)
     }
     console.timeEnd('dislex')
+    console.time('dislex2')
+    for (let i = 0; i < 1e4; i++){
+      let tree = dparse(src(i))
+      // evaluate(tree,args)
+    }
+    console.timeEnd('dislex2')
 
 
     console.time('new Function')
@@ -81,6 +113,12 @@
       f(3, 4)
     }
     console.timeEnd('new Function')
+    console.time('new Function2')
+    for (let i = 0; i < 1e4; i++){
+      let f = new Function('a','b', 'return '+src(i))
+      f(3, 4)
+    }
+    console.timeEnd('new Function2')
 
 
   })
