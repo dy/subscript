@@ -20,7 +20,8 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   unlist = l => l.length<2?l[0]:l,
 
   // create calltree node from opInfo, a, b with transforms
-  Node = (op, a, b, t, n) => (n = [op[0], unlist(a), unlist(b)], t = transforms[op[0]])?t(n):n,
+  // Node = (op, a, b, t, n) => (n = [op[0], unlist(a), unlist(b)], t = transforms[op[0]])?t(n):n,
+  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
 
   // unblocked throw error
   err = e => {throw new Error(e)}
@@ -141,14 +142,14 @@ parse = (expr, index=0, len=expr.length, lastOp, x=0) => {
     // FIXME: +(a+b) - can be consumed as unary ( in fact
     else if (blocks[c]) index++, node = consumeSequence(blocks[c])
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    // else if (op = consumeOp(unary)) return nil==(node = consumeToken()) ? err('missing unaryOp argument') : [op, node];
+    // else if (op = consumeOp(unary)) return nil==(node = consumeLevel()) ? err('missing unaryOp argument') : [op, node];
     else return nil
 
-    // if (char() == end) index++
+    if (blocks[curOp[0]] == char()) index++
     if (!(lastOp=consumeOp(binary))) return node // FIXME: is this closing group? end? or not found unary?
 
     // parse into expression
-    while (lastOp && lastOp[1] < curOp[1]) node = [lastOp[0], node, consumeLevel(lastOp)]
+    while (lastOp && lastOp[1] < curOp[1]) node = tr([lastOp[0], node, consumeLevel(lastOp)])
 
     return node;
   },
