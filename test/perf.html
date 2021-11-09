@@ -38,7 +38,7 @@
   })
 
 
-  test('parse: justin', async t => {
+  test.skip('parse: justin', async t => {
     const {default:justin} = await import('../justin.js');
     console.time('justin')
     for (let i = 0; i < 1e4; i++){
@@ -136,7 +136,7 @@
   })
 
 
-  test.skip('parse: new Function', async t => {
+  test('parse: new Function', async t => {
     console.time('new Function')
     for (let i = 0; i < 1e4; i++){
       let f = new Function('a','b', 'return '+src(i))

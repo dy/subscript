@@ -14,10 +14,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
 
   // apply transform to node
-  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
-
-  // unblocked throw error
-  err = e => {throw new Error(e)}
+  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
 
 export const literals = {
   true: true,
@@ -102,7 +99,7 @@ transforms = {
 },
 
 
-parse = (expr, index=0, len=expr.length, x=0) => {
+parse = (expr, index=0, len=expr.length) => {
   const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
 
   // skip index until condition matches
@@ -116,8 +113,6 @@ parse = (expr, index=0, len=expr.length, x=0) => {
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
   consumeGroup = (curOp) => {
-    if (x++>1e2) err('Whoops')
-
     skip(isSpace);
 
     let cc = code(), c = char(), op,
@@ -125,11 +120,10 @@ parse = (expr, index=0, len=expr.length, x=0) => {
 
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
-    else if (quotes[c]) index++, node = new String(consume(isNotQuote)), index++
+    else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
     else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
-    // else err(`Unknown ${c} at ${index}`)
 
     skip(isSpace)
 

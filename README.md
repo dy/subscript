@@ -5,7 +5,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* It's fast ([~10 times faster than eval](#performance))
+* It's fast ([see performance](#performance))
 * Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
@@ -274,12 +274,11 @@ These are custom DSL operators snippets for your inspiration:
 Subscript shows fastest known performance within other evaluators:
 
 ```
-expr-eval: 105.385986328125 ms
-jsep: 71.583251953125 ms
-subscript: 34.6259765625 ms
-jexl: 88.382080078125 ms
-string-math: 107.573974609375 ms
-new Function: 354.0400390625 ms
+expr-eval: 86.924072265625 ms
+subscript: 177.585205078125 ms
+jsep: 80.21630859375 ms
+string-math: 112.215087890625 ms
+new Function: 392.10400390625 ms
 ```
 
 ## See also
