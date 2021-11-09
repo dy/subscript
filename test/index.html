@@ -295,9 +295,9 @@
   })
 
   test('ext: justin', async t => {
-    const {parse} = await import('./justin.js')
-
-    is(parse('{x:1, "y":2+2}["x"]'), ['[', {x:1, y: ['+', 2, 2]}, 'x'])
+    const {parse} = await import('../justin.js')
+    is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','y',['**',2,2]]], 'x'])
+    is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
   })
 
 
