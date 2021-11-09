@@ -96,7 +96,7 @@ binary = [
 
 transforms = {
   '(': n => n.length < 3 ? n[1] : [n[1], n[2]], // [(,a,args] → [a,...args]
-  '[': n => ['.', n[1], n[2][n[2].length-1]], // [(,a,args] → ['.', a, args[-1]]
+  '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
   // ',': n => console.log(n)||n,
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
@@ -128,7 +128,7 @@ parse = (expr, index=0, len=expr.length, x=0) => {
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    // FIXME: is that possible to merge that into a while loop?
+    // FIXME: why is it impossible-ish to merge into while loop?
     else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
     // else err(`Unknown ${c} at ${index}`)
 
