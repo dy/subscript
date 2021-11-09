@@ -15,20 +15,40 @@
     console.timeEnd('expr-eval')
 
 
+    const {parse} = await import('../subscript.js');
+    console.time('subscript')
+    for (let i = 0; i < 1e4; i++){
+      let ast = parse(src(i));
+    }
+    console.timeEnd('subscript')
+    console.time('subscript2')
+    for (let i = 0; i < 1e4; i++){
+      let ast = parse(src(i));
+    }
+    console.timeEnd('subscript2')
+
+    // const {default:justin} = await import('../justin.js');
+    // console.time('justin')
+    // for (let i = 0; i < 1e4; i++){
+    //   let f = justin(src(i))
+    //   f(args)
+    // }
+    // console.timeEnd('justin')
+
+
     const jsep = await import('../lib/expression-eval.module.js');
     console.time('jsep')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
-      jsep.eval(ast, args)
+      // jsep.eval(ast, args)
     }
     console.timeEnd('jsep')
-
-    const {parse:jseparse} = await import('../subscript.js');
-    console.time('subscript')
+    console.time('jsep2')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
+      // jsep.eval(ast, args)
     }
-    console.timeEnd('subscript')
+    console.timeEnd('jsep2')
 
     const {Jexl} = await import('../lib/jexl.min.js');
     console.time('jexl')
@@ -45,22 +65,14 @@
     }
     console.timeEnd('string-math')
 
-    // const {default:justin} = await import('./justin.js');
-    // console.time('justin')
-    // for (let i = 0; i < 1e4; i++){
-    //   let f = justin(src(i))
-    //   f(args)
-    // }
-    // console.timeEnd('justin')
 
-
-    // const {default:dislex,parse:dparse} = await import('../lib/dislex.js');
-    // console.time('dislex')
-    // for (let i = 0; i < 1e4; i++){
-    //   let tree = dparse(src(i))
-    //   evaluate(tree,args)
-    // }
-    // console.timeEnd('dislex')
+    const {default:dislex,parse:dparse} = await import('../lib/dislex.js');
+    console.time('dislex')
+    for (let i = 0; i < 1e4; i++){
+      let tree = dparse(src(i))
+      // evaluate(tree,args)
+    }
+    console.timeEnd('dislex')
 
 
     console.time('new Function')
