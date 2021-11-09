@@ -16,6 +16,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   // apply transform to node
   tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
 
+
 export const literals = {
   true: true,
   false: false,
@@ -115,11 +116,12 @@ parse = (expr, index=0, len=expr.length) => {
   consumeGroup = (curOp) => {
     skip(isSpace);
 
-    let cc = code(), c = char(), op,
+    let cc = code(), op,
+        end = groups[curOp[0]],
         node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
-    if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
+    if (isDigit(cc) || char() === '.') node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
@@ -128,7 +130,7 @@ parse = (expr, index=0, len=expr.length) => {
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = parseOp()) && (op[1] < curOp[1] || groups[curOp[0]])) {
+    while ((op = parseOp()) && (op[1] < curOp[1] || end)) {
       index+=op[0].length
       // FIXME: same-group arguments should be collected before applying transform
       isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
@@ -136,14 +138,14 @@ parse = (expr, index=0, len=expr.length) => {
     }
 
     // if we're at end of group-operator
-    if (groups[curOp[0]] == char()) index++
+    if (end == char()) index++
 
     return node;
   },
 
   // `12`, `3.4`, `.5`
   consumeNumber = () => {
-    let number = '', c = char();
+    let number = '', c;
 
     number += consume(isDigit)
     if (char() === '.') number += expr.charAt(index++) + consume(isDigit) // .1
