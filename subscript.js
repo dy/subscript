@@ -13,9 +13,6 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   // is calltree node
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
 
-  // indicates "nothing consumed", since undefined means 'undefined' consumed
-  nil = Symbol.for('nil'),
-
   // if single argument - return it
   // unlist = l => l.length<2?l[0]:l,
 
@@ -101,9 +98,10 @@ binary = [
 
 transforms = {
   // [(,a,args] → [a,...args]
-  '(': n => n.length < 3 ? n[1] : [n[1]].concat(isCmd(n[2]) && n[2][0]==',' ? n[2].slice(1) : [n[2]]),
+  '(': n => n.length < 3 ? n[1] :
+    [n[1]].concat(n[2]==='' ? [] : isCmd(n[2])&&n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
   '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
-  // ',': n => console.log(n)||n,
+  // ',': n => n.filter(),
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
 
@@ -117,10 +115,8 @@ parse = (expr, index=0, len=expr.length, x=0) => {
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
 
-  parseOp = (ops, l=3, op) => {
-    while (l&&!op) op=oper(expr.substr(index, l--),ops)
-    return op
-  },
+  //
+  parseOp = (ops, l=3, op) => { while (l&&!op) op=oper(expr.substr(index, l--),ops); return op },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
   consumeGroup = (curOp) => {
@@ -128,7 +124,8 @@ parse = (expr, index=0, len=expr.length, x=0) => {
 
     skip(isSpace);
 
-    let cc = code(), c = char(), node, op
+    let cc = code(), c = char(), op,
+        node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
@@ -143,6 +140,7 @@ parse = (expr, index=0, len=expr.length, x=0) => {
     // consume expression for current precedence or group (== highest precedence)
     while ((op = parseOp()) && (op[1] < curOp[1] || groups[curOp[0]])) {
       index+=op[0].length
+      // FIXME: same-group arguments should be collected before applying transform
       isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
       skip(isSpace)
     }
@@ -179,6 +177,7 @@ evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
     // FIXME: move to transforms
     // if ((c=s[0])=='.') return oper(c,binary)[2](evaluate(s[1], ctx),...s.slice(2))
+    c = s[0]
 
     if (typeof c === 'string') op = oper(c, s.length<3?unary:binary)
     c = op ? op[2] : evaluate(c, ctx)
