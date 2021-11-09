@@ -19,8 +19,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   // if single argument - return it
   // unlist = l => l.length<2?l[0]:l,
 
-  // create calltree node from opInfo, a, b with transforms
-  // Node = (op, a, b, t, n) => (n = [op[0], unlist(a), unlist(b)], t = transforms[op[0]])?t(n):n,
+  // apply transform to node
   tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
 
   // unblocked throw error
@@ -101,7 +100,8 @@ binary = [
 ],
 
 transforms = {
-  '(': n => n.length < 3 ? n[1] : [n[1], n[2]], // [(,a,args] → [a,...args]
+  // [(,a,args] → [a,...args]
+  '(': n => n.length < 3 ? n[1] : [n[1]].concat(isCmd(n[2]) && n[2][0]==',' ? n[2].slice(1) : [n[2]]),
   '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
   // ',': n => console.log(n)||n,
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
@@ -142,7 +142,9 @@ parse = (expr, index=0, len=expr.length, x=0) => {
 
     // consume expression for current precedence or group (== highest precedence)
     while ((op = parseOp()) && (op[1] < curOp[1] || groups[curOp[0]])) {
-      index+=op[0].length, node = tr([op[0], node, consumeGroup(op)]), skip(isSpace)
+      index+=op[0].length
+      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
+      skip(isSpace)
     }
 
     // if we're at end of group-operator
