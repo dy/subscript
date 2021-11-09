@@ -50,7 +50,7 @@
     3. `Array → [,'a','b','c']`, call → ['a', 'b', 'c']
       - undefined(a,b,c)
     4. `Array → ['a', 'b', 'c'], call → ['a', 'b', 'c'] if 'a' is a function` (frisk)
-    5. ✔ Prohibit arrays/JSONs?
+    5. Prohibit arrays/JSONs?
       + not cross-compatible - every lang has its own way defining them, but property access is same
       + expected to pass via context
       . not really good idea to mix lisp with arrays/objects
@@ -60,15 +60,16 @@
           + same as in mdn https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
           - lengthy
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
-* [x] word operators
-* [x] ~~subscript`exp`~~ no need for tpl tag unless fields have special meaning
-* [x] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
+* [ ] word operators
+* [x] ~~subscript`exp`~~
+  → no need for tpl tag unless fields have special meaning
+* [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
   * [x] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
     + [?,a], [?a,[:b,c]], [in,[,a,b],c], [to,a,b], [to,a,[by,b,c]], [if,a,[else,b,c]]
     . for that we would need to create transform groups
     + that would enable Justin extension
     + that would allow flattening fn calls by default
-* [x] ; solved as seq parser
+* [ ] ;
 * [ ] comments
 * [ ] # operators overloaded (python comments for example)
 * [ ] all extension tests
@@ -89,6 +90,7 @@
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
 * [x] extension: Justin (+JSONs)
 * [ ] string interpolation ` ${} 1 ${} `
+  ? make transforms for strings?
 * [x] Bench
 * [ ] unary word
 * [ ] Demo
@@ -120,5 +122,18 @@
 * [ ] Minifications
   * [x] ( [ . can be folded to operators, can they?...
   * [ ] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
+    * [ ] 2a can be parsed as `2*a`, but likely with '' operator
+      + that also allows defining either units or coefficients (units can be done as postfix too)
+    * [ ] Maybe create separate parse literal function
+      + can detect booleans, null, undefined
+      + can detect any other types of literals, like versions, units, hashes, urls, regexes etc
 * [ ] Examples
   * https://github.com/gajus/liqe
+* [ ] Flatten binaries: [, [, a b] c] → [, a b c]
+  + many exceptions lead to flat form (args, sequence, ternaries)
+  + it matches reducers
+  + formulas are still meaningful this way
+* [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
+* [ ] Transforms for literals.
+  + We need to interpolate strings `a${}b`
+  + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0

@@ -7,8 +7,8 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isSpace = c => c <= 32,
   isNotQuote = c => !quotes[String.fromCharCode(c)],
 
-  // get precedence
-  oper = (op, ops=binary, f, res, p) => { for (p=0;p<ops.length;) if (res=ops[p++][op]) return f?res:p },
+  // get operator info: [operator, precedence, reducer]
+  oper = (op, ops=binary, f, p) => { for (p=0;p<ops.length;) if (f=ops[p++][op]) return [op,p,f] },
 
   // is calltree node
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
@@ -36,7 +36,6 @@ groups = {'(':')','[':']'},
 quotes = {'"':'"'},
 comments = {},
 
-// prefix
 unary = [
   {
     '(':a=>a[a.length-1], // +(a+b)
@@ -49,6 +48,13 @@ unary = [
     '-':a=>-a,
     '++':a=>++a,
     '--':a=>--a
+  }
+],
+
+postfix = [
+  {
+    '++':a=>a++,
+    '--':b=>b--
   }
 ],
 
@@ -106,14 +112,14 @@ parse = (expr, index=0, len=expr.length, x=0) => {
   const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
 
   // skip index until condition matches
-  skip = (f, c=code()) => { while (index < len && f(c)) c=expr.charCodeAt(++index); return index },
+  skip = is => { while (index < len && is(code())) index++; return index },
 
-  // skip index, returning skipped part
-  consume = f => expr.slice(index, skip(f)),
+  // skip index, return skipped part
+  consume = is => expr.slice(index, skip(is)),
 
-  parseOp = (ops, l=3, op, prec) => {
-    while (!(prec=oper(op=expr.substr(index, l--),ops))) if (!l) return
-    return [op, prec]
+  parseOp = (ops, l=3, op) => {
+    while (!(op=oper(expr.substr(index, l--),ops))) if (!l) return
+    return op
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
@@ -128,15 +134,16 @@ parse = (expr, index=0, len=expr.length, x=0) => {
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    // FIXME: why is it impossible-ish to merge into while loop?
+    // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
     else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
     // else err(`Unknown ${c} at ${index}`)
 
     skip(isSpace)
 
-    // consume expression for current precedence or group (highest precedence)
-    while ((op = parseOp(binary)) && (op[1] < curOp[1] || groups[curOp[0]]))
+    // consume expression for current precedence or group (== highest precedence)
+    while ((op = parseOp()) && (op[1] < curOp[1] || groups[curOp[0]])) {
       index+=op[0].length, node = tr([op[0], node, consumeGroup(op)]), skip(isSpace)
+    }
 
     // if we're at end of group-operator
     if (groups[curOp[0]] == char()) index++
@@ -162,17 +169,17 @@ parse = (expr, index=0, len=expr.length, x=0) => {
     return number //  LITERAL
   }
 
-  return consumeGroup([',',binary.length])
+  return consumeGroup(oper(','))
 },
 
 // calltree → result
 evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
     // FIXME: move to transforms
-    if ((c=s[0])=='.') return oper(c,binary,true)(evaluate(s[1], ctx),...s.slice(2))
+    // if ((c=s[0])=='.') return oper(c,binary)[2](evaluate(s[1], ctx),...s.slice(2))
 
-    if (typeof c === 'string') op = oper(c, s.length<3?unary:binary, true)
-    c = op || evaluate(c, ctx)
+    if (typeof c === 'string') op = oper(c, s.length<3?unary:binary)
+    c = op ? op[2] : evaluate(c, ctx)
     if (typeof c !== 'function') return c
 
     return c.call(...s.map(a=>evaluate(a,ctx)))
