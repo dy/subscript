@@ -109,12 +109,23 @@
       + no flattening: makes precedence more clear, ops reduce-less: in js there's still binary ops
         - can be hard to organize right-assoc operators like **
         → long calls (multiple args) allow easier manual evals, frisk-compatible, fns still require args, enables shortcuts
-  - ~~try handling unaries in advance~~ direct parser solves that
+  - ~~try handling unaries in advance~~ → direct parser solves that
     ? turn . operator to transform
       ? a.b(c.d).e.f
   . dislex version (operators split) was faster than now.
   - seems many redundant checks come from operator call at the time when we just consume a token
-  . it is meaningful to track perf tests from the beginning of development?
+  . it is meaningful to track perf tests from the beginning of development
+* Main slowdown reasons:
+  1. Operators lookup - it must be precedence dict
+  2. Unknown 20% lost at recursive algorithm: jsep-strip is faster:
+    . it has direct sequences
+    . direct props/calls
+    . single-token expression shortcuts
+    . flattened recursion.
+    ↑ Something of that makes thing faster, although less pure nor extensible (like, no {} literals).
+    . Logically, gobbleExpression doesn't check every token to belong to end token, so maybe there's just less checks?
+    . So the offer is: 20% performance, no [(. operators at price of +200-300bytes and hardcoded braces, also we don't know price of evaluator.
+      → seems that we're going to have slower perf.
 * [ ] Passing array literals is a problem
   - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
   ? Maybe we should prohibit evaluate exports to simplify internal logic?

@@ -12,26 +12,92 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   // apply transform to node
   tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
 
-export const unary= {
-  '-': 1,
-  '!': 1,
-  '~': 1,
-  '+': 1,
-  '(': 1,
-  '++': 1,
-  '--': 1
-},
+  // get operator info: [operator, precedence, closing, reducer]
+  // opinfo = (op, ops=binary, f, prec=0) => { while (prec<ops.length) if (f=ops[prec++][op]) return [op,prec,groups[op],f] }
 
-binary= {
-  ',': 11,
-  '||': 10, '&&': 9, '|': 8, '^': 7, '&': 6,
-  '==': 5, '!=': 5, '===': 5, '!==': 5,
-  '<': 4, '>': 4, '<=': 4, '>=': 4,
-  '<<': 3, '>>': 3, '>>>': 3,
-  '+': 2, '-': 2,
-  '*': 1, '/': 1, '%': 1,
-  '[':.1, '.':.1, '(':.1
-},
+export const unary = [
+  {
+    '(':a=>a[a.length-1], // +(a+b)
+  },
+  {},
+  {
+    '!':a=>!a,
+    '+':a=>+a,
+    '-':a=>-a,
+    '++':a=>++a,
+    '--':a=>--a
+  }
+],
+
+postfix = [
+  {
+    '++':a=>a++,
+    '--':b=>b--
+  }
+],
+
+// multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
+// parser still generates binary groups - it's safer and clearer
+binary = [
+  {},
+  {
+    '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
+    '(':(a,...args)=>a(...args),
+    '[':(a,...args)=>a[args.pop()]
+  },
+  {},
+  {
+    '%':(...a)=>a.reduce((a,b)=>a%b),
+    '/':(...a)=>a.reduce((a,b)=>a/b),
+    '*':(...a)=>a.reduce((a,b)=>a*b),
+  },
+  {
+    '+':(...a)=>a.reduce((a,b)=>a+b),
+    '-':(...a)=>a.reduce((a,b)=>a-b),
+  },
+  {
+    '>>>':(a,b)=>a>>>b,
+    '>>':(a,b)=>a>>b,
+    '<<':(a,b)=>a<<b,
+  },
+  {
+    '>=':(a,b)=>a>=b,
+    '>':(a,b)=>a>b,
+    '<=':(a,b)=>a<=b,
+    '<':(a,b)=>a<b,
+  },
+  {
+    '!=':(a,b)=>a!=b,
+    '==':(a,b)=>a==b,
+  },
+  {'&':(a,b)=>a&b},
+  {'^':(a,b)=>a^b},
+  {'|':(a,b)=>a|b},
+  {'&&':(...a)=>a.every(Boolean)},
+  {'||':(...a)=>a.some(Boolean)},
+  {',':true}
+],
+
+// export const unary= {
+//   '-': 1,
+//   // '!': 1,
+//   // '~': 1,
+//   '+': 1,
+//   '(': 1,
+//   // '++': 1,
+//   // '--': 1
+// },
+
+// binary= {
+//   ',': 11,
+//   // '||': 10, '&&': 9, '|': 8, '^': 7, '&': 6,
+//   '==': 5, '!=': 5, '===': 5, '!==': 5,
+//   '<': 4, '>': 4, '<=': 4, '>=': 4,
+//   '<<': 3, '>>': 3, '>>>': 3,
+//   '+': 2, '-': 2,
+//   '*': 1, '/': 1, '%': 1,
+//   '[':.1, '.':.1, '(':.1
+// },
 
 literals= {
   'true': true,
@@ -53,20 +119,19 @@ transforms = {
 groups = {'[':']','(':')'}
 
 
-export const parse = (expr, index=0, len=expr.length, lastOp) => {
-  const char = () => expr.charAt(index),
-  code = () => expr.charCodeAt(index),
+export const parse = (expr, index=0) => {
+  const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
   err = (message) => { throw new Error(message + ' at character ' + index) },
 
   // skip index until condition matches
-  skip = is => { while (index < len && is(code())) index++; return index },
+  skip = is => { while (index < expr.length && is(code())) index++; return index },
 
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
 
-  consumeOp = (ops=binary, op, prec, l=3) => {
-    // skip(isSpace);
-    while (l) if (prec=ops[op=expr.substr(index, l--)]) return [op, prec, groups[op]]
+  consumeOp = (ops=binary, info, l=3) => {
+    // while (l) if (info=opinfo(expr.substr(index, l--), ops)) return info
+    while (l) if (prec=ops[op=expr.substr(index, l--)]) return [op, prec, groups[op]||'']
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
@@ -86,14 +151,14 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp()) && (op[1] < curOp[1] || curOp[2])) {
+    while ((op = consumeOp()) && (curOp[2] || op[1] < curOp[1])) {
       index+=op[0].length
       // FIXME: same-group arguments should be collected before applying transform
-      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
+      Array.isArray(node) && node.length > 2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
       skip(isSpace)
     }
 
-    // if we're at end of group-operator
+    // end of group-operator
     if (curOp[2]) char() !== curOp[2] ? err('Unexpected ' + char()) : index++
 
     return node;
@@ -118,14 +183,14 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     return number //  LITERAL
   }
 
-  return consumeGroup([',',11])
+  return consumeGroup([',',11,''])
 },
 
 // calltree → result
 evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
     c = s[0]
-    if (typeof c === 'string') op = oper(c, s.length<3?unary:binary)
+    if (typeof c === 'string') op = opinfo(c, s.length<3?unary:binary)
     c = op ? op[2] : evaluate(c, ctx)
     if (typeof c !== 'function') return c
 
@@ -142,70 +207,3 @@ evaluate = (s, ctx={}, c, op) => {
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
 
-
-
-//   // get operator info: [operator, precedence, reducer]
-//   oper = (op, ops=binary, f, p) => { for (p=0;p<ops.length;) if (f=ops[p++][op]) return [op,p,f] },
-
-// unary = [
-//   {
-//     '(':a=>a[a.length-1], // +(a+b)
-//   },
-//   {},
-//   {
-//     '!':a=>!a,
-//     '+':a=>+a,
-//     '-':a=>-a,
-//     '++':a=>++a,
-//     '--':a=>--a
-//   }
-// ],
-
-// postfix = [
-//   {
-//     '++':a=>a++,
-//     '--':b=>b--
-//   }
-// ],
-
-// // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
-// // parser still generates binary groups - it's safer and clearer
-// binary = [
-//   {},
-//   {
-//     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
-//     '(':(a,...args)=>a(...args),
-//     '[':(a,...args)=>a[args.pop()]
-//   },
-//   {},
-//   {
-//     '%':(...a)=>a.reduce((a,b)=>a%b),
-//     '/':(...a)=>a.reduce((a,b)=>a/b),
-//     '*':(...a)=>a.reduce((a,b)=>a*b),
-//   },
-//   {
-//     '+':(...a)=>a.reduce((a,b)=>a+b),
-//     '-':(...a)=>a.reduce((a,b)=>a-b),
-//   },
-//   {
-//     '>>>':(a,b)=>a>>>b,
-//     '>>':(a,b)=>a>>b,
-//     '<<':(a,b)=>a<<b,
-//   },
-//   {
-//     '>=':(a,b)=>a>=b,
-//     '>':(a,b)=>a>b,
-//     '<=':(a,b)=>a<=b,
-//     '<':(a,b)=>a<b,
-//   },
-//   {
-//     '!=':(a,b)=>a!=b,
-//     '==':(a,b)=>a==b,
-//   },
-//   {'&':(a,b)=>a&b},
-//   {'^':(a,b)=>a^b},
-//   {'|':(a,b)=>a|b},
-//   {'&&':(...a)=>a.every(Boolean)},
-//   {'||':(...a)=>a.some(Boolean)},
-//   {',':true}
-// ],
