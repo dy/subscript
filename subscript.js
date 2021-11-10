@@ -6,14 +6,11 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isIdentifierPart = c => isIdentifierStart(c) || isDigit(c),
   isSpace = c => c <= 32,
 
-  PERIOD= 46, // '.'
-  COMMA=  44, // ','
-  OPAREN= 40, // (
-  CPAREN= 41, // )
-  OBRACK= 91, // [
-  CBRACK= 93, // ]
-  SEMCOL= 59, // ;
-  COLON=  58 // :
+  // is calltree node
+  isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
+
+  // apply transform to node
+  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
 
 export const unary= {
   '-': 1,
@@ -88,13 +85,13 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     else if (quotes.indexOf(c)>=0) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (prec = consumeOp(unary)) index += lastOp.length, node = [lastOp, consumeGroup(prec, groups[lastOp])]
+    else if (prec = consumeOp(unary)) index += lastOp.length, node = tr([lastOp, consumeGroup(prec, groups[lastOp])])
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
     while ((prec = consumeOp()) && (end || prec < level)) {
       index += lastOp.length
-      node = [lastOp, node, consumeGroup(prec, groups[lastOp])]
+      node = tr([lastOp, node, consumeGroup(prec, groups[lastOp])])
       skip(isSpace)
     }
 
@@ -150,23 +147,6 @@ export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s
 
 //   // get operator info: [operator, precedence, reducer]
 //   oper = (op, ops=binary, f, p) => { for (p=0;p<ops.length;) if (f=ops[p++][op]) return [op,p,f] },
-
-//   // is calltree node
-//   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
-
-//   // apply transform to node
-//   tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
-
-
-// export const literals = {
-//   true: true,
-//   false: false,
-//   null: null
-// },
-
-// groups = {'(':')','[':']'},
-// quotes = {'"':'"'},
-// comments = {},
 
 // unary = [
 //   {
@@ -230,13 +210,3 @@ export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s
 //   {'||':(...a)=>a.some(Boolean)},
 //   {',':true}
 // ],
-
-// transforms = {
-//   // [(,a,args] → [a,...args]
-//   '(': n => n.length < 3 ? n[1] :
-//     [n[1]].concat(n[2]==='' ? [] : n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
-//   '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
-//   // ',': n => n.filter(),
-//   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
-// },
-
