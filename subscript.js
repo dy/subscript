@@ -128,7 +128,7 @@ export const parse = (expr, index=0, len=expr.length) => {
     cc = code(), c = char()
 
     // Char code 46 is a dot `.` which can start off a numeric literal
-    if (isDigit(cc) || cc === PERIOD) node = consumeNumber();
+    if (isDigit(cc) || cc === PERIOD) node = new Number(consumeNumber());
     else if (quotes.indexOf(c)>=0) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
     else if (cc === OBRACK) index++, node = [Array].concat(consumeSequence(CBRACK)||[]) // array
     else if (cc === OPAREN) index++, node = consumeSequence(CPAREN) // group
@@ -150,17 +150,12 @@ export const parse = (expr, index=0, len=expr.length) => {
     return node;
   },
 
-  /**
-   * Parse simple numeric literals: `12`, `3.4`, `.5`. Do this by using a string to
-   * keep track of everything in the numeric literal and then calling `parseFloat` on that string
-   * @returns {jsep.Literal}
-   */
+  // `12`, `3.4`, `.5`
   consumeNumber = () => {
-    let number = '', c, cc;
+    let number = '', c;
 
     number += consume(isDigit)
-
-    if (code() === PERIOD) number += expr.charAt(index++) + consume(isDigit) // .1
+    if (char() === '.') number += expr.charAt(index++) + consume(isDigit) // .1
 
     c = char();
     if (c === 'e' || c === 'E') { // exponent marker
@@ -170,7 +165,7 @@ export const parse = (expr, index=0, len=expr.length) => {
       number += consume(isDigit)
     }
 
-    return new Number(number) //  LITERAL
+    return number //  LITERAL
   }
 
   return consumeSequence();
