@@ -1,11 +1,10 @@
-const isDecimalDigit = c => c >= 48 && c <= 57, // 0...9,
+const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isIdentifierStart = c => (c >= 65 && c <= 90) || // A...Z
       (c >= 97 && c <= 122) || // a...z
-      (c >= 192 && !binary[String.fromCharCode(c)]) || // any non-ASCII that is not an operator
-      (c==='36'||c==95), // $, _,
-  isIdentifierPart = c => isIdentifierStart(c) || isDecimalDigit(c),
+      (c == 36 || c == 95) || // $, _,
+      c >= 192, // any non-ASCII
+  isIdentifierPart = c => isIdentifierStart(c) || isDigit(c),
   isSpace = c => c <= 32,
-  isNotQuote = c => c != 39 && c != 34,
 
   PERIOD= 46, // '.'
   COMMA=  44, // ','
@@ -39,7 +38,7 @@ literals= {
 },
 
 groups = {'(':')','[':']'},
-quotes = {'"':'"'},
+quotes = '"',
 comments = {},
 
 transforms = {
@@ -58,7 +57,7 @@ export const parse = (expr, index=0, len=expr.length) => {
   err = (message) => { throw new Error(message + ' at character ' + index) },
 
   // skip index until condition matches
-  skip = (f, c=code()) => { while (index < len && f(c)) c=expr.charCodeAt(++index); return index },
+  skip = (f) => { while (index < len && f(code())) index++; return index },
 
   // skip index, returning skipped part
   gobble = f => expr.slice(index, skip(f)),
@@ -129,8 +128,8 @@ export const parse = (expr, index=0, len=expr.length) => {
     cc = code(), c = char()
 
     // Char code 46 is a dot `.` which can start off a numeric literal
-    if (isDecimalDigit(cc) || cc === PERIOD) node = gobbleNumber();
-    else if (!isNotQuote(cc)) index++, node = new String(gobble(isNotQuote)), index++ // string literal
+    if (isDigit(cc) || cc === PERIOD) node = gobbleNumber();
+    else if (quotes.indexOf(c)>=0) index++, node = new String(gobble(c=>c!==cc)), index++ // string literal
     else if (cc === OBRACK) index++, node = [Array].concat(gobbleSequence(CBRACK)||[]) // array
     else if (cc === OPAREN) index++, node = gobbleSequence(CPAREN) // group
     else if (isIdentifierStart(cc)) node = gobble(isIdentifierPart); // LITERAL, TODO: map literal after
@@ -159,16 +158,16 @@ export const parse = (expr, index=0, len=expr.length) => {
   gobbleNumber = () => {
     let number = '', c, cc;
 
-    number += gobble(isDecimalDigit)
+    number += gobble(isDigit)
 
-    if (code() === PERIOD) number += expr.charAt(index++) + gobble(isDecimalDigit) // .1
+    if (code() === PERIOD) number += expr.charAt(index++) + gobble(isDigit) // .1
 
     c = char();
     if (c === 'e' || c === 'E') { // exponent marker
       number += c, index++
       c = char();
       if (c === '+' || c === '-') number += c, index++; // exponent sign
-      number += gobble(isDecimalDigit)
+      number += gobble(isDigit)
     }
 
     return new Number(number) //  LITERAL
