@@ -60,7 +60,8 @@
           + same as in mdn https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
           - lengthy
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
-* [ ] word operators
+* [ ] take over jsep-strip performance
+* [x] word operators
 * [x] ~~subscript`exp`~~
   → no need for tpl tag unless fields have special meaning
 * [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
