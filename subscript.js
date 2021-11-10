@@ -17,10 +17,13 @@ export const unary= {
   '!': 1,
   '~': 1,
   '+': 1,
-  '(': .1
+  '(': .1,
+  '++': 1,
+  '--': 1
 },
 
 binary= {
+  ',': 11,
   '||': 10, '&&': 9, '|': 8, '^': 7, '&': 6,
   '==': 5, '!=': 5, '===': 5, '!==': 5,
   '<': 4, '>': 4, '<=': 4, '>=': 4,
@@ -61,37 +64,35 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
 
-  parseOp = (ops, l=2, op) => {
-    while (l&&!op) op=oper(expr.substr(index, l--),ops);
-    return op
-  },
-
-  consumeOp = (ops=binary, prec, l=2) => {
+  consumeOp = (ops=binary, op, prec, l=3) => {
     // skip(isSpace);
-    while (!(prec=ops[lastOp=expr.substr(index, l--)])) {if (!l) return}
+    while (!(prec=ops[op=expr.substr(index, l--)])) if (!l) return
     // index+=op.length
-    return prec
+    return [op, prec]
   },
 
-  consumeGroup = (level, end) => {
+  // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
+  consumeGroup = (curOp) => {
     skip(isSpace);
 
-    let cc = code(), c = char(), op, prec,
+    let cc = code(), c =char(), op,
+        end = groups[curOp[0]],
         node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
-    if (isDigit(cc) || char() === '.') node = new Number(consumeNumber());
-    // else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
+    if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (quotes.indexOf(c)>=0) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (prec = consumeOp(unary)) index += lastOp.length, node = tr([lastOp, consumeGroup(prec, groups[lastOp])])
+    else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
+
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((prec = consumeOp()) && (end || prec < level)) {
-      index += lastOp.length
-      node = tr([lastOp, node, consumeGroup(prec, groups[lastOp])])
+    while ((op = consumeOp()) && (op[1] < curOp[1] || end)) {
+      index+=op[0].length
+      // FIXME: same-group arguments should be collected before applying transform
+      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
       skip(isSpace)
     }
 
@@ -119,7 +120,7 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     return number //  LITERAL
   }
 
-  return consumeGroup(11)
+  return consumeGroup([',',11])
 },
 
 // calltree → result

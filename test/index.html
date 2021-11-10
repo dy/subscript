@@ -2,7 +2,7 @@
   import test, {is, any} from '../lib/test.js'
   import subscript, {parse, evaluate, quotes, binary, unary, groups, literals, transforms} from '../subscript.js'
 
-  test.only('jsep strip', t => {
+  test('jsep strip', t => {
     is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
     any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
     any(parse('1 + 2 + 3 + 4'), ['+', ['+', ['+', 1, 2], 3], 4],   ['+', 1, 2, 3, 4])
