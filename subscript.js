@@ -19,7 +19,8 @@ export const unary= {
   '-': 1,
   '!': 1,
   '~': 1,
-  '+': 1
+  '+': 1,
+  '(': .1
 },
 
 binary= {
@@ -28,7 +29,8 @@ binary= {
   '<': 4, '>': 4, '<=': 4, '>=': 4,
   '<<': 3, '>>': 3, '>>>': 3,
   '+': 2, '-': 2,
-  '*': 1, '/': 1, '%': 1
+  '*': 1, '/': 1, '%': 1,
+  '[':.1, '.':.1, '(':.1
 },
 
 literals= {
@@ -51,7 +53,7 @@ transforms = {
 }
 
 
-export const parse = (expr, index=0, len=expr.length) => {
+export const parse = (expr, index=0, len=expr.length, lastOp) => {
   const char = () => expr.charAt(index),
   code = () => expr.charCodeAt(index),
   err = (message) => { throw new Error(message + ' at character ' + index) },
@@ -62,91 +64,42 @@ export const parse = (expr, index=0, len=expr.length) => {
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
 
-
-  consumeSequence = (end) => {
-    let list = [], cc;
-    let c = 0
-    while (index < len && (cc=code()) !== end) {
-      if (cc === SEMCOL || cc === COMMA) index++; // ignore separators
-      else list.push(consumeExpression()), skip(isSpace)
-    }
-    if (end) index++
-
-    return list.length<2?list[0]:list;
-  },
-
-  consumeOp = (ops=binary, op, l=3) => {
-    skip(isSpace);
-    while (!ops[op=expr.substr(index, l--)]) if (!l) return
-    index+=op.length
+  parseOp = (ops, l=2, op) => {
+    while (l&&!op) op=oper(expr.substr(index, l--),ops);
     return op
   },
 
-  /**
-   * This function is responsible for gobbling an individual expression,
-   * e.g. `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
-   */
-  consumeExpression = () => {
-    let node, op, prec, stack, op_info, left, right, i, curOp;
-
-    // First, try to get the leftmost thing
-    // Then, check to see if there's a binary operator operating on that leftmost thing
-    // Don't consumeOp without a left-hand-side
-    if (!(left = consumeToken())) return;
-    if (!(op = consumeOp())) return left;
-    if (!(right = consumeToken())) err("Expected expression after " + op);
-
-    // Otherwise, start a stack to properly place the binary operations in their precedence structure
-    stack = [left, [ op, binary[op]||0 ], right];
-
-    // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
-    // Basically stripped from jsep, not much mind given optimizing, but good enough
-    while ((curOp = consumeOp())&&(prec = binary[curOp])) {
-      // Reduce: make a binary expression from the three topmost entries.
-      while ((stack.length > 2) && stack[stack.length-2][1] <= prec) {
-        right = stack.pop(), op = stack.pop()[0], left = stack.pop();
-        stack.push([op, left, right]); // BINARY_EXP
-      }
-      node = consumeToken(); if (!node) err("Expected expression after " + curOp);
-      stack.push([curOp, prec], node);
-    }
-
-    i = stack.length - 1, node = stack[i];
-    while (i > 1) { node = [stack[i-1][0], stack[i-2], node], i-=2 } // BINARY_EXP
-
-    return node;
+  consumeOp = (ops=binary, prec, l=2) => {
+    // skip(isSpace);
+    while (!(prec=ops[lastOp=expr.substr(index, l--)])) {if (!l) return}
+    // index+=op.length
+    return prec
   },
 
-  /**
-   * An individual part of a binary expression:
-   * e.g. `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)` (because it's in parenthesis)
-   * @returns {boolean|jsep.Expression}
-   */
-  consumeToken = () => {
-    let cc, c, op, node;
+  consumeGroup = (level, end) => {
     skip(isSpace);
 
-    cc = code(), c = char()
+    let cc = code(), c = char(), op, prec,
+        node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
-    // Char code 46 is a dot `.` which can start off a numeric literal
-    if (isDigit(cc) || cc === PERIOD) node = new Number(consumeNumber());
+    // `.` can start off a numeric literal
+    if (isDigit(cc) || char() === '.') node = new Number(consumeNumber());
+    // else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (quotes.indexOf(c)>=0) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
-    else if (cc === OBRACK) index++, node = [Array].concat(consumeSequence(CBRACK)||[]) // array
-    else if (cc === OPAREN) index++, node = consumeSequence(CPAREN) // group
-    else if (isIdentifierStart(cc)) node = consume(isIdentifierPart); // LITERAL, TODO: map literal after
-    else if ((op = consumeOp(unary))&&unary[op]) {
-      if (!(node = consumeToken())) err('missing unaryOp argument');
-      return [op, node] // UNARY_EXP
-    }
-    if (!node) return
+    else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
+    // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
+    else if (prec = consumeOp(unary)) index += lastOp.length, node = [lastOp, consumeGroup(prec, groups[lastOp])]
+    skip(isSpace)
 
-    // consumeTokenProperty
-    while (skip(isSpace), cc=code(), cc === PERIOD || cc === OBRACK || cc === OPAREN) {
-      index++, skip(isSpace);
-      if (cc === OBRACK) node = ['[', node].concat(consumeSequence(CBRACK)||[]) // MEMBER_EXP
-      else if (cc === OPAREN) node = [node].concat(consumeSequence(CPAREN)||[]) // CALL_EXP
-      else if (cc === PERIOD) node = ['.', node, consume(isIdentifierPart)] // MEMBER_EXP
+    // consume expression for current precedence or group (== highest precedence)
+    while ((prec = consumeOp()) && (end || prec < level)) {
+      index += lastOp.length
+      node = [lastOp, node, consumeGroup(prec, groups[lastOp])]
+      skip(isSpace)
     }
+
+    // if we're at end of group-operator
+    if (end == char()) index++
 
     return node;
   },
@@ -169,7 +122,7 @@ export const parse = (expr, index=0, len=expr.length) => {
     return number //  LITERAL
   }
 
-  return consumeSequence();
+  return consumeGroup(11)
 },
 
 // calltree → result
@@ -287,43 +240,3 @@ export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s
 //   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 // },
 
-
-// parse = (expr, index=0, len=expr.length) => {
-//   const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
-
-//   //
-//   parseOp = (ops, l=3, op) => { while (l&&!op) op=oper(expr.substr(index, l--),ops); return op },
-
-//   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-//   consumeGroup = (curOp) => {
-//     skip(isSpace);
-
-//     let cc = code(), op,
-//         end = groups[curOp[0]],
-//         node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
-
-//     // `.` can start off a numeric literal
-//     if (isDigit(cc) || char() === '.') node = new Number(consumeNumber());
-//     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
-//     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-//     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-//     else if (op = parseOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
-
-//     skip(isSpace)
-
-//     // consume expression for current precedence or group (== highest precedence)
-//     while ((op = parseOp()) && (op[1] < curOp[1] || end)) {
-//       index+=op[0].length
-//       // FIXME: same-group arguments should be collected before applying transform
-//       isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
-//       skip(isSpace)
-//     }
-
-//     // if we're at end of group-operator
-//     if (end == char()) index++
-
-//     return node;
-//   },
-
-//   return consumeGroup(oper(','))
-// },
