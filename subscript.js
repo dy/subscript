@@ -17,7 +17,7 @@ export const unary= {
   '!': 1,
   '~': 1,
   '+': 1,
-  '(': .1,
+  '(': 1,
   '++': 1,
   '--': 1
 },
@@ -39,8 +39,7 @@ literals= {
   'null': null
 },
 
-groups = {'(':')','[':']'},
-quotes = '"',
+quotes = {'"':'"'},
 comments = {},
 
 transforms = {
@@ -50,7 +49,8 @@ transforms = {
   '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
   // ',': n => n.filter(),
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
-}
+},
+groups = {'[':']','(':')'}
 
 
 export const parse = (expr, index=0, len=expr.length, lastOp) => {
@@ -66,9 +66,7 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
 
   consumeOp = (ops=binary, op, prec, l=3) => {
     // skip(isSpace);
-    while (!(prec=ops[op=expr.substr(index, l--)])) if (!l) return
-    // index+=op.length
-    return [op, prec]
+    while (l) if (prec=ops[op=expr.substr(index, l--)]) return [op, prec, groups[op]]
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
@@ -76,20 +74,19 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     skip(isSpace);
 
     let cc = code(), c =char(), op,
-        end = groups[curOp[0]],
         node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
-    else if (quotes.indexOf(c)>=0) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
+    else if (quotes[c]) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
     else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
 
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp()) && (op[1] < curOp[1] || end)) {
+    while ((op = consumeOp()) && (op[1] < curOp[1] || curOp[2])) {
       index+=op[0].length
       // FIXME: same-group arguments should be collected before applying transform
       isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
@@ -97,7 +94,7 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     }
 
     // if we're at end of group-operator
-    if (end == char()) index++
+    if (curOp[2]) char() !== curOp[2] ? err('Unexpected ' + char()) : index++
 
     return node;
   },
@@ -107,7 +104,8 @@ export const parse = (expr, index=0, len=expr.length, lastOp) => {
     let number = '', c;
 
     number += consume(isDigit)
-    if (char() === '.') number += expr.charAt(index++) + consume(isDigit) // .1
+    c = char()
+    if (c === '.') number += c + (index++, consume(isDigit)) // .1
 
     c = char();
     if (c === 'e' || c === 'E') { // exponent marker
