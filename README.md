@@ -285,6 +285,7 @@ new Function: 392.10400390625 ms
 
 * [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
+* [mozjexl](https://github.com/mozilla/mozjexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)
 * [expression-eval](https://github.com/donmccurdy/expression-eval)
 * [jsep](https://github.com/EricSmekens/jsep)
