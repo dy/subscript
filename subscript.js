@@ -57,10 +57,11 @@ export const parse = (expr, index=0, len=expr.length) => {
   err = (message) => { throw new Error(message + ' at character ' + index) },
 
   // skip index until condition matches
-  skip = (f) => { while (index < len && f(code())) index++; return index },
+  skip = is => { while (index < len && is(code())) index++; return index },
 
-  // skip index, returning skipped part
-  consume = f => expr.slice(index, skip(f)),
+  // skip index, return skipped part
+  consume = is => expr.slice(index, skip(is)),
+
 
   consumeSequence = (end) => {
     let list = [], cc;
@@ -172,29 +173,27 @@ export const parse = (expr, index=0, len=expr.length) => {
 },
 
 // calltree → result
-evaluate = (s, ctx={},x) => isnode(s)
-  ? (x=isnode(s[0]) ? evaluate(s[0], ctx) : typeof s[0]==='string' ? ctx[s[0]]||operator(s[0],s.length-1) : s[0],x)
-    (...s.slice(1).map(a=>evaluate(a,ctx)))
-  : typeof s == 'string'
-  ? quotes[s[0]] ? s.slice(1,-1) : ctx[s]
-  : s
+evaluate = (s, ctx={}, c, op) => {
+  if (isCmd(s)) {
+    c = s[0]
+    if (typeof c === 'string') op = oper(c, s.length<3?unary:binary)
+    c = op ? op[2] : evaluate(c, ctx)
+    if (typeof c !== 'function') return c
+
+    return c.call(...s.map(a=>evaluate(a,ctx)))
+  }
+  if (s && typeof s === 'string')
+    return quotes[s[0]] ? s.slice(1,-1)
+          : s[0]==='@' ? s.slice(1)
+          : s in ctx ? ctx[s] : s
+
+  return s
+}
 
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
 
 
-
-
-
-
-// const isDigit = c => c >= 48 && c <= 57, // 0...9,
-//   isIdentifierStart = c => (c >= 65 && c <= 90) || // A...Z
-//       (c >= 97 && c <= 122) || // a...z
-//       (c == 36 || c == 95) || // $, _,
-//       c >= 192, // any non-ASCII
-//   isIdentifierPart = c => isIdentifierStart(c) || isDigit(c),
-//   isSpace = c => c <= 32,
-//   isNotQuote = c => !quotes[String.fromCharCode(c)],
 
 //   // get operator info: [operator, precedence, reducer]
 //   oper = (op, ops=binary, f, p) => { for (p=0;p<ops.length;) if (f=ops[p++][op]) return [op,p,f] },
@@ -292,12 +291,6 @@ export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s
 // parse = (expr, index=0, len=expr.length) => {
 //   const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
 
-//   // skip index until condition matches
-//   skip = is => { while (index < len && is(code())) index++; return index },
-
-//   // skip index, return skipped part
-//   consume = is => expr.slice(index, skip(is)),
-
 //   //
 //   parseOp = (ops, l=3, op) => { while (l&&!op) op=oper(expr.substr(index, l--),ops); return op },
 
@@ -332,44 +325,5 @@ export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s
 //     return node;
 //   },
 
-//   // `12`, `3.4`, `.5`
-//   consumeNumber = () => {
-//     let number = '', c;
-
-//     number += consume(isDigit)
-//     if (char() === '.') number += expr.charAt(index++) + consume(isDigit) // .1
-
-//     c = char();
-//     if (c === 'e' || c === 'E') { // exponent marker
-//       number += c, index++
-//       c = char();
-//       if (c === '+' || c === '-') number += c, index++; // exponent sign
-//       number += consume(isDigit)
-//     }
-
-//     return number //  LITERAL
-//   }
-
 //   return consumeGroup(oper(','))
 // },
-
-// // calltree → result
-// evaluate = (s, ctx={}, c, op) => {
-//   if (isCmd(s)) {
-//     c = s[0]
-//     if (typeof c === 'string') op = oper(c, s.length<3?unary:binary)
-//     c = op ? op[2] : evaluate(c, ctx)
-//     if (typeof c !== 'function') return c
-
-//     return c.call(...s.map(a=>evaluate(a,ctx)))
-//   }
-//   if (s && typeof s === 'string')
-//     return quotes[s[0]] ? s.slice(1,-1)
-//           : s[0]==='@' ? s.slice(1)
-//           : s in ctx ? ctx[s] : s
-
-//   return s
-// }
-
-// // code → evaluator
-// export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
