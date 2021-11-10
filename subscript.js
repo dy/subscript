@@ -60,21 +60,21 @@ export const parse = (expr, index=0, len=expr.length) => {
   skip = (f) => { while (index < len && f(code())) index++; return index },
 
   // skip index, returning skipped part
-  gobble = f => expr.slice(index, skip(f)),
+  consume = f => expr.slice(index, skip(f)),
 
-  gobbleSequence = (end) => {
+  consumeSequence = (end) => {
     let list = [], cc;
     let c = 0
     while (index < len && (cc=code()) !== end) {
       if (cc === SEMCOL || cc === COMMA) index++; // ignore separators
-      else list.push(gobbleExpression()), skip(isSpace)
+      else list.push(consumeExpression()), skip(isSpace)
     }
     if (end) index++
 
     return list.length<2?list[0]:list;
   },
 
-  gobbleOp = (ops=binary, op, l=3) => {
+  consumeOp = (ops=binary, op, l=3) => {
     skip(isSpace);
     while (!ops[op=expr.substr(index, l--)]) if (!l) return
     index+=op.length
@@ -85,28 +85,28 @@ export const parse = (expr, index=0, len=expr.length) => {
    * This function is responsible for gobbling an individual expression,
    * e.g. `1`, `1+2`, `a+(b*2)-Math.sqrt(2)`
    */
-  gobbleExpression = () => {
+  consumeExpression = () => {
     let node, op, prec, stack, op_info, left, right, i, curOp;
 
     // First, try to get the leftmost thing
     // Then, check to see if there's a binary operator operating on that leftmost thing
-    // Don't gobbleOp without a left-hand-side
-    if (!(left = gobbleToken())) return;
-    if (!(op = gobbleOp())) return left;
-    if (!(right = gobbleToken())) err("Expected expression after " + op);
+    // Don't consumeOp without a left-hand-side
+    if (!(left = consumeToken())) return;
+    if (!(op = consumeOp())) return left;
+    if (!(right = consumeToken())) err("Expected expression after " + op);
 
     // Otherwise, start a stack to properly place the binary operations in their precedence structure
     stack = [left, [ op, binary[op]||0 ], right];
 
     // Properly deal with precedence using [recursive descent](http://www.engr.mun.ca/~theo/Misc/exp_parsing.htm)
     // Basically stripped from jsep, not much mind given optimizing, but good enough
-    while ((curOp = gobbleOp())&&(prec = binary[curOp])) {
+    while ((curOp = consumeOp())&&(prec = binary[curOp])) {
       // Reduce: make a binary expression from the three topmost entries.
       while ((stack.length > 2) && stack[stack.length-2][1] <= prec) {
         right = stack.pop(), op = stack.pop()[0], left = stack.pop();
         stack.push([op, left, right]); // BINARY_EXP
       }
-      node = gobbleToken(); if (!node) err("Expected expression after " + curOp);
+      node = consumeToken(); if (!node) err("Expected expression after " + curOp);
       stack.push([curOp, prec], node);
     }
 
@@ -121,30 +121,30 @@ export const parse = (expr, index=0, len=expr.length) => {
    * e.g. `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)` (because it's in parenthesis)
    * @returns {boolean|jsep.Expression}
    */
-  gobbleToken = () => {
+  consumeToken = () => {
     let cc, c, op, node;
     skip(isSpace);
 
     cc = code(), c = char()
 
     // Char code 46 is a dot `.` which can start off a numeric literal
-    if (isDigit(cc) || cc === PERIOD) node = gobbleNumber();
-    else if (quotes.indexOf(c)>=0) index++, node = new String(gobble(c=>c!==cc)), index++ // string literal
-    else if (cc === OBRACK) index++, node = [Array].concat(gobbleSequence(CBRACK)||[]) // array
-    else if (cc === OPAREN) index++, node = gobbleSequence(CPAREN) // group
-    else if (isIdentifierStart(cc)) node = gobble(isIdentifierPart); // LITERAL, TODO: map literal after
-    else if ((op = gobbleOp(unary))&&unary[op]) {
-      if (!(node = gobbleToken())) err('missing unaryOp argument');
+    if (isDigit(cc) || cc === PERIOD) node = consumeNumber();
+    else if (quotes.indexOf(c)>=0) index++, node = new String(consume(c=>c!==cc)), index++ // string literal
+    else if (cc === OBRACK) index++, node = [Array].concat(consumeSequence(CBRACK)||[]) // array
+    else if (cc === OPAREN) index++, node = consumeSequence(CPAREN) // group
+    else if (isIdentifierStart(cc)) node = consume(isIdentifierPart); // LITERAL, TODO: map literal after
+    else if ((op = consumeOp(unary))&&unary[op]) {
+      if (!(node = consumeToken())) err('missing unaryOp argument');
       return [op, node] // UNARY_EXP
     }
     if (!node) return
 
-    // gobbleTokenProperty
+    // consumeTokenProperty
     while (skip(isSpace), cc=code(), cc === PERIOD || cc === OBRACK || cc === OPAREN) {
       index++, skip(isSpace);
-      if (cc === OBRACK) node = ['[', node].concat(gobbleSequence(CBRACK)||[]) // MEMBER_EXP
-      else if (cc === OPAREN) node = [node].concat(gobbleSequence(CPAREN)||[]) // CALL_EXP
-      else if (cc === PERIOD) node = ['.', node, gobble(isIdentifierPart)] // MEMBER_EXP
+      if (cc === OBRACK) node = ['[', node].concat(consumeSequence(CBRACK)||[]) // MEMBER_EXP
+      else if (cc === OPAREN) node = [node].concat(consumeSequence(CPAREN)||[]) // CALL_EXP
+      else if (cc === PERIOD) node = ['.', node, consume(isIdentifierPart)] // MEMBER_EXP
     }
 
     return node;
@@ -155,25 +155,25 @@ export const parse = (expr, index=0, len=expr.length) => {
    * keep track of everything in the numeric literal and then calling `parseFloat` on that string
    * @returns {jsep.Literal}
    */
-  gobbleNumber = () => {
+  consumeNumber = () => {
     let number = '', c, cc;
 
-    number += gobble(isDigit)
+    number += consume(isDigit)
 
-    if (code() === PERIOD) number += expr.charAt(index++) + gobble(isDigit) // .1
+    if (code() === PERIOD) number += expr.charAt(index++) + consume(isDigit) // .1
 
     c = char();
     if (c === 'e' || c === 'E') { // exponent marker
       number += c, index++
       c = char();
       if (c === '+' || c === '-') number += c, index++; // exponent sign
-      number += gobble(isDigit)
+      number += consume(isDigit)
     }
 
     return new Number(number) //  LITERAL
   }
 
-  return gobbleSequence();
+  return consumeSequence();
 },
 
 // calltree → result
