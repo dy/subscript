@@ -130,6 +130,7 @@ export const parse = (expr, index=0, x=0) => {
   consume = is => expr.slice(index, skip(is)),
 
   consumeOp = (ops=binary, op, prec, info, l=3) => {
+    x++
     // while (l) if (info=opinfo(expr.substr(index, l--), ops)) return info
     while (l) if (prec=ops[op=expr.substr(index, l--)]) return [op, prec]
   },
@@ -160,13 +161,11 @@ export const parse = (expr, index=0, x=0) => {
     // interestingly, this thing is ~20% slower than the flat loop below
     // while ((op = consumeOp()) && op[1] < prec) {
     //   index += op[0].length
-    //   // FIXME: same-group arguments should be collected before applying transform
-    //   // Array.isArray(node) && node.length > 2 && op[0] === node[0] ? node.push(consumeExpression(op[1])) :
     //   node = [op[0], node, consumeExpression(op[1])]
     //   skip(isSpace)
     // }
 
-    // jsep flattened handler
+    // // jsep flattened handler
     let stack = [node], left, right, curOp, i
     while (curOp = consumeOp()) {
       index+=curOp[0].length
@@ -178,7 +177,6 @@ export const parse = (expr, index=0, x=0) => {
       node = consumeToken(); if (!node) err("Expected expression after " + curOp[0]);
       stack.push(curOp, node);
     }
-
     i = stack.length - 1, node = stack[i];
     while (i > 1) { node = [stack[i-1][0], stack[i-2], node], i-=2 } // BINARY_EXP
 
@@ -213,7 +211,9 @@ export const parse = (expr, index=0, x=0) => {
     return number //  LITERAL
   }
 
-  return consumeSequence()
+  let res = consumeSequence()
+  // console.log('called times:', x)
+  return res
 },
 
 // calltree → result
