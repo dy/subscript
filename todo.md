@@ -157,4 +157,12 @@
   + Braces are still special case of operator
   + Comma-operator creates many problematic transforms, that can be reduced
   - It doesn't gain desired performance, still ~17-20% slower.
+    + → due to excessive lookups
   - It still has problems with calls/properties - it must check if consumed operator is a group or not.
+    → can be checked on expression level for redirection
+  + With memoized op lookup it allows faster braces lookups (no closing braces)
+  + Sequence is useful for consuming same-precedence ops as well like a + b + c ...
+* [ ] Optimizations 2
+  * [ ] Operator lookup can be simplified: look for small-letters first, and increase until meet none
+  * [ ] curOp can expect itself first, unless it's not met do lookup
+    + allows better node construction as well

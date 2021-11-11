@@ -12,6 +12,8 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   // apply transform to node
   tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
 
+  unlist = list => list.length < 2 ? list[0] : list,
+
   // get operator info: [operator, precedence, closing, reducer]
   opinfo = (op, ops=binary, f, prec=0) => { while (prec<ops.length) if (f=ops[prec++][op]) return [op,prec,groups[op],f] }
 
@@ -96,7 +98,7 @@ binary= {
   '<<': 3, '>>': 3, '>>>': 3,
   '+': 2, '-': 2,
   '*': 1, '/': 1, '%': 1,
-  '[':.1, '.':.1, '(':.1
+  '.': .1, '(': .1, '[': .1
 },
 
 literals= {
@@ -120,7 +122,7 @@ groups = {'[':']','(':')'}
 
 
 export const parse = (expr, index=0, x=0, lastOp) => {
-  const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
+  const char = () => expr[index], code = () => expr.charCodeAt(index),
   err = (message) => { throw new Error(message + ' at character ' + index) },
 
   // skip index until condition matches
@@ -137,45 +139,46 @@ export const parse = (expr, index=0, x=0, lastOp) => {
     while (l) if (prec=ops[op=expr.substr(index, l--)]) return lastOp = [op, prec, index]
   },
 
-  consumeToken = () => {
+  // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
+  consumeExpression = (group, c, cc, op, left='', node) => {
+    if (c=groups[group[0]]) return consumeSequence(',', group[0], c) // shortcut for (a,b,c)
+
+    index += group[0].length // Expression starts as -a, (a or
+
     skip(isSpace);
     // if (x++>1e2) err('Whoops')
 
-    let cc=code(), c=char(), op, node=''
+    cc=code(), c=char()
 
     // `.` can start off a numeric literal
     if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     else if (quotes[c]) index++, node = new String(consume(c=>c!==cc)), index++
-    // group loop simplifies expression loop and transforms, also removes ,; operators headache
-    else if (c=groups[c]) index++, node = consumeSequence(c), index++
     // unaries can't be mixed to binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeExpression(op[1])])
+    else if (op = consumeOp(unary)) node = tr([op[0], consumeExpression(op)])
 
     skip(isSpace)
-    return node
-  },
 
-  // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeExpression = (prec) => {
-    let node = consumeToken(), op
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp()) && op[1] < prec) {
-      index += op[0].length
-      node = [op[0], node, consumeExpression(op[1])]
-      skip(isSpace)
+    while (op = consumeOp()) {
+      if (op[1] < group[1]) { // + b * c
+        node = [op[0], node, ...consumeSequence(op[0])], skip(isSpace)
+      }
+      else break;
     }
 
     return node;
   },
 
   // to remove burden of comma-operators/brackes from expression loop
-  consumeSequence = (end, list=[], c) => {
+  consumeSequence = (sep=',;', start, end, list=[], c) => {
+    if (start) index++
     while (index < expr.length && (c=char()) !== end) {
-      if (c === ',' || c === ';') index++; // ignore separators
-      list.push(consumeExpression(99))
+      if (~sep.indexOf(c)) index++;
+      else list.push(consumeExpression(['',99]))
     }
-    return list.length < 2 ? list[0] : list;
+    if (end) index++
+    return list;
   },
 
   // `12`, `3.4`, `.5`
@@ -199,7 +202,7 @@ export const parse = (expr, index=0, x=0, lastOp) => {
 
   let res = consumeSequence()
   console.log('called times:', x)
-  return res
+  return unlist(res)
 },
 
 // calltree → result
