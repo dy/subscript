@@ -130,17 +130,12 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
 
-  // //
-  // parseOp = (ops, l=3, op) => {
-  //   while (l&&!op) op=oper(expr.substr(index, l--),ops); return op
-  // },
-
   consumeOp = (ops=binary, op, prec, info, l=3) => {
     // memoize op for index - saves 20% performance to recursion scheme
     if (lastOp && lastOp[2] === index) return lastOp
-      // x++, console.log(1,char())
+      x++, console.log(1,char())
     // while (l) if (info=opinfo(expr.substr(index, l--), ops)) return info
-    while (l) if (prec=ops[op=expr.substr(index, l--)]) return lastOp = [op, prec, index]
+    while (l) if (prec=ops[op=expr.substr(index, l--)]) return lastOp = [op, prec, index, op.length]
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
@@ -156,15 +151,20 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
+    else if (op = consumeOp(unary)) index += op[3], node = tr([op[0], consumeGroup(op)])
 
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
     while ((op = consumeOp(binary)) && (op[1] < curOp[1] || end)) {
-      index+=op[0].length
+      index+=op[3]
       // FIXME: same-group arguments should be collected before applying transform
-      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
+      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) :
+      node = tr([op[0], node, consumeGroup(op)])
+
+      // while (expr.substr(index, op[0].length) === op[0]) index+=op[0].length, node.push(consumeGroup(op))
+
+      // node = tr(node)
       skip(isSpace)
     }
 
