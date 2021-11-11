@@ -155,20 +155,19 @@ export const parse = (expr, index=0, x=0) => {
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
   consumeExpression = (prec) => {
-    // // consume expression for current precedence or group (== highest precedence)
+    let node = consumeToken(), op
+    // consume expression for current precedence or group (== highest precedence)
+    // interestingly, this thing is ~20% slower than the flat loop below
     // while ((op = consumeOp()) && op[1] < prec) {
-    //   index+=op[0].length
+    //   index += op[0].length
     //   // FIXME: same-group arguments should be collected before applying transform
     //   // Array.isArray(node) && node.length > 2 && op[0] === node[0] ? node.push(consumeExpression(op[1])) :
-    //   // console.group(op,char())
     //   node = [op[0], node, consumeExpression(op[1])]
-    //   // console.log(node)
-    //   // console.groupEnd()
     //   skip(isSpace)
     // }
 
     // jsep flattened handler
-    let node = consumeToken(), stack = [node], left, right, curOp, i, op
+    let stack = [node], left, right, curOp, i
     while (curOp = consumeOp()) {
       index+=curOp[0].length
       // Reduce: make a binary expression from the three topmost entries.

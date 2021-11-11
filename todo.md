@@ -123,7 +123,7 @@
     . direct props/calls
     . single-token expression shortcuts
     . flattened recursion.
-      + it speeds up indeed up to 5-10%.
+      + it speeds up indeed up to 5-10%. Added hand-to-hand imlpementations.
     ↑ Something of that makes thing faster, although less pure nor extensible (like, no {} literals).
     . Logically, gobbleExpression doesn't check every token to belong to end token, so maybe there's just less checks?
       → seems that we're going to have slower perf.
