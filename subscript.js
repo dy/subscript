@@ -122,12 +122,15 @@ transforms = {
 
 
 parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
-  const char = () => expr.charAt(index),
+  const char = () => expr[index],
   code = () => expr.charCodeAt(index),
-  opinfo = (name='',prec=108)=>({name, prec, index, len:name.length, end:groups[name]}),
+  opinfo = (name='',prec=108)=>({name, prec, index, end:groups[name]}),
 
   // skip index until condition matches
   skip = is => { while (index < len && is(code())) index++; return index },
+
+  // get next N chars
+  sub = len => expr.substr(index, len),
 
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
@@ -135,16 +138,15 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
   consumeOp = (ops=binary, op, prec, info, l=3) => {
     if (index >= len) return
     // memoize op for index - saves 20% performance to recursion scheme
-      // if (x>1e2) throw 'Whoops'
+    // if (x>1e2) throw 'Whoops'
     if (index && lastOp.index === index) return lastOp
-      // x++, console.log(123,char())
-    // while (l) if (info=opinfo(expr.substr(index, l--), ops)) return info
-    while (l) if (prec=ops[op=expr.substr(index, l--)]) return lastOp = opinfo(op, prec)
+      x++, console.log(123,char())
+    while (l) if (prec=ops[op=sub(l--)]) return lastOp = opinfo(op, prec)
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeGroup = (curOp) => {
-    index += curOp.len // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
+  consumeGroup = (group) => {
+    index += group.name.length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
 
     skip(isSpace);
 
@@ -161,16 +163,16 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp(binary)) && (curOp.end || op.prec < curOp.prec)) {
+    while ((op = consumeOp(binary)) && (group.end || op.prec < group.prec)) {
       node = [op.name, node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
-      while (expr.substr(index, op.len) === op.name) node.push(consumeGroup(op))
+      while (sub(op.name.length) === op.name) node.push(consumeGroup(op))
       node = tr(node)
       skip(isSpace)
     }
 
-    // if we're at end of group-operator
-    if (curOp.end == char()) index+=curOp.len
+    // if group has end operator eg + a ) or + a ]
+    if (group.end) index+=group.end.length
 
     return node;
   },
