@@ -122,15 +122,12 @@ transforms = {
 
 
 parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
-  const char = () => expr[index],
+  const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
   opinfo = (name='',prec=108)=>({name, prec, index, end:groups[name]}),
 
   // skip index until condition matches
   skip = is => { while (index < len && is(code())) index++ },
-
-  // get next N chars
-  sub = len => expr.substr(index, len),
 
   // skip index, return skipped part
   consume = is => expr.slice(index, (skip(is), index)),
@@ -140,8 +137,8 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     // memoize op for index - saves 20% performance to recursion scheme
     // if (x>1e2) throw 'Whoops'
     if (index && lastOp.index === index) return lastOp
-      x++, console.log(123,char())
-    while (l) if (prec=ops[op=sub(l--)]) return lastOp = opinfo(op, prec)
+      x++//, console.log(123,char())
+    while (l) if (prec=ops[op=char(l--)]) return lastOp = opinfo(op, prec)
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
@@ -166,7 +163,7 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     while ((op = consumeOp(binary)) && (group.end || op.prec < group.prec)) {
       node = [op.name, node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
-      while (sub(op.name.length) === op.name) node.push(consumeGroup(op))
+      while (char(op.name.length) === op.name) node.push(consumeGroup(op))
       node = tr(node)
       skip(isSpace)
     }
@@ -182,7 +179,8 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     let number = '', c;
 
     number += consume(isDigit)
-    if (char() === '.') number += expr.charAt(index++) + consume(isDigit) // .1
+    c = char()
+    if (c === '.') number += (index++, c) + consume(isDigit) // .1
 
     c = char();
     if (c === 'e' || c === 'E') { // exponent marker
