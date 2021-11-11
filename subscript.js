@@ -131,6 +131,7 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
   consume = is => expr.slice(index, skip(is)),
 
   consumeOp = (ops=binary, op, prec, info, l=3) => {
+    if (index >= len) return
     // memoize op for index - saves 20% performance to recursion scheme
     if (lastOp && lastOp[2] === index) return lastOp
       x++, console.log(1,char())
@@ -140,6 +141,8 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
   consumeGroup = (curOp) => {
+    index += curOp[3] // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
+
     skip(isSpace);
 
     let cc = code(), op,
@@ -151,20 +154,15 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(unary)) index += op[3], node = tr([op[0], consumeGroup(op)])
+    else if (op = consumeOp(unary)) node = tr([op[0], consumeGroup(op)])
 
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
     while ((op = consumeOp(binary)) && (op[1] < curOp[1] || end)) {
-      index+=op[3]
-      // FIXME: same-group arguments should be collected before applying transform
-      // isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) :
       node = [op[0], node, consumeGroup(op)]
-
       // consume same-op group, that also saves op lookups
-      while (expr.substr(index, op[3]) === op[0]) index+=op[3], node.push(consumeGroup(op))
-
+      while (expr.substr(index, op[3]) === op[0]) node.push(consumeGroup(op))
       node = tr(node)
       skip(isSpace)
     }
@@ -193,7 +191,7 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     return number //  LITERAL
   }
 
-  return consumeGroup([',', binary[',']])
+  return consumeGroup(['', 108, 0, 0])
 },
 
 // calltree → result
