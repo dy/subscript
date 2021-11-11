@@ -119,7 +119,7 @@ transforms = {
 groups = {'[':']','(':')'}
 
 
-export const parse = (expr, index=0, x=0) => {
+export const parse = (expr, index=0, x=0, lastOp) => {
   const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
   err = (message) => { throw new Error(message + ' at character ' + index) },
 
@@ -130,9 +130,11 @@ export const parse = (expr, index=0, x=0) => {
   consume = is => expr.slice(index, skip(is)),
 
   consumeOp = (ops=binary, op, prec, info, l=3) => {
-    x++
+    // memoize op for index - saves 20% performance to recursion scheme
+    if (lastOp && lastOp[2] === index) return lastOp
+      x++, console.log(1,char())
     // while (l) if (info=opinfo(expr.substr(index, l--), ops)) return info
-    while (l) if (prec=ops[op=expr.substr(index, l--)]) return [op, prec]
+    while (l) if (prec=ops[op=expr.substr(index, l--)]) return lastOp = [op, prec, index]
   },
 
   consumeToken = () => {
@@ -148,7 +150,7 @@ export const parse = (expr, index=0, x=0) => {
     // group loop simplifies expression loop and transforms, also removes ,; operators headache
     else if (c=groups[c]) index++, node = consumeSequence(c), index++
     // unaries can't be mixed to binary expressions loop due to operator names conflict, must be parsed before
-    // else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeExpression(op[1])])
+    else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeExpression(op[1])])
 
     skip(isSpace)
     return node
@@ -158,27 +160,11 @@ export const parse = (expr, index=0, x=0) => {
   consumeExpression = (prec) => {
     let node = consumeToken(), op
     // consume expression for current precedence or group (== highest precedence)
-    // interestingly, this thing is ~20% slower than the flat loop below
-    // while ((op = consumeOp()) && op[1] < prec) {
-    //   index += op[0].length
-    //   node = [op[0], node, consumeExpression(op[1])]
-    //   skip(isSpace)
-    // }
-
-    // // jsep flattened handler
-    let stack = [node], left, right, curOp, i
-    while (curOp = consumeOp()) {
-      index+=curOp[0].length
-      // Reduce: make a binary expression from the three topmost entries.
-      while ((stack.length > 2) && stack[stack.length-2][1] <= curOp[1]) {
-        right = stack.pop(), op = stack.pop()[0], left = stack.pop();
-        stack.push([op, left, right]); // BINARY_EXP
-      }
-      node = consumeToken(); if (!node) err("Expected expression after " + curOp[0]);
-      stack.push(curOp, node);
+    while ((op = consumeOp()) && op[1] < prec) {
+      index += op[0].length
+      node = [op[0], node, consumeExpression(op[1])]
+      skip(isSpace)
     }
-    i = stack.length - 1, node = stack[i];
-    while (i > 1) { node = [stack[i-1][0], stack[i-2], node], i-=2 } // BINARY_EXP
 
     return node;
   },
@@ -212,7 +198,7 @@ export const parse = (expr, index=0, x=0) => {
   }
 
   let res = consumeSequence()
-  // console.log('called times:', x)
+  console.log('called times:', x)
   return res
 },
 

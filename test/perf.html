@@ -3,7 +3,7 @@
 
   const src = c => `(a + 2) * 3 / 2 + b * 2 - ${c}`
   const args = {a:3,b:4}
-  const RUNS = 1e5
+  const RUNS = 3e4
 
   test('parse: expr-eval', async t => {
     const {Parser} = await import('../lib/parser/expr-eval.min.js');
@@ -43,16 +43,16 @@
   test.only('parse: subscript', async t => {
     const {parse} = await import('../subscript.js');
     console.log(parse(src(0)))
-    console.time('subscript')
-    for (let i = 0; i < RUNS; i++){
-      let ast = parse(src(i));
-    }
-    console.timeEnd('subscript')
-    console.time('subscript2')
-    for (let i = 0; i < RUNS; i++){
-      let ast = parse(src(i));
-    }
-    console.timeEnd('subscript2')
+    // console.time('subscript')
+    // for (let i = 0; i < RUNS; i++){
+    //   let ast = parse(src(i));
+    // }
+    // console.timeEnd('subscript')
+    // console.time('subscript2')
+    // for (let i = 0; i < RUNS; i++){
+    //   let ast = parse(src(i));
+    // }
+    // console.timeEnd('subscript2')
   })
 
 
