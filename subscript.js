@@ -159,12 +159,13 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     while ((op = consumeOp(binary)) && (op[1] < curOp[1] || end)) {
       index+=op[3]
       // FIXME: same-group arguments should be collected before applying transform
-      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) :
-      node = tr([op[0], node, consumeGroup(op)])
+      // isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) :
+      node = [op[0], node, consumeGroup(op)]
 
-      // while (expr.substr(index, op[0].length) === op[0]) index+=op[0].length, node.push(consumeGroup(op))
+      // consume same-op group, that also saves op lookups
+      while (expr.substr(index, op[3]) === op[0]) index+=op[3], node.push(consumeGroup(op))
 
-      // node = tr(node)
+      node = tr(node)
       skip(isSpace)
     }
 
