@@ -127,13 +127,13 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
   opinfo = (name='',prec=108)=>({name, prec, index, end:groups[name]}),
 
   // skip index until condition matches
-  skip = is => { while (index < len && is(code())) index++; return index },
+  skip = is => { while (index < len && is(code())) index++ },
 
   // get next N chars
   sub = len => expr.substr(index, len),
 
   // skip index, return skipped part
-  consume = is => expr.slice(index, skip(is)),
+  consume = is => expr.slice(index, (skip(is), index)),
 
   consumeOp = (ops=binary, op, prec, info, l=3) => {
     if (index >= len) return
