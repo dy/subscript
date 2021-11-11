@@ -123,9 +123,9 @@
     . direct props/calls
     . single-token expression shortcuts
     . flattened recursion.
+      + it speeds up indeed up to 5-10%.
     ↑ Something of that makes thing faster, although less pure nor extensible (like, no {} literals).
     . Logically, gobbleExpression doesn't check every token to belong to end token, so maybe there's just less checks?
-    . So the offer is: 20% performance, no [(. operators at price of +200-300bytes and hardcoded braces, also we don't know price of evaluator.
       → seems that we're going to have slower perf.
 * [ ] Passing array literals is a problem
   - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.

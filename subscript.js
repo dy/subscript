@@ -134,8 +134,7 @@ export const parse = (expr, index=0, x=0) => {
     while (l) if (prec=ops[op=expr.substr(index, l--)]) return [op, prec]
   },
 
-  // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeExpression = (prec) => {
+  consumeToken = () => {
     skip(isSpace);
     // if (x++>1e2) err('Whoops')
 
@@ -146,22 +145,43 @@ export const parse = (expr, index=0, x=0) => {
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     else if (quotes[c]) index++, node = new String(consume(c=>c!==cc)), index++
     // group loop simplifies expression loop and transforms, also removes ,; operators headache
-    else if (c=groups[c]) index++, node = consumeSequence(c)
+    else if (c=groups[c]) index++, node = consumeSequence(c), index++
     // unaries can't be mixed to binary expressions loop due to operator names conflict, must be parsed before
     // else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeExpression(op[1])])
 
     skip(isSpace)
-    // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp()) && op[1] < prec) {
-      index+=op[0].length
-      // FIXME: same-group arguments should be collected before applying transform
-      // Array.isArray(node) && node.length > 2 && op[0] === node[0] ? node.push(consumeExpression(op[1])) :
-      // console.group(op,char())
-      node = [op[0], node, consumeExpression(op[1])]
-      // console.log(node)
-      // console.groupEnd()
-      skip(isSpace)
+    return node
+  },
+
+  // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
+  consumeExpression = (prec) => {
+    // // consume expression for current precedence or group (== highest precedence)
+    // while ((op = consumeOp()) && op[1] < prec) {
+    //   index+=op[0].length
+    //   // FIXME: same-group arguments should be collected before applying transform
+    //   // Array.isArray(node) && node.length > 2 && op[0] === node[0] ? node.push(consumeExpression(op[1])) :
+    //   // console.group(op,char())
+    //   node = [op[0], node, consumeExpression(op[1])]
+    //   // console.log(node)
+    //   // console.groupEnd()
+    //   skip(isSpace)
+    // }
+
+    // jsep flattened handler
+    let node = consumeToken(), stack = [node], left, right, curOp, i, op
+    while (curOp = consumeOp()) {
+      index+=curOp[0].length
+      // Reduce: make a binary expression from the three topmost entries.
+      while ((stack.length > 2) && stack[stack.length-2][1] <= curOp[1]) {
+        right = stack.pop(), op = stack.pop()[0], left = stack.pop();
+        stack.push([op, left, right]); // BINARY_EXP
+      }
+      node = consumeToken(); if (!node) err("Expected expression after " + curOp[0]);
+      stack.push(curOp, node);
     }
+
+    i = stack.length - 1, node = stack[i];
+    while (i > 1) { node = [stack[i-1][0], stack[i-2], node], i-=2 } // BINARY_EXP
 
     return node;
   },
@@ -172,7 +192,6 @@ export const parse = (expr, index=0, x=0) => {
       if (c === ',' || c === ';') index++; // ignore separators
       list.push(consumeExpression(99))
     }
-    if (end) index++
     return list.length < 2 ? list[0] : list;
   },
 
