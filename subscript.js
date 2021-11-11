@@ -5,19 +5,49 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
       c >= 192, // any non-ASCII
   isIdentifierPart = c => isIdentifierStart(c) || isDigit(c),
   isSpace = c => c <= 32,
+  isNotQuote = c => !quotes[String.fromCharCode(c)],
+
+  // get operator info: [operator, precedence, reducer]
+  oper = (op, ops=binary, f, p) => { for (p=0;p<ops.length;) if (f=ops[p++][op]) return [op,p,f] },
 
   // is calltree node
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
 
   // apply transform to node
-  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
+  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
 
-  unlist = list => list.length < 2 ? list[0] : list,
 
-  // get operator info: [operator, precedence, closing, reducer]
-  opinfo = (op, ops=binary, f, prec=0) => { while (prec<ops.length) if (f=ops[prec++][op]) return [op,prec,groups[op],f] }
+export const literals = {
+  true: true,
+  false: false,
+  null: null
+},
 
-export const
+groups = {'(':')','[':']'},
+quotes = {'"':'"'},
+comments = {},
+
+unary= {
+  '-': 1,
+  '!': 1,
+  '~': 1,
+  '+': 1,
+  '(': 1,
+  '++': 1,
+  '--': 1
+},
+
+binary= {
+  ',': 11,
+  '||': 10, '&&': 9, '|': 8, '^': 7, '&': 6,
+  '==': 5, '!=': 5, '===': 5, '!==': 5,
+  '<': 4, '>': 4, '<=': 4, '>=': 4,
+  '<<': 3, '>>': 3, '>>>': 3,
+  '+': 2, '-': 2,
+  '*': 1, '/': 1, '%': 1,
+  '.': .1, '(': .1, '[': .1
+},
+
 // unary = [
 //   {
 //     '(':a=>a[a.length-1], // +(a+b)
@@ -77,108 +107,71 @@ export const
 //   {'^':(a,b)=>a^b},
 //   {'|':(a,b)=>a|b},
 //   {'&&':(...a)=>a.every(Boolean)},
-//   {'||':(...a)=>a.some(Boolean)}
+//   {'||':(...a)=>a.some(Boolean)},
+//   {',':true}
 // ],
-
-unary= {
-  '-': 1,
-  '!': 1,
-  '~': 1,
-  '+': 1,
-  '(': 1,
-  '++': 1,
-  '--': 1
-},
-
-binary= {
-  ',': 11,
-  '||': 10, '&&': 9, '|': 8, '^': 7, '&': 6,
-  '==': 5, '!=': 5, '===': 5, '!==': 5,
-  '<': 4, '>': 4, '<=': 4, '>=': 4,
-  '<<': 3, '>>': 3, '>>>': 3,
-  '+': 2, '-': 2,
-  '*': 1, '/': 1, '%': 1,
-  '.': .1, '(': .1, '[': .1
-},
-
-literals= {
-  'true': true,
-  'false': false,
-  'null': null
-},
-
-quotes = {'"':'"'},
-comments = {},
 
 transforms = {
   // [(,a,args] → [a,...args]
-  // '(': n => n.length < 3 ? n[1] :
-  //   [n[1]].concat(n[2]==='' ? [] : n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
-  // '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
+  '(': n => n.length < 3 ? n[1] :
+    [n[1]].concat(n[2]==='' ? [] : n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
+  '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
   // ',': n => n.filter(),
   // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
 },
-groups = {'[':']','(':')'}
 
 
-export const parse = (expr, index=0, x=0, lastOp) => {
-  const char = () => expr[index], code = () => expr.charCodeAt(index),
-  err = (message) => { throw new Error(message + ' at character ' + index) },
+parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
+  const char = () => expr.charAt(index), code = () => expr.charCodeAt(index),
 
   // skip index until condition matches
-  skip = is => { while (index < expr.length && is(code())) index++; return index },
+  skip = is => { while (index < len && is(code())) index++; return index },
 
   // skip index, return skipped part
   consume = is => expr.slice(index, skip(is)),
 
+  // //
+  // parseOp = (ops, l=3, op) => {
+  //   while (l&&!op) op=oper(expr.substr(index, l--),ops); return op
+  // },
+
   consumeOp = (ops=binary, op, prec, info, l=3) => {
     // memoize op for index - saves 20% performance to recursion scheme
     if (lastOp && lastOp[2] === index) return lastOp
-      x++, console.log(1,char())
+      // x++, console.log(1,char())
     // while (l) if (info=opinfo(expr.substr(index, l--), ops)) return info
     while (l) if (prec=ops[op=expr.substr(index, l--)]) return lastOp = [op, prec, index]
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeExpression = (group, c, cc, op, left='', node) => {
-    if (c=groups[group[0]]) return consumeSequence(',', group[0], c) // shortcut for (a,b,c)
-
-    index += group[0].length // Expression starts as -a, (a or
-
+  consumeGroup = (curOp) => {
     skip(isSpace);
-    // if (x++>1e2) err('Whoops')
 
-    cc=code(), c=char()
+    let cc = code(), op,
+        end = groups[curOp[0]],
+        node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
-    if (isDigit(cc) || c === '.') node = new Number(consumeNumber());
+    if (isDigit(cc) || char() === '.') node = new Number(consumeNumber());
+    else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
-    else if (quotes[c]) index++, node = new String(consume(c=>c!==cc)), index++
-    // unaries can't be mixed to binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(unary)) node = tr([op[0], consumeExpression(op)])
+    // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
+    else if (op = consumeOp(unary)) index += op[0].length, node = tr([op[0], consumeGroup(op)])
 
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while (op = consumeOp()) {
-      if (op[1] < group[1]) { // + b * c
-        node = [op[0], node, ...consumeSequence(op[0])], skip(isSpace)
-      }
-      else break;
+    while ((op = consumeOp(binary)) && (op[1] < curOp[1] || end)) {
+      index+=op[0].length
+      // FIXME: same-group arguments should be collected before applying transform
+      isCmd(node) && node.length>2 && op[0] === node[0] ? node.push(consumeGroup(op)) : node = tr([op[0], node, consumeGroup(op)])
+      skip(isSpace)
     }
+
+    // if we're at end of group-operator
+    if (end == char()) index++
 
     return node;
-  },
-
-  // to remove burden of comma-operators/brackes from expression loop
-  consumeSequence = (sep=',;', start, end, list=[], c) => {
-    if (start) index++
-    while (index < expr.length && (c=char()) !== end) {
-      if (~sep.indexOf(c)) index++;
-      else list.push(consumeExpression(['',99]))
-    }
-    if (end) index++
-    return list;
   },
 
   // `12`, `3.4`, `.5`
@@ -186,8 +179,7 @@ export const parse = (expr, index=0, x=0, lastOp) => {
     let number = '', c;
 
     number += consume(isDigit)
-    c = char()
-    if (c === '.') number += c + (index++, consume(isDigit)) // .1
+    if (char() === '.') number += expr.charAt(index++) + consume(isDigit) // .1
 
     c = char();
     if (c === 'e' || c === 'E') { // exponent marker
@@ -200,16 +192,14 @@ export const parse = (expr, index=0, x=0, lastOp) => {
     return number //  LITERAL
   }
 
-  let res = consumeSequence()
-  console.log('called times:', x)
-  return unlist(res)
+  return consumeGroup([',', binary[',']])
 },
 
 // calltree → result
 evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
     c = s[0]
-    if (typeof c === 'string') op = opinfo(c, s.length<3?unary:binary)
+    if (typeof c === 'string') op = oper(c, s.length<3?unary:binary)
     c = op ? op[2] : evaluate(c, ctx)
     if (typeof c !== 'function') return c
 
@@ -225,4 +215,3 @@ evaluate = (s, ctx={}, c, op) => {
 
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
-

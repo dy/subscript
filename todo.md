@@ -162,6 +162,10 @@
     → can be checked on expression level for redirection
   + With memoized op lookup it allows faster braces lookups (no closing braces)
   + Sequence is useful for consuming same-precedence ops as well like a + b + c ...
+  - Passing precedence over sequence is teadious
+    → Maybe pass groupinfo, like [operator, precedence, start, end, index]?
+  - consumeGroup from previous impl is almost identical (gravitates) to consumeSequence
+    - we may just address operator memo, current group collection (that simplifies lookups)
 * [ ] Optimizations 2
   * [ ] Operator lookup can be simplified: look for small-letters first, and increase until meet none
   * [ ] curOp can expect itself first, unless it's not met do lookup
