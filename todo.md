@@ -119,6 +119,7 @@
   1. Operators lookup - it must be precedence dict
   2. Unknown 20% lost at recursive algorithm: jsep-strip is faster:
     . it has direct sequences
+      - streamlined sequences: doesn't seem to speed up.
     . direct props/calls
     . single-token expression shortcuts
     . flattened recursion.
@@ -149,3 +150,10 @@
 * [ ] Transforms for literals.
   + We need to interpolate strings `a${}b`
   + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0
+* [ ] Process sequences separately
+  + Now expression loop checks for groups besides normal operators, which is op tax
+  + Now commas are almost useless
+  + Braces are still special case of operator
+  + Comma-operator creates many problematic transforms, that can be reduced
+  - It doesn't gain desired performance, still ~17-20% slower.
+  - It still has problems with calls/properties - it must check if consumed operator is a group or not.

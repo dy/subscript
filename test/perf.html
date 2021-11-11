@@ -24,6 +24,7 @@
 
   test.only('parse: jsep', async t => {
     const jsep = await import('../lib/parser/expression-eval.module.js');
+    console.log(jsep.parse(src(0)));
     console.time('jsep')
     for (let i = 0; i < 1e4; i++){
       let ast = jsep.parse(src(i));
@@ -40,6 +41,7 @@
 
   test.only('parse: subscript', async t => {
     const {parse} = await import('../subscript.js');
+    console.log(parse(src(0)))
     console.time('subscript')
     for (let i = 0; i < 1e4; i++){
       let ast = parse(src(i));
@@ -54,7 +56,8 @@
 
 
   test.only('parse: jsep-strip', async t => {
-    const {default:parse} = await import('../lib/parser/jsep-strip.js');
+    const {parse} = await import('../lib/parser/jsep-strip.js');
+    console.log(parse(src(0)))
     console.time('jsep-strip')
     for (let i = 0; i < 1e4; i++){
       let ast = parse(src(i));
