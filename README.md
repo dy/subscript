@@ -117,19 +117,13 @@ Transform rules are applied to raw parsed calltree groups, eg.:
 That can be used to organize ternary/combining operators:
 
 ```js
-import {parse, transforms, operators} from 'subscript.js'
+import {parse, binary, transforms, operators} from 'subscript.js'
 
-Object.assign(operators[11],{
-  ':':(a,b)=>[a,b],
-  '?':(a,b)=>a??b,
-  '?:':(a,b)=>a?b:c
-})
+operators['?:'] = (a,b)=>a?b:c
+binary[':'] = binary['?'] = 5
 transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
-parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 
-// bonus side-effect:
-parse('a ? b') // ['?', 'a', 'b']
-parse('a : b') // [':', 'a', 'b']
+parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 ```
 
 
