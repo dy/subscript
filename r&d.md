@@ -188,6 +188,10 @@
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
 * [ ] Make literals direct (passing wrapped numbers to functions isn't good)
 * [ ] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
+  + allows defining per-operator consumers
+  + allows better tests (no need for generic operator lookups)
+  + allows probablistic order of operators check
+  + some operators can consume as much nodes as they need
 
 ## Notes
 
