@@ -14,7 +14,9 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
 
   // apply transform to node
-  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node
+  tr = (node, t) => isCmd(node) ? (t = transforms[node[0]], t?t(node):node) : node,
+
+  err = msg => {throw Error(msg)}
 
 
 export const literals = {
@@ -28,24 +30,24 @@ quotes = {'"':'"'},
 comments = {},
 
 unary= {
-  '-': 1,
-  '!': 1,
-  '~': 1,
-  '+': 1,
-  '(': 1,
-  '++': 1,
-  '--': 1
+  '-': 2,
+  '!': 2,
+  '~': 2,
+  '+': 2,
+  '(': 2,
+  '++': 2,
+  '--': 2
 },
 
 binary= {
-  ',': 11,
-  '||': 10, '&&': 9, '|': 8, '^': 7, '&': 6,
-  '==': 5, '!=': 5, '===': 5, '!==': 5,
-  '<': 4, '>': 4, '<=': 4, '>=': 4,
-  '<<': 3, '>>': 3, '>>>': 3,
-  '+': 2, '-': 2,
-  '*': 1, '/': 1, '%': 1,
-  '.': .1, '(': .1, '[': .1
+  ',': 12,
+  '||': 11, '&&': 10, '|': 9, '^': 8, '&': 7,
+  '==': 6, '!=': 6, '===': 6, '!==': 6,
+  '<': 5, '>': 5, '<=': 5, '>=': 5,
+  '<<': 4, '>>': 4, '>>>': 4,
+  '+': 3, '-': 3,
+  '*': 2, '/': 2, '%': 2,
+  '.': 1, '(': 1, '[': 1
 },
 
 // op evaluators
@@ -87,12 +89,11 @@ operators = {
 },
 
 transforms = {
-  // [(,a,args] → [a,...args]
-  '(': n => n.length < 3 ? n[1] :
-    [n[1]].concat(n[2]==='' ? [] : n[2][0]==',' ? n[2].slice(1).map(x=>x===''?undefined:x) : [n[2]]),
-  '[': n => ['.', n[1], n[2]], // [(,a,args] → ['.', a, args[-1]]
-  // ',': n => n.filter(),
-  // '.': s => [s[0],s[1], ...s.slice(2).map(a=>typeof a === 'string' ? `"${a}"` : a)] // [.,a,b → [.,a,'"b"'
+  // [(,a,args1,args2] → [[a,...args1],...args2]
+  '(': n => n.length < 3 ? n[1] : n.slice(1).reduce(
+    (a,b)=>[a].concat(b==='' ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
+  ),
+  '[': n => (n[0]='.',n), // [(,a,args] → ['.', a, args[-1]]
 },
 
 
@@ -184,6 +185,7 @@ evaluate = (s, ctx={}, c, op) => {
     c = s[0]
     if (typeof c === 'string') op = operators[c]
     c = op || evaluate(c, ctx) // [[a,b], c]
+    // console.log(c,op)
     if (typeof c !== 'function') return c
 
     return c.call(...s.map(a=>evaluate(a,ctx)))
