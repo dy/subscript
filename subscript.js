@@ -132,19 +132,27 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
   // skip index, return skipped part
   consume = is => expr.slice(index, (skip(is), index)),
 
-  consumeOp = (ops=binary, op, prec, info, l=3) => {
+  // consume operator that resides within current group by precedence
+  consumeOp = (ops=binary, group, op, prec, info, l=3) => {
     if (index >= len) return
+
     // memoize op for index - saves 20% performance to recursion scheme
+    // if (index && lastOp.index === index) return console.log('return memo', index, lastOp), lastOp
+
+    // shortcut to check group end to avoid lookup
+    // if (group && group.end && group.end === char(group.end.length)) return
+
+    // x++, console.log('consume op',char(),index)
     // if (x>1e2) throw 'Whoops'
-    if (index && lastOp.index === index) return lastOp
-      x++//, console.log(123,char())
-    while (l) if (prec=ops[op=char(l--)]) return lastOp = opinfo(op, prec)
+
+    while (l) if (prec=ops[op=char(l--)])
+        return lastOp = opinfo(op, prec), (!group || group.end || prec < group.prec) && lastOp
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
   consumeGroup = (group) => {
-    index += group.name.length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-
+    // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
+    index += group.name.length
     skip(isSpace);
 
     let cc = code(), op,
@@ -160,7 +168,8 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp(binary)) && (group.end || op.prec < group.prec)) {
+    // FIXME: we can hide sub flag under op - basically we need to only know if returned operator has less than group precedence to continue
+    while ((op = consumeOp(binary, group))) {
       node = [op.name, node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
       while (char(op.name.length) === op.name) node.push(consumeGroup(op))
