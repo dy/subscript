@@ -121,10 +121,10 @@ transforms = {
 },
 
 
-parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
+parse = (expr, index=0, len=expr.length, x=0, curOp, curEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
-  opinfo = (name='',prec=108)=>({name, prec, index, end:groups[name]}),
+  opinfo = (name='', prec=108) => ({name, prec, index, end:groups[name]}),
 
   // skip index until condition matches
   skip = is => { while (index < len && is(code())) index++ },
@@ -133,26 +133,24 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
   consume = is => expr.slice(index, (skip(is), index)),
 
   // consume operator that resides within current group by precedence
-  consumeOp = (ops=binary, group, op, prec, info, l=3) => {
+  consumeOp = (ops=binary, op, prec, l=3) => {
     if (index >= len) return
 
-    // memoize op for index - saves 20% performance to recursion scheme
-    // if (index && lastOp.index === index) return console.log('return memo', index, lastOp), lastOp
+    // memoize by index - saves 20% to perf
+    if (index && curOp.index === index) return curOp
 
-    // shortcut to check group end to avoid lookup
-    // if (group && group.end && group.end === char(group.end.length)) return
+    // don't look up for end characters - saves 5-10% to perf
+    if (curEnd && curEnd === char(curEnd.length)) return
 
-    // x++, console.log('consume op',char(),index)
     // if (x>1e2) throw 'Whoops'
-
-    while (l) if (prec=ops[op=char(l--)])
-        return lastOp = opinfo(op, prec), (!group || group.end || prec < group.prec) && lastOp
+    while (l) if (prec=ops[op=char(l--)]) return curOp = opinfo(op, prec)
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeGroup = (group) => {
-    // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-    index += group.name.length
+  consumeGroup = (group, end=curEnd) => {
+    index += group.name.length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
+    if (group.end) curEnd = group.end // also we write root end marker
+
     skip(isSpace);
 
     let cc = code(), op,
@@ -168,8 +166,7 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    // FIXME: we can hide sub flag under op - basically we need to only know if returned operator has less than group precedence to continue
-    while ((op = consumeOp(binary, group))) {
+    while ((op = consumeOp(binary)) && (group.end || op.prec < group.prec)) {
       node = [op.name, node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
       while (char(op.name.length) === op.name) node.push(consumeGroup(op))
@@ -178,7 +175,7 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     }
 
     // if group has end operator eg + a ) or + a ]
-    if (group.end) index+=group.end.length
+    if (group.end) index+=group.end.length, curEnd=end
 
     return node;
   },
@@ -202,7 +199,7 @@ parse = (expr, index=0, len=expr.length, x=0, lastOp) => {
     return number //  LITERAL
   }
 
-  return consumeGroup(lastOp = opinfo())
+  return consumeGroup(curOp = opinfo())
 },
 
 // calltree → result
