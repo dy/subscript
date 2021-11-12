@@ -175,7 +175,7 @@
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
 * [x] Separating binary/unary and operators is good: +clear pertinence to eval/parse, +faster & simpler base, ...
-* [ ] Should consolidate binary as `parse.binary`, `parse.prefix`, `evaluate.operator`?
+* [x] Should consolidate binary as `parse.binary`, `parse.prefix`, `evaluate.operator`?
   + makes sense semantically
   + better association parse.literal = ...
   + reduces amount of exports

@@ -95,7 +95,7 @@ const parse = (expr, index=0, curOp, curEnd) => {
 evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
     c = s[0]
-    if (typeof c === 'string') op = evaluate[c]
+    if (typeof c === 'string') op = evaluate.operator[c]
     c = op || evaluate(c, ctx) // [[a,b], c]
     // console.log(c,op)
     if (typeof c !== 'function') return c
@@ -153,7 +153,7 @@ Object.assign(parse, {
 
 // op evaluators
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
-Object.assign(evaluate, {
+evaluate.operator = {
   '!':a=>!a,
   '++':a=>++a,
   '--':a=>--a,
@@ -187,7 +187,7 @@ Object.assign(evaluate, {
   '&&':(...a)=>a.every(Boolean),
   '||':(...a)=>a.some(Boolean),
   ',':(...a)=>a.reduce((a,b)=>(a,b))
-})
+}
 
 export { parse, evaluate }
 

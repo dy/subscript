@@ -13,7 +13,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 ```js
 import subscript from 'subscript.js'
 let fn = subscript(`a.b + c(d - 1)`)
-fn({a:{b:1}, c:x=>x*2, d:3}) // 5
+fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 ```
 
 ## Useful in:
@@ -47,7 +47,7 @@ It compiles code to lispy calltree (compatible with [frisk](https://npmjs.com/fr
 
 ```js
 import {evaluate} from 'subscript.js'
-evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // min*60 + "sec" == "300sec"
+evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
 
 ## Core primitives
@@ -58,13 +58,13 @@ By default subscript reserves:
 * `true`, `false`, `null` literals
 * `"` quotes.
 
-All primitives are extensible via `literals`, `quotes`, `groups`, `comments` dicts.
+All primitives are extensible via `parse.literal`, `parse.quote`, `parse.group`, `parse.comment` dicts.
 
 ```js
-import {quotes, comments, parse} from 'subscript.js'
+import { parse } from 'subscript.js'
 
-quotes["'"] = "'"
-comments["//"] = "\n"
+parse.quote["'"] = "'"
+parse.comment["//"] = "\n"
 
 parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 ```
@@ -86,17 +86,17 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-All other operators can be extended via `binary`, `unary` and `operators`.
+All other operators can be extended via `parse.binary`, `parse.prefix`, `parse.postfix` and `evaluate.operator`.
 
 ```js
-import {binary, operators, parse, evaluate} from 'subscript.js'
+import { parse, evaluate } from 'subscript.js'
 
 // add precedences
-binary['=>'] = 10
+parse.binary['=>'] = 10
 
 // define evaluators
-operators['=>'] = (args, body) => evaluate(body, args)
-operators['|'] = (a,...b) => a.pipe(...b)
+evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
+evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -104,7 +104,7 @@ let tree = parse(`
   | map(gaussian)
   | map(num => "•".repeat(Math.floor(num * 65)))
 `)
-evaluate(tree, {Math, map, take, interval, gaussian})
+evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
 ## Transforms
@@ -117,11 +117,11 @@ Transform rules are applied to raw parsed calltree groups, eg.:
 That can be used to organize ternary/combining operators:
 
 ```js
-import {parse, binary, transforms, operators} from 'subscript.js'
+import { parse, evaluate } from 'subscript.js'
 
-operators['?:'] = (a,b)=>a?b:c
-binary[':'] = binary['?'] = 5
-transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+evaluate.operator['?:'] = (a,b) => a ? b : c
+parse.binary[':'] = parse.binary['?'] = 5
+parse.map[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
 
 parse('a ? b : c') // ['?:', 'a', 'b', 'c']
 ```
@@ -145,7 +145,7 @@ It adds support for:
 <!-- + strings interpolation -->
 
 ```js
-import {parse} from 'subscript/justin.js'
+import { parse } from 'subscript/justin.js'
 
 let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
 ```
@@ -265,7 +265,7 @@ Subscript shows relatively good performance within other evaluators:
 // parse 30k times
 
 expr-eval: 712 ms
-subscript: 345 ms
+subscript: 336 ms
 jsep: 278 ms
 jexl: ~1200 ms
 new Function: 1466 ms
