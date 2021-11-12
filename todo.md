@@ -167,7 +167,8 @@
   - consumeGroup from previous impl is almost identical (gravitates) to consumeSequence
     - we may just address operator memo, current group collection (that simplifies lookups)
 * [ ] Optimizations 2
-  * [ ] Operator lookup can be simplified: look for small-letters first, and increase until meet none
+  * [x] Operator lookup can be simplified: look for small-letters first, and increase until meet none
     ? so we go until max length or until found operator loses?
+      - it's faster for 1-char ops, slower for 2+ char ops
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well

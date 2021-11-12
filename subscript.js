@@ -117,6 +117,8 @@ parse = (expr, index=0, curOp, curEnd) => {
     // don't look up for end characters - saves 5-10% to perf
     if (curEnd && curEnd === char(curEnd.length)) return
 
+    // ascending lookup is faster 1-char operators, longer for 2+ char ops
+    // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
     while (l) if (prec=ops[op=char(l--)]) return curOp = opinfo(op, prec)
   },
 

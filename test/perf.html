@@ -23,21 +23,6 @@
     console.timeEnd('expr-eval2')
   })
 
-  test.only('parse: subscript', async t => {
-    const {parse} = await import('../subscript.js');
-    console.log(parse(src(0)))
-    console.time('subscript')
-    for (let i = 0; i < RUNS; i++){
-      let ast = parse(src(i));
-    }
-    console.timeEnd('subscript')
-    console.time('subscript2')
-    for (let i = 0; i < RUNS; i++){
-      let ast = parse(src(i));
-    }
-    console.timeEnd('subscript2')
-  })
-
   test.only('parse: jsep', async t => {
     const jsep = await import('../lib/parser/expression-eval.module.js');
     console.log(jsep.parse(src(0)));
@@ -55,6 +40,20 @@
     console.timeEnd('jsep2')
   })
 
+  test.only('parse: subscript', async t => {
+    const {parse} = await import('../subscript.js');
+    console.log(parse(src(0)))
+    console.time('subscript')
+    for (let i = 0; i < RUNS; i++){
+      let ast = parse(src(i));
+    }
+    console.timeEnd('subscript')
+    console.time('subscript2')
+    for (let i = 0; i < RUNS; i++){
+      let ast = parse(src(i));
+    }
+    console.timeEnd('subscript2')
+  })
 
   test.only('parse: jsep-strip', async t => {
     const {parse} = await import('../lib/parser/jsep-strip.js');
@@ -89,7 +88,7 @@
   })
 
 
-  test.only('parse: jexl', async t => {
+  test.skip('parse: jexl', async t => {
     const {Jexl} = await import('../lib/parser/jexl.min.js');
     console.time('jexl')
     let jexl = new Jexl
@@ -105,7 +104,7 @@
     console.timeEnd('jexl2')
   })
 
-  test.only('parse: string-math', async t => {
+  test.skip('parse: string-math', async t => {
     const {default:sm} = await import('../lib/parser/string-math.js');
     console.time('string-math')
     for (let i = 0; i < RUNS; i++){
@@ -153,7 +152,7 @@
   })
 
 
-  test.only('parse: new Function', async t => {
+  test.skip('parse: new Function', async t => {
     console.time('new Function')
     for (let i = 0; i < RUNS; i++){
       let f = new Function('a','b', 'return '+src(i))
