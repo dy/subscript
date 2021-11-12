@@ -5,7 +5,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* It's fast ([see performance](#performance))
+* It's very fast ([see performance](#performance))
 * Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
@@ -86,14 +86,17 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-All other operators can be extended.
+All other operators can be extended via `binary`, `unary` and `operators`.
 
 ```js
-import {binary, parse, evaluate} from 'subscript.js'
+import {binary, operators, parse, evaluate} from 'subscript.js'
 
-// add operators to precedence groups
-binary[0]['=>'] = (args, body) => evaluate(body, args)
-binary[5]['|'] = (a,...b) => a.pipe(...b)
+// add precedences
+binary['=>'] = 10
+
+// define evaluators
+operators['=>'] = (args, body) => evaluate(body, args)
+operators['|'] = (a,...b) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -103,16 +106,6 @@ let tree = parse(`
 `)
 evaluate(tree, {Math, map, take, interval, gaussian})
 ```
-
-Operators are defined in by precedence index.
-
-```js
-unary[0]['&'] = a => address(a)   // unary prefix:  &a
-unary[1]['!'] = a => factorial(a) // TODO: unary postfix: a!
-binary[9]['U'] = (a,b) => a.union(b)  // binary:  a U b
-binary[9]['|'] = (...a) => a[0].pipe(...)  // also binary: a | b
-```
-
 
 ## Transforms
 
@@ -271,15 +264,18 @@ These are custom DSL operators snippets for your inspiration:
 
 ## Performance
 
-Subscript shows fastest known performance within other evaluators:
+Subscript shows relatively good performance within other evaluators:
 
 ```
-expr-eval: 86.924072265625 ms
-subscript: 177.585205078125 ms
-jsep: 80.21630859375 ms
-string-math: 112.215087890625 ms
-new Function: 392.10400390625 ms
+// parse/evaluate `(a + 2) * 3 / 2 + b * 2 - ${c}` 30k times
+
+subscript: 128.77783203125 ms
+jsep: 141.91796875 ms
+jexl: 347.718994140625 ms
+string-math: 494.740966796875 ms
+new Function: 3173.48095703125 ms
 ```
+
 
 ## See also
 
