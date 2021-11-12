@@ -60,11 +60,11 @@
           + same as in mdn https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
           - lengthy
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
-* [ ] take over jsep-strip performance
+* [x] take over jsep-strip performance
 * [x] word operators
 * [x] ~~subscript`exp`~~
   → no need for tpl tag unless fields have special meaning
-* [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
+* [x] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
   * [x] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
     + [?,a], [?a,[:b,c]], [in,[,a,b],c], [to,a,b], [to,a,[by,b,c]], [if,a,[else,b,c]]
     . for that we would need to create transform groups
@@ -128,10 +128,11 @@
     ↑ Something of that makes thing faster, although less pure nor extensible (like, no {} literals).
     . Logically, gobbleExpression doesn't check every token to belong to end token, so maybe there's just less checks?
       → seems that we're going to have slower perf.
-* [ ] Passing array literals is a problem
+* [x] Passing array literals is a problem
   - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
   ? Maybe we should prohibit evaluate exports to simplify internal logic?
-  → transform keeping raw literal or turn into constructors
+  → transform keeping raw literal or turn into constructors.
+  → not literals anymore, but tree operators
 * [ ] calltree nodes could stash static values (as in HTM)
 * [ ] Minifications
   * [x] ( [ . can be folded to operators, can they?...
@@ -143,15 +144,16 @@
       + can detect any other types of literals, like versions, units, hashes, urls, regexes etc
 * [ ] Examples
   * https://github.com/gajus/liqe
-* [ ] Flatten binaries: [, [, a b] c] → [, a b c]
+* [x] Flatten binaries: [, [, a b] c] → [, a b c]
   + many exceptions lead to flat form (args, sequence, ternaries)
   + it matches reducers
   + formulas are still meaningful this way
+  + good for performance
 * [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
 * [ ] Transforms for literals.
   + We need to interpolate strings `a${}b`
   + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0
-* [ ] Process sequences separately
+* [x] ~~Process sequences separately~~ → too redundant code, see drawbacks
   + Now expression loop checks for groups besides normal operators, which is op tax
   + Now commas are almost useless
   + Braces are still special case of operator
@@ -162,13 +164,14 @@
     → can be checked on expression level for redirection
   + With memoized op lookup it allows faster braces lookups (no closing braces)
   + Sequence is useful for consuming same-precedence ops as well like a + b + c ...
-  - Passing precedence over sequence is teadious
+  - Passing precedence over sequence is tedious
     → Maybe pass groupinfo, like [operator, precedence, start, end, index]?
   - consumeGroup from previous impl is almost identical (gravitates) to consumeSequence
     - we may just address operator memo, current group collection (that simplifies lookups)
-* [ ] Optimizations 2
+* [x] Optimizations 2
   * [x] Operator lookup can be simplified: look for small-letters first, and increase until meet none
     ? so we go until max length or until found operator loses?
       - it's faster for 1-char ops, slower for 2+ char ops
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
+* [ ] Error cases from jsep
