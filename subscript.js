@@ -100,7 +100,6 @@ transforms = {
 parse = (expr, index=0, curOp, curEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
-  opinfo = (name='', prec=108) => ({name, prec, index, end:groups[name]}),
 
   // skip index until condition matches
   skip = is => { while (index < expr.length && is(code())) index++ },
@@ -113,20 +112,20 @@ parse = (expr, index=0, curOp, curEnd) => {
     if (index >= expr.length) return
 
     // memoize by index - saves 20% to perf
-    if (index && curOp.index === index) return curOp
+    if (index && curOp[3] === index) return curOp
 
     // don't look up for end characters - saves 5-10% to perf
     if (curEnd && curEnd === char(curEnd.length)) return
 
     // ascending lookup is faster 1-char operators, longer for 2+ char ops
     // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
-    while (l) if (prec=ops[op=char(l--)]) return curOp = opinfo(op, prec)
+    while (l) if (prec=ops[op=char(l--)]) return curOp = [op, prec, groups[op], index] //opinfo
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
   consumeGroup = (group, end=curEnd) => {
-    index += group.name.length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-    if (group.end) curEnd = group.end // also we write root end marker
+    index += group[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
+    if (group[2]) curEnd = group[2] // also we write root end marker
 
     skip(isSpace);
 
@@ -138,21 +137,21 @@ parse = (expr, index=0, curOp, curEnd) => {
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(unary)) node = tr([op.name, consumeGroup(op)])
+    else if (op = consumeOp(unary)) node = tr([op[0], consumeGroup(op)])
 
     skip(isSpace)
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp(binary)) && (group.end || op.prec < group.prec)) {
-      node = [op.name, node, consumeGroup(op)]
+    while ((op = consumeOp(binary)) && (group[2] || op[1] < group[1])) {
+      node = [op[0], node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
-      while (char(op.name.length) === op.name) node.push(consumeGroup(op))
+      while (char(op[0].length) === op[0]) node.push(consumeGroup(op))
       node = tr(node)
       skip(isSpace)
     }
 
     // if group has end operator eg + a ) or + a ]
-    if (group.end) index+=group.end.length, curEnd=end
+    if (group[2]) index+=group[2].length, curEnd=end
 
     return node;
   },
@@ -176,7 +175,7 @@ parse = (expr, index=0, curOp, curEnd) => {
     return number //  LITERAL
   }
 
-  return consumeGroup(curOp = opinfo())
+  return consumeGroup(curOp = ['', 108])
 },
 
 // calltree → result
