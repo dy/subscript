@@ -183,3 +183,22 @@
 * [ ] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
 * [ ] Make literals direct (passing wrapped numbers to functions isn't good)
+
+## Notes
+
+. Parsers scheme usually can be generalized to just a set of tests like
+
+  isNumber: consumeNumber
+  isIdentifier: consumeIdentifier
+  isUnaryGroup: consumeUnaryGroup like (a)
+  isUnaryOperator: consumeUnary like +a
+  isQuote: consumeString
+  isComment: consumeComment
+  isAnythingElse: consumeAnythingElse
+
+  isBinaryOperator: consumeBinary like a+b, maybe even a+b+c
+  isBinaryGroup: consumeBinaryGroup like a(b), maybe even a,b,c
+  isTernaryStart: consumeTernary like a?b:
+
+  . Each test is fastest as simple numbers comparison, worse - string comparison, worse - regex
+  . Each consume is flow with own simpler checks
