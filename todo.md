@@ -174,4 +174,7 @@
       - it's faster for 1-char ops, slower for 2+ char ops
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
-* [ ] Error cases from jsep
+* [x] Separating binary/unary and operators is good: +clear pertinence to eval/parse, +faster & simpler base, ...
+* [ ] Error cases from jsep (from source)
+* [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
+* [ ] Make literals direct

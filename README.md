@@ -5,7 +5,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* It's very fast ([see performance](#performance))
+* It's fast ([see performance](#performance))
 * Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
@@ -73,8 +73,8 @@ parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 
 Default operators include common operators for the listed languages in the following precedence:
 
-* `.`
-* `! + - ++ --` unary
+* `.`, `(…)`, `…(…)`, `…[…]`
+* `! + - ++ --` prefix
 * `* / %`
 * `+ -`
 * `<< >> >>>`
@@ -261,15 +261,15 @@ These are custom DSL operators snippets for your inspiration:
 Subscript shows relatively good performance within other evaluators:
 
 ```
-// parse/evaluate `(a + 2) * 3 / 2 + b * 2 - ${c}` 30k times
+// 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
+// parse 30k times
 
-subscript: 128.77783203125 ms
-jsep: 141.91796875 ms
-jexl: 347.718994140625 ms
-string-math: 494.740966796875 ms
-new Function: 3173.48095703125 ms
+expr-eval: 712 ms
+subscript: 345 ms
+jsep: 278 ms
+jexl: ~1200 ms
+new Function: 1466 ms
 ```
-
 
 ## See also
 

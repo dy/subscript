@@ -32,7 +32,7 @@ comments = {},
 unary= {
   '-': 2,
   '!': 2,
-  '~': 2,
+  // '~': 2,
   '+': 2,
   '(': 2,
   '++': 2,
@@ -42,7 +42,7 @@ unary= {
 binary= {
   ',': 12,
   '||': 11, '&&': 10, '|': 9, '^': 8, '&': 7,
-  '==': 6, '!=': 6, '===': 6, '!==': 6,
+  '==': 6, '!=': 6, //'===': 6, '!==': 6,
   '<': 5, '>': 5, '<=': 5, '>=': 5,
   '<<': 4, '>>': 4, '>>>': 4,
   '+': 3, '-': 3,
@@ -133,7 +133,7 @@ parse = (expr, index=0, curOp, curEnd) => {
         node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
-    if (isDigit(cc) || char() === '.') node = new Number(consumeNumber());
+    if (isDigit(cc) || cc === 46) node = new Number(consumeNumber());
     else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in literals ? literals[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
