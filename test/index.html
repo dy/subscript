@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is, any} from '../lib/test.js'
-  import subscript, {parse, evaluate, quotes, binary, unary, groups, literals, transforms, operators} from '../subscript.js'
+  import subscript, {parse, evaluate} from '../subscript.js'
 
   test('jsep strip', t => {
     is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -32,8 +32,8 @@
     is(parse('a(b)(c)'),[['a', 'b'],'c'])
     any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
 
-    binary['**']=.5
-    quotes["'"]="'"
+    parse.binary['**']=.5
+    parse.quote["'"]="'"
     any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
     is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
     is(parse(`"abcd" + 'efgh'`), ['+','abcd','efgh'])
@@ -43,7 +43,7 @@
     let fn = subscript(`a.b + c(d-1)`)
     is(fn({a:{b:1}, c:x=>x*2, d:3}), 5)
 
-    quotes["'"] = "'"
+    parse.quote["'"] = "'"
     is(parse("'a' + 'b'"), ['+', "a", "b"])
 
     is(evaluate(['+', ['*', 'min', 60], new String('sec')], {min: 5}), "300sec")
@@ -96,10 +96,10 @@
     is(parse('"a" + "b"'), ['+', 'a', 'b'])
     is(parse('"a" + ("1" + "2")'), ['+', 'a', ['+', '1', '2']])
 
-    // quotes['<?']='?>'
+    // parse.quote['<?']='?>'
     // is(parse('"abc" + <?js\nxyz?>'), ['+','"abc"','<?js\nxyz?>'])
 
-    // quotes['<--']='-->'
+    // parse.quote['<--']='-->'
     // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc"','<--js\nxyz-->'])
   })
   test.todo('parse: comments', t => {
@@ -244,9 +244,9 @@
   })
 
   test('ext: in operator', t => {
-    binary['in'] = 5
-    operators['in'] = (a,b)=>a in b
-    transforms['in'] = n => (n[1]=`${n[1]}`, n)
+    parse.binary['in'] = 5
+    evaluate['in'] = (a,b)=>a in b
+    parse.map['in'] = n => (n[1]=`${n[1]}`, n)
 
     is(parse('inc in bin'), ['in', 'inc', 'bin'])
     is(parse('bin in inc'), ['in', 'bin', 'inc'])
@@ -254,10 +254,10 @@
   })
 
   test('ext: ternary', t => {
-    operators['?:']=(a,b,c)=>a?b:c
-    binary[':']=binary['?']=5
+    evaluate['?:']=(a,b,c)=>a?b:c
+    parse.binary[':']=parse.binary['?']=5
 
-    transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+    parse.map[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
     is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
 
     // bonus side-effect:
@@ -269,9 +269,9 @@
   })
 
   test('ext: list', t => {
-    unary['['] = binary['['] = 1
-    operators['['] = (...args) => Array(...args)
-    transforms['['] = n => n.length > 2 ? ['.',n[1],n[2]] :
+    parse.prefix['['] = parse.binary['['] = 1
+    evaluate['['] = (...args) => Array(...args)
+    parse.map['['] = n => n.length > 2 ? ['.',n[1],n[2]] :
       n[1]==='' ? [n[0]] : [n[0], ...(n[1][0]===','?n[1].slice(1).map(x=>x===''?undefined:x):[n[1]])]
 
     is(parse('[]'),['['])
@@ -282,13 +282,13 @@
   })
 
   test('ext: object', t => {
-    groups['{']='}'
-    unary['{'] = binary['{'] = 1
-    binary[':'] = 7
-    operators['{'] = (...args)=>Object.fromEntries(args)
-    operators[':'] = (a,b)=>[a,b]
-    // transforms[':'] = s => {}
-    transforms['{'] = (s, args) => {
+    parse.group['{']='}'
+    parse.prefix['{'] = parse.binary['{'] = 1
+    parse.binary[':'] = 7
+    evaluate['{'] = (...args)=>Object.fromEntries(args)
+    evaluate[':'] = (a,b)=>[a,b]
+    // parse.map[':'] = s => {}
+    parse.map['{'] = (s, args) => {
       if (s[1]==='') args = []
       else if (s[1][0]==':') args = [s[1]]
       else if (s[1][0]==',') args = s[1].slice(1)

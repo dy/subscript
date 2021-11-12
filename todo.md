@@ -175,6 +175,11 @@
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
 * [x] Separating binary/unary and operators is good: +clear pertinence to eval/parse, +faster & simpler base, ...
+* [ ] Should consolidate binary as `parse.binary`, `parse.prefix`, `evaluate.operator`?
+  + makes sense semantically
+  + better association parse.literal = ...
+  + reduces amount of exports
+  + no plurals needed
 * [ ] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
 * [ ] Make literals direct
