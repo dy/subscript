@@ -96,20 +96,20 @@ transforms = {
 },
 
 
-parse = (expr, index=0, len=expr.length, x=0, curOp, curEnd) => {
+parse = (expr, index=0, curOp, curEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
   opinfo = (name='', prec=108) => ({name, prec, index, end:groups[name]}),
 
   // skip index until condition matches
-  skip = is => { while (index < len && is(code())) index++ },
+  skip = is => { while (index < expr.length && is(code())) index++ },
 
   // skip index, return skipped part
   consume = is => expr.slice(index, (skip(is), index)),
 
   // consume operator that resides within current group by precedence
-  consumeOp = (ops=binary, op, prec, l=3) => {
-    if (index >= len) return
+  consumeOp = (ops, op, prec, l=3) => {
+    if (index >= expr.length) return
 
     // memoize by index - saves 20% to perf
     if (index && curOp.index === index) return curOp
@@ -117,7 +117,6 @@ parse = (expr, index=0, len=expr.length, x=0, curOp, curEnd) => {
     // don't look up for end characters - saves 5-10% to perf
     if (curEnd && curEnd === char(curEnd.length)) return
 
-    // if (x>1e2) throw 'Whoops'
     while (l) if (prec=ops[op=char(l--)]) return curOp = opinfo(op, prec)
   },
 

@@ -168,5 +168,6 @@
     - we may just address operator memo, current group collection (that simplifies lookups)
 * [ ] Optimizations 2
   * [ ] Operator lookup can be simplified: look for small-letters first, and increase until meet none
-  * [ ] curOp can expect itself first, unless it's not met do lookup
+    ? so we go until max length or until found operator loses?
+  * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
