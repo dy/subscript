@@ -182,4 +182,4 @@
   + no plurals needed
 * [ ] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
-* [ ] Make literals direct
+* [ ] Make literals direct (passing wrapped numbers to functions isn't good)

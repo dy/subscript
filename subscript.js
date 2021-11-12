@@ -3,16 +3,16 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
       (c >= 97 && c <= 122) || // a...z
       (c == 36 || c == 95) || // $, _,
       c >= 192, // any non-ASCII
-  isIdentifierPart = c => isIdentifierStart(c) || isDigit(c),
+  isIdentifierPart = c => isDigit(c) || isIdentifierStart(c),
   isSpace = c => c <= 32,
-  isNotQuote = c => !parse.quote[String.fromCharCode(c)],
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
-  tr = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node,
-  err = msg => {throw Error(msg)}
+  map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
 
 const parse = (expr, index=0, curOp, curEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
+
+  err = msg => {throw Error(msg + ' at ' + index)},
 
   // skip index until condition matches
   skip = is => { while (index < expr.length && is(code())) index++ },
@@ -32,7 +32,7 @@ const parse = (expr, index=0, curOp, curEnd) => {
 
     // ascending lookup is faster 1-char operators, longer for 2+ char ops
     // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
-    while (l) if (prec=ops[op=char(l--)]) return curOp = [op, prec, parse.group[op], index] //opinfo
+    while (l) if ((prec=ops[op=char(l--)])!=null) return curOp = [op, prec, parse.group[op], index] //opinfo
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
@@ -42,15 +42,15 @@ const parse = (expr, index=0, curOp, curEnd) => {
 
     skip(isSpace);
 
-    let cc = code(), op,
+    let cc = code(), op, c = char(),
         node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
 
     // `.` can start off a numeric literal
-    if (isDigit(cc) || cc === 46) node = new Number(consumeNumber());
-    else if (!isNotQuote(cc)) index++, node = new String(consume(isNotQuote)), index++
+    if (isDigit(cc)) node = parseInt(consume(isDigit));
+    else if (parse.quote[c]) index++, node = c + consume(c=>c!=cc) + c, index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in parse.literal ? parse.literal[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(parse.prefix)) node = tr([op[0], consumeGroup(op)])
+    else if (op = consumeOp(parse.prefix)) node = map([op[0], consumeGroup(op)])
 
     skip(isSpace)
 
@@ -59,7 +59,7 @@ const parse = (expr, index=0, curOp, curEnd) => {
       node = [op[0], node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
       while (char(op[0].length) === op[0]) node.push(consumeGroup(op))
-      node = tr(node)
+      node = map(node)
       skip(isSpace)
     }
 
@@ -67,25 +67,6 @@ const parse = (expr, index=0, curOp, curEnd) => {
     if (group[2]) index+=group[2].length, curEnd=end
 
     return node;
-  },
-
-  // `12`, `3.4`, `.5`
-  consumeNumber = () => {
-    let number = '', c;
-
-    number += consume(isDigit)
-    c = char()
-    if (c === '.') number += (index++, c) + consume(isDigit) // .1
-
-    c = char();
-    if (c === 'e' || c === 'E') { // exponent marker
-      number += c, index++
-      c = char();
-      if (c === '+' || c === '-') number += c, index++; // exponent sign
-      number += consume(isDigit)
-    }
-
-    return number //  LITERAL
   }
 
   return consumeGroup(curOp = ['', 108])
@@ -97,7 +78,6 @@ evaluate = (s, ctx={}, c, op) => {
     c = s[0]
     if (typeof c === 'string') op = evaluate.operator[c]
     c = op || evaluate(c, ctx) // [[a,b], c]
-    // console.log(c,op)
     if (typeof c !== 'function') return c
 
     return c.call(...s.map(a=>evaluate(a,ctx)))
@@ -126,7 +106,8 @@ Object.assign(parse, {
     '+': 2,
     '(': 2,
     '++': 2,
-    '--': 2
+    '--': 2,
+    '.': 1
   },
   postfix: {
     '++': 2,
@@ -140,14 +121,18 @@ Object.assign(parse, {
     '<<': 4, '>>': 4, '>>>': 4,
     '+': 3, '-': 3,
     '*': 2, '/': 2, '%': 2,
-    '.': 1, '(': 1, '[': 1
+    '.': 1, '(': 1, '[': 1,
+    'e': 1, 'E': 1
   },
   map: {
-    // [(,a,args1,args2] → [[a,...args1],...args2]
     '(': n => n.length < 3 ? n[1] : n.slice(1).reduce(
-      (a,b)=>[a].concat(b==='' ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
-    ),
-    '[': n => (n[0]='.',n), // [(,a,args] → ['.', a, args[-1]]
+        (a,b)=>[a].concat(b==='' ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
+      ), // [(,a,args1,args2] → [[a,...args1],...args2]
+    '[': n => (n[0]='.',n),
+    '.': n => typeof n[1] === 'number' ? parseFloat(n.length < 3 ? '.'+n[1] : n[1]+n[0]+n[2]) : // [.,2,1] → 2.1
+      ['.',n[1],...n.slice(2).map(s=>typeof s === 'string' ? '"'+s+'"' : s)], // [.,a,b] → [.,a,"b"]
+    'e': n => parseFloat(n[1]+'e'+(Array.isArray(n[2])?n[2].join(''):n[2])),
+    'E': n => parse.map['e'](n)
   }
 })
 
