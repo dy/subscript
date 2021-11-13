@@ -134,8 +134,8 @@
   })
 
 
-  test.skip('parse: subscript-v1', async t => {
-    const {default:v1,parse:v1parse} = await import('../lib/parser/subscript.1.0.js');
+  test.skip('subscript-v1', async t => {
+    const {default:v1,parse:v1parse,evaluate} = await import('../lib/parser/subscript-lex.js');
     console.time('subscript1')
     for (let i = 0; i < 1e4; i++){
       let tree = v1parse(src(i))
