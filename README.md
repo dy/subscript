@@ -13,7 +13,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 ```js
 import subscript from 'subscript.js'
 let fn = subscript(`a.b + c(d - 1)`)
-fn({a:{b:1}, c:x=>x*2, d:3}) // 5
+fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 ```
 
 ## Useful in:
@@ -47,7 +47,7 @@ It compiles code to lispy calltree (compatible with [frisk](https://npmjs.com/fr
 
 ```js
 import {evaluate} from 'subscript.js'
-evaluate(['+', ['*', 'min', 60], '"sec"'], {min: 5}) // min*60 + "sec" == "300sec"
+evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
 
 ## Core primitives
@@ -58,13 +58,13 @@ By default subscript reserves:
 * `true`, `false`, `null` literals
 * `"` quotes.
 
-All primitives are extensible via `literals`, `quotes`, `groups`, `comments` dicts.
+All primitives are extensible via `parse.literal`, `parse.quote`, `parse.group`, `parse.comment` dicts.
 
 ```js
-import {quotes, comments, parse} from 'subscript.js'
+import { parse } from 'subscript.js'
 
-quotes["'"] = "'"
-comments["//"] = "\n"
+parse.quote["'"] = "'"
+parse.comment["//"] = "\n"
 
 parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 ```
@@ -73,8 +73,8 @@ parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
 
 Default operators include common operators for the listed languages in the following precedence:
 
-* `.`
-* `! + - ++ --` unary
+* `.`, `(…)`, `…(…)`, `…[…]`
+* `! + - ++ --` prefix
 * `* / %`
 * `+ -`
 * `<< >> >>>`
@@ -86,14 +86,17 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-All other operators can be extended.
+All other operators can be extended via `parse.binary`, `parse.prefix`, `parse.postfix` and `evaluate.operator`.
 
 ```js
-import {binary, parse, evaluate} from 'subscript.js'
+import { parse, evaluate } from 'subscript.js'
 
-// add operators to precedence groups
-binary[0]['=>'] = (args, body) => evaluate(body, args)
-binary[5]['|'] = (a,...b) => a.pipe(...b)
+// add precedences
+parse.binary['=>'] = 10
+
+// define evaluators
+evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
+evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -101,18 +104,8 @@ let tree = parse(`
   | map(gaussian)
   | map(num => "•".repeat(Math.floor(num * 65)))
 `)
-evaluate(tree, {Math, map, take, interval, gaussian})
+evaluate(tree, { Math, map, take, interval, gaussian })
 ```
-
-Operators are defined in by precedence index.
-
-```js
-unary[0]['&'] = a => address(a)   // unary prefix:  &a
-unary[1]['!'] = a => factorial(a) // TODO: unary postfix: a!
-binary[9]['U'] = (a,b) => a.union(b)  // binary:  a U b
-binary[9]['|'] = (...a) => a[0].pipe(...)  // also binary: a | b
-```
-
 
 ## Transforms
 
@@ -124,19 +117,13 @@ Transform rules are applied to raw parsed calltree groups, eg.:
 That can be used to organize ternary/combining operators:
 
 ```js
-import {parse, transforms, operators} from 'subscript.js'
+import { parse, evaluate } from 'subscript.js'
 
-Object.assign(operators[11],{
-  ':':(a,b)=>[a,b],
-  '?':(a,b)=>a??b,
-  '?:':(a,b)=>a?b:c
-})
-transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+evaluate.operator['?:'] = (a,b) => a ? b : c
+parse.binary[':'] = parse.binary['?'] = 5
+parse.map[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+
 parse('a ? b : c') // ['?:', 'a', 'b', 'c']
-
-// bonus side-effect:
-parse('a ? b') // ['?', 'a', 'b']
-parse('a : b') // [':', 'a', 'b']
 ```
 
 
@@ -158,7 +145,7 @@ It adds support for:
 <!-- + strings interpolation -->
 
 ```js
-import {parse} from 'subscript/justin.js'
+import { parse } from 'subscript/justin.js'
 
 let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
 ```
@@ -271,20 +258,24 @@ These are custom DSL operators snippets for your inspiration:
 
 ## Performance
 
-Subscript shows fastest known performance within other evaluators:
+Subscript shows relatively good performance within other evaluators:
 
 ```
-expr-eval: 86.924072265625 ms
-subscript: 177.585205078125 ms
-jsep: 80.21630859375 ms
-string-math: 112.215087890625 ms
-new Function: 392.10400390625 ms
+// 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
+// parse 30k times
+
+expr-eval: 712 ms
+subscript: 336 ms
+jsep: 278 ms
+jexl: ~1200 ms
+new Function: 1466 ms
 ```
 
 ## See also
 
 * [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
+* [mozjexl](https://github.com/mozilla/mozjexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)
 * [expression-eval](https://github.com/donmccurdy/expression-eval)
 * [jsep](https://github.com/EricSmekens/jsep)

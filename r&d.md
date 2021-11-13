@@ -60,10 +60,11 @@
           + same as in mdn https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_Precedence
           - lengthy
           - impossible to approach in the same loop as regular operators. Asc creates [.,a,b,[c,args]], desc creates [[[+,a,[.,b,c]], d, .e]
-* [ ] word operators
+* [x] take over jsep-strip performance
+* [x] word operators
 * [x] ~~subscript`exp`~~
   → no need for tpl tag unless fields have special meaning
-* [ ] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
+* [x] ternaries: `a?b:c`, `a|name>b`, `a,b in c`, `a to b by c`,
   * [x] ‽ what if we decompose these to op groups (just postfix unaries), it's totally fine and even useful:
     + [?,a], [?a,[:b,c]], [in,[,a,b],c], [to,a,b], [to,a,[by,b,c]], [if,a,[else,b,c]]
     . for that we would need to create transform groups
@@ -108,16 +109,30 @@
       + no flattening: makes precedence more clear, ops reduce-less: in js there's still binary ops
         - can be hard to organize right-assoc operators like **
         → long calls (multiple args) allow easier manual evals, frisk-compatible, fns still require args, enables shortcuts
-  - ~~try handling unaries in advance~~ direct parser solves that
+  - ~~try handling unaries in advance~~ → direct parser solves that
     ? turn . operator to transform
       ? a.b(c.d).e.f
   . dislex version (operators split) was faster than now.
   - seems many redundant checks come from operator call at the time when we just consume a token
-  . it is meaningful to track perf tests from the beginning of development?
-* [ ] Passing array literals is a problem
+  . it is meaningful to track perf tests from the beginning of development
+* Main slowdown reasons:
+  1. Operators lookup - it must be precedence dict
+  2. Unknown 20% lost at recursive algorithm: jsep-strip is faster:
+    . it has direct sequences
+      - streamlined sequences: doesn't seem to speed up.
+    . direct props/calls
+    . single-token expression shortcuts
+    . flattened recursion.
+      + it speeds up indeed up to 5-10%. Added hand-to-hand imlpementations.
+      ! Found! Recursion just causes extra consumeOp checks (twice as much)
+    ↑ Something of that makes thing faster, although less pure nor extensible (like, no {} literals).
+    . Logically, gobbleExpression doesn't check every token to belong to end token, so maybe there's just less checks?
+      → seems that we're going to have slower perf.
+* [x] Passing array literals is a problem
   - no way to pass Array literals to calltree. Internally they're marked in literals store, so evals are guaranteed. But direct eval(['a', ['+',1,2,3]]) marks an array as evaluable.
   ? Maybe we should prohibit evaluate exports to simplify internal logic?
-  → transform keeping raw literal or turn into constructors
+  → transform keeping raw literal or turn into constructors.
+  → not literals anymore, but tree operators
 * [ ] calltree nodes could stash static values (as in HTM)
 * [ ] Minifications
   * [x] ( [ . can be folded to operators, can they?...
@@ -129,11 +144,70 @@
       + can detect any other types of literals, like versions, units, hashes, urls, regexes etc
 * [ ] Examples
   * https://github.com/gajus/liqe
-* [ ] Flatten binaries: [, [, a b] c] → [, a b c]
+* [x] Flatten binaries: [, [, a b] c] → [, a b c]
   + many exceptions lead to flat form (args, sequence, ternaries)
   + it matches reducers
   + formulas are still meaningful this way
+  + good for performance
 * [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
 * [ ] Transforms for literals.
   + We need to interpolate strings `a${}b`
   + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0
+* [x] ~~Process sequences separately~~ → too redundant code, see drawbacks
+  + Now expression loop checks for groups besides normal operators, which is op tax
+  + Now commas are almost useless
+  + Braces are still special case of operator
+  + Comma-operator creates many problematic transforms, that can be reduced
+  - It doesn't gain desired performance, still ~17-20% slower.
+    + → due to excessive lookups
+  - It still has problems with calls/properties - it must check if consumed operator is a group or not.
+    → can be checked on expression level for redirection
+  + With memoized op lookup it allows faster braces lookups (no closing braces)
+  + Sequence is useful for consuming same-precedence ops as well like a + b + c ...
+  - Passing precedence over sequence is tedious
+    → Maybe pass groupinfo, like [operator, precedence, start, end, index]?
+  - consumeGroup from previous impl is almost identical (gravitates) to consumeSequence
+    - we may just address operator memo, current group collection (that simplifies lookups)
+* [x] Optimizations 2
+  * [x] Operator lookup can be simplified: look for small-letters first, and increase until meet none
+    ? so we go until max length or until found operator loses?
+      - it's faster for 1-char ops, slower for 2+ char ops
+  * [x] curOp can expect itself first, unless it's not met do lookup
+    + allows better node construction as well
+  * [ ] Think if it's worth hardcoding subscript case, opposed to generalization
+    + apparently that's faster, esp if done on numbers;
+    + maybe that's smaller, since generalization is not required;
+    + it can take a faster routes for numbers, sequences (no global closing-bracket case);
+* [x] Separating binary/unary and operators is good: +clear pertinence to eval/parse, +faster & simpler base, ...
+* [x] Should consolidate binary as `parse.binary`, `parse.prefix`, `evaluate.operator`?
+  + makes sense semantically
+  + better association parse.literal = ...
+  + reduces amount of exports
+  + no plurals needed
+* [ ] Error cases from jsep (from source)
+* [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
+* [ ] Make literals direct (passing wrapped numbers to functions isn't good)
+* [ ] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
+  + allows defining per-operator consumers
+  + allows better tests (no need for generic operator lookups)
+  + allows probablistic order of operators check
+  + some operators can consume as much nodes as they need
+
+## Notes
+
+. Parsers scheme usually can be generalized to just a set of tests like
+
+  isNumber: consumeNumber
+  isIdentifier: consumeIdentifier
+  isUnaryGroup: consumeUnaryGroup like (a)
+  isUnaryOperator: consumeUnary like +a
+  isQuote: consumeString
+  isComment: consumeComment
+  isAnythingElse: consumeAnythingElse
+
+  isBinaryOperator: consumeBinary like a+b, maybe even a+b+c
+  isBinaryGroup: consumeBinaryGroup like a(b), maybe even a,b,c
+  isTernaryStart: consumeTernary like a?b:
+
+  . Each test is fastest as simple numbers comparison, worse - string comparison, worse - regex
+  . Each consume is flow with own simpler checks
