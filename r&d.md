@@ -168,16 +168,14 @@
     → Maybe pass groupinfo, like [operator, precedence, start, end, index]?
   - consumeGroup from previous impl is almost identical (gravitates) to consumeSequence
     - we may just address operator memo, current group collection (that simplifies lookups)
+  + [.( are 3 special transforms and also they need special handling in expressions...
+  + also , still makes no sense on itself, so mb they can be handled as postfixes actually
 * [x] Optimizations 2
   * [x] Operator lookup can be simplified: look for small-letters first, and increase until meet none
     ? so we go until max length or until found operator loses?
       - it's faster for 1-char ops, slower for 2+ char ops
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
-  * [ ] Think if it's worth hardcoding subscript case, opposed to generalization
-    + apparently that's faster, esp if done on numbers;
-    + maybe that's smaller, since generalization is not required;
-    + it can take a faster routes for numbers, sequences (no global closing-bracket case);
 * [x] Separating binary/unary and operators is good: +clear pertinence to eval/parse, +faster & simpler base, ...
 * [x] Should consolidate binary as `parse.binary`, `parse.prefix`, `evaluate.operator`?
   + makes sense semantically
@@ -192,6 +190,13 @@
   + allows better tests (no need for generic operator lookups)
   + allows probablistic order of operators check
   + some operators can consume as much nodes as they need
+* [ ] Optimizations 3
+  * [ ] Think if it's worth hardcoding subscript case, opposed to generalization
+    + apparently that's faster, esp if done on numbers;
+    + maybe that's smaller, since generalization is not required;
+    + it can take a faster routes for numbers, sequences (no global closing-bracket case);
+  * [ ] It can be completely built on recursions, without while loops.
+    . Take space: space = (str='') => isSpace(c=char()) ? (str+c, index++, space(str)) : ''
 
 ## Notes
 
