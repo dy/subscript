@@ -19,8 +19,12 @@ class State extends String {
 const expr = (s, prec=0, node) => {
   space(s)
   node = any(s, token) || unary(s, prec) || s.err(`Unknown ${s[s.i]}`)
-  // while (wrap = any(postfix)) node = wrap
-  // space(s)
+  space(s)
+  // FIXME: postfix also should take prefix
+  console.log(1,node)
+  node = postfix(s, node)
+  console.log(2,node)
+  space(s)
   // while (wrap = binary()) node = wrap
   // space(s)
   return node
@@ -34,6 +38,7 @@ number = (s, from=s.i, c) => {
 }, // 0...9
 
 id = (s, from=s.i, c) => {
+  console.log(s[s.i])
   while (
     c = s.c1,
     (c >= 65 && c <= 90) || // A...Z
@@ -59,14 +64,16 @@ unary = (s, prec, c=s.c1) => {
   if (c === 43 || c === 45) return s.i++, [String.fromCharCode(c), expr(s)] // +, -
 },
 
-postfix = [
-  node => c2 === '++' || c2 === '--' || c1 === '+' || c1 === '-' || c1 === '!' && [c2, node],
-  node => c1 === '.' && ['.', '"' + node + '"'],
-  node => c1 === '(' && [node, group(')')],
-  node => c1 === '[' && [node, group(']')]
-],
+postfix = (s, node, c) =>
+  // ++--, +-!
+  (c = s.c2, c === 0x2b2b || c === 0x2d2d && (s.i+=2)) || (c = s.c1, c === 0x2b || c === 0x2d || c === 0x21 && (s.i+=1)) ? [c, node] :
+  c === 0x2e && ++s.i ? ['.', node, '"' + id(s) + '"'] :
+  // c === 0x28 ? [node, group(s,')')] :
+  s.c1 === 0x5b ? ['.', node, group(s,']')] :
+  node
+,
 
-group = end => (index++, node = expr(end), index++, node),
+group = (s,end,node) => (s.i++, node = expr(s,end), s.i++, node),
 
 prop = (cur, next) => (
   char() === '.' ? ['.', node, id()] : cur
