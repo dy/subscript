@@ -24,7 +24,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   },
 
   // consume operator that resides within current group by precedence
-  consumeOp = (ops, op, prec, l=3) => {
+  operator = (ops, op, prec, l=3) => {
     if (index >= expr.length) return
 
     // memoize by index - saves 20% to perf
@@ -39,7 +39,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeGroup = (curOp, end=curEnd) => {
+  group = (curOp, end=curEnd) => {
     index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
     if (curOp[2]) curEnd = curOp[2] // also we write root end marker
 
@@ -53,15 +53,15 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     else if (parse.quote[c]) index++, node = c + consume(c=>c!=cc) + c, index++
     else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in parse.literal ? parse.literal[node] : node
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = consumeOp(parse.prefix)) node = map([op[0], consumeGroup(op)])
+    else if (op = operator(parse.prefix)) node = map([op[0], group(op)])
 
     space()
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp(parse.binary)) && (curOp[2] || op[1] < curOp[1])) {
-      node = [op[0], node, consumeGroup(op)]
+    while ((op = operator(parse.binary)) && (curOp[2] || op[1] < curOp[1])) {
+      node = [op[0], node, group(op)]
       // consume same-op group, that also saves op lookups
-      while (char(op[0].length) === op[0]) node.push(consumeGroup(op))
+      while (char(op[0].length) === op[0]) node.push(group(op))
       node = map(node)
       space()
     }
@@ -72,7 +72,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     return node;
   }
 
-  return consumeGroup(prevOp = ['', 108])
+  return group(prevOp = ['', 108])
 },
 
 // calltree → result
