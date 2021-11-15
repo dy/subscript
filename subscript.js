@@ -31,7 +31,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     let cc = code(), op, c = char(), node, i=0
 
     // parse node by token parsers
-    tokens.find(token => (node = token(consume)) !== undefined)
+    tokens.find(token => (node = token(next)) !== undefined)
 
     // FIXME: ideally that shouldn't be the case here, that can be externalized too...
     if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
@@ -56,9 +56,8 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
   tokens = [...parse.token, unary],
 
-
   // consume until condition matches
-  consume = (is, from=index, n) => {
+  next = (is, from=index, n) => {
     if (typeof is === 'number') index+=is;
     else while (n = is(code())) if (typeof n === 'number') {index+=n; break} else index++;
     return index > from ? expr.slice(from, index) : undefined
@@ -98,12 +97,12 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   token: [
     // int
-    (consume,n) => (n = consume(c => c >= 48 && c <= 57)) && parseInt(n),
+    (next,n) => (n = next(c => c >= 48 && c <= 57)) && parseInt(n),
     // float
-    // (consume) => {
+    // (next) => {
     //   let number = '', c, isDigit = c => c >= 48 && c <= 57
 
-    //   return consume([
+    //   return next([
     //     isDigit,
     //     c => c === PERIOD ? 1 : 0 ?? '',
     //     isDigit,
@@ -113,11 +112,11 @@ Object.assign(parse, {
     //   ])
     // },
     // string '"
-    (consume,q,qc) => (
-      (q = consume(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + consume(c=>c!=qc) + consume(1))
+    (next,q,qc) => (
+      (q = next(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + next(c=>c!=qc) + next(1))
     ),
     // identifier
-    (consume) => consume(c =>
+    (next) => next(c =>
       (c >= 65 && c <= 90) || // A...Z
       (c >= 97 && c <= 122) || // a...z
       c == 36 || c == 95 || // $, _,
