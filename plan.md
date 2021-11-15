@@ -197,6 +197,7 @@
     + it can take a faster routes for numbers, sequences (no global closing-bracket case);
   * [ ] It can be completely built on recursions, without while loops.
     . Take space: space = (str='') => isSpace(c=char()) ? (str+c, index++, space(str)) : ''
+* [x] Move token parsers out: that would allow simplify & speed up comment, quote, interpolated string, float, even group token, and even maybe unary
 
 ## Notes
 

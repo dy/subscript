@@ -28,8 +28,9 @@ const parse = (expr, index=0, prevOp, curEnd) => {
 
     space();
 
-    let cc = code(), op, c = char(), node = number() ?? string() ?? id() ?? unary()
+    let cc = code(), op, c = char(), node = first(parse.token) ?? unary()
 
+    // FIXME: ideally that shouldn't be the case here, that can be externalized too...
     if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
 
     space()
@@ -52,19 +53,13 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
 
   // consume until condition matches
-  consume = (is, from=index) => {while (is(code())) index++; return index > from ? expr.slice(from, index) : undefined},
+  consume = (is, from=index) => {
+    if (typeof is === 'number') index+=is; else while (is(code())) index++;
+    return index > from ? expr.slice(from, index) : undefined
+  },
 
-  // return first fn that matches
-  first = (list, i, result) => {while (i<list.length) if (result = list[i]()) return result},
-
-  number = n => (n = consume(c => c >= 48 && c <= 57)) && parseInt(n),
-  string = (c,cc) => parse.quote[c=char()] && (cc=code(), (index++,c) + consume(c=>c!=cc) + (index++,c)),
-  id = () => consume(c =>
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  )
+  // return first fn that returns result
+  first = (list, i=0, result) => {while (i<list.length) if ((result = list[i++](consume)) !== undefined) return result}
 
   return group(prevOp = ['', 108])
 },
@@ -98,6 +93,21 @@ Object.assign(parse, {
     null: null
   },
   group: {'(':')','[':']'},
+  token: [
+    // int
+    (consume,n) => (n = consume(c => c >= 48 && c <= 57)) && parseInt(n),
+    // string '"
+    (consume,q,qc) => (
+      (q = consume(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + consume(c=>c!=qc) + consume(1))
+    ),
+    // identifier
+    (consume) => consume(c =>
+      (c >= 65 && c <= 90) || // A...Z
+      (c >= 97 && c <= 122) || // a...z
+      c == 36 || c == 95 || // $, _,
+      c >= 192 // any non-ASCII
+    )
+  ],
   quote: {'"':'"'},
   comment: {},
   prefix: {
@@ -124,6 +134,7 @@ Object.assign(parse, {
     '.': 1, '(': 1, '[': 1,
     'e': 1, 'E': 1
   },
+  // FIXME: ideally these should be merged into `token` - we could parse group/prop as single token, as jsperf does
   map: {
     '(': n => n.length < 3 ? n[1] : n.slice(1).reduce(
         (a,b)=>[a].concat(b==null ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
