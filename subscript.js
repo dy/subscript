@@ -15,13 +15,13 @@ const parse = (expr, index=0, curOp, curEnd) => {
 
   err = msg => {throw Error(msg + ' at ' + index)},
 
-  // skip index until condition matches
-  skip = is => { while (index < expr.length && is(code())) index++ },
-
   space = () => {while (code() <= 32) index++},
 
   // skip index, return skipped part
-  consume = is => expr.slice(index, (skip(is), index)),
+  consume = (is, from=index) => {
+    while (is(code())) index++
+    return expr.slice(from, index)
+  },
 
   // consume operator that resides within current group by precedence
   consumeOp = (ops, op, prec, l=3) => {
