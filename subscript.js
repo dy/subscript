@@ -33,9 +33,6 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
     // parse node by token parsers
     tokens.find(token => (node = token(next)) !== '')
 
-    // FIXME: ideally that shouldn't be the case here, that can be externalized too...
-    if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
-
     space()
 
     // consume expression for current precedence or group (== highest precedence)
@@ -113,11 +110,14 @@ Object.assign(parse, {
       (q = next(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + next(c=>c!=qc) + next(1))
     ),
     // identifier
-    (next) => next(c =>
-      (c >= 65 && c <= 90) || // A...Z
-      (c >= 97 && c <= 122) || // a...z
-      c == 36 || c == 95 || // $, _,
-      c >= 192 // any non-ASCII
+    (next, id) => (
+      id = next(c =>
+        (c >= 65 && c <= 90) || // A...Z
+        (c >= 97 && c <= 122) || // a...z
+        c == 36 || c == 95 || // $, _,
+        c >= 192 // any non-ASCII
+      ),
+      id && parse.literal.hasOwnProperty(id) ? parse.literal[id] : id
     )
   ],
   quote: {'"':'"'},
