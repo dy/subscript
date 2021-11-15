@@ -3,6 +3,7 @@
   import subscript, {parse, evaluate} from '../subscript.js'
 
   test('parse: basic', t => {
+    // is(parse('1 + * 2'), ['+',1, ['*', 2, 3]])
     is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
     any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
     any(parse('1 + 2 + 3 + 4'), ['+', ['+', ['+', 1, 2], 3], 4],   ['+', 1, 2, 3, 4])

@@ -1,8 +1,9 @@
 const isDigit = c => c >= 48 && c <= 57, // 0...9,
-  isIdentifierStart = c => (c >= 65 && c <= 90) || // A...Z
-      (c >= 97 && c <= 122) || // a...z
-      (c == 36 || c == 95) || // $, _,
-      c >= 192, // any non-ASCII
+  isIdentifierStart = c =>
+    (c >= 65 && c <= 90) || // A...Z
+    (c >= 97 && c <= 122) || // a...z
+    c == 36 || c == 95 || // $, _,
+    c >= 192, // any non-ASCII
   isIdentifierPart = c => isDigit(c) || isIdentifierStart(c),
   isSpace = c => c <= 32,
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
@@ -16,6 +17,8 @@ const parse = (expr, index=0, curOp, curEnd) => {
 
   // skip index until condition matches
   skip = is => { while (index < expr.length && is(code())) index++ },
+
+  space = () => {while (code() <= 32) index++},
 
   // skip index, return skipped part
   consume = is => expr.slice(index, (skip(is), index)),
@@ -40,10 +43,10 @@ const parse = (expr, index=0, curOp, curEnd) => {
     index += group[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
     if (group[2]) curEnd = group[2] // also we write root end marker
 
-    skip(isSpace);
+    space();
 
-    let cc = code(), op, c = char(),
-        node='' // indicates "nothing", or "empty", as in [a,,b] - impossible to get as result of parsing
+    let cc = code(), op, c = char(), node=''
+        // node= number() || string() || id() || unary() || ''
 
     // `.` can start off a numeric literal
     if (isDigit(cc)) node = parseInt(consume(isDigit));
@@ -52,7 +55,7 @@ const parse = (expr, index=0, curOp, curEnd) => {
     // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
     else if (op = consumeOp(parse.prefix)) node = map([op[0], consumeGroup(op)])
 
-    skip(isSpace)
+    space()
 
     // consume expression for current precedence or group (== highest precedence)
     while ((op = consumeOp(parse.binary)) && (group[2] || op[1] < group[1])) {
@@ -60,7 +63,7 @@ const parse = (expr, index=0, curOp, curEnd) => {
       // consume same-op group, that also saves op lookups
       while (char(op[0].length) === op[0]) node.push(consumeGroup(op))
       node = map(node)
-      skip(isSpace)
+      space()
     }
 
     // if group has end operator eg + a ) or + a ]
@@ -99,6 +102,8 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   quote: {'"':'"'},
   comment: {},
+  token: [
+  ],
   prefix: {
     '-': 2,
     '!': 2,
