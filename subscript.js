@@ -53,13 +53,14 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     return node;
   },
 
+  unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
   tokens = [...parse.token, unary],
 
-  unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
 
   // consume until condition matches
-  consume = (is, from=index) => {
-    if (typeof is === 'number') index+=is; else while (is(code())) index++;
+  consume = (is, from=index, n) => {
+    if (typeof is === 'number') index+=is;
+    else while (n = is(code())) if (typeof n === 'number') {index+=n; break} else index++;
     return index > from ? expr.slice(from, index) : undefined
   }
 
@@ -98,6 +99,19 @@ Object.assign(parse, {
   token: [
     // int
     (consume,n) => (n = consume(c => c >= 48 && c <= 57)) && parseInt(n),
+    // float
+    // (consume) => {
+    //   let number = '', c, isDigit = c => c >= 48 && c <= 57
+
+    //   return consume([
+    //     isDigit,
+    //     c => c === PERIOD ? 1 : 0 ?? '',
+    //     isDigit,
+    //     c => c === E || c === e ? 1 : 0,
+    //     c => c === PLUS || c === MINUS ? 1 : 0,
+    //     isDigit
+    //   ])
+    // },
     // string '"
     (consume,q,qc) => (
       (q = consume(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + consume(c=>c!=qc) + consume(1))
