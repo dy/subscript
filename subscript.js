@@ -1,6 +1,3 @@
-const isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
-  map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
-
 const parse = (expr, index=0, prevOp, curEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
@@ -39,7 +36,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
 
     // consume expression for current precedence or group (== highest precedence)
     while ((op = operator(parse.binary)) && (curOp[2] || op[1] < curOp[1])) {
-      node = [op[0], node, group(op)]
+      node = [op[0], node]
       // consume same-op group, that also saves op lookups
       while (char(op[0].length) === op[0]) node.push(group(op))
       node = map(node)
@@ -51,6 +48,8 @@ const parse = (expr, index=0, prevOp, curEnd) => {
 
     return node;
   },
+
+  unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
 
   // consume until condition matches
   consume = (is, from=index) => {while (is(code())) index++; return index > from ? expr.slice(from, index) : undefined},
@@ -65,9 +64,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
     c >= 192 // any non-ASCII
-  ),
-
-  unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)])
+  )
 
   return group(prevOp = ['', 108])
 },
@@ -88,7 +85,11 @@ evaluate = (s, ctx={}, c, op) => {
           : s in ctx ? ctx[s] : s
 
   return s
-}
+},
+
+// utils
+isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
+map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
 
 Object.assign(parse, {
   literal: {
