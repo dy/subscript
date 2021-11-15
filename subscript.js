@@ -9,7 +9,7 @@ const isDigit = c => c >= 48 && c <= 57, // 0...9,
   isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
   map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
 
-const parse = (expr, index=0, curOp, curEnd) => {
+const parse = (expr, index=0, prevOp, curEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
 
@@ -28,20 +28,20 @@ const parse = (expr, index=0, curOp, curEnd) => {
     if (index >= expr.length) return
 
     // memoize by index - saves 20% to perf
-    if (index && curOp[3] === index) return curOp
+    if (index && prevOp[3] === index) return prevOp
 
     // don't look up for end characters - saves 5-10% to perf
     if (curEnd && curEnd === char(curEnd.length)) return
 
     // ascending lookup is faster 1-char operators, longer for 2+ char ops
     // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
-    while (l) if ((prec=ops[op=char(l--)])!=null) return curOp = [op, prec, parse.group[op], index] //opinfo
+    while (l) if ((prec=ops[op=char(l--)])!=null) return prevOp = [op, prec, parse.group[op], index] //opinfo
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  consumeGroup = (group, end=curEnd) => {
-    index += group[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-    if (group[2]) curEnd = group[2] // also we write root end marker
+  consumeGroup = (curOp, end=curEnd) => {
+    index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
+    if (curOp[2]) curEnd = curOp[2] // also we write root end marker
 
     space();
 
@@ -58,7 +58,7 @@ const parse = (expr, index=0, curOp, curEnd) => {
     space()
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = consumeOp(parse.binary)) && (group[2] || op[1] < group[1])) {
+    while ((op = consumeOp(parse.binary)) && (curOp[2] || op[1] < curOp[1])) {
       node = [op[0], node, consumeGroup(op)]
       // consume same-op group, that also saves op lookups
       while (char(op[0].length) === op[0]) node.push(consumeGroup(op))
@@ -67,12 +67,12 @@ const parse = (expr, index=0, curOp, curEnd) => {
     }
 
     // if group has end operator eg + a ) or + a ]
-    if (group[2]) index+=group[2].length, curEnd=end
+    if (curOp[2]) index+=curOp[2].length, curEnd=end
 
     return node;
   }
 
-  return consumeGroup(curOp = ['', 108])
+  return consumeGroup(prevOp = ['', 108])
 },
 
 // calltree → result
