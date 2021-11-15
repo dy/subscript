@@ -28,7 +28,11 @@ const parse = (expr, index=0, prevOp, curEnd) => {
 
     space();
 
-    let cc = code(), op, c = char(), node = first(parse.token) ?? unary()
+    let cc = code(), op, c = char(), node, i=0
+
+    // parse node by token parsers
+    while (i<parse.token.length) if ((node = parse.token[i++](consume)) !== undefined) break
+    if (node === undefined) node = unary()
 
     // FIXME: ideally that shouldn't be the case here, that can be externalized too...
     if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
@@ -56,10 +60,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   consume = (is, from=index) => {
     if (typeof is === 'number') index+=is; else while (is(code())) index++;
     return index > from ? expr.slice(from, index) : undefined
-  },
-
-  // return first fn that returns result
-  first = (list, i=0, result) => {while (i<list.length) if ((result = list[i++](consume)) !== undefined) return result}
+  }
 
   return group(prevOp = ['', 108])
 },
