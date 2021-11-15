@@ -1,4 +1,4 @@
-const parse = (expr, index=0, prevOp, curEnd) => {
+const parse = (expr, index=0, lastOp, expectEnd) => {
   const char = (n=1) => expr.substr(index, n), // get next n chars (as fast as expr[index])
   code = () => expr.charCodeAt(index),
 
@@ -11,27 +11,27 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     if (index >= expr.length) return
 
     // memoize by index - saves 20% to perf
-    if (index && prevOp[3] === index) return prevOp
+    if (index && lastOp[3] === index) return lastOp
 
     // don't look up for end characters - saves 5-10% to perf
-    if (curEnd && curEnd === char(curEnd.length)) return
+    if (expectEnd && expectEnd === char(expectEnd.length)) return
 
     // ascending lookup is faster 1-char operators, longer for 2+ char ops
     // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
-    while (l) if ((prec=ops[op=char(l--)])!=null) return prevOp = [op, prec, parse.group[op], index] //opinfo
+    while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, parse.group[op], index] //opinfo
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  group = (curOp, end=curEnd) => {
+  group = (curOp, end=expectEnd) => {
     index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-    if (curOp[2]) curEnd = curOp[2] // also we write root end marker
+    if (curOp[2]) expectEnd = curOp[2] // also we write root end marker
 
     space();
 
     let cc = code(), op, c = char(), node, i=0
 
     // parse node by token parsers
-    tokens.find(token => (node = token(next)) !== undefined)
+    tokens.find(token => (node = token(next)) !== '')
 
     // FIXME: ideally that shouldn't be the case here, that can be externalized too...
     if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
@@ -48,7 +48,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     }
 
     // if group has end operator eg + a ) or + a ]
-    if (curOp[2]) index+=curOp[2].length, curEnd=end
+    if (curOp[2]) index+=curOp[2].length, expectEnd=end
 
     return node;
   },
@@ -59,11 +59,11 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   // consume until condition matches
   next = (is, from=index, n) => {
     if (typeof is === 'number') index+=is;
-    else while (n = is(code())) if (typeof n === 'number') {index+=n; break} else index++;
-    return index > from ? expr.slice(from, index) : undefined
+    else while (n=is(code())) index+=n; // 1 + true === 2
+    return expr.slice(from, index)
   }
 
-  return group(prevOp = ['', 108])
+  return group(lastOp = ['', 108])
 },
 
 // calltree → result
@@ -97,19 +97,16 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   token: [
     // int
-    (next,n) => (n = next(c => c >= 48 && c <= 57)) && parseInt(n),
+    (next,n) => (n = next(c => c >= 48 && c <= 57)).length ? parseInt(n) : '',
     // float
     // (next) => {
-    //   let number = '', c, isDigit = c => c >= 48 && c <= 57
-
-    //   return next([
-    //     isDigit,
-    //     c => c === PERIOD ? 1 : 0 ?? '',
-    //     isDigit,
+    //   let number, c, isDigit = c => c >= 48 && c <= 57
+    //   number = next(isDigit) + next(c => c === PERIOD) + next(isDigit)
+    //   if (number) {
     //     c => c === E || c === e ? 1 : 0,
     //     c => c === PLUS || c === MINUS ? 1 : 0,
     //     isDigit
-    //   ])
+    //   }
     // },
     // string '"
     (next,q,qc) => (
