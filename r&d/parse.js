@@ -1,8 +1,20 @@
-// v3 parser, principles:
+// v3 parser - how that may look, principles:
 // clarity of high-level outlook
 // extensibility via functional parsers, rather than declaratively
 // fast versions of subparsers vs short versions (bring size/speed balance to components)
 // avoid recursion in favor of local loops
+
+// FIXME
+// ? should we markup string before, like mapping to: ____+____+___
+// so that it saves time for id parsing and operator parsing?
+// because now we have to check nested group operators multiple times
+// consider a | b & c << d + e * f ** g | 1
+// - here lookup after g can be called multiple times to walk "up" by precedence, it's redundant parsing option.
+// ? or we could use this fast loop for lexer (detecting either token or operator, making groups).
+// and do grouping after (as we did in
+
+// ok, turns out op lookup by comparing with numbers is shower than dict access, so no much sense
+// so migrating some ideas
 
 export default s => expr(new State(s))
 
@@ -16,13 +28,13 @@ class State extends String {
   get c3() { return this.charCodeAt(this.i+2)|this.c2<<8 } // 3 char codes
 }
 
-const expr = (s, prec=0, node) => {
+const expr = (s, prec=0, end, node) => {
   space(s)
-  node = any(s, token) || unary(s, prec) || s.err(`Unknown ${s[s.i]}`)
+  node = any(s, token) || prefix(s, prec) || s.err(`Unknown ${s[s.i]}`)
   space(s)
   // FIXME: postfix also should take prefix
   console.log(1,node)
-  node = postfix(s, node)
+  node = postfix(s, node, prec)
   console.log(2,node)
   space(s)
   // while (wrap = binary()) node = wrap
@@ -60,20 +72,21 @@ string = (s, q=s.c1, from) => {
 comment = s => {
 },
 
-unary = (s, prec, c=s.c1) => {
+prefix = (s, prec, c=s.c1) => {
   if (c === 43 || c === 45) return s.i++, [String.fromCharCode(c), expr(s)] // +, -
+  // (c = s.c2, c === 0x2b2b || c === 0x2d2d && (s.i+=2))
+  // (c = s.c1, c === 0x2b || c === 0x2d || c === 0x21 && (s.i+=1))
 },
 
+// FIXME: this should consider precedence also
 postfix = (s, node, c) =>
-  // ++--, +-!
-  (c = s.c2, c === 0x2b2b || c === 0x2d2d && (s.i+=2)) || (c = s.c1, c === 0x2b || c === 0x2d || c === 0x21 && (s.i+=1)) ? [c, node] :
+  // ++--
+  (c = s.c2, c === 0x2b2b || c === 0x2d2d && (s.i+=2)) ? [c, node] :
   c === 0x2e && ++s.i ? ['.', node, '"' + id(s) + '"'] :
   // c === 0x28 ? [node, group(s,')')] :
-  s.c1 === 0x5b ? ['.', node, group(s,']')] :
+  s.c1 === 0x5b && ++s.i ? ['.', node, expr(s,']')] :
   node
 ,
-
-group = (s,end,node) => (s.i++, node = expr(s,end), s.i++, node),
 
 prop = (cur, next) => (
   char() === '.' ? ['.', node, id()] : cur
