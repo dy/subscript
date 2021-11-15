@@ -1,12 +1,4 @@
-const isDigit = c => c >= 48 && c <= 57, // 0...9,
-  isIdentifierStart = c =>
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192, // any non-ASCII
-  isIdentifierPart = c => isDigit(c) || isIdentifierStart(c),
-  isSpace = c => c <= 32,
-  isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
+const isCmd = (a,op) => Array.isArray(a) && a.length && a[0] && (op ? a[0]===op : typeof a[0] === 'string' || isCmd(a[0])),
   map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
 
 const parse = (expr, index=0, prevOp, curEnd) => {
@@ -16,12 +8,6 @@ const parse = (expr, index=0, prevOp, curEnd) => {
   err = msg => {throw Error(msg + ' at ' + index)},
 
   space = () => {while (code() <= 32) index++},
-
-  // skip index, return skipped part
-  consume = (is, from=index) => {
-    while (is(code())) index++
-    return expr.slice(from, index)
-  },
 
   // consume operator that resides within current group by precedence
   operator = (ops, op, prec, l=3) => {
@@ -45,15 +31,9 @@ const parse = (expr, index=0, prevOp, curEnd) => {
 
     space();
 
-    let cc = code(), op, c = char(), node=''
-        // node= number() || string() || id() || unary() || ''
+    let cc = code(), op, c = char(), node = number() ?? string() ?? id() ?? unary()
 
-    // `.` can start off a numeric literal
-    if (isDigit(cc)) node = parseInt(consume(isDigit));
-    else if (parse.quote[c]) index++, node = c + consume(c=>c!=cc) + c, index++
-    else if (isIdentifierStart(cc)) node = (node = consume(isIdentifierPart)) in parse.literal ? parse.literal[node] : node
-    // unaries can't be mixed in binary expressions loop due to operator names conflict, must be parsed before
-    else if (op = operator(parse.prefix)) node = map([op[0], group(op)])
+    if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
 
     space()
 
@@ -70,7 +50,24 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     if (curOp[2]) index+=curOp[2].length, curEnd=end
 
     return node;
-  }
+  },
+
+  // consume until condition matches
+  consume = (is, from=index) => {while (is(code())) index++; return index > from ? expr.slice(from, index) : undefined},
+
+  // return first fn that matches
+  first = (list, i, result) => {while (i<list.length) if (result = list[i]()) return result},
+
+  number = n => (n = consume(c => c >= 48 && c <= 57)) && parseInt(n),
+  string = (c,cc) => parse.quote[c=char()] && (cc=code(), (index++,c) + consume(c=>c!=cc) + (index++,c)),
+  id = () => consume(c =>
+    (c >= 65 && c <= 90) || // A...Z
+    (c >= 97 && c <= 122) || // a...z
+    c == 36 || c == 95 || // $, _,
+    c >= 192 // any non-ASCII
+  ),
+
+  unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)])
 
   return group(prevOp = ['', 108])
 },
@@ -102,8 +99,6 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   quote: {'"':'"'},
   comment: {},
-  token: [
-  ],
   prefix: {
     '-': 2,
     '!': 2,
@@ -130,7 +125,7 @@ Object.assign(parse, {
   },
   map: {
     '(': n => n.length < 3 ? n[1] : n.slice(1).reduce(
-        (a,b)=>[a].concat(b==='' ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
+        (a,b)=>[a].concat(b==null ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
       ), // [(,a,args1,args2] → [[a,...args1],...args2]
     '[': n => (n[0]='.',n),
     '.': n => typeof n[1] === 'number' ? parseFloat(n.length < 3 ? '.'+n[1] : n[1]+n[0]+n[2]) : // [.,2,1] → 2.1
