@@ -93,18 +93,17 @@ Object.assign(parse, {
   },
   group: {'(':')','[':']'},
   token: [
-    // int
-    (next,n) => (n = next(c => c >= 48 && c <= 57)).length ? parseInt(n) : '',
     // float
-    // (next) => {
-    //   let number, c, isDigit = c => c >= 48 && c <= 57
-    //   number = next(isDigit) + next(c => c === PERIOD) + next(isDigit)
-    //   if (number) {
-    //     c => c === E || c === e ? 1 : 0,
-    //     c => c === PLUS || c === MINUS ? 1 : 0,
-    //     isDigit
-    //   }
-    // },
+    (next) => {
+      let number, c, e,
+        isDigit = c => c >= 48 && c <= 57,
+        E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
+      number = next(isDigit) + next(c => c === PERIOD) + next(isDigit)
+      if (number)
+        if (e = next(c => c === E || c === _E))
+          number += e + next(c => c === PLUS || c === MINUS) + next(isDigit)
+      return number && parseFloat(number)
+    },
     // string '"
     (next,q,qc) => (
       (q = next(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + next(c=>c!=qc) + next(1))
@@ -152,10 +151,7 @@ Object.assign(parse, {
         (a,b)=>[a].concat(b==null ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
       ), // [(,a,args1,args2] → [[a,...args1],...args2]
     '[': n => (n[0]='.',n),
-    '.': n => typeof n[1] === 'number' ? parseFloat(n.length < 3 ? '.'+n[1] : n[1]+n[0]+n[2]) : // [.,2,1] → 2.1
-      ['.',n[1],...n.slice(2).map(s=>typeof s === 'string' ? '"'+s+'"' : s)], // [.,a,b] → [.,a,"b"]
-    'e': n => parseFloat(n[1]+'e'+(Array.isArray(n[2])?n[2].join(''):n[2])),
-    'E': n => parse.map['e'](n)
+    '.': n => ['.',n[1],...n.slice(2).map(s=>typeof s === 'string' ? '"'+s+'"' : s)] // [.,a,b] → [.,a,"b"]
   }
 })
 
