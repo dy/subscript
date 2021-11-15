@@ -31,8 +31,7 @@ const parse = (expr, index=0, prevOp, curEnd) => {
     let cc = code(), op, c = char(), node, i=0
 
     // parse node by token parsers
-    while (i<parse.token.length) if ((node = parse.token[i++](consume)) !== undefined) break
-    if (node === undefined) node = unary()
+    tokens.find(token => (node = token(consume)) !== undefined)
 
     // FIXME: ideally that shouldn't be the case here, that can be externalized too...
     if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
@@ -53,6 +52,8 @@ const parse = (expr, index=0, prevOp, curEnd) => {
 
     return node;
   },
+
+  tokens = [...parse.token, unary],
 
   unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
 
