@@ -6,37 +6,44 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
 
   space = () => {while (code() <= 32) index++},
 
+  // consume until condition matches
+  next = (is, from=index, n) => {
+    while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2; number indicates skip & stop (don't check)
+    return expr.slice(from, index)
+  },
+
   // consume operator that resides within current group by precedence
   operator = (ops, op, prec, l=3) => {
     if (index >= expr.length) return
 
     // memoize by index - saves 20% to perf
-    if (index && lastOp[3] === index) return lastOp
+    if (index && lastOp[2] === index) return lastOp
 
     // don't look up for end characters - saves 5-10% to perf
     if (expectEnd && expectEnd === char(expectEnd.length)) return
 
     // ascending lookup is faster 1-char operators, longer for 2+ char ops
     // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
-    while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, parse.group[op], index] //opinfo
+    while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
   },
 
   // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-  group = (curOp, end=expectEnd) => {
+  group = (curOp, end=expectEnd, curEnd) => {
     index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-    if (curOp[2]) expectEnd = curOp[2] // also we write root end marker
+
+    if (curEnd = parse.group[curOp[0]]) expectEnd = curEnd // also we write root end marker
 
     space();
 
     let cc = code(), op, c = char(), node, i=0
 
     // parse node by token parsers
-    tokens.find(token => (node = token(next)) !== '')
+    tokens.find(token => (node = token({next, group, code, err, space})) !== '')
 
     space()
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = operator(parse.binary)) && (curOp[2] || op[1] < curOp[1])) {
+    while ((op = operator(parse.binary)) && (curEnd || op[1] < curOp[1])) {
       node = [op[0], node]
       // consume same-op group, that also saves op lookups
       while (char(op[0].length) === op[0]) node.push(group(op))
@@ -45,19 +52,13 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
     }
 
     // if group has end operator eg + a ) or + a ]
-    if (curOp[2]) index+=curOp[2].length, expectEnd=end
+    if (curEnd) index+=curEnd.length, expectEnd=end
 
     return node;
   },
 
   unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
-  tokens = [...parse.token, unary],
-
-  // consume until condition matches
-  next = (is, from=index, n) => {
-    while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2; number indicates skip & stop (don't check)
-    return expr.slice(from, index)
-  }
+  tokens = [...parse.token, unary]
 
   return group(lastOp = ['', 108])
 },
@@ -88,7 +89,7 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   token: [
     // float
-    (next, number, c, e, isDigit) => {
+    ({next}, number, c, e, isDigit) => {
       const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
       number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD && 1) + next(isDigit)
       if (number)
@@ -98,12 +99,12 @@ Object.assign(parse, {
     },
 
     // string '"
-    (next,q,qc) => (
+    ({next},q,qc) => (
       (q = next(c => c === 34 || c === 39 && 1)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(c => 1))
     ),
 
     // identifier
-    function id(next, node, isId, c,cc) {
+    ({next, group}, node, isId, c,cc) => {
       node = next(isId = c =>
         (c >= 48 && c <= 57) || // 0..9
         (c >= 65 && c <= 90) || // A...Z
