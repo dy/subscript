@@ -88,11 +88,9 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   token: [
     // float
-    (next) => {
-      let number, c, e,
-        isDigit = c => c >= 48 && c <= 57,
-        E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
-      number = next(isDigit) + next(c => c === PERIOD ? 1 : 0) + next(isDigit)
+    (next, number, c, e, isDigit) => {
+      const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
+      number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD ? 1 : 0) + next(isDigit)
       if (number)
         if (e = next(c => c === E || c === _E ? 1 : 0))
           number += e + next(c => c === PLUS || c === MINUS ? 1 : 0) + next(isDigit)
@@ -105,8 +103,9 @@ Object.assign(parse, {
     ),
 
     // identifier
-    function id(next, node) {
-      node = next(c =>
+    function id(next, node, s, isId) {
+      node = next(isId = c =>
+        (c >= 48 && c <= 57) || // 0..9
         (c >= 65 && c <= 90) || // A...Z
         (c >= 97 && c <= 122) || // a...z
         c == 36 || c == 95 || // $, _,
@@ -117,9 +116,12 @@ Object.assign(parse, {
       else if (node === 'false') return false
       else if (node === 'null') return null
 
-      // parse props
+      // // parse a.b.c props
       // const PERIOD = 46
-      // while (p = next(c => c === PERIOD))
+      // while (next(c => c === PERIOD ? 1 : 0)) {
+      //   if (!Array.isArray(node)) node = ['.', node]
+      //   node.push((s=id(next), typeof s === 'string' ? '"'+s+'"' : s))
+      // }
 
       return node
     }
