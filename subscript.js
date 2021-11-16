@@ -23,7 +23,6 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
     if (expectEnd && expectEnd === char(expectEnd.length)) return
 
     // ascending lookup is faster 1-char operators, longer for 2+ char ops
-    // for (let i=0, prec0, op0; i < l;) if (prec0=ops[op0=char(++i)]) prec=prec0,op=op0; else if (prec) return opinfo(op, prec)
     while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
   },
 
@@ -38,12 +37,12 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
     let cc = code(), op, c = char(), node, i=0
 
     // parse node by token parsers
-    tokens.find(token => (node = token({next, group, code, err, space})) !== '')
+    tokens.find(token => (node = token(next)) !== '')
 
     space()
 
     // consume expression for current precedence or group (== highest precedence)
-    while ((op = operator(parse.binary)) && (curEnd || op[1] < curOp[1])) {
+    while ((op = operator(parse.binary)) && (curEnd || op[1] > curOp[1])) {
       node = [op[0], node]
       // consume same-op group, that also saves op lookups
       while (char(op[0].length) === op[0]) node.push(group(op))
@@ -60,7 +59,7 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
   unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]),
   tokens = [...parse.token, unary]
 
-  return group(lastOp = ['', 108])
+  return group(lastOp = ['', 0])
 },
 
 // calltree → result
@@ -89,7 +88,7 @@ Object.assign(parse, {
   group: {'(':')','[':']'},
   token: [
     // float
-    ({next}, number, c, e, isDigit) => {
+    (next, number, c, e, isDigit) => {
       const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
       number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD && 1) + next(isDigit)
       if (number)
@@ -99,12 +98,12 @@ Object.assign(parse, {
     },
 
     // string '"
-    ({next},q,qc) => (
+    (next,q,qc) => (
       (q = next(c => c === 34 || c === 39 && 1)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(c => 1))
     ),
 
     // identifier
-    ({next, group}, node, isId, c,cc) => {
+    (next, node, isId, c,cc) => {
       node = next(isId = c =>
         (c >= 48 && c <= 57) || // 0..9
         (c >= 65 && c <= 90) || // A...Z
@@ -126,35 +125,34 @@ Object.assign(parse, {
 
       while (next(c => c === PERIOD && (cc=c,1))) {
         if (cc === PERIOD) node = ['.', node, '"'+next(isId)+'"']
-        // else if (cc === OPAREN) node = ['[', node].concat(group(']')||[])
-        // else if (cc === OBRACK) node = [node].concat(group(')')||[])
+        // else if (cc === OBRACK) node = ['[', node].concat(group(']')||[])
+        // else if (cc === OPAREN) node = [node, group(')')]
       }
 
       return node
     }
   ],
   prefix: {
-    '-': 2,
-    '!': 2,
-    '+': 2,
-    '(': 2,
-    '++': 2,
-    '--': 2,
-    '.': 1
+    '-': 10,
+    '!': 10,
+    '+': 10,
+    '(': 10,
+    '++': 10,
+    '--': 10
   },
   postfix: {
-    '++': 2,
-    '--': 2
+    '++': 10,
+    '--': 10
   },
   binary: {
-    ',': 12,
-    '||': 11, '&&': 10, '|': 9, '^': 8, '&': 7,
+    ',': 0,
+    '||': 1, '&&': 2, '|': 3, '^': 4, '&': 5,
     '==': 6, '!=': 6,
-    '<': 5, '>': 5, '<=': 5, '>=': 5,
-    '<<': 4, '>>': 4, '>>>': 4,
-    '+': 3, '-': 3,
-    '*': 2, '/': 2, '%': 2,
-    '.': 1, '(': 1, '[': 1
+    '<': 7, '>': 7, '<=': 7, '>=': 7,
+    '<<': 8, '>>': 8, '>>>': 8,
+    '+': 9, '-': 9,
+    '*': 10, '/': 10, '%': 10,
+    '.': 11, '(': 11, '[': 11
   },
   // FIXME: ideally these should be merged into `token` - we could parse group/prop as single token, as jsperf does
   map: {
