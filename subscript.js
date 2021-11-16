@@ -55,8 +55,7 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
 
   // consume until condition matches
   next = (is, from=index, n) => {
-    if (typeof is === 'number') index+=is;
-    else while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2
+    while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2; number indicates skip & stop (don't check)
     return expr.slice(from, index)
   }
 
@@ -102,7 +101,7 @@ Object.assign(parse, {
 
     // string '"
     (next,q,qc) => (
-      (q = next(c => c === 34 || c === 39 ? 1 : 0)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(1))
+      (q = next(c => c === 34 || c === 39 ? 1 : 0)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(c => 1))
     ),
 
     // identifier
