@@ -33,7 +33,7 @@
     any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
 
     parse.binary['**']=.5
-    parse.quote["'"]="'"
+    // parse.quote["'"]="'"
     any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
     is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
     is(parse(`"abcd" + 'efgh'`), ['+','"abcd"',"'efgh'"])
@@ -77,7 +77,7 @@
     let fn = subscript(`a.b + c(d-1)`)
     is(fn({a:{b:1}, c:x=>x*2, d:3}), 5)
 
-    parse.quote["'"] = "'"
+    // parse.quote["'"] = "'"
     is(parse("'a' + 'b'"), ['+', "'a'", "'b'"])
 
     is(evaluate(['+', ['*', 'min', 60], new String('sec')], {min: 5}), "300sec")
@@ -110,9 +110,9 @@
   test('parse: literals', t=> {
     is(parse('null'), null)
     is(parse('(null)'), null)
-    parse.literal['undefined'] = undefined
-    is(parse('undefined'), undefined)
-    is(parse('(undefined)'), undefined)
+    // parse.literal['undefined'] = undefined
+    // is(parse('undefined'), undefined)
+    // is(parse('(undefined)'), undefined)
     is(parse('true||((false))'), ['||', true, false])
     is(parse('a(true)'), ['a', true])
     is(evaluate(parse('x(0)'),{x:v=>!!v}), false)

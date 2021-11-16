@@ -56,7 +56,7 @@ const parse = (expr, index=0, lastOp, expectEnd) => {
   // consume until condition matches
   next = (is, from=index, n) => {
     if (typeof is === 'number') index+=is;
-    else while (n=is(code())) index+=n; // 1 + true === 2
+    else while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2
     return expr.slice(from, index)
   }
 
@@ -93,36 +93,36 @@ Object.assign(parse, {
       let number, c, e,
         isDigit = c => c >= 48 && c <= 57,
         E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
-      number = next(isDigit) + next(c => c === PERIOD) + next(isDigit)
+      number = next(isDigit) + next(c => c === PERIOD ? 1 : 0) + next(isDigit)
       if (number)
-        if (e = next(c => c === E || c === _E))
-          number += e + next(c => c === PLUS || c === MINUS) + next(isDigit)
+        if (e = next(c => c === E || c === _E ? 1 : 0))
+          number += e + next(c => c === PLUS || c === MINUS ? 1 : 0) + next(isDigit)
       return number && parseFloat(number)
     },
 
     // string '"
     (next,q,qc) => (
-      (q = next(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + next(c=>c!=qc) + next(1))
+      (q = next(c => c === 34 || c === 39 ? 1 : 0)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(1))
     ),
 
     // identifier
-    function ident(next, id) {
-      id = next(c =>
+    function id(next, node) {
+      node = next(c =>
         (c >= 65 && c <= 90) || // A...Z
         (c >= 97 && c <= 122) || // a...z
         c == 36 || c == 95 || // $, _,
         c >= 192 // any non-ASCII
       )
-      if (!id) return id
-      else if (id === 'true') return true
-      else if (id === 'false') return false
-      else if (id === 'null') return null
+      if (!node) return node
+      else if (node === 'true') return true
+      else if (node === 'false') return false
+      else if (node === 'null') return null
 
       // parse props
       // const PERIOD = 46
-      // let p = next(c => c === PERIOD)
+      // while (p = next(c => c === PERIOD))
 
-      return id
+      return node
     }
   ],
   prefix: {
