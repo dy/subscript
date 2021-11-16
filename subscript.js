@@ -154,8 +154,7 @@ Object.assign(parse, {
     '<<': 4, '>>': 4, '>>>': 4,
     '+': 3, '-': 3,
     '*': 2, '/': 2, '%': 2,
-    '.': 1, '(': 1, '[': 1,
-    'e': 1, 'E': 1
+    '.': 1, '(': 1, '[': 1
   },
   // FIXME: ideally these should be merged into `token` - we could parse group/prop as single token, as jsperf does
   map: {

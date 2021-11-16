@@ -115,6 +115,7 @@
     // is(parse('(undefined)'), undefined)
     is(parse('true||((false))'), ['||', true, false])
     is(parse('a(true)'), ['a', true])
+    is(parse('a0'), 'a0')
     is(evaluate(parse('x(0)'),{x:v=>!!v}), false)
     is(evaluate(parse('x(true)'),{x:v=>!!v}), true)
   })
@@ -180,7 +181,7 @@
 
   test('parse: prop access', t => {
     any(parse('a["b"]["c"][0]'),['.',['.',['.','a','"b"'],'"c"'],0],  ['.', 'a', '"b"', '"c"', 0])
-    any(parse('a.b.c.0'), ['.',['.',['.','a','"b"'],'"c"'],0],  ['.', 'a', '"b"', '"c"', 0])
+    any(parse('a.b.c.0'), ['.',['.',['.','a','"b"'],'"c"'],'"0"'],  ['.', 'a', '"b"', '"c"', '"0"'])
     is(evaluate(['.','a','"b"','c',0], {a:{b:{c:[2]}}}), 2)
     is(evaluate(['.',['.',['.','a','"b"'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
   })
@@ -320,6 +321,11 @@
     is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
   })
 
+  test('parse: unfinished sequences', async t => {
+    is(parse('a+b)+c'), ['+','a','b'])
+    is(parse('(a+(b)))+c'), ['+','a','b'])
+    is(parse('a+b+)c'), ['+','a','b',null])
+  })
 
   test('eval: edge cases', t => {
     is(evaluate(parse('Math.pow(a, 3) / 2 + b * 2 - 1'), {Math, a:1, b:1}), 1.5)
