@@ -74,7 +74,7 @@ evaluate = (s, ctx={}, c, op) => {
     return c.call(...s.map(a=>evaluate(a,ctx)))
   }
   if (s && typeof s === 'string')
-    return parse.quote[s[0]] ? s.slice(1,-1)
+    return s[0] === '"' ? s.slice(1,-1)
           : s[0]==='@' ? s.slice(1)
           : s in ctx ? ctx[s] : s
 
@@ -86,11 +86,6 @@ isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
 map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
 
 Object.assign(parse, {
-  literal: {
-    true: true,
-    false: false,
-    null: null
-  },
   group: {'(':')','[':']'},
   token: [
     // float
@@ -104,23 +99,32 @@ Object.assign(parse, {
           number += e + next(c => c === PLUS || c === MINUS) + next(isDigit)
       return number && parseFloat(number)
     },
+
     // string '"
     (next,q,qc) => (
       (q = next(c => c === 34 || c === 39)) && (qc = q.charCodeAt(0), q + next(c=>c!=qc) + next(1))
     ),
+
     // identifier
-    (next, id) => (
+    function ident(next, id) {
       id = next(c =>
         (c >= 65 && c <= 90) || // A...Z
         (c >= 97 && c <= 122) || // a...z
         c == 36 || c == 95 || // $, _,
         c >= 192 // any non-ASCII
-      ),
-      id && parse.literal.hasOwnProperty(id) ? parse.literal[id] : id
-    )
+      )
+      if (!id) return id
+      else if (id === 'true') return true
+      else if (id === 'false') return false
+      else if (id === 'null') return null
+
+      // parse props
+      // const PERIOD = 46
+      // let p = next(c => c === PERIOD)
+
+      return id
+    }
   ],
-  quote: {'"':'"'},
-  comment: {},
   prefix: {
     '-': 2,
     '!': 2,

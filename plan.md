@@ -93,7 +93,7 @@
 * [ ] string interpolation ` ${} 1 ${} `
   ? make transforms for strings?
 * [x] Bench
-* [ ] unary word
+* [x] unary word
 * [ ] Demo
 * [x] Optimizations
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
@@ -142,15 +142,15 @@
     * [ ] Maybe create separate parse literal function
       + can detect booleans, null, undefined
       + can detect any other types of literals, like versions, units, hashes, urls, regexes etc
-* [ ] Examples
-  * https://github.com/gajus/liqe
+* [ ] https://github.com/gajus/liqe
 * [x] Flatten binaries: [, [, a b] c] → [, a b c]
   + many exceptions lead to flat form (args, sequence, ternaries)
   + it matches reducers
   + formulas are still meaningful this way
   + good for performance
 * [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
-* [ ] Transforms for literals.
+* [x] Transforms for literals/tokens.
+  → done as parsers, just implement per-token parsers
   + We need to interpolate strings `a${}b`
   + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0
 * [x] ~~Process sequences separately~~ → too redundant code, see drawbacks
@@ -184,8 +184,8 @@
   + no plurals needed
 * [ ] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
-* [ ] Make literals direct (passing wrapped numbers to functions isn't good)
-* [ ] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
+* [x] Make literals direct (passing wrapped numbers to functions isn't good)
+* [x] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
   + allows defining per-operator consumers
   + allows better tests (no need for generic operator lookups)
   + allows probablistic order of operators check
