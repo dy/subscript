@@ -103,7 +103,7 @@ Object.assign(parse, {
     ),
 
     // identifier
-    (next, node, isId, c,cc) => {
+    (next, node, isId, cc, sem=0) => {
       node = next(isId = c =>
         (c >= 48 && c <= 57) || // 0..9
         (c >= 65 && c <= 90) || // A...Z
@@ -123,10 +123,11 @@ Object.assign(parse, {
             OBRACK = 91, // [
             CBRACK = 93; // ]
 
-      while (next(c => c === PERIOD && (cc=c,1))) {
-        if (cc === PERIOD) node = ['.', node, '"'+next(isId)+'"']
+      while (next(c => (c === PERIOD) && (cc=c, 1))) {
+        if (cc === PERIOD) node = ['.', node, '"' + next(isId) + '"']
         // else if (cc === OBRACK) node = ['[', node].concat(group(']')||[])
-        // else if (cc === OPAREN) node = [node, group(')')]
+        // FIXME: this might be suboptimal
+        // else if (cc === OPAREN) node = [node, next(c => (c === CPAREN ? sem-- && true : c === OPAREN ? (sem++, true) : true ))]
       }
 
       return node
@@ -152,7 +153,7 @@ Object.assign(parse, {
     '<<': 8, '>>': 8, '>>>': 8,
     '+': 9, '-': 9,
     '*': 10, '/': 10, '%': 10,
-    '.': 11, '(': 11, '[': 11
+    '.': 11, '[': 11, '(': 11
   },
   // FIXME: ideally these should be merged into `token` - we could parse group/prop as single token, as jsperf does
   map: {
