@@ -90,20 +90,20 @@ Object.assign(parse, {
     // float
     (next, number, c, e, isDigit) => {
       const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
-      number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD ? 1 : 0) + next(isDigit)
+      number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD && 1) + next(isDigit)
       if (number)
-        if (e = next(c => c === E || c === _E ? 1 : 0))
-          number += e + next(c => c === PLUS || c === MINUS ? 1 : 0) + next(isDigit)
+        if (e = next(c => c === E || c === _E && 1))
+          number += e + next(c => c === PLUS || c === MINUS && 1) + next(isDigit)
       return number && parseFloat(number)
     },
 
     // string '"
     (next,q,qc) => (
-      (q = next(c => c === 34 || c === 39 ? 1 : 0)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(c => 1))
+      (q = next(c => c === 34 || c === 39 && 1)) && (qc = q.charCodeAt(0), q + next(c => c !== qc) + next(c => 1))
     ),
 
     // identifier
-    function id(next, node, s, isId) {
+    function id(next, node, isId, c,cc) {
       node = next(isId = c =>
         (c >= 48 && c <= 57) || // 0..9
         (c >= 65 && c <= 90) || // A...Z
@@ -116,12 +116,18 @@ Object.assign(parse, {
       else if (node === 'false') return false
       else if (node === 'null') return null
 
-      // // parse a.b.c props
-      // const PERIOD = 46
-      // while (next(c => c === PERIOD ? 1 : 0)) {
-      //   if (!Array.isArray(node)) node = ['.', node]
-      //   node.push((s=id(next), typeof s === 'string' ? '"'+s+'"' : s))
-      // }
+      // parse a.b.c props
+      const PERIOD = 46,
+            OPAREN = 40, // (
+            CPAREN = 41, // )
+            OBRACK = 91, // [
+            CBRACK = 93; // ]
+
+      while (next(c => c === PERIOD && (cc=c,1))) {
+        if (cc === PERIOD) node = ['.', node, '"'+next(isId)+'"']
+        // else if (cc === OPAREN) node = ['[', node].concat(group(']')||[])
+        // else if (cc === OBRACK) node = [node].concat(group(')')||[])
+      }
 
       return node
     }
@@ -156,7 +162,7 @@ Object.assign(parse, {
         (a,b)=>[a].concat(b==null ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
       ), // [(,a,args1,args2] → [[a,...args1],...args2]
     '[': n => (n[0]='.',n),
-    '.': n => ['.',n[1],...n.slice(2).map(s=>typeof s === 'string' ? '"'+s+'"' : s)] // [.,a,b] → [.,a,"b"]
+    // '.': n => ['.',n[1],...n.slice(2).map(s=>typeof s === 'string' ? '"'+s+'"' : s)] // [.,a,b] → [.,a,"b"]
   }
 })
 
