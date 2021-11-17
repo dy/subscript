@@ -198,7 +198,15 @@
   * [ ] It can be completely built on recursions, without while loops.
     . Take space: space = (str='') => isSpace(c=char()) ? (str+c, index++, space(str)) : ''
 * [x] Move token parsers out: that would allow simplify & speed up comment, quote, interpolated string, float, even group token, and even maybe unary
-* [ ] Will that eventually evolve into dict of parsing tokens/arrays of tokens? We may need this dict to be passed to subparsers, eg. string interpolator may need parse.expr.
+* [x] Will that eventually evolve into dict of parsing tokens/arrays of tokens? We may need this dict to be passed to subparsers, eg. string interpolator may need parse.expr.
+  ? maybe just make it a valid class? parser = new Parser(); parser.group(), parser.char() etc.
+    + exposes internal sub-parsers
+    + naturally exposes static variables
+    + passes instance to custom subparsers
+    + standard method
+    - mb problematic minifications
+  ? alternatively, a set of top-level parsers
+  → Done as flat directly exported tokens
 
 ## Notes
 
