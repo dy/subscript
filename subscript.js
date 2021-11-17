@@ -1,33 +1,31 @@
 let index, cur, end, lastOp
 
 const code = () => cur.charCodeAt(index), // current char code
-  char = (n=1) => cur.substr(index, n), // next n chars
-  err = (msg) => { throw Error(msg + ' at ' + index) },
-  next = (is, from=index, n) => { // number indicates skip & stop (don't check)
-    while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2;
-    return cur.slice(from, index)
-  },
-  space = () => { while (code() <= 32) index++ },
+char = (n=1) => cur.substr(index, n), // next n chars
+err = (msg) => { throw Error(msg + ' at ' + index) },
+next = (is, from=index, n) => { // number indicates skip & stop (don't check)
+  while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2;
+  return cur.slice(from, index)
+},
+space = () => { while (code() <= 32) index++ },
 
-  // consume operator that resides within current group by precedence
-  operator = (ops, op, prec, l=3) => {
-    if (index >= cur.length) return
+// consume operator that resides within current group by precedence
+operator = (ops, op, prec, l=3) => {
+  if (index >= cur.length) return
 
-    // memoize by index - saves 20% to perf
-    if (index && lastOp[2] === index) return lastOp
+  // memoize by index - saves 20% to perf
+  if (index && lastOp[2] === index) return lastOp
 
-    // don't look up for end characters - saves 5-10% to perf
-    if (end && end === char(end.length)) return
+  // don't look up for end characters - saves 5-10% to perf
+  if (end && end === char(end.length)) return
 
-    // ascending lookup is faster 1-char operators, longer for 2+ char ops
-    while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
-  },
+  // ascending lookup is faster 1-char operators, longer for 2+ char ops
+  while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
+},
 
-  isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
-  map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node
+isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
+map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node,
 
-
-export const
 // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
 group = (curOp, rootEnd=end, curEnd) => {
   index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
@@ -200,6 +198,8 @@ evaluate = Object.assign((s, ctx={}, c, op) => {
     ',':(...a)=>a.reduce((a,b)=>(a,b))
   }
 })
+
+export { parse, evaluate }
 
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
