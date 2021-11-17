@@ -153,7 +153,7 @@
   → done as parsers, just implement per-token parsers
   + We need to interpolate strings `a${}b`
   + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0
-* [x] ~~Process sequences separately~~ → too redundant code, see drawbacks
+* [x] Process sequences separately
   + Now expression loop checks for groups besides normal operators, which is op tax
   + Now commas are almost useless
   + Braces are still special case of operator
@@ -170,6 +170,7 @@
     - we may just address operator memo, current group collection (that simplifies lookups)
   + [.( are 3 special transforms and also they need special handling in expressions...
   + also , still makes no sense on itself, so mb they can be handled as postfixes actually
+  → Ok, handled in id parser as single token, same as jsep - that reduces unnecessary declarative API
 * [x] Optimizations 2
   * [x] Operator lookup can be simplified: look for small-letters first, and increase until meet none
     ? so we go until max length or until found operator loses?

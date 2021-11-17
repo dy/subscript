@@ -11,50 +11,46 @@ space = () => { while (code() <= 32) index++ },
 
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
-  if (index >= current.length) return
-
   // memoize by index - saves 20% to perf
-  if (index && lastOp[2] === index) return lastOp
+  // if (index && lastOp[2] === index) return lastOp
 
   // don't look up for end characters - saves 5-10% to perf
-  if (end && end === char(end.length)) return
+  // if (end && end === char(end.length)) return
 
   // ascending lookup is faster 1-char operators, longer for 2+ char ops
   while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
 },
 
 isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
-map = (node, t) => isCmd(node) ? (t = parse.map[node[0]], t?t(node):node) : node,
 
 // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-group = (curOp, rootEnd=end, curEnd) => {
+expr = (end, curOp = ['', -1]) => {
   index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
 
-  if (curEnd = parse.group[curOp[0]]) end = curEnd // also we write root end marker
+  // if (curEnd = parse.group[curOp[0]]) end = curEnd // also we write root end marker
 
-  space();
+  space()
 
   let cc = code(), op, c = char(), node, i=0
 
   // parse node by token parsers
   // FIXME: maybe instead of just next it's worth exposing full parsing st (that can later be merged into class?)
   parse.token.find(token => (node = token()) !== '')
-  if (node === '') (op = operator(parse.prefix)) && (node = map([op[0], group(op)]))
+  if (node === '') (op = operator(parse.prefix)) && (node = [op[0], expr(end, op)])
   if (node === '') node = undefined
 
   space()
 
   // consume expression for current precedence or group (== highest precedence)
-  while ((op = operator(parse.binary)) && (curEnd || op[1] > curOp[1])) {
+  while ((code() !== end && index < current.length) && (op = operator(parse.binary)) && op[1] > curOp[1]) {
     node = [op[0], node]
     // consume same-op group, that also saves op lookups
-    while (char(op[0].length) === op[0]) node.push(group(op))
-    node = map(node)
+    while (char(op[0].length) === op[0]) node.push(expr(end, op))
     space()
   }
 
   // if group has end operator eg + a ) or + a ]
-  if (curEnd) index+=curEnd.length, end=rootEnd
+  // if (curEnd) index+=curEnd.length, end=rootEnd
 
   return node;
 },
@@ -71,6 +67,10 @@ float = (number, c, e, isDigit) => {
 string = (q,qc) => (
   (q = next(c => (c === 34 || c === 39) && (qc=code()) && 1)) && (q + next(c => c !== qc) + next(c => 1))
 ),
+group = (OPEN=40, CLOSE=41, node='') => {
+  if (code() === OPEN) index++, node = expr(CLOSE), index++
+  return node
+},
 id = (node, isId, cc, sem=0) => {
   node = next(isId = c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -79,39 +79,36 @@ id = (node, isId, cc, sem=0) => {
     c == 36 || c == 95 || // $, _,
     c >= 192 // any non-ASCII
   )
+
+  // literals
   if (!node) return node
   else if (node === 'true') return true
   else if (node === 'false') return false
   else if (node === 'null') return null
+  space()
 
-  // parse a.b.c props
-  // const PERIOD = 46,
-  //       OPAREN = 40, // (
-  //       CPAREN = 41, // )
-  //       OBRACK = 91, // [
-  //       CBRACK = 93; // ]
-
-  // while (next(c => (c === PERIOD) && (cc=c, 1))) {
-  //   if (cc === PERIOD) node = ['.', node, '"' + next(isId) + '"']
-  //   // else if (cc === OBRACK) node = ['[', node].concat(group(']')||[])
-  //   // FIXME: this might be suboptimal
-  //   // else if (cc === OPAREN) node = [node, next(c => (c === CPAREN ? sem-- && true : c === OPAREN ? (sem++, true) : true ))]
-  // }
+  // a.b[c](d).e can be treated as single token - faster & shorter than making ([., a separate operator (see plan)
+  const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93
+  while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) {
+    index++, space()
+    if (cc === PERIOD) node = ['.', node, '"' + next(isId) + '"'], space()
+    else if (cc === OBRACK) node = ['.', node, expr(CBRACK)], index++
+    else if (cc === OPAREN) node = [node, expr(CPAREN)], index++
+    space()
+  }
 
   return node
 },
 
 parse = Object.assign(
-  expr => (current=expr, index=0, group(lastOp = ['', -1])),
+  str => (current=str, index=0, expr()),
   {
-    group: {'(':')','[':']'}, // FIXME: consolidate under group
-    token: [float, string, id],
+    token: [group, float, string, id],
 
     prefix: {
       '-': 10,
       '!': 10,
       '+': 10,
-      '(': 10,
       '++': 10,
       '--': 10
     },
@@ -126,17 +123,7 @@ parse = Object.assign(
       '<': 7, '>': 7, '<=': 7, '>=': 7,
       '<<': 8, '>>': 8, '>>>': 8,
       '+': 9, '-': 9,
-      '*': 10, '/': 10, '%': 10,
-      '.': 11, '[': 11, '(': 11
-    },
-
-    // FIXME: ideally these should be merged into `token` - we could parse group/prop as single token, as jsperf does
-    map: {
-      '(': n => n.length < 3 ? n[1] : n.slice(1).reduce(
-          (a,b)=>[a].concat(b==null ? [] : b[0]==',' ? b.slice(1).map(x=>x===''?undefined:x) : [b]),
-        ), // [(,a,args1,args2] → [[a,...args1],...args2]
-      '[': n => (n[0]='.',n),
-      '.': n => ['.',n[1],...n.slice(2).map(s=>typeof s === 'string' ? '"'+s+'"' : s)] // [.,a,b] → [.,a,"b"]
+      '*': 10, '/': 10, '%': 10
     }
   }
 ),
