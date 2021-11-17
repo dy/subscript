@@ -11,7 +11,7 @@ space = () => { while (code() <= 32) index++ },
 
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
-  // memoize by index - saves 20% to perf
+  // FIXME: memoize by index - saves 20% to perf
   // if (index && lastOp && lastOp[3] === index) return lastOp
 
   // ascending lookup is faster 1-char operators, longer for 2+ char ops
@@ -22,8 +22,6 @@ isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
 
 // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
 expr = (end, prec=-1) => {
-  // FIXME: try to make argument take only precedence
-
   space()
 
   let cc = code(), op, c = char(), node, from=index, arg
