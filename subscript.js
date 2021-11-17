@@ -45,7 +45,7 @@ expr = (end, curOp = ['', -1]) => {
     space()
     while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) {
       index++
-      if (cc === PERIOD) space(), node = ['.', node, float() ?? ('"' + id() + '"')]
+      if (cc === PERIOD) space(), node = ['.', node, '"' + id() + '"']
       else if (cc === OBRACK) node = ['.', node, expr(CBRACK)], index++
       else if (cc === OPAREN)
         arg = expr(CPAREN), index++,
@@ -68,20 +68,26 @@ expr = (end, curOp = ['', -1]) => {
 },
 
 // tokens
-float = (number, c, e, isDigit) => {
+// 1.2e+3, .5
+float = (number, c, isDigit) => {
   const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
+
   number = next(isDigit = c => c >= 48 && c <= 57) || ''
   if (code() === PERIOD) index++, number += '.' + next(isDigit)
-  if (number && ((c = code()) === E || c === _E)) {
-    index++, number += 'e'
-    if ((c=code()) === PLUS || c === MINUS) number += char(), index++
-    number += next(isDigit)
+  if (number) {
+    if ((c = code()) === E || c === _E) {
+      index++, number += 'e'
+      if ((c=code()) === PLUS || c === MINUS) number += char(), index++
+      number += next(isDigit)
+    }
+    return parseFloat(number)
   }
-  return number ? parseFloat(number) : undefined
 },
 
+// "a", 'b'
 string = (q=code(), qc) => (q === 34 || q === 39) && (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc),
 
+// (...exp)
 group = (open=40, end=41, node) => code() === open && (index++, node = expr(end), index++, node),
 
 id = () => next(c =>
