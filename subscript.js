@@ -4,8 +4,8 @@ const code = () => current.charCodeAt(index), // current char code
 char = (n=1) => current.substr(index, n), // next n chars
 err = (msg) => { throw Error(msg + ' at ' + index) },
 next = (is, from=index, n) => { // number indicates skip & stop (don't check)
-  while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2;
-  return current.slice(from, index)
+  while (is(code())) ++index > current.length && err('End by ' + is) // 1 + true === 2;
+  return index > from ? current.slice(from, index) : undefined
 },
 space = () => { while (code() <= 32) index++ },
 
@@ -13,9 +13,6 @@ space = () => { while (code() <= 32) index++ },
 operator = (ops, op, prec, l=3) => {
   // memoize by index - saves 20% to perf
   // if (index && lastOp[2] === index) return lastOp
-
-  // don't look up for end characters - saves 5-10% to perf
-  // if (end && end === char(end.length)) return
 
   // ascending lookup is faster 1-char operators, longer for 2+ char ops
   while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
@@ -25,32 +22,46 @@ isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
 
 // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
 expr = (end, curOp = ['', -1]) => {
+  // FIXME: try to make argument take only precedence
+  // FIXME: excessive here. Try moving back to operator
   index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
-
-  // if (curEnd = parse.group[curOp[0]]) end = curEnd // also we write root end marker
 
   space()
 
-  let cc = code(), op, c = char(), node, i=0
+  let cc = code(), op, c = char(), node, from=index, arg
+  const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93
 
   // parse node by token parsers
-  // FIXME: maybe instead of just next it's worth exposing full parsing st (that can later be merged into class?)
-  parse.token.find(token => (node = token()) !== '')
-  if (node === '') (op = operator(parse.prefix)) && (node = [op[0], expr(end, op)])
-  if (node === '') node = undefined
+  parse.token.find(token => (node = token(), index > from))
+
+  // unary
+  if (index === from) (op = operator(parse.prefix)) && (node = [op[0], expr(end, op)])
+
+  // literal
+  else if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
+
+  // chain, a.b[c](d).e − can be treated as single token. Faster & shorter than making ([. a separate operator
+  else {
+    space()
+    while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) {
+      index++
+      if (cc === PERIOD) space(), node = ['.', node, float() ?? ('"' + id() + '"')]
+      else if (cc === OBRACK) node = ['.', node, expr(CBRACK)], index++
+      else if (cc === OPAREN)
+        arg = expr(CPAREN), index++, node = [node, ...(isCmd(arg) && arg[0] === ',' ? arg.slice(1) : arg === undefined ? [] : [arg])]
+      space()
+    }
+  }
 
   space()
 
   // consume expression for current precedence or group (== highest precedence)
-  while ((code() !== end && index < current.length) && (op = operator(parse.binary)) && op[1] > curOp[1]) {
+  while ((cc = code()) && cc !== end && (op = operator(parse.binary)) && op[1] > curOp[1]) {
     node = [op[0], node]
     // consume same-op group, that also saves op lookups
     while (char(op[0].length) === op[0]) node.push(expr(end, op))
     space()
   }
-
-  // if group has end operator eg + a ) or + a ]
-  // if (curEnd) index+=curEnd.length, end=rootEnd
 
   return node;
 },
@@ -58,52 +69,34 @@ expr = (end, curOp = ['', -1]) => {
 // tokens
 float = (number, c, e, isDigit) => {
   const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
-  number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD && 1) + next(isDigit)
-  if (number)
-    if (e = next(c => (c === E || c === _E) && 1))
-      number += e + next(c => (c === PLUS || c === MINUS) && 1) + next(isDigit)
-  return number && parseFloat(number)
-},
-string = (q,qc) => (
-  (q = next(c => (c === 34 || c === 39) && (qc=code()) && 1)) && (q + next(c => c !== qc) + next(c => 1))
-),
-group = (OPEN=40, CLOSE=41, node='') => {
-  if (code() === OPEN) index++, node = expr(CLOSE), index++
-  return node
-},
-id = (node, isId, cc, sem=0) => {
-  node = next(isId = c =>
-    (c >= 48 && c <= 57) || // 0..9
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  )
-
-  // literals
-  if (!node) return node
-  else if (node === 'true') return true
-  else if (node === 'false') return false
-  else if (node === 'null') return null
-  space()
-
-  // a.b[c](d).e can be treated as single token - faster & shorter than making ([., a separate operator (see plan)
-  const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93
-  while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) {
-    index++, space()
-    if (cc === PERIOD) node = ['.', node, '"' + next(isId) + '"'], space()
-    else if (cc === OBRACK) node = ['.', node, expr(CBRACK)], index++
-    else if (cc === OPAREN) node = [node, expr(CPAREN)], index++
-    space()
+  number = next(isDigit = c => c >= 48 && c <= 57) || ''
+  if (code() === PERIOD) index++, number += '.' + next(isDigit)
+  if (number && (code() === E || code() === _E)) {
+    index++, number += 'e'
+    if (code() === PLUS || code() === MINUS) number += char(), index++
+    number += next(isDigit)
   }
-
-  return node
+  return number ? parseFloat(number) : undefined
 },
+
+string = (q=code(), qc) => (q === 34 || q === 39) && (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc),
+
+group = (open=40, end=41, node) => code() === open && (index++, node = expr(end), index++, node),
+
+id = () => next(c =>
+  (c >= 48 && c <= 57) || // 0..9
+  (c >= 65 && c <= 90) || // A...Z
+  (c >= 97 && c <= 122) || // a...z
+  c == 36 || c == 95 || // $, _,
+  c >= 192 // any non-ASCII
+),
 
 parse = Object.assign(
   str => (current=str, index=0, expr()),
   {
-    token: [group, float, string, id],
+    token: [ group, float, string, id ],
+
+    literal: { true: true, false: false, null: null },
 
     prefix: {
       '-': 10,
