@@ -4,7 +4,7 @@ const code = () => current.charCodeAt(index), // current char code
 char = (n=1) => current.substr(index, n), // next n chars
 err = (msg) => { throw Error(msg + ' at ' + index) },
 next = (is, from=index, n) => { // number indicates skip & stop (don't check)
-  while (is(code())) ++index > current.length && err('End by ' + is) // 1 + true === 2;
+  while (is(code())) ++index > current.length && err('Unexpected end ' + is) // 1 + true === 2;
   return index > from ? current.slice(from, index) : undefined
 },
 space = () => { while (code() <= 32) index++ },
@@ -72,9 +72,9 @@ float = (number, c, e, isDigit) => {
   const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
   number = next(isDigit = c => c >= 48 && c <= 57) || ''
   if (code() === PERIOD) index++, number += '.' + next(isDigit)
-  if (number && (code() === E || code() === _E)) {
+  if (number && ((c = code()) === E || c === _E)) {
     index++, number += 'e'
-    if (code() === PLUS || code() === MINUS) number += char(), index++
+    if ((c=code()) === PLUS || c === MINUS) number += char(), index++
     number += next(isDigit)
   }
   return number ? parseFloat(number) : undefined
@@ -97,7 +97,11 @@ parse = Object.assign(
   {
     token: [ group, float, string, id ],
 
-    literal: { true: true, false: false, null: null },
+    literal: {
+      true: true,
+      false: false,
+      null: null
+    },
 
     prefix: {
       '-': 10,
@@ -147,8 +151,6 @@ evaluate = Object.assign((s, ctx={}, c, op) => {
     '--':a=>--a,
 
     '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
-    '(':(a,...args)=>a(...args),
-    '[':(a,...args)=>a[args.pop()],
 
     '%':(...a)=>a.reduce((a,b)=>a%b),
     '/':(...a)=>a.reduce((a,b)=>a/b),
