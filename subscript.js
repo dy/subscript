@@ -48,7 +48,8 @@ expr = (end, curOp = ['', -1]) => {
       if (cc === PERIOD) space(), node = ['.', node, float() ?? ('"' + id() + '"')]
       else if (cc === OBRACK) node = ['.', node, expr(CBRACK)], index++
       else if (cc === OPAREN)
-        arg = expr(CPAREN), index++, node = [node, ...(isCmd(arg) && arg[0] === ',' ? arg.slice(1) : arg === undefined ? [] : [arg])]
+        arg = expr(CPAREN), index++,
+        node = isCmd(arg) && arg[0]===','? (arg[0]=node, node=arg) : arg == null ? [node] : [node, arg]
       space()
     }
   }
