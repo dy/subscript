@@ -1,17 +1,17 @@
-let index, cur, end, lastOp
+let index, current, end, lastOp
 
-const code = () => cur.charCodeAt(index), // current char code
-char = (n=1) => cur.substr(index, n), // next n chars
+const code = () => current.charCodeAt(index), // current char code
+char = (n=1) => current.substr(index, n), // next n chars
 err = (msg) => { throw Error(msg + ' at ' + index) },
 next = (is, from=index, n) => { // number indicates skip & stop (don't check)
   while (n=is(code())) if (index+=n, typeof n ==='number') break // 1 + true === 2;
-  return cur.slice(from, index)
+  return current.slice(from, index)
 },
 space = () => { while (code() <= 32) index++ },
 
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
-  if (index >= cur.length) return
+  if (index >= current.length) return
 
   // memoize by index - saves 20% to perf
   if (index && lastOp[2] === index) return lastOp
@@ -39,7 +39,8 @@ group = (curOp, rootEnd=end, curEnd) => {
   // parse node by token parsers
   // FIXME: maybe instead of just next it's worth exposing full parsing st (that can later be merged into class?)
   parse.token.find(token => (node = token()) !== '')
-  // if (node === '') (op = operator(parse.prefix)) && (node = map([op[0], group(op)]))
+  if (node === '') (op = operator(parse.prefix)) && (node = map([op[0], group(op)]))
+  if (node === '') node = undefined
 
   space()
 
@@ -58,8 +59,7 @@ group = (curOp, rootEnd=end, curEnd) => {
   return node;
 },
 
-unary = op => (op = operator(parse.prefix)) && map([op[0], group(op)]), // FIXME: consolidate into group
-
+// tokens
 float = (number, c, e, isDigit) => {
   const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
   number = next(isDigit = c => c >= 48 && c <= 57) + next(c => c === PERIOD && 1) + next(isDigit)
@@ -68,11 +68,9 @@ float = (number, c, e, isDigit) => {
       number += e + next(c => (c === PLUS || c === MINUS) && 1) + next(isDigit)
   return number && parseFloat(number)
 },
-
 string = (q,qc) => (
   (q = next(c => (c === 34 || c === 39) && (qc=code()) && 1)) && (q + next(c => c !== qc) + next(c => 1))
 ),
-
 id = (node, isId, cc, sem=0) => {
   node = next(isId = c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -104,10 +102,10 @@ id = (node, isId, cc, sem=0) => {
 },
 
 parse = Object.assign(
-  expr => (cur=expr, index=0, group(lastOp = ['', -1])),
+  expr => (current=expr, index=0, group(lastOp = ['', -1])),
   {
     group: {'(':')','[':']'}, // FIXME: consolidate under group
-    token: [float, string, id, unary],
+    token: [float, string, id],
 
     prefix: {
       '-': 10,
