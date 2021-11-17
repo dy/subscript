@@ -1,4 +1,4 @@
-let index, current, end, lastOp
+let index, current, lastOp
 
 const code = () => current.charCodeAt(index), // current char code
 char = (n=1) => current.substr(index, n), // next n chars
@@ -12,19 +12,17 @@ space = () => { while (code() <= 32) index++ },
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
   // memoize by index - saves 20% to perf
-  // if (index && lastOp[2] === index) return lastOp
+  // if (index && lastOp && lastOp[3] === index) return lastOp
 
   // ascending lookup is faster 1-char operators, longer for 2+ char ops
-  while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, index] //opinfo
+  while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, op.length, index] //opinfo
 },
 
 isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
 
 // `foo.bar(baz)`, `1`, `"abc"`, `(a % 2)`
-expr = (end, curOp = ['', -1]) => {
+expr = (end, prec=-1) => {
   // FIXME: try to make argument take only precedence
-  // FIXME: excessive here. Try moving back to operator
-  index += curOp[0].length // group always starts with an operator +-b, a(b, +(b, a+b+c, so we skip it
 
   space()
 
@@ -35,7 +33,7 @@ expr = (end, curOp = ['', -1]) => {
   parse.token.find(token => (node = token(), index > from))
 
   // unary
-  if (index === from) (op = operator(parse.prefix)) && (node = [op[0], expr(end, op)])
+  if (index === from) (op = operator(parse.prefix)) && (index += op[2], node = [op[0], expr(end, op[1])])
 
   // literal
   else if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
@@ -57,10 +55,10 @@ expr = (end, curOp = ['', -1]) => {
   space()
 
   // consume expression for current precedence or group (== highest precedence)
-  while ((cc = code()) && cc !== end && (op = operator(parse.binary)) && op[1] > curOp[1]) {
+  while ((cc = code()) && cc !== end && (op = operator(parse.binary)) && op[1] > prec) {
     node = [op[0], node]
-    // consume same-op group, that also saves op lookups
-    while (char(op[0].length) === op[0]) node.push(expr(end, op))
+    // consume same-op group, do..while both saves op lookups and space
+    do { index += op[2], node.push(expr(end, op[1])) } while (char(op[2]) === op[0])
     space()
   }
 
