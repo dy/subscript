@@ -1,3 +1,5 @@
+const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, PLUS = 43, MINUS = 45
+
 export let index, current, lastOp
 
 export const code = () => current.charCodeAt(index), // current char code
@@ -9,7 +11,7 @@ next = (is=1, from=index) => { // number indicates skip & stop (don't check)
   return index > from ? current.slice(from, index) : null
 },
 space = () => { while (code() <= 32) index++ },
-map = (node, t=parse.map[node[0]]) => t ? t(node) : node,
+map = (node, t=Array.isArray(node)&&parse.map[node[0]]) => t ? t(node) : node,
 
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
@@ -25,27 +27,17 @@ expr = (end, prec=-1) => {
   space()
 
   let cc = code(), op, c = char(), node, from=index, arg
-  const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93
 
   // parse node by token parsers
   parse.token.find(token => (node = token()) != null)
 
-  // unary
-  if (node == null) (op = operator(parse.prefix)) && (index += op[2], node = map([op[0], expr(end, op[1])]))
+  // unary prefix
+  if (node == null) (op = operator(parse.unary)) && (index += op[2], node = map([op[0], expr(end, op[1])]))
 
-  // literal
-  else if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
-
-  // chain, a.b[c](d).e − can be treated as single token. Faster & shorter than making ([. a separate operator
+  // postfix handlers allow a.b[c](d).e, postfix operators, literals etc.
   else {
     space()
-    while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) { // .([
-      index++
-      if (cc === PERIOD) space(), node = map(['.', node, id()])
-      else if (cc === OBRACK) node = map(['[', node, expr(CBRACK)]), index++
-      else if (cc === OPAREN) node = map(['(', node, expr(CPAREN)]), index++
-      space()
-    }
+    while (parse.post.find((post, res) => (res = post(node)) !== node && (node = map(res)))) space()
   }
 
   space()
@@ -66,11 +58,11 @@ expr = (end, prec=-1) => {
 // 1.2e+3, .5
 float = (number, c, isDigit) => {
   number = next(isDigit = c => c >= 48 && c <= 57) || ''
-  if (code() === 46) index++, number += '.' + next(isDigit)
+  if (code() === PERIOD) index++, number += '.' + next(isDigit)
   if (number) {
     if ((c = code()) === 69 || c === 101) { // e, E
       index++, number += 'e'
-      if ((c=code()) === 43 || c === 45) // +-
+      if ((c=code()) === PLUS || c === MINUS) // +-
         number += char(), index++
       number += next(isDigit)
     }
@@ -97,23 +89,14 @@ parse = Object.assign(
   {
     token: [ group, float, string, id ],
 
-    literal: {
-      true: true,
-      false: false,
-      null: null
-    },
-
-    prefix: {
+    unary: {
       '-': 17,
       '!': 17,
       '+': 17,
       '++': 17,
       '--': 17
     },
-    postfix: {
-      '++': 18,
-      '--': 18
-    },
+
     binary: {
       ',': 1,
       '||': 6, '&&': 7, '|': 8, '^': 9, '&': 10,
@@ -123,8 +106,16 @@ parse = Object.assign(
       '+': 14, '-': 14,
       '*': 15, '/': 15, '%': 15
     },
+
+    post: [
+      node => (typeof node === 'string') ? node === 'true' ? true : node === 'false' ? false : node === 'null' ? null : node : node,
+      node => code() === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
+      node => code() === OBRACK ? (index++, node=['[', node, expr(CBRACK)], index++, node) : node,
+      node => code() === OPAREN ? (index++, node=['(', node, expr(CPAREN)], index++, node) : node
+    ],
+
     map: {
-      '.': ([op, obj, prop]) => [op, obj, '"'+prop+'"'],
+      // '.': ([op, obj, prop]) => [op, obj, '"'+prop+'"'],
       '[': (node) => (node[0]='.', node),
       '(': ([op, fn, arg]) => Array.isArray(arg) && arg[0]===','? (arg[0]=fn, arg) : arg == null ? [fn] : [fn, arg]
     }
