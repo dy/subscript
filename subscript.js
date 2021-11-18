@@ -11,8 +11,8 @@ space = () => { while (code() <= 32) index++ },
 
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
-  // FIXME: memoize by index - saves 20% to perf
-  // if (index && lastOp && lastOp[3] === index) return lastOp
+  // memoize by index - saves 20% to perf
+  if (index && lastOp && lastOp[3] === index) return lastOp
 
   // ascending lookup is faster 1-char operators, longer for 2+ char ops
   while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, op.length, index] //opinfo
@@ -95,7 +95,7 @@ id = () => next(c =>
 ),
 
 parse = Object.assign(
-  str => (current=str, index=0, expr()),
+  str => (current=str, index=lastOp=0, expr()),
   {
     token: [ group, float, string, id ],
 
