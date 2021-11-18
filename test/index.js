@@ -325,9 +325,9 @@ test('ext: object', t => {
   is(evaluate(parse('{x: 1+2, y:a(3)}'),{a:x=>x*2}), {x:3, y:6})
 })
 
-test.todo('ext: justin', async t => {
+test('ext: justin', async t => {
   const {parse} = await import('../justin.js')
-  is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','y',['**',2,2]]], 'x'])
+  is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','"y"',['**',2,2]]], '"x"'])
   is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
 })
 

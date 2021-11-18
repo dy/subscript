@@ -1,68 +1,73 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import {binary, unary, transforms, groups, comments, quotes, literals} from './subscript.js'
+import {evaluate, operator} from './src/evaluate.js'
+import {parse, binary, unary, postfix, token, literal,
+        code, char, next, space, expr} from './src/parse.js'
 
 // undefined
-literals['undefined'] = undefined
+literal['undefined'] = undefined
+
+// '
+token.push((q, qc) => q === 39 ? (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc) : null)
 
 // **
-binary.splice(2,0,{'**': (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))})
+binary['**'] = 16
+operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
 
 // ~
-unary[1]['~'] = a=>~a
+unary['~'] = 17
+operator['~'] = a=>~a
 
 // ...
 // unary[1]['...']=true
 
 // ;
-binary[binary.length-1][';'] = binary[binary.length-1][',']
+binary[';'] = 1
 
 // ?:
-binary.splice(binary.length-2,0, {':':(a,b)=>[a,b], '?':(a,b)=>a??b, '?:':(a,b,c)=>a?b:c})
-transforms[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
-
-// {}
-groups['{']='}'
+operator['?:']=(a,b,c)=>a?b:c
+postfix.push(node => {
+  let a, b
+  if (code() !== 63) return node
+  next(), space(), a = expr(58)
+  if (code() !== 58) return node
+  next(), space(), b = expr()
+  return ['?:',node, a, b]
+})
 
 // /**/, //
-comments['/*']='*/'
-comments['//']='\n'
+// comments['/*']='*/'
+// comments['//']='\n'
 
 // in
-binary[5]['in'] = (a,b)=>a in b
-transforms['in'] = n => (n[1]=`"${n[1]}"`, n)
+evaluate.operator['in'] = (a,b)=>a in b
+parse.postfix.unshift(node => (char(2) === 'in' ? (next(2), ['in', '"' + node + '"', expr()]) : node))
 
-// {}, []
-unary[0]['['] = binary[0]['['] = (...args) => Array(...args)
-transforms['['] = n => n.length > 2 ? ['.',n[1],n[2]] :
-  n[1]==='' ? [n[0]] : [n[0], ...(n[1][0]===','?n[1].slice(1).map(x=>x===''?undefined:x):[n[1]])]
+// []
+operator['['] = (...args) => Array(...args)
+token.push((node, arg) =>
+  code() === 91 ?
+  (
+    next(), arg=expr(93),
+    node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+    next(), node
+  ) : null
+)
 
-groups['{']='}'
-unary[0]['{'] = binary[binary.length-2]['{'] = (...args)=>Object.fromEntries(args)
-binary[binary.length-2][':']=(a,b)=>[a,b]
-transforms['{'] = (s, args) => {
-  if (s[1]==='') args = []
-  else if (s[1][0]==':') args = [s[1]]
-  else if (s[1][0]==',') args = s[1].slice(1)
+// {}
+binary[':'] = 2
+token.unshift((node) => code() === 123 ? (next(), node = map(['{',expr(125)]), next(), node) : null)
+operator['{'] = (...args)=>Object.fromEntries(args)
+operator[':'] = (a,b)=>[a,b]
+
+const map = (n, args) => {
+  if (n[1]==null) args = []
+  else if (n[1][0]==':') args = [n[1]]
+  else if (n[1][0]==',') args = n[1].slice(1)
   return ['{', ...args]
 }
 
-// groups ['{']='}'
-// binary.unshift({'[':a=>Array(...a), '{':a=>Object.fromEntries(a)})
-// transforms['['] = s => s.length > 2 ? s
-//   : s[1] === undefined
-//   ? [Array]
-//   // ['[',[',',a,[',',b],c]] → ['[',[',',a,,b,c]]
-//   : [Array].concat(isnode(s[1]) ? s[1].slice(1).reduce((a,b)=>a.push(...(isnode(b)&&b[0]==','?(b[0]=undefined,b):[b]))&&a,[])
-//   : s[1])
-// transforms['{'] = (s,entries) => {
-//   if (s[1]===undefined) return {}
-//   if (s[1][0]==':') entries = [s[1].slice(1)]
-//   else entries = s[1].slice(1).map(n=>n.slice(1))
-//   entries = entries.map(n=>quotes[n[0][0]]?[n[0].slice(1,-1),n[1]]:n)
-//   return Object.fromEntries(entries)
-// }
 
 // TODO: strings interpolation
 
 export { default } from './subscript.js';
-export * from './subscript.js'
+export { parse, evaluate }

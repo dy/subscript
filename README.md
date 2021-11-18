@@ -19,7 +19,7 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 * templates (perfect match with [template parts](https://github.com/github/template-parts))
 * expressions evaluators, calculators
-* subsets of languages (eg. justin) <!-- see sonr, mineural -->
+* subsets of languages (eg. [justin](#justin)) <!-- see sonr, mineural -->
 * mocking language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
 * custom DSL
@@ -99,15 +99,17 @@ It adds support for:
 + `{...}` Object literal
 + `in` binary operator
 + `;` expression separator
-+ `//, /* */` comments
-+ `undefined` literal
+<!-- + `//, /* */` comments -->
+<!-- + `undefined` literal -->
+<!-- + `?` chaining operator -->
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 
 ```js
-import { parse } from 'subscript/justin.js'
+import { parse, evaluate } from 'subscript/justin.js'
 
-let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
+let xy = parse('{ x: 1, "y": 2+2 }["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
+evaluate(xy)  // 1
 ```
 
 <!--
