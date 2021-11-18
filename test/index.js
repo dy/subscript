@@ -1,6 +1,6 @@
 import test, {is, any} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../subscript.js'
-import { char, next, index, current, space, group, code, expr, map } from '../src/parse.js'
+import { char, next, index, current, space, group, code, expr } from '../src/parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
