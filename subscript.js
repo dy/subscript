@@ -1,13 +1,15 @@
-let index, current, lastOp
+export let index, current, lastOp
 
-const code = () => current.charCodeAt(index), // current char code
+export const code = () => current.charCodeAt(index), // current char code
 char = (n=1) => current.substr(index, n), // next n chars
 err = (msg) => { throw Error(msg + ' at ' + index) },
 next = (is, from=index, n) => { // number indicates skip & stop (don't check)
-  while (is(code())) ++index > current.length && err('Unexpected end ' + is) // 1 + true === 2;
-  return index > from ? current.slice(from, index) : undefined
+  if (typeof is === 'number') index += is
+  else while (is(code())) ++index > current.length && err('Unexpected end ' + is) // 1 + true === 2;
+  return index > from ? current.slice(from, index) : null
 },
 space = () => { while (code() <= 32) index++ },
+map = (node, t=parse.map[node[0]]) => t ? t(node) : node,
 
 // consume operator that resides within current group by precedence
 operator = (ops, op, prec, l=3) => {
@@ -28,10 +30,10 @@ expr = (end, prec=-1) => {
   const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93
 
   // parse node by token parsers
-  parse.token.find(token => (node = token(), index > from))
+  parse.token.find(token => (node = token()) != null)
 
   // unary
-  if (index === from) (op = operator(parse.prefix)) && (index += op[2], node = [op[0], expr(end, op[1])])
+  if (node == null) (op = operator(parse.prefix)) && (index += op[2], node = map([op[0], expr(end, op[1])]))
 
   // literal
   else if (typeof node === 'string' && parse.literal.hasOwnProperty(node)) node = parse.literal[node]
@@ -41,11 +43,9 @@ expr = (end, prec=-1) => {
     space()
     while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) {
       index++
-      if (cc === PERIOD) space(), node = ['.', node, '"' + id() + '"']
-      else if (cc === OBRACK) node = ['.', node, expr(CBRACK)], index++
-      else if (cc === OPAREN)
-        arg = expr(CPAREN), index++,
-        node = isCmd(arg) && arg[0]===','? (arg[0]=node, node=arg) : arg == null ? [node] : [node, arg]
+      if (cc === PERIOD) space(), node = map(['.', node, id()])
+      else if (cc === OBRACK) node = map(['[', node, expr(CBRACK)]), index++
+      else if (cc === OPAREN) node = map(['(', node, expr(CPAREN)]), index++
       space()
     }
   }
@@ -57,6 +57,7 @@ expr = (end, prec=-1) => {
     node = [op[0], node]
     // consume same-op group, do..while both saves op lookups and space
     do { index += op[2], node.push(expr(end, op[1])) } while (char(op[2]) === op[0])
+    node = map(node)
     space()
   }
 
@@ -81,10 +82,10 @@ float = (number, c, isDigit) => {
 },
 
 // "a", 'b'
-string = (q=code(), qc) => (q === 34 || q === 39) && (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc),
+string = (q=code(), qc) => (q === 34 || q === 39) ? (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc) : null,
 
 // (...exp)
-group = (open=40, end=41, node) => code() === open && (index++, node = expr(end), index++, node),
+group = (open=40, end=41, node) => code() === open ? (index++, node = expr(end), index++, node) : null,
 
 id = () => next(c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -124,6 +125,11 @@ parse = Object.assign(
       '<<': 8, '>>': 8, '>>>': 8,
       '+': 9, '-': 9,
       '*': 10, '/': 10, '%': 10
+    },
+    map: {
+      '.': ([op, obj, prop]) => [op, obj, '"'+prop+'"'],
+      '[': (node) => (node[0]='.', node),
+      '(': ([op, fn, arg]) => isCmd(arg) && arg[0]===','? (arg[0]=fn, arg) : arg == null ? [fn] : [fn, arg]
     }
   }
 ),
@@ -181,8 +187,6 @@ evaluate = Object.assign((s, ctx={}, c, op) => {
     ',':(...a)=>a.reduce((a,b)=>(a,b))
   }
 })
-
-export { parse, evaluate }
 
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))

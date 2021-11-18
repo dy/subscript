@@ -1,6 +1,6 @@
 <script type="module">
   import test, {is, any} from '../lib/test.js'
-  import subscript, {parse, evaluate} from '../subscript.js'
+  import subscript, {parse, evaluate, char, next, index, current, space} from '../subscript.js'
 
   test('parse: basic', t => {
     is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -102,10 +102,18 @@
     // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc"','<--js\nxyz-->'])
   })
   test.todo('parse: comments', t => {
-    comments['//']='\n'
-    is(parse(`a /
-      // abc
-      b`), ['/', 'a', 'b'])
+    const RETURN = 13, NEWLINE = 10
+    parse.token.unshift(() => {
+      console.group('parse', index, current)
+      console.log(0, char(2))
+      if (char(2) === '//') next(2), console.log('found',char()), next(c => console.log(1,char())||(c !== RETURN && c !== NEWLINE)), space()
+      console.log(123, char())
+      console.groupEnd()
+    })
+
+    // is(parse(`a /
+    //   // abc
+    //   b`), ['/', 'a', 'b'])
     is(parse(`'a' + 'b' // concat`),['+',"'a'","'b'"])
   })
   test('parse: literals', t=> {
@@ -260,10 +268,10 @@
   test('ext: in operator', t => {
     parse.binary['in'] = 5
     evaluate.operator['in'] = (a,b)=>a in b
-    parse.map['in'] = n => (n[1]=`${n[1]}`, n)
+    parse.map['in'] = ([op, prop, obj]) => ['in', '"'+prop+'"', obj ]
 
-    is(parse('inc in bin'), ['in', 'inc', 'bin'])
-    is(parse('bin in inc'), ['in', 'bin', 'inc'])
+    is(parse('inc in bin'), ['in', '"inc"', 'bin'])
+    is(parse('bin in inc'), ['in', '"bin"', 'inc'])
     is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
   })
 
@@ -282,8 +290,9 @@
     is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
   })
 
-  test('ext: list', t => {
-    parse.prefix['['] = parse.binary['['] = 1
+  test.todo('ext: list', t => {
+    // FIXME: requires array token parser
+    parse.prefix['['] = 1
     evaluate.operator['['] = (...args) => Array(...args)
     parse.map['['] = n => n.length > 2 ? ['.',n[1],n[2]] :
       n[1]==null ? [n[0]] : [n[0], ...(n[1][0]===','?n[1].slice(1).map(x=>x==null?undefined:x):[n[1]])]
@@ -295,7 +304,8 @@
     is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
   })
 
-  test('ext: object', t => {
+  test.todo('ext: object', t => {
+    // FIXME: requires array token parser
     parse.group['{']='}'
     parse.prefix['{'] = parse.binary['{'] = 1
     parse.binary[':'] = 7
@@ -316,7 +326,7 @@
     is(evaluate(parse('{x: 1+2, y:a(3)}'),{a:x=>x*2}), {x:3, y:6})
   })
 
-  test('ext: justin', async t => {
+  test.todo('ext: justin', async t => {
     const {parse} = await import('../justin.js')
     is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','y',['**',2,2]]], 'x'])
     is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)

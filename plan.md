@@ -134,15 +134,15 @@
   → transform keeping raw literal or turn into constructors.
   → not literals anymore, but tree operators
 * [ ] calltree nodes could stash static values (as in HTM)
-* [ ] Minifications
+* [x] Minifications
   * [x] ( [ . can be folded to operators, can they?...
-  * [ ] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
-    * [ ] 2a can be parsed as `2*a`, but likely with '' operator
+  * [x] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
+    * [x] 2a can be parsed as `2*a`, but likely with '' operator
       + that also allows defining either units or coefficients (units can be done as postfix too)
-    * [ ] Maybe create separate parse literal function
+    * [x] Maybe create separate parse literal function
       + can detect booleans, null, undefined
       + can detect any other types of literals, like versions, units, hashes, urls, regexes etc
-* [ ] https://github.com/gajus/liqe
+* [x] ~~https://github.com/gajus/liqe~~ nah
 * [x] Flatten binaries: [, [, a b] c] → [, a b c]
   + many exceptions lead to flat form (args, sequence, ternaries)
   + it matches reducers
@@ -191,13 +191,14 @@
   + allows better tests (no need for generic operator lookups)
   + allows probablistic order of operators check
   + some operators can consume as much nodes as they need
-* [ ] Optimizations 3
-  * [ ] Think if it's worth hardcoding subscript case, opposed to generalization
+* [x] Optimizations 3
+  * [x] Think if it's worth hardcoding subscript case, opposed to generalization
     + apparently that's faster, esp if done on numbers;
     + maybe that's smaller, since generalization is not required;
     + it can take a faster routes for numbers, sequences (no global closing-bracket case);
-  * [ ] It can be completely built on recursions, without while loops.
+  * [x] ~~It can be completely built on recursions, without while loops.~~
     . Take space: space = (str='') => isSpace(c=char()) ? (str+c, index++, space(str)) : ''
+    → recursions are slower than loops
 * [x] Move token parsers out: that would allow simplify & speed up comment, quote, interpolated string, float, even group token, and even maybe unary
 * [x] Will that eventually evolve into dict of parsing tokens/arrays of tokens? We may need this dict to be passed to subparsers, eg. string interpolator may need parse.expr.
   ? maybe just make it a valid class? parser = new Parser(); parser.group(), parser.char() etc.
@@ -208,10 +209,7 @@
     - mb problematic minifications
   ? alternatively, a set of top-level parsers
   → Done as flat directly exported tokens
-
-## Notes
-
-. Parsers scheme usually can be generalized to just a set of tests like
+* [x] Parsers scheme usually can be generalized to just a set of tests like
 
   isNumber: consumeNumber
   isIdentifier: consumeIdentifier
