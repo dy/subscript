@@ -33,7 +33,7 @@ test('parse: basic', t => {
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
-  parse.binary['**']=11
+  parse.binary['**']=16
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
@@ -291,10 +291,8 @@ test('ext: ternary', t => {
 })
 
 test('ext: list', t => {
-  // FIXME: requires array token parser
   evaluate.operator['['] = (...args) => Array(...args)
   parse.token.unshift((node) => code() === 91 ? (next(), node = map(['[',expr(93)]), next(), node) : null)
-  // parse.prefix['['] = 1
   parse.map['['] = n => n[1]==null ? [n[0]] :
     n[1][0] === ',' ? (n[1][0]=n[0],n[1]) :
     n
@@ -307,12 +305,9 @@ test('ext: list', t => {
 })
 
 test.todo('ext: object', t => {
-  // FIXME: requires array token parser
-  parse.group['{']='}'
-  parse.prefix['{'] = parse.binary['{'] = 1
-  parse.binary[':'] = 7
+  parse.binary[':'] = 0
+  parse.token.unshift((node) => code() === 91 ? (next(), node = map(['{',expr(93)]), next(), node) : null)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
-  evaluate.operator[':'] = (a,b)=>[a,b]
   // parse.map[':'] = s => {}
   parse.map['{'] = (s, args) => {
     if (s[1]==null) args = []
