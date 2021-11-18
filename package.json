@@ -12,7 +12,9 @@
     "justin.min.js"
   ],
   "directories": {
-    "lib": "lib"
+    "lib": "lib",
+    "src": "src",
+    "test": "test"
   },
   "scripts": {
     "build": "esbuild subscript.js --bundle --format=esm --minify --outfile=subscript.min.js",
