@@ -39,7 +39,7 @@ expr = (end, prec=-1) => {
   // chain, a.b[c](d).e − can be treated as single token. Faster & shorter than making ([. a separate operator
   else {
     space()
-    while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) {
+    while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) { // .([
       index++
       if (cc === PERIOD) space(), node = map(['.', node, id()])
       else if (cc === OBRACK) node = map(['[', node, expr(CBRACK)]), index++
@@ -65,14 +65,13 @@ expr = (end, prec=-1) => {
 // tokens
 // 1.2e+3, .5
 float = (number, c, isDigit) => {
-  const E = 69, _E = 101, PLUS = 43, MINUS = 45, PERIOD = 46
-
   number = next(isDigit = c => c >= 48 && c <= 57) || ''
-  if (code() === PERIOD) index++, number += '.' + next(isDigit)
+  if (code() === 46) index++, number += '.' + next(isDigit)
   if (number) {
-    if ((c = code()) === E || c === _E) {
+    if ((c = code()) === 69 || c === 101) { // e, E
       index++, number += 'e'
-      if ((c=code()) === PLUS || c === MINUS) number += char(), index++
+      if ((c=code()) === 43 || c === 45) // +-
+        number += char(), index++
       number += next(isDigit)
     }
     return parseFloat(number)
