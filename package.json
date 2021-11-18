@@ -4,6 +4,8 @@
   "description": "Microlanguage with common syntax for JS/C++/Python/Rust",
   "main": "subscript.js",
   "files": [
+    "src/*",
+    "subscript.js",
     "subscript.min.js",
     "justin.js",
     "justin.min.js"
@@ -35,7 +37,9 @@
     "dsl",
     "json",
     "calculator",
-    "calc"
+    "calc",
+    "lisp",
+    "frisk"
   ],
   "author": "Dmitry Iv.",
   "license": "ISC",
