@@ -119,9 +119,9 @@
   test('parse: literals', t=> {
     is(parse('null'), null)
     is(parse('(null)'), null)
-    // parse.literal['undefined'] = undefined
-    // is(parse('undefined'), undefined)
-    // is(parse('(undefined)'), undefined)
+    parse.literal['undefined'] = undefined
+    is(parse('undefined'), undefined)
+    is(parse('(undefined)'), undefined)
     is(parse('true||((false))'), ['||', true, false])
     is(parse('a(true)'), ['a', true])
     is(parse('a0'), 'a0')

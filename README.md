@@ -2,11 +2,10 @@
 
 _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust.<br/>
 
-* Everyone knows _subscript_ syntax
-* Any _subscript_ fragment can be copy-pasted to a target language and it will work
+* Well-known syntax
+* Any _subscript_ fragment can be copy-pasted to any target language
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
 * It's very fast ([see performance](#performance))
-* Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
 
@@ -18,13 +17,11 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 ## Useful in:
 
-* templates (awesome match with [template parts](https://github.com/github/template-parts))
-* expressions evaluators (math, arithmetic)
-* subsets of languages (eg. jessie, justin) <!-- see sonr -->
-* prototyping language features (eg. pipe operator)
-* simulating languages (eg. glsl <!--, FORTRAN?, COBOL?-->)
-* sandboxes, playgrounds
-* safe, secure eval
+* templates (perfect match with [template parts](https://github.com/github/template-parts))
+* expressions evaluators
+* subsets of languages (eg. justin) <!-- see sonr -->
+* mocking language features (eg. pipe operator)
+* sandboxes, playgrounds, safe eval
 * custom DSL
 
 ```html
@@ -41,7 +38,7 @@ It compiles code to lispy calltree (compatible with [frisk](https://npmjs.com/fr
 + minimal possible AST overhead
 + clear operators precedence
 + overloading operators by context 
-+ simple manual evaluation, debugging
++ easy manual evaluation and debugging
 + conventional form
 + one-liner docs...
 
@@ -54,15 +51,23 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 
 By default subscript detects the following tokens:
 
-* `"'` strings
+* `"` strings
 * `1.2e+3` floats
 * `true`, `false`, `null` literals
 * `()` expression groups or fn calls
 * `.`, `[]` property access
 
 All primitives are extensible via `parse.token` and `parse.literal` dicts.
-Subscript exports all internal fragment parsers and utils, to implement own token parsers:
 
+```js
+import { parse } from 'subscript.js'
+
+parse.literal[undefined] = undefined
+
+parse('a.b(undefined)')  // [ ['.','a','b'], undefined ]
+```
+
+<!--
 ```js
 import { parse, next } from 'subscript.js'
 
@@ -74,7 +79,7 @@ parse.token.push(() => {
 })
 
 parse(`'a' + 'b' // concat`) // ['+', 'a', 'b']
-```
+``` -->
 
 To get more info how to write sub-parsers you may need to look at source or examples.
 
