@@ -3,7 +3,7 @@ export let index, current, lastOp
 export const code = () => current.charCodeAt(index), // current char code
 char = (n=1) => current.substr(index, n), // next n chars
 err = (msg) => { throw Error(msg + ' at ' + index) },
-next = (is, from=index, n) => { // number indicates skip & stop (don't check)
+next = (is=1, from=index) => { // number indicates skip & stop (don't check)
   if (typeof is === 'number') index += is
   else while (is(code())) ++index > current.length && err('Unexpected end ' + is) // 1 + true === 2;
   return index > from ? current.slice(from, index) : null

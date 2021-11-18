@@ -228,3 +228,4 @@
   + makes shorter & cleaner main exports, extension is possible by importing from src/
   - requires bundling
 * [x] Node tests
+* [ ] Make eval-only tests

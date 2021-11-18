@@ -1,6 +1,6 @@
 import test, {is, any} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../subscript.js'
-import { char, next, index, current, space } from '../src/parse.js'
+import { char, next, index, current, space, group, code, expr, map } from '../src/parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -290,12 +290,14 @@ test('ext: ternary', t => {
   is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
 })
 
-test.todo('ext: list', t => {
+test('ext: list', t => {
   // FIXME: requires array token parser
-  parse.prefix['['] = 1
   evaluate.operator['['] = (...args) => Array(...args)
-  parse.map['['] = n => n.length > 2 ? ['.',n[1],n[2]] :
-    n[1]==null ? [n[0]] : [n[0], ...(n[1][0]===','?n[1].slice(1).map(x=>x==null?undefined:x):[n[1]])]
+  parse.token.unshift((node) => code() === 91 ? (next(), node = map(['[',expr(93)]), next(), node) : null)
+  // parse.prefix['['] = 1
+  parse.map['['] = n => n[1]==null ? [n[0]] :
+    n[1][0] === ',' ? (n[1][0]=n[0],n[1]) :
+    n
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])

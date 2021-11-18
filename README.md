@@ -277,6 +277,8 @@ like versions, units, hashes, urls, regexes etc
 string interpolation ` ${} 1 ${} `
 
 keyed arrays? [a:1, b:2, c:3]
+
+Examples: sonr, template-parts, neural-chunks
 -->
 
 ## Performance
