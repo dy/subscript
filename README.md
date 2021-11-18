@@ -47,43 +47,6 @@ import {evaluate} from 'subscript.js'
 evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
 
-## Primitives
-
-By default subscript detects the following tokens:
-
-* `"` strings
-* `1.2e+3` floats
-* `true`, `false`, `null` literals
-* `()` expression groups or fn calls
-* `.`, `[]` property access
-
-All primitives are extensible via `parse.pre` and `parse.post` dicts.
-
-```js
-import { parse } from 'subscript.js'
-
-parse.literal[undefined] = undefined
-
-parse('a.b(undefined)')  // [ ['.','a','b'], undefined ]
-```
-
-<!--
-```js
-import { parse, next } from 'subscript.js'
-
-const RETURN = 13, NEWLINE = 10
-
-// detect & skip comments
-parse.token.push(() => {
-  if (char(2) === '//') let comment = next(c => c !== RETURN && c !== NEWLINE)
-})
-
-parse(`'a' + 'b' // concat`) // ['+', 'a', 'b']
-``` -->
-
-To get more info how to write sub-parsers you may need to look at source or examples.
-
-
 ## Operators
 
 Default operators include common operators for the listed languages in the following precedence:
@@ -100,7 +63,7 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-All other operators can be extended via `parse.binary`, `parse.prefix`, `parse.postfix` and `evaluate.operator`.
+All other operators can be extended via `parse.binary`, `parse.unary` and `evaluate.operator`.
 
 ```js
 import { parse, evaluate } from 'subscript.js'
@@ -121,25 +84,22 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
-## Transforms
+## Tokens
 
-Transform rules are applied to raw parsed expression nodes, eg.:
+By default subscript detects the following tokens:
 
-* Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
-* Computed property `a[b]` → `['[', 'a', 'b']` → `['.', 'a', 'b']`
-* Function call `a(b,c)` → `['(', 'a', [',', 'b', 'c']]` → `['a', 'b', 'c']`
+* `"` strings
+* `1.2e+3` floats
+* `true`, `false`, `null` literals
+* `()` expression groups or fn calls
+* `.`, `[]` property access
 
-That can be used to organize ternary/combining operators:
+Token parsers are extensible via `parse.token` dict, can be extended to _regex_, _array_, _object_, _interpolated string_ and others.
 
-```js
-import { parse, evaluate } from 'subscript.js'
 
-evaluate.operator['?:'] = (a,b) => a ? b : c
-parse.binary[':'] = parse.binary['?'] = 5
-parse.map[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
+## Postfixes
 
-parse('a ? b : c') // ['?:', 'a', 'b', 'c']
-```
+Postfix parsers are applied to just parsed tokens and can be used to provide _property chains_, _function calls_, _postfix operators_, _token mapping_, _ternary operators_ and so on.
 
 
 ## Justin
@@ -149,6 +109,7 @@ It adds support for:
 
 + `**` binary operator
 + `~` unary operator
++ `'` strings
 + `?:` ternary operator
 + `[...]` Array literal
 + `{...}` Object literal

@@ -178,7 +178,7 @@ test.skip('subscript-v1', async t => {
 })
 
 
-test('new Function', async t => {
+test.skip('new Function', async t => {
   console.time('new Function')
   for (let n = 0; n < RUNS; n++){
     let fn = new Function('a','b', 'c', 'd', 'f', 'i', 'k', 'return '+src(n))
