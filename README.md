@@ -51,6 +51,7 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 
 Default operators include common operators for the listed languages in the following precedence:
 
+* `++ --` unary postfix
 * `! + - ++ --` unary prefix
 * `* / %`
 * `+ -`

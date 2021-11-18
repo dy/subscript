@@ -85,15 +85,24 @@ parse = Object.assign(
     token: [ group, float, string, id ],
 
     postfix: [
-      // (node, c2=code()) => (c===PLUS||c===MINUS
+      // true, false, null
       node => (typeof node === 'string') ? node === 'true' ? true : node === 'false' ? false : node === 'null' ? null : node : node,
+
+      // a.b.c
       node => code() === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
+
+      // a[b][c]
       node => code() === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
+
+      // a(b)(c)
       (node, arg) => code() === OPAREN ? (
         index++, arg=expr(CPAREN),
         node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
         index++, node
-      ) : node
+      ) : node,
+
+      // a++, a--
+      (node, c2=code()<<8|current.charCodeAt(index+1)) => (c2===0x2b2b||c2===0x2d2d) ? [next(2), node] : node,
     ],
 
     unary: {

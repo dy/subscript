@@ -178,14 +178,9 @@ test('parse: unaries', t => {
   is(parse('1-+!2'),['-',1,['+',['!',2]]])
   is(parse('1 * -1'),['*',1,['-',1]])
 })
-test.todo('parse: postfix unaries', t => {
-  is(parse('2-'),['-',2])
-  is(parse('2-+'),['+',['-',2]])
-  is(parse('2-+-'),['-',['+',['-',2]]])
-  is(parse('2!+-'),['-',['+',['!',2]]])
-  is(parse('1---2'),['-',['--',1], 2])
-  is(parse('1!+2'),['+',['!',1],2])
-  is(parse('1 * -1'),['*',1,['-',1]])
+test('parse: postfix unaries', t => {
+  is(parse('2--'),['--',2])
+  is(parse('2++'),['++',2])
 })
 
 test('parse: prop access', t => {
@@ -196,7 +191,7 @@ test('parse: prop access', t => {
 })
 
 test('parse: parens', t => {
-  is(parse('1++(b)'),['+',1,['+','b']]) // NOTE: not supported by JS btw
+  is(parse('1++(b)'),[['++',1],'b']) // NOTE: not supported by JS btw
   is(parse('1+(b)()'),['+',1,['b']])
   is(parse('(1)+-b()'),['+',1,['-',['b']]])
   is(parse('1+a(b)'),['+',1,['a','b']])

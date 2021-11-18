@@ -73,9 +73,9 @@
 * [ ] ;
 * [ ] comments
 * [ ] # operators overloaded (python comments for example)
-* [ ] all extension tests
+* [ ] justin
 * [x] infinite unaries? -+-+a
-* [ ] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
+* [x] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
   . Lisp tree doesn't make difference between unary/binary operator.
   . Seems that postfix operator === binary operator without second argument.
   - We don't have cases in pure subscript for postfix operators: a--, b++ don't make sense in evaluator.
