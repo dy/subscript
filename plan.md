@@ -93,7 +93,7 @@
 * [ ] string interpolation ` ${} 1 ${} `
   ? make transforms for strings?
 * [x] Bench
-* [ ] unary word
+* [x] unary word
 * [ ] Demo
 * [x] Optimizations
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
@@ -134,26 +134,26 @@
   → transform keeping raw literal or turn into constructors.
   → not literals anymore, but tree operators
 * [ ] calltree nodes could stash static values (as in HTM)
-* [ ] Minifications
+* [x] Minifications
   * [x] ( [ . can be folded to operators, can they?...
-  * [ ] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
-    * [ ] 2a can be parsed as `2*a`, but likely with '' operator
+  * [x] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
+    * [x] 2a can be parsed as `2*a`, but likely with '' operator
       + that also allows defining either units or coefficients (units can be done as postfix too)
-    * [ ] Maybe create separate parse literal function
+    * [x] Maybe create separate parse literal function
       + can detect booleans, null, undefined
       + can detect any other types of literals, like versions, units, hashes, urls, regexes etc
-* [ ] Examples
-  * https://github.com/gajus/liqe
+* [x] ~~https://github.com/gajus/liqe~~ nah
 * [x] Flatten binaries: [, [, a b] c] → [, a b c]
   + many exceptions lead to flat form (args, sequence, ternaries)
   + it matches reducers
   + formulas are still meaningful this way
   + good for performance
 * [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
-* [ ] Transforms for literals.
+* [x] Transforms for literals/tokens.
+  → done as parsers, just implement per-token parsers
   + We need to interpolate strings `a${}b`
   + We need to generalize tokens 2a, https://..., ./a/b/c, [a,b,c], {a,b,c}, hash, /abc/ig, 1.2.0
-* [x] ~~Process sequences separately~~ → too redundant code, see drawbacks
+* [x] Process sequences separately
   + Now expression loop checks for groups besides normal operators, which is op tax
   + Now commas are almost useless
   + Braces are still special case of operator
@@ -168,16 +168,15 @@
     → Maybe pass groupinfo, like [operator, precedence, start, end, index]?
   - consumeGroup from previous impl is almost identical (gravitates) to consumeSequence
     - we may just address operator memo, current group collection (that simplifies lookups)
+  + [.( are 3 special transforms and also they need special handling in expressions...
+  + also , still makes no sense on itself, so mb they can be handled as postfixes actually
+  → Ok, handled in id parser as single token, same as jsep - that reduces unnecessary declarative API
 * [x] Optimizations 2
   * [x] Operator lookup can be simplified: look for small-letters first, and increase until meet none
     ? so we go until max length or until found operator loses?
       - it's faster for 1-char ops, slower for 2+ char ops
   * [x] curOp can expect itself first, unless it's not met do lookup
     + allows better node construction as well
-  * [ ] Think if it's worth hardcoding subscript case, opposed to generalization
-    + apparently that's faster, esp if done on numbers;
-    + maybe that's smaller, since generalization is not required;
-    + it can take a faster routes for numbers, sequences (no global closing-bracket case);
 * [x] Separating binary/unary and operators is good: +clear pertinence to eval/parse, +faster & simpler base, ...
 * [x] Should consolidate binary as `parse.binary`, `parse.prefix`, `evaluate.operator`?
   + makes sense semantically
@@ -186,16 +185,31 @@
   + no plurals needed
 * [ ] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
-* [ ] Make literals direct (passing wrapped numbers to functions isn't good)
-* [ ] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
+* [x] Make literals direct (passing wrapped numbers to functions isn't good)
+* [x] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
   + allows defining per-operator consumers
   + allows better tests (no need for generic operator lookups)
   + allows probablistic order of operators check
   + some operators can consume as much nodes as they need
-
-## Notes
-
-. Parsers scheme usually can be generalized to just a set of tests like
+* [x] Optimizations 3
+  * [x] Think if it's worth hardcoding subscript case, opposed to generalization
+    + apparently that's faster, esp if done on numbers;
+    + maybe that's smaller, since generalization is not required;
+    + it can take a faster routes for numbers, sequences (no global closing-bracket case);
+  * [x] ~~It can be completely built on recursions, without while loops.~~
+    . Take space: space = (str='') => isSpace(c=char()) ? (str+c, index++, space(str)) : ''
+    → recursions are slower than loops
+* [x] Move token parsers out: that would allow simplify & speed up comment, quote, interpolated string, float, even group token, and even maybe unary
+* [x] Will that eventually evolve into dict of parsing tokens/arrays of tokens? We may need this dict to be passed to subparsers, eg. string interpolator may need parse.expr.
+  ? maybe just make it a valid class? parser = new Parser(); parser.group(), parser.char() etc.
+    + exposes internal sub-parsers
+    + naturally exposes static variables
+    + passes instance to custom subparsers
+    + standard method
+    - mb problematic minifications
+  ? alternatively, a set of top-level parsers
+  → Done as flat directly exported tokens
+* [x] Parsers scheme usually can be generalized to just a set of tests like
 
   isNumber: consumeNumber
   isIdentifier: consumeIdentifier

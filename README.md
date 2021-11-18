@@ -5,7 +5,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Everyone knows _subscript_ syntax
 * Any _subscript_ fragment can be copy-pasted to a target language and it will work
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* It's fast ([see performance](#performance))
+* It's very fast ([see performance](#performance))
 * Enables operators overloading
 * Configurable & extensible
 * Trivial to use...
@@ -50,31 +50,40 @@ import {evaluate} from 'subscript.js'
 evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
 
-## Core primitives
+## Primitives
 
-By default subscript reserves:
+By default subscript detects the following tokens:
 
-* `[]`, `()` groups
+* `"'` strings
+* `1.2e+3` floats
 * `true`, `false`, `null` literals
-* `"` quotes.
+* `()` expression groups or fn calls
+* `.`, `[]` property access
 
-All primitives are extensible via `parse.literal`, `parse.quote`, `parse.group`, `parse.comment` dicts.
+All primitives are extensible via `parse.token` and `parse.literal` dicts.
+Subscript exports all internal fragment parsers and utils, to implement own token parsers:
 
 ```js
-import { parse } from 'subscript.js'
+import { parse, next } from 'subscript.js'
 
-parse.quote["'"] = "'"
-parse.comment["//"] = "\n"
+const RETURN = 13, NEWLINE = 10
 
-parse(`'a' + 'b' // concat`) // ['+', 'a':String, 'b':String]
+// detect & skip comments
+parse.token.push(() => {
+  if (char(2) === '//') let comment = next(c => c !== RETURN && c !== NEWLINE)
+})
+
+parse(`'a' + 'b' // concat`) // ['+', 'a', 'b']
 ```
+
+To get more info how to write sub-parsers you may need to look at source or examples.
+
 
 ## Operators
 
 Default operators include common operators for the listed languages in the following precedence:
 
-* `.`, `(…)`, `…(…)`, `…[…]`
-* `! + - ++ --` prefix
+* `! + - ++ --` unary prefix
 * `* / %`
 * `+ -`
 * `<< >> >>>`
@@ -109,10 +118,11 @@ evaluate(tree, { Math, map, take, interval, gaussian })
 
 ## Transforms
 
-Transform rules are applied to raw parsed calltree groups, eg.:
+Transform rules are applied to raw parsed expression nodes, eg.:
 
-* Flatten calls `a(b,c)(d)` → `['(', 'a', [',', 'b', 'c'], 'd']` → `[['a', 'b', 'c'], 'd']`
 * Property access `a.b.c` → `['.', 'a', 'b', 'c']` → `['.', 'a', '"b"', '"c"']`
+* Computed property `a[b]` → `['[', 'a', 'b']` → `['.', 'a', 'b']`
+* Function call `a(b,c)` → `['(', 'a', [',', 'b', 'c']]` → `['a', 'b', 'c']`
 
 That can be used to organize ternary/combining operators:
 
@@ -254,6 +264,14 @@ These are custom DSL operators snippets for your inspiration:
   ```
 
 </details>
+
+like versions, units, hashes, urls, regexes etc
+
+2a as `2*a`
+
+string interpolation ` ${} 1 ${} `
+
+keyed arrays? [a:1, b:2, c:3]
 -->
 
 ## Performance
@@ -264,11 +282,11 @@ Subscript shows relatively good performance within other evaluators:
 // 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
 // parse 30k times
 
-expr-eval: 712 ms
-subscript: 336 ms
-jsep: 278 ms
+subscript: ~250 ms
+jsep: ~280 ms
+expr-eval: ~480 ms
 jexl: ~1200 ms
-new Function: 1466 ms
+new Function: ~1400 ms
 ```
 
 ## See also
