@@ -25,16 +25,33 @@ operator = (ops, op, prec, l=3) => {
 expr = (end, prec=-1) => {
   space()
 
-  let cc = code(), op, c = char(), node, from=index, arg
+  let cc = code(), op, c = char(), node, mapped, i=0, pre = parse.token, post = parse.postfix
 
   // parse node by token parsers
-  parse.token.find(token => (node = token()) != null)
+  parse.token.find(token => (node = token(cc)) != null)
 
   // unary prefix
   if (node == null) (op = operator(parse.unary)) && (index += op[2], node = [op[0], expr(end, op[1])])
 
   // postfix handlers allow a.b[c](d).e, postfix operators, literals etc.
-  else do {space()} while (parse.postfix.find((post, res) => (res = post(node)) !== node && (node = res)))
+  else do {space(), cc=code()} while (post.find(parse => (mapped = parse(node, cc)) !== node && (node = mapped)))
+  // else {
+  //   space(), cc=code()
+  //   for (;i < post.length;)
+  //     if ((mapped=post[i](node, cc)) !== node) {
+  //     node=mapped, i=0, space(), cc=code()
+  //   } else i++
+  // }
+  // else {
+  //   space()
+  //   while ( cc = code(), cc === PERIOD || cc === OPAREN || cc === OBRACK ) { // .([
+  //     index++
+  //     if (cc === PERIOD) space(), node = (['.', node, id()])
+  //     else if (cc === OBRACK) node = (['.', node, expr(CBRACK)]), index++
+  //     else if (cc === OPAREN) node = ([node, expr(CPAREN)]), index++
+  //     space()
+  //   }
+  // }
 
   space()
 
@@ -66,10 +83,10 @@ float = (number, c, isDigit) => {
 },
 
 // "a", 'b'
-string = (q=code(), qc) => (q === 34 || q === 39) ? (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc) : null,
+string = (q, qc) => (q === 34 || q === 39) ? (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc) : null,
 
 // (...exp)
-group = (open=40, end=41, node) => code() === open ? (index++, node = expr(end), index++, node) : null,
+group = (c, node) => c === OPAREN ? (index++, node = expr(CPAREN), index++, node) : null,
 
 id = () => next(c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -88,18 +105,29 @@ parse = Object.assign(
       // true, false, null
       node => (typeof node === 'string') ? node === 'true' ? true : node === 'false' ? false : node === 'null' ? null : node : node,
 
-      // a.b.c
-      node => code() === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
+      // prop/call, for perf - 3 in 1
+      (node, cc, arg) => {
+        if (cc === PERIOD) index++, space(), node = ['.', node, '"'+id()+'"']
+        else if (cc === OBRACK) index++, node = ['.', node, expr(CBRACK)], index++
+        else if (cc === OPAREN)
+          index++, arg=expr(CPAREN),
+          node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
+          index++
+        return node
+      },
 
-      // a[b][c]
-      node => code() === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
+      // // a.b.c
+      // (node, c) => c === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
 
-      // a(b)(c)
-      (node, arg) => code() === OPAREN ? (
-        index++, arg=expr(CPAREN),
-        node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
-        index++, node
-      ) : node,
+      // // a[b][c]
+      // (node, c) => c === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
+
+      // // a(b)(c)
+      // (node, c, arg) => c === OPAREN ? (
+      //   index++, arg=expr(CPAREN),
+      //   node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
+      //   index++, node
+      // ) : node,
 
       // a++, a--
       (node, c2=code()<<8|current.charCodeAt(index+1)) => (c2===0x2b2b||c2===0x2d2d) ? [next(2), node] : node,
