@@ -18,8 +18,8 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 ## Useful in:
 
 * templates (perfect match with [template parts](https://github.com/github/template-parts))
-* expressions evaluators
-* subsets of languages (eg. justin) <!-- see sonr -->
+* expressions evaluators, calculators
+* subsets of languages (eg. justin) <!-- see sonr, mineural -->
 * mocking language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
 * custom DSL
@@ -29,22 +29,6 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 <template id="timer">
   <time datetime="{{ date.toUTCString() }}">{{ date.toLocaleTimeString() }}</time>
 </template>
-```
-
-## Lispy tree
-
-It compiles code to lispy calltree (compatible with [frisk](https://npmjs.com/frisk)). Why?
-
-+ minimal possible AST overhead
-+ clear operators precedence
-+ overloading operators by context 
-+ easy manual evaluation and debugging
-+ conventional form
-+ one-liner docs...
-
-```js
-import {evaluate} from 'subscript.js'
-evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
 
 ## Operators
@@ -85,7 +69,7 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
-## Tokens
+## Extending
 
 By default subscript detects the following tokens:
 
@@ -95,12 +79,11 @@ By default subscript detects the following tokens:
 * `()` expression groups or fn calls
 * `.`, `[]` property access
 
-Token parsers are extensible via `parse.token` dict, can be extended to _regex_, _array_, _object_, _interpolated string_ and others.
+Literals can be extended via `parse.literal` dict.
 
+Token parsers are extensible via `parse.token` dict, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
 
-## Postfixes
-
-Postfix parsers are applied to just parsed tokens and can be used to provide _property chains_, _function calls_, _postfix operators_, _token mapping_, _ternary operators_ and so on.
+Postfix parsers are applied to parsed tokens and can be used to provide _property chains_, _function calls_, _postfix operators_, _token mapping_, _ternary operators_ and so on. They're extensible via `parse.postfix`.
 
 
 ## Justin
@@ -131,6 +114,19 @@ let tree = parse('{x:1, "y":2+2}["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
 ## Ideas
 
 These are custom DSL operators snippets for your inspiration:
+
+// a.b.c
+// (node, c) => c === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
+
+// a[b][c]
+// (node, c) => c === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
+
+// a(b)(c)
+// (node, c, arg) => c === OPAREN ? (
+//   index++, arg=expr(CPAREN),
+//   node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
+//   index++, node
+// ) : node,
 
 <details>
   <summary>Keyed arrays <code>[a:1, b:2, c:3]</code></summary>
@@ -251,7 +247,7 @@ Subscript shows relatively good performance within other evaluators:
 // 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
 // parse 30k times
 
-subscript: ~240 ms
+subscript: ~270 ms
 jsep: ~280 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms

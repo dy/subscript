@@ -136,27 +136,6 @@ test('jsep-strip', async t => {
 })
 
 
-test('subscript x3', async t => {
-  const {parse, evaluate} = await import('../subscript.js');
-
-  let ast = parse(src(0))
-  // console.log(ast);
-  is(evaluate(ast, args), result);
-
-  console.time('subscript')
-  for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
-    // evaluate(ast, args)
-  }
-  console.timeEnd('subscript')
-  console.time('subscript eval')
-  for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
-    evaluate(ast, args)
-  }
-  console.timeEnd('subscript eval')
-})
-
 test('jsep x3', async t => {
   const jsep = await import('../lib/parser/expression-eval.module.js');
 
@@ -176,6 +155,27 @@ test('jsep x3', async t => {
     jsep.eval(ast, args)
   }
   console.timeEnd('jsep eval')
+})
+
+test('subscript x3', async t => {
+  const {parse, evaluate} = await import('../subscript.js');
+
+  let ast = parse(src(0))
+  // console.log(ast);
+  is(evaluate(ast, args), result);
+
+  console.time('subscript')
+  for (let i = 0; i < RUNS; i++){
+    let ast = parse(src(i));
+    // evaluate(ast, args)
+  }
+  console.timeEnd('subscript')
+  console.time('subscript eval')
+  for (let i = 0; i < RUNS; i++){
+    let ast = parse(src(i));
+    evaluate(ast, args)
+  }
+  console.timeEnd('subscript eval')
 })
 
 
