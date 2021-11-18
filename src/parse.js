@@ -28,16 +28,13 @@ expr = (end, prec=-1) => {
   let cc = code(), op, c = char(), node, from=index, arg
 
   // parse node by token parsers
-  parse.token.find(token => (node = token()) != null)
+  parse.pre.find(token => (node = token()) != null)
 
   // unary prefix
   if (node == null) (op = operator(parse.unary)) && (index += op[2], node = [op[0], expr(end, op[1])])
 
   // postfix handlers allow a.b[c](d).e, postfix operators, literals etc.
-  else {
-    space()
-    while (parse.post.find((post, res) => (res = post(node)) !== node && (node = res))) space()
-  }
+  else do {space()} while (parse.post.find((post, res) => (res = post(node)) !== node && (node = res)))
 
   space()
 
@@ -85,7 +82,21 @@ id = () => next(c =>
 parse = Object.assign(
   str => (current=str, index=lastOp=0, expr()),
   {
-    token: [ group, float, string, id ],
+    // token types
+    pre: [ group, float, string, id ],
+
+    // augment token types
+    post: [
+      node => (typeof node === 'string') ? node === 'true' ? true : node === 'false' ? false : node === 'null' ? null : node : node,
+      node => code() === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
+      node => code() === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
+      (node, arg) => code() === OPAREN ?
+        (
+          index++, arg=expr(CPAREN),
+          node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
+          index++, node
+        ) : node
+    ],
 
     unary: {
       '-': 17,
@@ -103,19 +114,7 @@ parse = Object.assign(
       '<<': 13, '>>': 13, '>>>': 13,
       '+': 14, '-': 14,
       '*': 15, '/': 15, '%': 15
-    },
-
-    post: [
-      node => (typeof node === 'string') ? node === 'true' ? true : node === 'false' ? false : node === 'null' ? null : node : node,
-      node => code() === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
-      node => code() === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
-      (node, arg) => code() === OPAREN ?
-        (
-          index++, arg=expr(CPAREN),
-          node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
-          index++, node
-        ) : node
-    ]
+    }
   }
 )
 

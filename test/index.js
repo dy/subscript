@@ -266,9 +266,8 @@ test('eval: basic', t => {
 })
 
 test('ext: in operator', t => {
-  parse.binary['in'] = 5
   evaluate.operator['in'] = (a,b)=>a in b
-  parse.map['in'] = ([op, prop, obj]) => ['in', '"'+prop+'"', obj ]
+  parse.post.unshift(node => (char(2) === 'in' ? (next(2), ['in', '"' + node + '"', expr()]) : node))
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
@@ -277,14 +276,16 @@ test('ext: in operator', t => {
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  parse.binary[':']=parse.binary['?']=5
+  parse.post.unshift(node => {
+    let a, b
+    if (code() !== 63) return node
+    next(), space(), a = expr(58)
+    if (code() !== 58) return node
+    next(), space(), b = expr()
+    return ['?:',node, a, b]
+  })
 
-  parse.map[':'] = node => node[1][0]=='?' ? ['?:',node[1][1],node[1][2],node[2]] : node // [:, [?, a, b], c] → [?:, a, b, c]
   is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
-
-  // bonus side-effect:
-  is(parse('a ? b'), ['?', 'a', 'b'])
-  is(parse('a : b'), [':', 'a', 'b'])
 
   is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
   is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
@@ -292,10 +293,14 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   evaluate.operator['['] = (...args) => Array(...args)
-  parse.token.unshift((node) => code() === 91 ? (next(), node = map(['[',expr(93)]), next(), node) : null)
-  parse.map['['] = n => n[1]==null ? [n[0]] :
-    n[1][0] === ',' ? (n[1][0]=n[0],n[1]) :
-    n
+  parse.pre.unshift((node, arg) =>
+    code() === 91 ?
+    (
+      next(), arg=expr(93),
+      node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+      next(), node
+    ) : null
+  )
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])
@@ -306,11 +311,11 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   parse.binary[':'] = 2
-  parse.token.unshift((node) => code() === 123 ? (next(), node = map(['{',expr(125)]), next(), node) : null)
+  parse.pre.unshift((node) => code() === 123 ? (next(), node = map(['{',expr(125)]), next(), node) : null)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
-  // parse.map[':'] = s => {}
-  parse.map['{'] = (n, args) => {
+
+  const map = (n, args) => {
     if (n[1]==null) args = []
     else if (n[1][0]==':') args = [n[1]]
     else if (n[1][0]==',') args = n[1].slice(1)

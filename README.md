@@ -57,7 +57,7 @@ By default subscript detects the following tokens:
 * `()` expression groups or fn calls
 * `.`, `[]` property access
 
-All primitives are extensible via `parse.token` and `parse.literal` dicts.
+All primitives are extensible via `parse.pre` and `parse.post` dicts.
 
 ```js
 import { parse } from 'subscript.js'
