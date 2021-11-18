@@ -304,15 +304,16 @@ test('ext: list', t => {
   is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
 })
 
-test.todo('ext: object', t => {
-  parse.binary[':'] = 0
-  parse.token.unshift((node) => code() === 91 ? (next(), node = map(['{',expr(93)]), next(), node) : null)
+test('ext: object', t => {
+  parse.binary[':'] = 2
+  parse.token.unshift((node) => code() === 123 ? (next(), node = map(['{',expr(125)]), next(), node) : null)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
+  evaluate.operator[':'] = (a,b)=>[a,b]
   // parse.map[':'] = s => {}
-  parse.map['{'] = (s, args) => {
-    if (s[1]==null) args = []
-    else if (s[1][0]==':') args = [s[1]]
-    else if (s[1][0]==',') args = s[1].slice(1)
+  parse.map['{'] = (n, args) => {
+    if (n[1]==null) args = []
+    else if (n[1][0]==':') args = [n[1]]
+    else if (n[1][0]==',') args = n[1].slice(1)
     return ['{', ...args]
   }
 
