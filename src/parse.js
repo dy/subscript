@@ -110,13 +110,13 @@ parse = Object.assign(
     post: [
       node => (typeof node === 'string') ? node === 'true' ? true : node === 'false' ? false : node === 'null' ? null : node : node,
       node => code() === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
-      node => code() === OBRACK ? (index++, node=['[', node, expr(CBRACK)], index++, node) : node,
+      node => code() === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
       node => code() === OPAREN ? (index++, node=['(', node, expr(CPAREN)], index++, node) : node
     ],
 
     map: {
       // '.': ([op, obj, prop]) => [op, obj, '"'+prop+'"'],
-      '[': (node) => (node[0]='.', node),
+      // '[': (node) => (node[0]='.', node),
       '(': ([op, fn, arg]) => Array.isArray(arg) && arg[0]===','? (arg[0]=fn, arg) : arg == null ? [fn] : [fn, arg]
     }
   }
