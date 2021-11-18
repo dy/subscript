@@ -224,6 +224,6 @@
 
   . Each test is fastest as simple numbers comparison, worse - string comparison, worse - regex
   . Each consume is flow with own simpler checks
-* [ ] Move fragment parsers into own module
+* [x] Move fragment parsers into own module
   + makes shorter & cleaner main exports, extension is possible by importing from src/
   - requires bundling
