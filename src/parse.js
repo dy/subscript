@@ -50,17 +50,10 @@ expr = (end, prec=-1) => {
 },
 
 // tokens
-// 1.2e+3, .5
-float = (number, c, isDigit) => {
-  number = skip(isDigit = c => c >= 48 && c <= 57) || ''
-  if (code() === PERIOD) index++, number += '.' + skip(isDigit)
-  if (number) {
-    if ((c = code()) === 69 || c === 101) { // e, E
-      index++, number += 'e'
-      if ((c=code()) === PLUS || c === MINUS) // +-
-        number += char(), index++
-      number += skip(isDigit)
-    }
+// 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
+float = (number, c) => {
+  if (number = skip(c => (c >= 48 && c <= 57) || c === PERIOD)) {
+    if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
     return parseFloat(number)
   }
 },
