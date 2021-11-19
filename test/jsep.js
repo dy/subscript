@@ -65,55 +65,25 @@ test('Ops', function (qunit) {
 
 });
 
-test('Custom operators', ()=> {
-  parse.binary['^'] = 10;
-  testParser('a^b', {});
+test.only('Custom operators', ()=> {
+  // parse.binary['^'] = 10;
+  // is(parse('a^b'), ['^','a','b']);
 
-  parse.binary['×'] = 9;
-  testParser('a×b', {
-    type: 'BinaryExpression',
-    left: { name: 'a' },
-    right: { name: 'b' },
-  });
+  // parse.binary['×'] = 9;
+  // is(parse('a×b'), ['×','a','b']);
 
-  parse.binary['or'] = 1;
-  testParser('oneWord ordering anotherWord', {
-    type: 'Compound',
-    body: [
-      {
-        type: 'Identifier',
-        name: 'oneWord',
-      },
-      {
-        type: 'Identifier',
-        name: 'ordering',
-      },
-      {
-        type: 'Identifier',
-        name: 'anotherWord',
-      },
-    ],
-  });
+  // parse.binary['or'] = 1;
+  // is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
+  // throws(() => parse('oneWord ordering anotherWord'));
 
-  jsep.addUnaryOp('#');
-  testParser('#a', {
-    type: 'UnaryExpression',
-    operator: '#',
-    argument: { type: 'Identifier', name: 'a' },
-  });
+  // parse.unary['#'] = 11;
+  // is(parse('#a'), ['#','a']);
 
-  jsep.addUnaryOp('not');
-  testParser('not a', {
-    type: 'UnaryExpression',
-    operator: 'not',
-    argument: { type: 'Identifier', name: 'a' },
-  });
+  parse.unary['not'] = 11;
+  is(parse('not a'), ['not', 'a']);
 
-  jsep.addUnaryOp('notes');
-  testParser('notes', {
-    type: 'Identifier',
-    name: 'notes',
-  });
+  parse.unary['notes'] = 11;
+  is(parse('notes'), ['notes']);
 });
 
 test('Custom alphanumeric operators', ()=> {

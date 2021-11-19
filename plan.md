@@ -229,3 +229,6 @@
   - requires bundling
 * [x] Node tests
 * [ ] Make eval-only tests
+* [ ] Hardcode subscript parser for smaller size & better perf
+* [ ] Make parse/eval first-level
+* [ ] Provide parser examples as chunks

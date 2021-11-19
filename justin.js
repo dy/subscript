@@ -18,6 +18,18 @@ token[2] = (q, qc, c, str) => {
 }
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
+// detect custom operators
+token[3] = name => (name = skip(c =>
+  (
+    (c >= 48 && c <= 57) || // 0..9
+    (c >= 65 && c <= 90) || // A...Z
+    (c >= 97 && c <= 122) || // a...z
+    c == 36 || c == 95 || // $, _,
+    c >= 192 // any non-ASCII
+  ) && !binary[String.fromCharCode(c)]
+)) && literal.hasOwnProperty(name) ? literal[name] : name,
+
+
 // **
 binary['**'] = 16
 operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))

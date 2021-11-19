@@ -76,15 +76,17 @@ group = (c, node) => c === OPAREN ? (index++, node = expr(CPAREN), index++, node
 
 // var or literal
 id = name => (name = skip(c =>
-  (c >= 48 && c <= 57) || // 0..9
-  (c >= 65 && c <= 90) || // A...Z
-  (c >= 97 && c <= 122) || // a...z
-  c == 36 || c == 95 || // $, _,
-  c >= 192 // any non-ASCII
+  (
+    (c >= 48 && c <= 57) || // 0..9
+    (c >= 65 && c <= 90) || // A...Z
+    (c >= 97 && c <= 122) || // a...z
+    c == 36 || c == 95 || // $, _,
+    c >= 192 // any non-ASCII
+  )
 )) && literal.hasOwnProperty(name) ? literal[name] : name,
 
 // ----------- config
-token = parse.token = [ group, float, string, id ],
+token = parse.token = [ float, group, string, id ],
 
 literal = parse.literal = {true:true, false:false, null:null},
 

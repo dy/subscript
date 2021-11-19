@@ -278,6 +278,6 @@ new Function: ~1400 ms
 * [expression-eval](https://github.com/donmccurdy/expression-eval)
 * [jsep](https://github.com/EricSmekens/jsep)
 * [string-math](https://github.com/devrafalko/string-math)
-
+* [nerdamer](https://github.com/jiggzson/nerdamer)
 
 <p align=center>🕉</p>

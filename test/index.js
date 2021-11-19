@@ -332,9 +332,9 @@ test('ext: justin', async t => {
 })
 
 test('parse: unfinished sequences', async t => {
-  is(parse('a+b)+c'), ['+','a','b'])
-  is(parse('(a+(b)))+c'), ['+','a','b'])
-  is(parse('a+b+)c'), ['+','a','b',null])
+  throws(() => parse('a+b)+c'))//, ['+','a','b'])
+  throws(() => parse('(a+(b)))+c'))//, ['+','a','b'])
+  throws(() => parse('a+b+)c'))//, ['+','a','b',null])
 })
 
 test('eval: edge cases', t => {
