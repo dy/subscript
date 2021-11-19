@@ -59,7 +59,7 @@ float = (number) => {
 },
 
 // "a"
-string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + skip(c => c !== q) + (index++, qc) : null,
+string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + skip(c => c-q) + (index++, qc) : null,
 
 // (...exp)
 group = (c, node) => c === OPAREN ? (index++, node = expr(CPAREN), index++, node) : null,

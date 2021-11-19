@@ -6,8 +6,18 @@ import {parse, binary, unary, postfix, token, literal,
 // undefined
 literal['undefined'] = undefined
 
-// '
-token.push((q, qc) => q === 39 ? (qc = char(), index++, qc) + skip(c => c !== q) + (index++, qc) : null)
+// "' with /
+token[2] = (q, qc, c, str) => {
+  if (q !== 34 && q !== 39) return
+  qc = char(), skip(), str = ''
+  while (c=code(), c-q) {
+    if (c === 92) skip(), str+=escape[char()]||char()
+    else str+=char()
+    skip()
+  }
+  return qc + str + qc
+}
+const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
 // **
 binary['**'] = 16
