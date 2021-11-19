@@ -11,11 +11,10 @@ token[2] = (q, qc, c, str) => {
   if (q !== 34 && q !== 39) return
   qc = char(), skip(), str = ''
   while (c=code(), c-q) {
-    if (c === 92) skip(), str+=escape[char()]||char()
-    else str+=char()
+    if (c === 92) skip(), str += escape[char()] || char(); else str+=char()
     skip()
   }
-  return qc + str + qc
+  return skip(), qc + str + qc
 }
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 

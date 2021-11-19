@@ -2,10 +2,20 @@ const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, PLUS = 43
 
 export let index, current, lastOp
 
-export const parse = str => (current=str, index=lastOp=0, expr()),
+export const parse = (str, tree) => (current=str, index=lastOp=0, tree=expr(), index < current.length ? err() : tree),
 
+// ------------ util
+code = () => current.charCodeAt(index), // current char code
+char = (n=1) => current.substr(index, n), // skip n chars
+err = (msg=char()) => { throw Error('Bad syntax ' + msg + ' at ' + index) },
+skip = (is=1, from=index) => { // consume N or until condition matches
+  if (typeof is === 'number') index += is
+  else while (is(code())) ++index > current.length && err(is) // 1 + true === 2;
+  return index > from ? current.slice(from, index) : null
+},
 space = () => { while (code() <= 32) index++ },
 
+// ------------- expr
 // consume operator
 operator = (ops, op, prec, l=3) => {
   // memoize by index - saves 20% to perf
@@ -39,7 +49,7 @@ expr = (end, prec=-1) => {
   space()
 
   // consume expression for current precedence or higher
-  while ((cc = code()) && cc !== end && (op = operator(binary)) && op[1] > prec) {
+  while ((cc = code()) !== end && (op = operator(binary)) && op[1] > prec) {
     node = [op[0], node]
     // consume same-op group, do..while both saves op lookups and space
     do { index += op[2], node.push(expr(end, op[1])) } while (char(op[2]) === op[0])
@@ -54,7 +64,7 @@ expr = (end, prec=-1) => {
 float = (number) => {
   if (number = skip(c => (c >= 48 && c <= 57) || c === PERIOD)) {
     if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
-    return isNaN(number = parseFloat(number)) ? err('Bad number') : number
+    return isNaN(number = parseFloat(number)) ? err() : number
   }
 },
 
@@ -73,18 +83,6 @@ id = name => (name = skip(c =>
   c >= 192 // any non-ASCII
 )) && literal.hasOwnProperty(name) ? literal[name] : name,
 
-
-// ------------ util
-code = () => current.charCodeAt(index), // current char code
-char = (n=1) => current.substr(index, n), // skip n chars
-err = (msg) => { throw Error(msg + ' at ' + index) },
-skip = (is=1, from=index) => { // consume N or until condition matches
-  if (typeof is === 'number') index += is
-  else while (is(code())) ++index > current.length && err('Unexpected end ' + is) // 1 + true === 2;
-  return index > from ? current.slice(from, index) : null
-},
-
-
 // ----------- config
 token = parse.token = [ group, float, string, id ],
 
@@ -96,7 +94,7 @@ postfix = parse.postfix = [
     if (cc === PERIOD) index++, space(), node = ['.', node, '"'+id()+'"']
     else if (cc === OBRACK) index++, node = ['.', node, expr(CBRACK)], index++
     else if (cc === OPAREN)
-      index++, arg=expr(CPAREN),
+      index++, arg=expr(CPAREN), code() !== CPAREN && err(),
       node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
       index++
     return node
@@ -123,5 +121,6 @@ binary = parse.binary = {
   '+': 14, '-': 14,
   '*': 15, '/': 15, '%': 15
 }
+
 
 export default parse

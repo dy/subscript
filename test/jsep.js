@@ -9,7 +9,7 @@ test('Expression: Constants', ()=> {
   is(parse('12.3'),  12.3 );
 });
 
-test.only('String escapes', () => {
+test('String escapes', () => {
   is(parse("'a \\w b'"), "'a w b'")
   is(parse("'a \\' b'"), "'a ' b'")
   is(parse("'a \\n b'"), "'a \n b'")
@@ -31,14 +31,14 @@ test.todo('Question operator', () => {
 })
 
 test('Function Calls', ()=> {
-  is(parse("a(b, c(d,e), f)"), {})
-  is(parse('a b + c'), {})
-  is(parse('\'a\'.toString()'), {})
-  is(parse('[1].length'), {})
-  is(parse(';'), {})
-  // allow all spaces or all commas to separate arguments
-  is(parse('check(a, b, c, d)'), {})
-  is(parse('check(a b c d)'), {})
+  is(parse("a(b, c(d,e), f)"), ['a', 'b', ['c','d','e'], 'f'])
+  throws(t => parse('a b + c'))
+  is(parse("'a'.toString()"), [['.', "'a'", '"toString"']])
+  is(parse('[1].length'), ['.',['[',1],'"length"'])
+  // is(parse(';'), {})
+  // // allow all spaces or all commas to separate arguments
+  // is(parse('check(a, b, c, d)'), {})
+  throws(t => parse('check(a b c d)'))
 });
 
 test('Arrays', ()=> {
@@ -52,10 +52,10 @@ test('Ops', function (qunit) {
   is(parse('1'), 1)
   is(parse('1+2'), ['+',1,2])
   is(parse('1*2'), ['*',1,2])
-  is(parse('1*(2+3)'), ['*',['+',2,3]])
+  is(parse('1*(2+3)'), ['*',1,['+',2,3]])
   is(parse('(1+2)*3'), ['*',['+',1,2],3])
   is(parse('(1+2)*3+4-2-5+2/2*3'), ['+',['-',['+',['*',['+',1,2],3],4],2,5],['*',['/',2,2],3]])
-  is(parse('1 + 2-   3*  4 /8'), ['+',1,['-',2,['/',['*',3,4],8]]])
+  is(parse('1 + 2-   3*  4 /8'), ['-',['+',1, 2], ['/',['*',3,4],8]])
   is(parse('\n1\r\n+\n2\n'), ['+',1,2])
   is(parse('1 + -2'), ['+',1,['-',2]])
   is(parse('-1 + -2 * -3 * 2'), ['+',['-',1],['*',['-',2],['-',3],2]])
