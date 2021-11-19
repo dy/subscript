@@ -1,4 +1,4 @@
-import test, {is, any} from '../lib/test.js'
+import test, {is, any, throws} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../subscript.js'
 import { char, skip, index, current, space, code, expr } from '../src/parse.js'
 
@@ -120,9 +120,9 @@ test.todo('parse: comments', t => {
 test('parse: literals', t=> {
   is(parse('null'), null)
   is(parse('(null)'), null)
-  // parse.literal['undefined'] = undefined
-  // is(parse('undefined'), undefined)
-  // is(parse('(undefined)'), undefined)
+  parse.literal['undefined'] = undefined
+  is(parse('undefined'), undefined)
+  is(parse('(undefined)'), undefined)
   is(parse('true||((false))'), ['||', true, false])
   is(parse('a(true)'), ['a', true])
   is(parse('a0'), 'a0')
@@ -136,7 +136,7 @@ test('parse: E operator', t => {
   is(parse('1e2'), 100)
 
   is(parse('-1.23e-2'),['-',1.23e-2])
-  is(parse('-1.23E-2'),['-',1.23e-2])
+  throws(t => parse('.e-1'))
 })
 
 test('parse: intersecting binary', t => {

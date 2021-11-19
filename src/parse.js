@@ -51,10 +51,10 @@ expr = (end, prec=-1) => {
 
 // ------------------- tokens
 // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-float = (number, c) => {
+float = (number) => {
   if (number = skip(c => (c >= 48 && c <= 57) || c === PERIOD)) {
     if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
-    return parseFloat(number)
+    return isNaN(number = parseFloat(number)) ? err('Bad number') : number
   }
 },
 
