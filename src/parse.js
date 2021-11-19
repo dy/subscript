@@ -49,7 +49,7 @@ expr = (end, prec=-1) => {
   return node;
 },
 
-// tokens
+// ------------------- tokens
 // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
 float = (number, c) => {
   if (number = skip(c => (c >= 48 && c <= 57) || c === PERIOD)) {
