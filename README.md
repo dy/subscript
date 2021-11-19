@@ -2,7 +2,7 @@
 
 _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust.<br/>
 
-* Well-known syntax
+* It has well-known syntax
 * Any _subscript_ fragment can be copy-pasted to any target language
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
 * It's very fast ([see performance](#performance))
@@ -30,6 +30,25 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
   <time datetime="{{ date.toUTCString() }}">{{ date.toLocaleTimeString() }}</time>
 </template>
 ```
+
+## Motivation
+
+[jsep](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you design a tiny module and prefer keep dependencies as small as possible.
+Subscript has x4 smaller footprint than jsep, keeping performance and externalizing API. It also generates lispy calltree, compared to esprima AST:
+
++ minimal possible AST overhead
++ clear operators precedence
++ overloading operators by context, not only globally
++ easy manual evaluation and debugging
++ conventional form
++ compatible with [frisk](https://npmjs.com/frisk)
++ one-liner docs...
+
+```js
+import {evaluate} from 'subscript.js'
+evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
+``` 
+
 
 ## Operators
 
