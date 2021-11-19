@@ -17,7 +17,7 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 ## Motivation
 
-_Subscript_ is designed to be useful with:
+_Subscript_ is designed to be useful for:
 
 * templates (perfect match with [template parts](https://github.com/github/template-parts))
 * expressions evaluators, calculators
