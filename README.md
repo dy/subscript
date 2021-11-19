@@ -264,7 +264,7 @@ Subscript shows relatively good performance within other evaluators:
 // parse 30k times
 
 subscript: ~280 ms
-jsep: ~290 ms
+jsep: ~281 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms
 new Function: ~1400 ms

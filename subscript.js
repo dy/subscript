@@ -1,5 +1,5 @@
-import parse from './src/parse.js'
-import evaluate from './src/evaluate.js'
+import parse from './parse.js'
+import evaluate from './evaluate.js'
 
 export { parse, evaluate }
 

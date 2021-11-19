@@ -1,7 +1,7 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import {evaluate, operator} from './src/evaluate.js'
+import {evaluate, operator} from './evaluate.js'
 import {parse, binary, unary, postfix, token, literal,
-        code, char, skip, space, expr} from './src/parse.js'
+        code, char, skip, space, expr} from './parse.js'
 
 // undefined
 literal['undefined'] = undefined

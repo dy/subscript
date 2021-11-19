@@ -38,16 +38,15 @@ expr = (end, prec=-1) => {
   // unary prefix
   if (from===index) (op = operator(unary)) && (index += op[2], node = [op[0], expr(end, op[1])])
 
-  // postfix handlers allow a.b[c](d).e, postfix operators, literals etc.
+  // postfix handlers
   else {
-    for (space(), cc=code(), i=0; i < postfix.length;) if ((mapped=postfix[i](node, cc)) !== node) node=mapped, i=0, space(), cc=code(); else i++
+    for (space(), cc=code(), i=0; i < postfix.length;)
+      if ((mapped = postfix[i](node, cc)) !== node) node = mapped, space(), cc=code(); else i++
   }
   // ALT: seems to be slower
   // else do {space(), cc=code()} while (postfix.find((parse, mapped) => (mapped = parse(node, cc)) !== node && (node = mapped)))
 
-  space()
-
-  // consume expression for current precedence or higher
+  // consume binary expression for current precedence or higher
   while (cc = code() && cc !== end && (op = operator(binary)) && op[1] > prec) {
     node = [op[0], node]
     // consume same-op group, do..while both saves op lookups and space
@@ -90,22 +89,24 @@ token = parse.token = [ float, group, string, id ],
 literal = parse.literal = {true:true, false:false, null:null},
 
 postfix = parse.postfix = [
-  // a.b[c](d), 3 in 1 for performance
+  // postfix parsers merged into 1 for performance & compactness
   (node, cc, arg) => {
+    // a.b[c](d)
     if (cc === PERIOD) index++, space(), node = ['.', node, '"'+id()+'"']
     else if (cc === OBRACK) index++, node = ['.', node, expr(CBRACK)], index++
     else if (cc === OPAREN)
       index++, arg=expr(CPAREN), code() !== CPAREN && err(),
       node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
       index++
+
+    // a++, a--
+    else if ((cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc) node = [skip(2), node]
+
+    // literal
+    else if (typeof node === 'string' && literal.hasOwnProperty(node)) node = literal[node]
+
     return node
-  },
-
-  // a++, a--
-  (node, cc) => (cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc ? [skip(2), node] : node,
-
-  // literal
-  (node) => typeof node === 'string' && literal.hasOwnProperty(node) ? literal[node] : node
+  }
 ],
 
 unary = parse.unary = {
