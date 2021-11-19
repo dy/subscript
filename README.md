@@ -26,14 +26,7 @@ _Subscript_ is designed to be useful for:
 * sandboxes, playgrounds, safe eval
 * custom DSL
 
-```html
-<!-- template-parts proposal -->
-<template id="timer">
-  <time datetime="{{ date.toUTCString() }}">{{ date.toLocaleTimeString() }}</time>
-</template>
-```
-
-[jsep](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you design a tiny module and prefer keep dependencies as small as possible.
+[Jsep](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you design a tiny module and prefer keep dependencies as small as possible.
 Subscript has [2.5kb](https://npmfs.com/package/subscript/3.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) jsep, with same or better performance. It also has more open API and generates lispy calltree, compared to esprima AST:
 
 + minimal possible AST overhead
@@ -136,6 +129,14 @@ evaluate(xy)  // 1
 ## Ideas
 
 These are custom DSL operators snippets for your inspiration:
+
+
+```html
+<!-- template-parts proposal -->
+<template id="timer">
+  <time datetime="{{ date.toUTCString() }}">{{ date.toLocaleTimeString() }}</time>
+</template>
+```
 
 // a.b.c
 // (node, c) => c === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
