@@ -15,7 +15,9 @@ let fn = subscript(`a.b + c(d - 1)`)
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 ```
 
-## Useful in:
+## Motivation
+
+_Subscript_ is designed to be useful with:
 
 * templates (perfect match with [template parts](https://github.com/github/template-parts))
 * expressions evaluators, calculators
@@ -31,10 +33,8 @@ fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 </template>
 ```
 
-## Motivation
-
 [jsep](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you design a tiny module and prefer keep dependencies as small as possible.
-Subscript has x4 smaller footprint than jsep, keeping performance and externalizing API. It also generates lispy calltree, compared to esprima AST:
+Subscript has [2.5kb](https://npmfs.com/package/subscript/3.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) jsep, with same or better performance. It also has more open API and generates lispy calltree, compared to esprima AST:
 
 + minimal possible AST overhead
 + clear operators precedence
@@ -46,6 +46,7 @@ Subscript has x4 smaller footprint than jsep, keeping performance and externaliz
 
 ```js
 import {evaluate} from 'subscript.js'
+
 evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ``` 
 
