@@ -1,6 +1,6 @@
 const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, PLUS = 43, MINUS = 45
 
-export let index, current, lastOp
+export let index, current, lastOp, end
 
 export const parse = (str, tree) => (current=str, index=lastOp=0, tree=expr(), index < current.length ? err() : tree),
 
@@ -25,18 +25,19 @@ operator = (ops, op, prec, l=3) => {
   while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, op.length, index] //opinfo
 },
 
-expr = (end, prec=-1) => {
+expr = (prec=-1, curEnd) => {
   space()
 
-  let cc = code(), op, node, i=0, mapped, from=index
-
+  let cc = code(), op, node, i=0, mapped, from=index, prevEnd
   if (cc === end) return //shortcut
+
+  if (curEnd) prevEnd = end, end = curEnd // global end marker saves operator lookups
 
   // parse node by token parsers (direct loop is faster than token.find)
   while (from===index && i < token.length) node = token[i++](cc)
 
   // unary prefix
-  if (from===index) (op = operator(unary)) && (index += op[2], node = [op[0], expr(end, op[1])])
+  if (from===index) (op = operator(unary)) && (index += op[2], node = [op[0], expr(op[1])])
 
   // postfix handlers
   else {
@@ -47,12 +48,14 @@ expr = (end, prec=-1) => {
   // else do {space(), cc=code()} while (postfix.find((parse, mapped) => (mapped = parse(node, cc)) !== node && (node = mapped)))
 
   // consume binary expression for current precedence or higher
-  while (cc = code() && cc !== end && (op = operator(binary)) && op[1] > prec) {
+  while (cc = code() && (cc !== end) && (op = operator(binary)) && op[1] > prec) {
     node = [op[0], node]
     // consume same-op group, do..while both saves op lookups and space
-    do { index += op[2], node.push(expr(end, op[1])) } while (char(op[2]) === op[0])
+    do { index += op[2], node.push(expr(op[1])) } while (char(op[2]) === op[0])
     space()
   }
+
+  if (curEnd) end = code() !== curEnd ? err() : prevEnd
 
   return node;
 },
@@ -70,7 +73,7 @@ float = (number) => {
 string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + skip(c => c-q) + (index++, qc) : null,
 
 // (...exp)
-group = (c, node) => c === OPAREN ? (index++, node = expr(CPAREN), index++, node) : null,
+group = (c, node) => c === OPAREN ? (index++, node = expr(-1,CPAREN), index++, node) : null,
 
 // var or literal
 id = name => (name = skip(c =>
@@ -93,9 +96,9 @@ postfix = parse.postfix = [
   (node, cc, arg) => {
     // a.b[c](d)
     if (cc === PERIOD) index++, space(), node = ['.', node, '"'+id()+'"']
-    else if (cc === OBRACK) index++, node = ['.', node, expr(CBRACK)], index++
+    else if (cc === OBRACK) index++, node = ['.', node, expr(-1,CBRACK)], index++
     else if (cc === OPAREN)
-      index++, arg=expr(CPAREN), code() !== CPAREN && err(),
+      index++, arg=expr(-1,CPAREN),
       node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
       index++
 

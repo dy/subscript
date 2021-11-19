@@ -267,6 +267,7 @@ test('ext: in operator', t => {
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
+  // is(parse('b inc'), ['in', '"bin"', 'inc'])
   is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
 })
 
@@ -275,7 +276,7 @@ test('ext: ternary', t => {
   parse.postfix.unshift(node => {
     let a, b
     if (code() !== 63) return node
-    skip(), space(), a = expr(58)
+    skip(), space(), a = expr(-1,58)
     if (code() !== 58) return node
     skip(), space(), b = expr()
     return ['?:',node, a, b]
@@ -292,7 +293,7 @@ test('ext: list', t => {
   parse.token.unshift((node, arg) =>
     code() === 91 ?
     (
-      skip(), arg=expr(93),
+      skip(), arg=expr(-1,93),
       node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
       skip(), node
     ) : null
@@ -307,7 +308,7 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   parse.binary[':'] = 2
-  parse.token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(125)]), skip(), node) : null)
+  parse.token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(-1,125)]), skip(), node) : null)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
 

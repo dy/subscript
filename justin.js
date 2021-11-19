@@ -19,7 +19,7 @@ token[2] = (q, qc, c, str) => {
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
 // unary word
-postfix.push((node, prec) => typeof node === 'string' && (prec=unary[node]) ? [node, expr(null, prec)] : node)
+postfix.push((node, prec) => typeof node === 'string' && (prec=unary[node]) ? [node, expr(prec)] : node)
 
 // detect custom operators
 token[3] = name => (name = skip(c =>
@@ -30,7 +30,7 @@ token[3] = name => (name = skip(c =>
     c == 36 || c == 95 || // $, _,
     c >= 192 // any non-ASCII
   ) && !binary[String.fromCharCode(c)]
-)) && literal.hasOwnProperty(name) ? literal[name] : name,
+)),
 
 
 // **
@@ -52,7 +52,7 @@ operator['?:']=(a,b,c)=>a?b:c
 postfix.push(node => {
   let a, b
   if (code() !== 63) return node
-  skip(), space(), a = expr(58)
+  skip(), space(), a = expr(-1,58)
   if (code() !== 58) return node
   skip(), space(), b = expr()
   return ['?:',node, a, b]
@@ -71,7 +71,7 @@ operator['['] = (...args) => Array(...args)
 token.push((node, arg) =>
   code() === 91 ?
   (
-    skip(), arg=expr(93),
+    skip(), arg=expr(-1,93),
     node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
     skip(), node
   ) : null
@@ -79,7 +79,7 @@ token.push((node, arg) =>
 
 // {}
 binary[':'] = 2
-token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(125)]), skip(), node) : null)
+token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(-1,125)]), skip(), node) : null)
 operator['{'] = (...args)=>Object.fromEntries(args)
 operator[':'] = (a,b)=>[a,b]
 
