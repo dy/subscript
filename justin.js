@@ -1,13 +1,13 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate, operator} from './src/evaluate.js'
 import {parse, binary, unary, postfix, token, literal,
-        code, char, next, space, expr} from './src/parse.js'
+        code, char, skip, space, expr} from './src/parse.js'
 
 // undefined
 literal['undefined'] = undefined
 
 // '
-token.push((q, qc) => q === 39 ? (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc) : null)
+token.push((q, qc) => q === 39 ? (qc = char(), index++, qc) + skip(c => c !== q) + (index++, qc) : null)
 
 // **
 binary['**'] = 16
@@ -28,9 +28,9 @@ operator['?:']=(a,b,c)=>a?b:c
 postfix.push(node => {
   let a, b
   if (code() !== 63) return node
-  next(), space(), a = expr(58)
+  skip(), space(), a = expr(58)
   if (code() !== 58) return node
-  next(), space(), b = expr()
+  skip(), space(), b = expr()
   return ['?:',node, a, b]
 })
 
@@ -40,22 +40,22 @@ postfix.push(node => {
 
 // in
 evaluate.operator['in'] = (a,b)=>a in b
-parse.postfix.unshift(node => (char(2) === 'in' ? (next(2), ['in', '"' + node + '"', expr()]) : node))
+parse.postfix.unshift(node => (char(2) === 'in' ? (skip(2), ['in', '"' + node + '"', expr()]) : node))
 
 // []
 operator['['] = (...args) => Array(...args)
 token.push((node, arg) =>
   code() === 91 ?
   (
-    next(), arg=expr(93),
+    skip(), arg=expr(93),
     node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
-    next(), node
+    skip(), node
   ) : null
 )
 
 // {}
 binary[':'] = 2
-token.unshift((node) => code() === 123 ? (next(), node = map(['{',expr(125)]), next(), node) : null)
+token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(125)]), skip(), node) : null)
 operator['{'] = (...args)=>Object.fromEntries(args)
 operator[':'] = (a,b)=>[a,b]
 

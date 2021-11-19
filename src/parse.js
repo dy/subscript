@@ -6,12 +6,12 @@ export const parse = str => (current=str, index=lastOp=0, expr()),
 
 space = () => { while (code() <= 32) index++ },
 
-// consume operator that resides within current group by precedence
+// consume operator
 operator = (ops, op, prec, l=3) => {
   // memoize by index - saves 20% to perf
   if (index && lastOp && lastOp[3] === index) return lastOp
 
-  // ascending lookup is faster 1-char operators, longer for 2+ char ops
+  // ascending lookup is faster for 1-char operators, longer for 2+ char ops, so we use descending
   while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, op.length, index] //opinfo
 },
 
@@ -22,7 +22,7 @@ expr = (end, prec=-1) => {
 
   if (cc === end) return
 
-  // parse node by token parsers (direct loop is faster than stack entry)
+  // parse node by token parsers (direct loop is faster than token.find)
   while (from===index && i < token.length) node = token[i++](cc)
 
   // unary prefix
@@ -33,11 +33,12 @@ expr = (end, prec=-1) => {
     if (space(), cc=code(), cc === end) return node
     for (i=0; i < postfix.length;) if ((mapped=postfix[i](node, cc)) !== node) node=mapped, i=0, space(), cc=code(); else i++
   }
+  // ALT: seems to be slower
   // else do {space(), cc=code()} while (postfix.find((parse, mapped) => (mapped = parse(node, cc)) !== node && (node = mapped)))
 
   space()
 
-  // consume expression for current precedence or group (== highest precedence)
+  // consume expression for current precedence or higher
   while ((cc = code()) && cc !== end && (op = operator(binary)) && op[1] > prec) {
     node = [op[0], node]
     // consume same-op group, do..while both saves op lookups and space
@@ -51,26 +52,27 @@ expr = (end, prec=-1) => {
 // tokens
 // 1.2e+3, .5
 float = (number, c, isDigit) => {
-  number = next(isDigit = c => c >= 48 && c <= 57) || ''
-  if (code() === PERIOD) index++, number += '.' + next(isDigit)
+  number = skip(isDigit = c => c >= 48 && c <= 57) || ''
+  if (code() === PERIOD) index++, number += '.' + skip(isDigit)
   if (number) {
     if ((c = code()) === 69 || c === 101) { // e, E
       index++, number += 'e'
       if ((c=code()) === PLUS || c === MINUS) // +-
         number += char(), index++
-      number += next(isDigit)
+      number += skip(isDigit)
     }
     return parseFloat(number)
   }
 },
 
 // "a"
-string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + next(c => c !== q) + (index++, qc) : null,
+string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + skip(c => c !== q) + (index++, qc) : null,
 
 // (...exp)
 group = (c, node) => c === OPAREN ? (index++, node = expr(CPAREN), index++, node) : null,
 
-id = name => (name = next(c =>
+// var or literal
+id = name => (name = skip(c =>
   (c >= 48 && c <= 57) || // 0..9
   (c >= 65 && c <= 90) || // A...Z
   (c >= 97 && c <= 122) || // a...z
@@ -81,9 +83,9 @@ id = name => (name = next(c =>
 
 // ------------ util
 code = () => current.charCodeAt(index), // current char code
-char = (n=1) => current.substr(index, n), // next n chars
+char = (n=1) => current.substr(index, n), // skip n chars
 err = (msg) => { throw Error(msg + ' at ' + index) },
-next = (is=1, from=index) => { // number indicates skip & stop (don't check)
+skip = (is=1, from=index) => { // consume N or until condition matches
   if (typeof is === 'number') index += is
   else while (is(code())) ++index > current.length && err('Unexpected end ' + is) // 1 + true === 2;
   return index > from ? current.slice(from, index) : null
@@ -108,7 +110,7 @@ postfix = parse.postfix = [
   },
 
   // a++, a--
-  (node, cc) => (cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc ? [next(2), node] : node,
+  (node, cc) => (cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc ? [skip(2), node] : node,
 ],
 
 unary = parse.unary = {

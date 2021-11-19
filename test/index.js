@@ -1,6 +1,6 @@
 import test, {is, any} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../subscript.js'
-import { char, next, index, current, space, code, expr } from '../src/parse.js'
+import { char, skip, index, current, space, code, expr } from '../src/parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -107,7 +107,7 @@ test.todo('parse: comments', t => {
   parse.token.unshift(() => {
     console.group('parse', index, current)
     console.log(0, char(2))
-    if (char(2) === '//') next(2), console.log('found',char()), next(c => console.log(1,char())||(c !== RETURN && c !== NEWLINE)), space()
+    if (char(2) === '//') skip(2), console.log('found',char()), skip(c => console.log(1,char())||(c !== RETURN && c !== NEWLINE)), space()
     console.log(123, char())
     console.groupEnd()
   })
@@ -263,7 +263,7 @@ test('eval: basic', t => {
 
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
-  parse.postfix.unshift(node => (char(2) === 'in' ? (next(2), ['in', '"' + node + '"', expr()]) : node))
+  parse.postfix.unshift(node => (char(2) === 'in' ? (skip(2), ['in', '"' + node + '"', expr()]) : node))
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
@@ -275,9 +275,9 @@ test('ext: ternary', t => {
   parse.postfix.unshift(node => {
     let a, b
     if (code() !== 63) return node
-    next(), space(), a = expr(58)
+    skip(), space(), a = expr(58)
     if (code() !== 58) return node
-    next(), space(), b = expr()
+    skip(), space(), b = expr()
     return ['?:',node, a, b]
   })
 
@@ -292,9 +292,9 @@ test('ext: list', t => {
   parse.token.unshift((node, arg) =>
     code() === 91 ?
     (
-      next(), arg=expr(93),
+      skip(), arg=expr(93),
       node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
-      next(), node
+      skip(), node
     ) : null
   )
 
@@ -307,7 +307,7 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   parse.binary[':'] = 2
-  parse.token.unshift((node) => code() === 123 ? (next(), node = map(['{',expr(125)]), next(), node) : null)
+  parse.token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(125)]), skip(), node) : null)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
 
