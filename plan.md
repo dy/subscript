@@ -73,7 +73,7 @@
 * [ ] ;
 * [ ] comments
 * [ ] # operators overloaded (python comments for example)
-* [ ] justin
+* [x] justin
 * [x] infinite unaries? -+-+a
 * [x] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
   . Lisp tree doesn't make difference between unary/binary operator.
