@@ -40,9 +40,7 @@ expr = (end, prec=-1) => {
 
   // postfix handlers allow a.b[c](d).e, postfix operators, literals etc.
   else {
-    // this could add perf, but breaks literals
-    // if (space(), cc=code(), cc === end) return node
-    for (i=0; i < postfix.length;) if ((mapped=postfix[i](node, cc)) !== node) node=mapped, i=0, space(), cc=code(); else i++
+    for (space(), cc=code(), i=0; i < postfix.length;) if ((mapped=postfix[i](node, cc)) !== node) node=mapped, i=0, space(), cc=code(); else i++
   }
   // ALT: seems to be slower
   // else do {space(), cc=code()} while (postfix.find((parse, mapped) => (mapped = parse(node, cc)) !== node && (node = mapped)))
