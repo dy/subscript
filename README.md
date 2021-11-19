@@ -104,6 +104,7 @@ It adds support for:
 + `{...}` Object literal
 + `in` binary operator
 + `;` expression separator
++ unary word operators
 <!-- + `//, /* */` comments -->
 <!-- + `undefined` literal -->
 <!-- + `?` chaining operator -->

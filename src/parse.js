@@ -30,7 +30,7 @@ expr = (end, prec=-1) => {
 
   let cc = code(), op, node, i=0, mapped, from=index
 
-  if (cc === end) return
+  if (cc === end) return //shortcut
 
   // parse node by token parsers (direct loop is faster than token.find)
   while (from===index && i < token.length) node = token[i++](cc)
@@ -40,8 +40,7 @@ expr = (end, prec=-1) => {
 
   // postfix handlers allow a.b[c](d).e, postfix operators, literals etc.
   else {
-    if (space(), cc=code(), cc === end) return node
-    for (i=0; i < postfix.length;) if ((mapped=postfix[i](node, cc)) !== node) node=mapped, i=0, space(), cc=code(); else i++
+    for (space(), cc=code(), i=0; i < postfix.length;) if ((mapped=postfix[i](node, cc)) !== node) node=mapped, i=0, space(), cc=code(); else i++
   }
   // ALT: seems to be slower
   // else do {space(), cc=code()} while (postfix.find((parse, mapped) => (mapped = parse(node, cc)) !== node && (node = mapped)))
@@ -49,7 +48,7 @@ expr = (end, prec=-1) => {
   space()
 
   // consume expression for current precedence or higher
-  while ((cc = code()) !== end && (op = operator(binary)) && op[1] > prec) {
+  while (cc = code() && cc !== end && (op = operator(binary)) && op[1] > prec) {
     node = [op[0], node]
     // consume same-op group, do..while both saves op lookups and space
     do { index += op[2], node.push(expr(end, op[1])) } while (char(op[2]) === op[0])
@@ -83,7 +82,7 @@ id = name => (name = skip(c =>
     c == 36 || c == 95 || // $, _,
     c >= 192 // any non-ASCII
   )
-)) && literal.hasOwnProperty(name) ? literal[name] : name,
+)),
 
 // ----------- config
 token = parse.token = [ float, group, string, id ],
@@ -104,6 +103,9 @@ postfix = parse.postfix = [
 
   // a++, a--
   (node, cc) => (cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc ? [skip(2), node] : node,
+
+  // literal
+  (node) => typeof node === 'string' && literal.hasOwnProperty(node) ? literal[node] : node
 ],
 
 unary = parse.unary = {

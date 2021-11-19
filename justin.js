@@ -18,6 +18,9 @@ token[2] = (q, qc, c, str) => {
 }
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
+// unary word
+postfix.push((node, prec) => typeof node === 'string' && (prec=unary[node]) ? [node, expr(null, prec)] : node)
+
 // detect custom operators
 token[3] = name => (name = skip(c =>
   (

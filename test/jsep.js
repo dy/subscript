@@ -65,28 +65,28 @@ test('Ops', function (qunit) {
 
 });
 
-test.only('Custom operators', ()=> {
-  // parse.binary['^'] = 10;
-  // is(parse('a^b'), ['^','a','b']);
+test('Custom operators', ()=> {
+  parse.binary['^'] = 10;
+  is(parse('a^b'), ['^','a','b']);
 
-  // parse.binary['×'] = 9;
-  // is(parse('a×b'), ['×','a','b']);
+  parse.binary['×'] = 9;
+  is(parse('a×b'), ['×','a','b']);
 
-  // parse.binary['or'] = 1;
-  // is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
-  // throws(() => parse('oneWord ordering anotherWord'));
+  parse.binary['or'] = 1;
+  is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
+  throws(() => parse('oneWord ordering anotherWord'));
 
-  // parse.unary['#'] = 11;
-  // is(parse('#a'), ['#','a']);
+  parse.unary['#'] = 11;
+  is(parse('#a'), ['#','a']);
 
   parse.unary['not'] = 11;
   is(parse('not a'), ['not', 'a']);
 
   parse.unary['notes'] = 11;
-  is(parse('notes'), ['notes']);
+  is(parse('notes 1'), ['notes', 1]);
 });
 
-test('Custom alphanumeric operators', ()=> {
+test.todo('Custom alphanumeric operators', ()=> {
   jsep.binary['and'] = 2;
   testParser('a and b', {
     type: 'BinaryExpression',
@@ -109,7 +109,7 @@ test('Custom alphanumeric operators', ()=> {
   jsep.removeUnaryOp('not');
 });
 
-test('Custom identifier characters', ()=> {
+test.todo('Custom identifier characters', ()=> {
   jsep.addIdentifierChar('@');
   testParser('@asd', {
     type: 'Identifier',
@@ -118,14 +118,14 @@ test('Custom identifier characters', ()=> {
   jsep.removeIdentifierChar('@');
 });
 
-test('Bad Numbers', ()=> {
+test.todo('Bad Numbers', ()=> {
   testParser('1.', { type: 'Literal', value: 1, raw: '1.' });
   throws(function () {
     parse('1.2.3');
   });
 });
 
-test('Missing arguments', ()=> {
+test.todo('Missing arguments', ()=> {
   // throws(function () {
   //   parse('check(,)');
   // }, 'detects missing argument (all)');
@@ -144,7 +144,7 @@ test('Missing arguments', ()=> {
   throws(() => parse('check(a b c, d)'), 'spaced args first');
 });
 
-test('Uncompleted expression-call/array', ()=> {
+test.todo('Uncompleted expression-call/array', ()=> {
   throws(function () {
     parse('myFunction(a,b');
   }, 'detects unfinished expression call');
@@ -159,7 +159,7 @@ test('Uncompleted expression-call/array', ()=> {
   'detects trailing operator');
 });
 
-test(`should throw on invalid expr "${expr}"`, (assert) => {
+test.todo(`should throw on invalid expr "${expr}"`, (assert) => {
 
   throws(() => parse('!'))
   throws(() => parse('*x'))
@@ -171,7 +171,7 @@ test(`should throw on invalid expr "${expr}"`, (assert) => {
   throws(() => parse('() + 1'))
 });
 
-test('Esprima Comparison', ()=> {
+test.todo('Esprima Comparison', ()=> {
   ([
     '[1,,3]',
     '[1,,]', // this is actually incorrect in esprima
@@ -204,13 +204,13 @@ test('Esprima Comparison', ()=> {
 });
 
 // Should support ternary by default (index.js):
-test('Ternary', ()=> {
+test.todo('Ternary', ()=> {
   testParser('a ? b : c', { type: 'ConditionalExpression' });
   testParser('a||b ? c : d', { type: 'ConditionalExpression' });
 });
 
 
-test('should allow manipulating what is considered whitespace', (assert) => {
+test.todo('should allow manipulating what is considered whitespace', (assert) => {
   const expr = 'a // skip all this';
   throws(() => parse(expr));
 
@@ -225,7 +225,7 @@ test('should allow manipulating what is considered whitespace', (assert) => {
   testParser('a // skip all this', { type: 'Identifier' });
 });
 
-test('should allow overriding gobbleToken', (assert) => {
+test.todo('should allow overriding gobbleToken', (assert) => {
   const expr = '...';
   throws(() => parse(expr));
   jsep.hooks.add('gobble-token', function (env) {
