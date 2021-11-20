@@ -23,21 +23,22 @@ c1 = (i) => { return str.charCodeAt(i) }, // char code at current index
 c2 = () => { return c1(1)|c1(0)<<8 }, // 2 char codes
 c3 = () => { return c1(2)|c2()<<8 }, // 3 char codes
 
-MAX = 1e4
+MAX = 1e6
 
 // fastest
 console.time('dict')
-for (let i = 0, c, res=0, l=3, prec, op, curOp; i < MAX; i++)
+for (let i = 0, c, res=0, l=3, prec, op, curOp; i < MAX; i++) ops[char(3)] || ops[char(3)] || ops[char(2)] || ops[char(1)]
 console.timeEnd('dict')
 
 
 console.time('checkers fn')
-for (let i = 0; i < MAX; i++) fns.find(fn => fn())
+const findr = fn=>fn()
+for (let i = 0; i < MAX; i++) fns.find(findr)
 console.timeEnd('checkers fn')
 
 
 console.time('checkers unlist')
-for (let i = 0; i < MAX; i++) fns[0]() || fns[1]() || fns[2]()
+for (let i = 0; i < MAX; i++) for (let c = 0; c < 4;) fns[c++ % fns.length]()
 console.timeEnd('checkers unlist')
 
 
