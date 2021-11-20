@@ -7,10 +7,10 @@ export const parse = (str, tree) => (current=str, index=lastOp=0, tree=expr(), i
 // ------------ util
 code = () => current.charCodeAt(index), // current char code
 char = (n=1) => current.substr(index, n), // skip n chars
-err = (msg=char()) => { throw Error('Bad syntax ' + msg + ' at ' + index) },
+err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + index) },
 skip = (is=1, from=index) => { // consume N or until condition matches
   if (typeof is === 'number') index += is
-  else while (is(code())) ++index > current.length && err(is) // 1 + true === 2;
+  else while (is(code())) ++index > current.length && err('End by ' + is) // 1 + true === 2;
   return index > from ? current.slice(from, index) : null
 },
 space = () => { while (code() <= 32) index++ },
@@ -29,9 +29,8 @@ expr = (prec=-1, curEnd) => {
   space()
 
   let cc = code(), op, node, i=0, mapped, from=index, prevEnd
-  if (cc === end) return //shortcut
 
-  if (curEnd) prevEnd = end, end = curEnd // global end marker saves operator lookups
+  if (curEnd) if (cc === curEnd) return; else prevEnd = end, end = curEnd // global end marker saves operator lookups
 
   // parse node by token parsers (direct loop is faster than token.find)
   while (from===index && i < token.length) node = token[i++](cc)
@@ -55,7 +54,8 @@ expr = (prec=-1, curEnd) => {
     space()
   }
 
-  if (curEnd) end = code() !== curEnd ? err() : prevEnd
+  if (curEnd) end = code() !== curEnd ? err('Unclosed paren') : prevEnd
+  // if (node == null) err('Missing argument')
 
   return node;
 },
@@ -65,7 +65,7 @@ expr = (prec=-1, curEnd) => {
 float = (number) => {
   if (number = skip(c => (c >= 48 && c <= 57) || c === PERIOD)) {
     if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
-    return isNaN(number = parseFloat(number)) ? err() : number
+    return isNaN(number = parseFloat(number)) ? err('Bad number') : number
   }
 },
 
