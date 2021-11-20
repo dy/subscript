@@ -1,8 +1,8 @@
 # <!--<img alt="subscript" src="/subscript2.svg" height=42/>--> sub͘<em>script</em> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
-_Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust.<br/>
+_Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust, Swift, Objective C, Kotlin etc.<br/>
 
-* It has well-known syntax
+* Well-known syntax
 * Any _subscript_ fragment can be copy-pasted to any target language
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
 * It's very fast ([see performance](#performance))
