@@ -1,30 +1,32 @@
-const GT = 62, LT = 60, EQ = 61, PLUS = 43, MINUS = 45, PIPE = 124
+const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, PIPE=124, MUL=42, DIV=47, MOD=37, PERIOD=46, OBRACK=91, OPAREN=40
 
 // precedence-based parsing
-let index, current
+let idx, cur
 
-export const parse = (str, tree) => (current=str, index=0, expr()),
+export const parse = (str, tree) => (cur=str, idx=0, expr()),
 
-err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + index) },
-skip = (is=1, from=index) => {
-  if (typeof is === 'number') index += is else while (is(code())) index++;
-  return current.slice(from, index)
+err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + idx) },
+skip = (is=1, from=idx) => {
+  if (typeof is === 'number') idx += is else while (is(code())) idx++;
+  return cur.slice(from, idx)
 },
-space = cc => { while (cc = code(), cc < 33) index++; return cc },
+space = cc => { while (cc = code(), cc < 33) idx++; return cc },
 
-code = (i=0) => current.charCodeAt(index+i),
-char = (n=1) => current.substr(index, n),
+code = (i=0) => cur.charCodeAt(idx+i),
+char = (n=1) => cur.substr(idx, n),
 
 token = [float, string, literal, id],
 
-expr = (preс=0, cc, node, group, from=index) => {
+expr = (preс=0, cc, node, group, from=idx) => {
   cc = space()
 
   // prefix or token
-  while (from===index && i < token.length) node = node[i++](cc)
+  while (from===idx && i < token.length) node = node[i++](cc)
 
   // postfix or binary
-  while (!(group = operator(node, prec, cc = space())));
+  // while (!(group = operator(node, prec, cc = space())));
+  for (cc=space(), i=prec; i < postfix.length;)
+      if ((mapped = postfix[i](node, cc)) !== node) node = mapped, i=prec, cc=space(); else i++
 },
 
 // --------- token
@@ -36,9 +38,9 @@ float = (number) => {
   }
 },
 // "a"
-string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + skip(c => c-q) + (index++, qc) : null,
+string = (q, qc) => q === 34 ? (qc = char(), idx++, qc) + skip(c => c-q) + (idx++, qc) : null,
 // (...exp)
-group = (c, node) => c === OPAREN ? (index++, node = expr(-1,CPAREN), index++, node) : null,
+group = (c, node) => c === OPAREN ? (idx++, node = expr(-1,CPAREN), idx++, node) : null,
 // var or literal
 id = name => (name = skip(c =>
   (
@@ -53,8 +55,8 @@ id = name => (name = skip(c =>
 token = [ float, group, string, id ],
 
 // ------------- postfix
-operator = (node, prec, cc) => {
-  for (let i = prec, result; i < operators.length; i++) result = operators[i](cc)
+operator = (node, i=prec, cc) => {
+  while (i < operators.length) if (result = operators[i](node, cc)) return result
 },
 // route = () => {
 //   let c1 = code(), c2 = code(1)
@@ -69,18 +71,27 @@ operator = (node, prec, cc) => {
 // },
 comma = c1 => {},
 ternary = c1 => {},
-some = (c1, c2) => {},
-every = (c1, c2) => {},
+some = (c1,c2) => {},
+every = (c1,c2) => {},
 or = c1 => {},
 xor = c1 => {},
 and = c1 => {},
-eq = (c1, c2) => {},
-comp = (c1, c2) => {},
-shift = (c1, c2, c3) => {},
-sum = (c1) => {},
-mult = (c1) => {},
-unary = (c1, c2) => {},
-prop = (c1, c2) => {},
+eq = (c1,c2) => {},
+comp = (c1,c2) => {},
+shift = (c1,c2,c3) => {},
+sum = (a,c1,c2) => (c1 === PLUS && c2 !== PLUS)||(c1 === MINUS && c2 !== MINUS) ? [skip(), a, expr(14)] : null,
+mult = (a,c1,c2) => (c1 === MUL && c2 !== MUL)||c1 === DIV||c1===MOD ? [skip(), a, expr(15)] : null,
+// a++, a--
+unary = (a,c1,c2) => (c1===PLUS || c1===MINUS) && c2 === c1 ? [skip(2), node] : null,
+prop = (a,c1,c2) => (
+  // a.b[c](d)
+  (c1 === PERIOD) ? [skip(),a,'"'+(space(),id())+'"'] :
+  (c1 === OBRACK) ? [skip(), node, expr(CBRACK)] :
+  (c1 === OPAREN) ?
+    idx++, arg=expr(CPAREN),
+    Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
+    idx++
+),
 
 operators = [
   route,
@@ -121,31 +132,10 @@ operators = [
 
   // '()', '[]', '.': 18
   prop
-]
+],
 
 
 
-
-// postfix = parse.postfix = [
-//   // postfix parsers merged into 1 for performance & compactness
-//   (node, cc, arg) => {
-//     // a.b[c](d)
-//     if (cc === PERIOD) index++, space(), node = ['.', node, '"'+id()+'"']
-//     else if (cc === OBRACK) index++, node = ['.', node, expr(-1,CBRACK)], index++
-//     else if (cc === OPAREN)
-//       index++, arg=expr(-1,CPAREN),
-//       node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
-//       index++
-
-//     // a++, a--
-//     else if ((cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc) node = [skip(2), node]
-
-//     // literal
-//     else if (typeof node === 'string' && literal.hasOwnProperty(node)) node = literal[node]
-
-//     return node
-//   }
-// ],
 
 // unary = parse.unary = {
 //   '-': 17,
