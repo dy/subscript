@@ -301,8 +301,9 @@ test('ext: list', t => {
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])
-  is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
   is(parse('[1]+[2]'),['+',['[',1],['[',2]])
+  // FIXME: not critical
+  is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
   is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
 })
 
