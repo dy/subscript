@@ -2,10 +2,9 @@
 const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, PIPE=124, MUL=42, DIV=47, MOD=37, PERIOD=46, OBRACK=91, OPAREN=40
 
 let idx, // index in current string
-    cur, // current code string parsed
-    prec // current precedence level (start in operators lookup)
+    cur // current code string parsed
 
-export const parse = (str, tree) => (cur=str, prec=idx=0, expr()),
+export const parse = (str, tree) => (cur=str, idx=0, expr()),
 
 err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + idx) },
 skip = (is=1, from=idx) => {
@@ -19,17 +18,16 @@ code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 //a + b
-expr = (cc=space(), node, from=idx, pprec=prec, i=0, mapped) => {
+expr = (prec=0, cc=space(), node, from=idx, i=0, mapped) => {
   // prefix or token
   while (from===idx && i < token.length) node = token[i++](cc)
 
   if (!node) err('Unknown token')
 
   // postfix or binary
-  for (cc=space(); prec < operator.length;)
-    if (mapped = operator[prec](node, cc)) node = mapped, prec=pprec, cc=space(); else prec++
+  for (cc=space(), i=prec; i < operator.length;)
+    if (mapped = operator[i](node, cc, i)) node = mapped, i=prec, cc=space(); else i++
 
-  prec = pprec
   return node
 },
 
@@ -59,36 +57,25 @@ id = name => (name = skip(c =>
 token = [ float, group, string, id ],
 
 // ------------- operator
-// route = () => {
-//   let c1 = code(), c2 = code(1)
-//   // multichar op lookup redirect
-//   if (c1 === GT || c1 === LT) return expr(12)
-//   else if (c1 === PLUS || c1 === MINUS) return expr(14)
-//   else if (c1 === EQ) return expr(11)
-//   else if (c1 === PIPE) return expr(6)
-//   else {
-//     // TODO: lookup single-char opreator - likely useful to have a map of single-arg precedences
-//   }
-// },
-comma = (a,c1) => {},
-ternary = (a,c1) => {},
-some = (a,c1,c2) => {},
-every = (a,c1,c2) => {},
-or = (a,c1) => {},
-xor = (a,c1) => {},
-and = (a,c1) => {},
-eq = (c1,c2) => {},
-comp = (c1,c2) => {},
-shift = (c1,c2,c3) => {},
-sum = (a,c1,c2) => (c1===PLUS || c1===MINUS) && c2 !== c1 ? [skip(), a, expr()] : null,
-mult = (a,c1,c2) => (c1===MUL && c2 !== MUL) || c1===DIV || c1===MOD ? [skip(), a, expr()] : null,
-unary = (c1,c2) => {},
-postfix = (a,c1,c2) => (c1===PLUS || c1===MINUS) && c2===c1 ? [skip(2), node] : null,
-prop = (a,c1,c2) => (
+comma = (a,cc) => {},
+ternary = (a,cc) => {},
+some = (a,cc,prec) => {},
+every = (a,cc,prec) => {},
+or = (a,cc) => {},
+xor = (a,cc) => {},
+and = (a,cc) => {},
+eq = (cc,prec) => {},
+comp = (cc,prec) => {},
+shift = (cc,prec,c3) => {},
+sum = (a,cc,prec) => (cc===PLUS || cc===MINUS) && code(1) !== cc ? [skip(), a, expr(++prec)] : null,
+mult = (a,cc,prec) => (cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD ? [skip(), a, expr(++prec)] : null,
+unary = (cc,prec) => {},
+postfix = (a,cc,prec) => (cc===PLUS || cc===MINUS) ? [skip(2), node] : null,
+prop = (a,cc,prec) => (
   // a.b[c](d)
-  c1===PERIOD ? [skip(), a , '"'+(space(),id())+'"'] :
-  c1===OBRACK ? [skip(), node, expr(CBRACK)] :
-  c1===OPAREN ? (
+  cc===PERIOD ? [skip(), a , '"'+(space(),id())+'"'] :
+  cc===OBRACK ? [skip(), node, expr(CBRACK)] :
+  cc===OPAREN ? (
     idx++, arg=expr(CPAREN), idx++,
     Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) :
     arg == null ? [node] :
@@ -128,23 +115,3 @@ operator = [
 ]
 
 export default parse
-
-
-// unary = parse.unary = {
-//   '-': 17,
-//   '!': 17,
-//   '+': 17,
-//   '++': 17,
-//   '--': 17
-// },
-
-// binary = parse.binary = {
-//   ',': 1,
-//   '||': 6, '&&': 7, '|': 8, '^': 9, '&': 10,
-//   '==': 11, '!=': 11,
-//   '<': 12, '>': 12, '<=': 12, '>=': 12,
-//   '<<': 13, '>>': 13, '>>>': 13,
-//   '+': 14, '-': 14,
-//   '*': 15, '/': 15, '%': 15
-// }
-
