@@ -4,7 +4,7 @@ const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, AND=38, OR=124, HAT=94, MUL=42, DI
 // current string & index
 let idx, cur, end
 
-export const parse = (str, tree) => (cur=str, idx=0, expr()),
+export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
 
 err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + idx) },
 skip = (is=1, from=idx) => {
@@ -60,7 +60,14 @@ token = [ float, group, string, id ],
 // ↑ these two can be combined
 operator = [
   // ',': 1,
-  (a,cc,prec,end) => cc===COMMA ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => {
+    if (cc===COMMA) {
+      a = [',', a]
+      // consume same-op group, do..while both saves op lookups and space
+      do { skip(), a.push(expr(prec,end)) } while (space()===COMMA)
+      return a
+    }
+  },
   // '||': 6, '&&': 7,
   (a,cc,prec,end) => cc===OR && code(1)===cc ? [skip(),a,expr(prec,end)] : null,
   (a,cc,prec,end) => cc===AND && code(1)===cc ? [skip(),a,expr(prec,end)] : null,
