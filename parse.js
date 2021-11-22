@@ -58,52 +58,44 @@ token = [ float, group, string, id ],
 
 // operators
 // FIXME: check if binary op constructor affects performance anyhow, if not - just build condition-based
-// FIXME: not sure if exporting these names has meaning
 // FIXME: likely most part of these can be consolidated to single checkers, isn't that? Like, too bad to insert anything between or/xor/and or between comparisons. Like prop/parens.
+// can't consolidate different precedences fns due to next-precedence call, can we?
 // FIXME: unary prefixes can come here as well: they just check if a is null
-comma = (a,cc,prec) => cc===COMMA?[skip(),a,expr(++prec)]:null,
-some = (a,cc,prec) => cc===OR&&code(1)===cc?[skip(),a,expr(++prec)]:null,
-every = (a,cc,prec) => cc===AND&&code(1)===cc?[skip(),a,expr(++prec)]:null,
-or = (a,cc) => cc===OR?[skip(),a,expr(++prec)]:null,
-xor = (a,cc) => cc===HAT?[skip(),a,expr(++prec)]:null,
-and = (a,cc) => cc===AND?[skip(),a,expr(++prec)]:null,
-eq = (cc,prec) => cc===EQ&&cc===code(1)?[skip(),a,expr(++prec)]:null,
-comp = (cc,prec) => cc===GT||cc===LT?[skip(),a,expr(++prec)]:null,
-shift = (cc,prec,c3) => (cc===LT||cc===GT)&&cc===code(1) ? [skip(cc===code(2)?3:2), a, expr(++prec)] : null,
-sum = (a,cc,prec) => (cc===PLUS || cc===MINUS) && code(1) !== cc ? [skip(), a, expr(++prec)] : null,
-mult = (a,cc,prec) => (cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD ? [skip(), a, expr(++prec)] : null,
-unary = (cc,prec) => {},
-postfix = (a,cc,prec) => (cc===PLUS || cc===MINUS) ? [skip(2), node] : null,
-prop = (a,cc,prec) => (
-  // a.b[c](d)
-  cc===PERIOD ? [skip(), a , '"'+(space(),id())+'"'] :
-  cc===OBRACK ? [skip(), node, expr(CBRACK)] :
-  cc===OPAREN ? (
-    idx++, arg=expr(CPAREN), idx++,
-    Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) :
-    arg == null ? [node] :
-    [node, arg]
-  ) : null
-),
 
 operator = [
-  comma, // ',': 1,
-  // '||': 6, '&&': 7, '|': 8, '^': 9, '&': 10,
-  some,every,or,xor,and,
+  // ',': 1,
+  (a,cc,prec) => cc===COMMA?[skip(),a,expr(++prec)]:null,
+  // '||': 6, '&&': 7,
+  (a,cc,prec) => cc===OR&&code(1)===cc?[skip(),a,expr(++prec)]:null,
+  (a,cc,prec) => cc===AND&&code(1)===cc?[skip(),a,expr(++prec)]:null,
+  // '|': 8, '^': 9, '&': 10,
+  (a,cc) => cc===OR?[skip(),a,expr(++prec)]:null,
+  (a,cc) => cc===HAT?[skip(),a,expr(++prec)]:null,
+  (a,cc) => cc===AND?[skip(),a,expr(++prec)]:null,
   // '==': 11, '!=': 11,
-  eq,
+  (cc,prec) => cc===EQ&&cc===code(1)?[skip(),a,expr(++prec)]:null,
   // '<': 12, '>': 12, '<=': 12, '>=': 12,
-  comp,
+  (cc,prec) => cc===GT||cc===LT?[skip(),a,expr(++prec)]:null,
   // '<<': 13, '>>': 13, '>>>': 13,
-  shift,
+  (cc,prec,c3) => (cc===LT||cc===GT)&&cc===code(1) ? [skip(cc===code(2)?3:2), a, expr(++prec)] : null,
   // '+': 14, '-': 14,
-  sum,
+  (a,cc,prec) => (cc===PLUS || cc===MINUS) && code(1) !== cc ? [skip(), a, expr(++prec)] : null,
   // '*': 15, '/': 15, '%': 15
-  mult,
+  (a,cc,prec) => (cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD ? [skip(), a, expr(++prec)] : null,
   // - + -- ++ !
-  unary,
+  (a,cc,prec) => (cc===PLUS || cc===MINUS) ? [skip(2), node] : null,
   // '()', '[]', '.': 18
-  prop
+  (a,cc,prec) => (
+    // a.b[c](d)
+    cc===PERIOD ? [skip(), a , '"'+(space(),id())+'"'] :
+    cc===OBRACK ? [skip(), node, expr(CBRACK)] :
+    cc===OPAREN ? (
+      idx++, arg=expr(CPAREN), idx++,
+      Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) :
+      arg == null ? [node] :
+      [node, arg]
+    ) : null
+  )
 ]
 
 export default parse
