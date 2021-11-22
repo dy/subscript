@@ -2,7 +2,7 @@ import test, {is, any, throws} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../subscript.js'
 import { char, skip, space, code, expr } from '../parse.js'
 
-test.only('parse: basic', t => {
+test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
   any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
   any(parse('1 + 2 + 3 + 4'), ['+', ['+', ['+', 1, 2], 3], 4],   ['+', 1, 2, 3, 4])
@@ -35,7 +35,10 @@ test.only('parse: basic', t => {
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
-  parse.binary['**']=16
+  // parse.binary['**']=16
+  parse.operator.splice(parse.operator.length - 3, 0,
+    (a,cc,prec,end) => (cc===42 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
+  )
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
@@ -86,6 +89,7 @@ test('readme', t => {
 
   is(evaluate(['+', ['*', 'min', 60], new String('sec')], {min: 5}), "300sec")
 })
+
 
 test.skip('parse: interpolate string', t => {
   is(parse`a+1`, ['+','a',1])

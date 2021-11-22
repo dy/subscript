@@ -4,7 +4,7 @@ const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, AND=38, OR=124, HAT=94, MUL=42, DI
 // current string & index
 let idx, cur, end
 
-export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
+export const parse = (str, tree) => (cur=str, idx=end=0, tree=expr(), idx<cur.length ? err() : tree),
 
 err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + idx) },
 skip = (is=1, from=idx) => {
@@ -76,7 +76,7 @@ operator = parse.operator = [
   (a,cc,prec,end) => cc===HAT ? [skip(),a,expr(prec,end)] : null,
   (a,cc,prec,end) => cc===AND ? [skip(),a,expr(prec,end)] : null,
   // '==': 11, '!=': 11,
-  (a,cc,prec,end) => cc===EQ && cc===code(1) ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => (code(1)===EQ && (cc===EQ || cc===EXCL)) ? [skip(2),a,expr(prec,end)] : null,
   // '<': 12, '>': 12, '<=': 12, '>=': 12,
   (a,cc,prec,end) => (cc===GT || cc===LT) && cc!==code(1) ? [skip(),a,expr(prec,end)] : null,
   // '<<': 13, '>>': 13, '>>>': 13,
