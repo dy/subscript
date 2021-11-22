@@ -87,7 +87,7 @@ operator = [
   (a,cc,prec,arg) => (
     // a.b[c](d)
     cc===PERIOD ? [skip(), a , '"'+(space(), id())+'"'] :
-    cc===OBRACK ? [(skip(),'.'), a, expr(0,CBRACK)] :
+    cc===OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
     cc===OPAREN ? (
       idx++, arg=expr(0,CPAREN), idx++,
       Array.isArray(arg) && arg[0]===',' ? (arg[0]=a, arg) :
