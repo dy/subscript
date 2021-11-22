@@ -52,13 +52,13 @@ id = name => skip(c =>
     c >= 192 // any non-ASCII
   )
 ),
-token = [ float, group, string, id ],
+token = parse.token = [ float, group, string, id ],
 
 // operators
 // FIXME: check if binary op constructor affects performance anyhow, if not - just build condition-based
 // FIXME: seems that we have to consume same-level operators. That speeds up groups, as well as resolves unary issue.
 // ↑ these two can be combined
-operator = [
+operator = parse.operator = [
   // ',': 1,
   (a,cc,prec,end) => {
     if (cc===COMMA) {
@@ -69,8 +69,8 @@ operator = [
     }
   },
   // '||': 6, '&&': 7,
-  (a,cc,prec,end) => cc===OR && code(1)===cc ? [skip(),a,expr(prec,end)] : null,
-  (a,cc,prec,end) => cc===AND && code(1)===cc ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===OR && code(1)===cc ? [skip(2),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===AND && code(1)===cc ? [skip(2),a,expr(prec,end)] : null,
   // '|': 8, '^': 9, '&': 10,
   (a,cc,prec,end) => cc===OR ? [skip(),a,expr(prec,end)] : null,
   (a,cc,prec,end) => cc===HAT ? [skip(),a,expr(prec,end)] : null,
@@ -78,7 +78,7 @@ operator = [
   // '==': 11, '!=': 11,
   (a,cc,prec,end) => cc===EQ && cc===code(1) ? [skip(),a,expr(prec,end)] : null,
   // '<': 12, '>': 12, '<=': 12, '>=': 12,
-  (a,cc,prec,end) => cc===GT || cc===LT ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===GT || cc===LT) && cc!==code(1) ? [skip(),a,expr(prec,end)] : null,
   // '<<': 13, '>>': 13, '>>>': 13,
   (a,cc,prec,end) => (cc===LT || cc===GT) && cc===code(1) ? [skip(cc===code(2)?3:2), a, expr(prec,end)] : null,
   // '+': 14, '-': 14,
