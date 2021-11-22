@@ -10,7 +10,7 @@ err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + idx) },
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
   else while (is(code())) idx++;
-  return cur.slice(from, idx)
+  return from<idx ? cur.slice(from, idx) : undefined
 },
 space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
 
@@ -27,7 +27,6 @@ expr = (prec=0, end, cc=space(), node, from=idx, i=0, mapped) => {
     if (cc===end) break
     else if (mapped = operator[i++](node, cc, i, end)) node = mapped, i=prec, cc=space(); // we pass i+1 as precision
 
-
   return node
 },
 
@@ -40,9 +39,9 @@ float = (number) => {
   }
 },
 // "a"
-string = (q, qc) => q === 34 ? (qc = char(), idx++, qc) + skip(c => c-q) + (idx++, qc) : '',
+string = (q, qc) => q === 34 ? (qc = char(), idx++, qc) + skip(c => c-q) + (idx++, qc) : undefined,
 // (...exp)
-group = (c, node) => c === OPAREN ? (idx++, node = expr(0,CPAREN), idx++, node) : '',
+group = (c, node) => c === OPAREN ? (idx++, node = expr(0,CPAREN), idx++, node) : undefined,
 // var or literal
 id = name => skip(c =>
   (
@@ -57,32 +56,32 @@ token = [ float, group, string, id ],
 
 // operators
 // FIXME: check if binary op constructor affects performance anyhow, if not - just build condition-based
-// FIXME: unary prefixes can come here as well: they just check if a is null
 // FIXME: seems that we have to consume same-level operators. That speeds up groups, as well as resolves unary issue.
+// ↑ these two can be combined
 operator = [
   // ',': 1,
   (a,cc,prec,end) => cc===COMMA ? [skip(),a,expr(prec,end)] : null,
   // '||': 6, '&&': 7,
-  (a,cc,prec,end) => cc===OR&&code(1)===cc ? [skip(),a,expr(prec,end)] : null,
-  (a,cc,prec,end) => cc===AND&&code(1)===cc ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===OR && code(1)===cc ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===AND && code(1)===cc ? [skip(),a,expr(prec,end)] : null,
   // '|': 8, '^': 9, '&': 10,
   (a,cc,prec,end) => cc===OR ? [skip(),a,expr(prec,end)] : null,
   (a,cc,prec,end) => cc===HAT ? [skip(),a,expr(prec,end)] : null,
   (a,cc,prec,end) => cc===AND ? [skip(),a,expr(prec,end)] : null,
   // '==': 11, '!=': 11,
-  (a,cc,prec,end) => cc===EQ&&cc===code(1) ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===EQ && cc===code(1) ? [skip(),a,expr(prec,end)] : null,
   // '<': 12, '>': 12, '<=': 12, '>=': 12,
-  (a,cc,prec,end) => cc===GT||cc===LT ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===GT || cc===LT ? [skip(),a,expr(prec,end)] : null,
   // '<<': 13, '>>': 13, '>>>': 13,
-  (a,cc,prec,end) => (cc===LT||cc===GT)&&cc===code(1) ? [skip(cc===code(2)?3:2), a, expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===LT || cc===GT) && cc===code(1) ? [skip(cc===code(2)?3:2), a, expr(prec,end)] : null,
   // '+': 14, '-': 14,
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=='' && code(1) !== cc ? [skip(), a, expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=null && code(1) !== cc ? [skip(), a, expr(prec,end)] : null,
   // '*': 15, '/': 15, '%': 15
   (a,cc,prec,end) => (cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD ? [skip(), a, expr(prec,end)] : null,
   // -- ++ unaries
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && code(1) === cc ? [skip(2), a===''?expr(prec,end):a] : null,
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && code(1) === cc ? [skip(2), a==null?expr(prec-1,end):a] : null,
   // - + ! unaries
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS || cc===EXCL)&&a==='' ? [skip(1), expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS || cc===EXCL)&&a==null ? [skip(1), expr(prec-1,end)] : null,
   // '()', '[]', '.': 18
   (a,cc,prec,arg) => (
     // a.b[c](d)
