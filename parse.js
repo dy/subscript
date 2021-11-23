@@ -7,16 +7,16 @@ let idx, cur, end
 export const parse = (str, tree) => (cur=str, idx=end=0, tree=expr(), idx<cur.length ? err() : tree),
 
 err = (msg='Bad syntax '+cur[idx]) => { throw Error(msg + ' at ' + idx) },
+
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
   else while (is(code())) idx++;
   return from<idx ? cur.slice(from, idx) : undefined
 },
-code = (i=0) => cur.charCodeAt(idx+i),
-char = (n=1) => cur.substr(idx, n),
 
-// can be extended with comments, so we export
-space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
+code = (i=0) => cur.charCodeAt(idx+i),
+
+char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
 expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
@@ -33,8 +33,30 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
   return node
 },
 
+// consume same-op group, do..while both saves op lookups and space
+seq = (node,cc,prec,end,list=[cur[idx],node]) => {
+  do { skip(), list.push(expr(prec,end)) } while (parse.space()===cc)
+  return list
+},
+
+// fast operator lookup table
+lookup = []
+lookup[COMMA] = 0
+lookup[OR] = 1
+lookup[AND] = 2
+lookup[HAT] = 4
+lookup[EQ] = lookup[EXCL] = 6
+lookup[LT] = lookup[GT] = 7
+lookup[PLUS] = lookup[MINUS] = 9
+lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
+lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
+
+
+// can be extended with comments, so we export
+parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
+
 // tokens
-token = parse.token = [
+parse.token = [
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
   (number) => {
     if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
@@ -53,12 +75,12 @@ token = parse.token = [
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
     c >= 192 // any non-ASCII
-  ), literal.hasOwnProperty(name) ? literal[name] : name)
+  ), parse.literal.hasOwnProperty(name) ? parse.literal[name] : name)
 ],
 
-literal = parse.literal = {null:null,true:true,false:false},
+parse.literal = {null:null,true:true,false:false},
 
-operator = parse.operator = [
+parse.operator = [
   // ',': 1,
   (a,cc,prec,end) => cc===COMMA && seq(a,cc,prec,end),
   // '||': 6, '&&': 7,
@@ -94,23 +116,6 @@ operator = parse.operator = [
       [a, arg]
     ) : null
   )
-],
-// consume same-op group, do..while both saves op lookups and space
-seq = (node,cc,prec,end,list=[cur[idx],node]) => {
-  do { skip(), list.push(expr(prec,end)) } while (parse.space()===cc)
-  return list
-},
-
-// fast operator lookup table
-lookup = []
-lookup[COMMA] = 0
-lookup[OR] = 1
-lookup[AND] = 2
-lookup[HAT] = 4
-lookup[EQ] = lookup[EXCL] = 6
-lookup[LT] = lookup[GT] = 7
-lookup[PLUS] = lookup[MINUS] = 9
-lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
-lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
+]
 
 export default parse

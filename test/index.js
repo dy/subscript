@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, space, code, char, expr, operator } from '../parse.js'
+import { skip, code, char, expr } from '../parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -279,9 +279,9 @@ test('ext: ternary', t => {
     let a, b
     if (c++>1e2) throw Error('Whoops')
     if (cc !== 63) return
-    skip(), space(), a = expr(-1,58)
+    skip(), parse.space(), a = expr(-1,58)
     if (code() !== 58) return
-    skip(), space(), b = expr()
+    skip(), parse.space(), b = expr()
     return ['?:',node, a, b]
   })
 
