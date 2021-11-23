@@ -70,13 +70,13 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 
 By default subscript detects the following tokens:
 
-* `"` strings
+* `"abc"` strings
 * `1.2e+3` floats
-* `true`, `false`, `null` literals
 * `()` expression groups or fn calls
 * `.`, `[]` property access
 
-Literals can be extended via `parse.literal` dict.
+<!-- * `true`, `false`, `null` literals -->
+<!-- Literals can be extended via `parse.literal` dict. -->
 
 Token parsers are extensible via `parse.token` list, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
 

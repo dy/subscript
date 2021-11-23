@@ -35,7 +35,7 @@ test('parse: basic', t => {
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
   // parse.binary['**']=16
-  operator.splice(operator.length - 3, 0,
+  parse.operator.splice(parse.operator.length - 3, 0,
     (a,cc,prec,end) => (cc===42 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
   )
 
@@ -274,10 +274,8 @@ test('ext: in operator', t => {
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  let c = 0
   parse.operator.unshift((node,cc) => {
     let a, b
-    if (c++>1e2) throw Error('Whoops')
     if (cc !== 63) return
     skip(), parse.space(), a = expr(-1,58)
     if (code() !== 58) return
