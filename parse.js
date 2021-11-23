@@ -33,26 +33,27 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
 },
 
 // tokens
-// 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-float = (number) => {
-  if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
-    if (code(0) === 69 || code(0) === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
-    return isNaN(number = parseFloat(number)) ? err('Bad number') : number
-  }
-},
-// "a"
-string = (q, qc) => q === 34 && (skip() + skip(c => c-q) + skip()),
-// (...exp)
-group = (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
-// var or literal
-id = c => skip(c =>
-  (c >= 48 && c <= 57) || // 0..9
-  (c >= 65 && c <= 90) || // A...Z
-  (c >= 97 && c <= 122) || // a...z
-  c == 36 || c == 95 || // $, _,
-  c >= 192 // any non-ASCII
-),
-token = parse.token = [ float, group, string, id ],
+token = parse.token = [
+  // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
+  (number) => {
+    if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
+      if (code(0) === 69 || code(0) === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
+      return isNaN(number = parseFloat(number)) ? err('Bad number') : number
+    }
+  },
+  // "a"
+  (q, qc) => q === 34 && (skip() + skip(c => c-q) + skip()),
+  // (...exp)
+  (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
+  // var or literal
+  c => skip(c =>
+    (c >= 48 && c <= 57) || // 0..9
+    (c >= 65 && c <= 90) || // A...Z
+    (c >= 97 && c <= 122) || // a...z
+    c == 36 || c == 95 || // $, _,
+    c >= 192 // any non-ASCII
+  )
+],
 
 operator = parse.operator = [
   // ',': 1,
@@ -81,7 +82,7 @@ operator = parse.operator = [
   // '()', '[]', '.': 18
   (a,cc,prec,arg) => (
     // a.b[c](d)
-    cc===PERIOD ? [skip(), a, '"'+(parse.space(), id())+'"'] :
+    cc===PERIOD ? [skip(), a, '"'+expr(prec)+'"'] :
     cc===OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
     cc===OPAREN ? (
       idx++, arg=expr(0,CPAREN), idx++,
