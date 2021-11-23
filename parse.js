@@ -6,27 +6,27 @@ let idx, cur, end
 
 export const parse = (str, tree) => (cur=str, idx=end=0, tree=expr(), idx<cur.length ? err() : tree),
 
-err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + idx) },
+err = (msg='Bad syntax '+cur[idx]) => { throw Error(msg + ' at ' + idx) },
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
-  else while (is(code())) idx++;
+  else while (is(code(0))) idx++;
   return from<idx ? cur.slice(from, idx) : undefined
 },
-space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
+code = i => cur.charCodeAt(idx+i),
 
-code = (i=0) => cur.charCodeAt(idx+i),
-char = (n=1) => cur.substr(idx, n),
+// can be extended with comments, so we export
+space = parse.space = cc => { while (cc = code(0), cc <= SPACE) idx++; return cc },
 
 // a + b - c
-expr = (prec=0, end, cc=space(), node, from=idx, i=0, mapped) => {
+expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
   // prefix or token
   while (from===idx && i < token.length) node = token[i++](cc)
 
   // postfix or binary
-  for (i = Math.max(lookup[cc=space()]|0, prec); i < operator.length;) {
+  for (i = Math.max(lookup[cc=parse.space()]|0, prec); i < operator.length;) {
     if (cc===end || i<prec) break // if lookup got prec lower than current - end group
     else if (mapped = operator[i++](node, cc, i, end))
-      node = mapped, i = Math.max(lookup[cc=space()]|0, prec); // we pass i+1 as precision
+      node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
   }
 
   return node
@@ -36,41 +36,27 @@ expr = (prec=0, end, cc=space(), node, from=idx, i=0, mapped) => {
 // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
 float = (number) => {
   if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
-    if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
+    if (code(0) === 69 || code(0) === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
     return isNaN(number = parseFloat(number)) ? err('Bad number') : number
   }
 },
 // "a"
-string = (q, qc) => q === 34 && ((qc = char(), idx++, qc) + skip(c => c-q) + (idx++, qc)),
+string = (q, qc) => q === 34 && (skip() + skip(c => c-q) + skip()),
 // (...exp)
 group = (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
 // var or literal
-id = name => skip(c =>
+id = c => skip(c =>
   (c >= 48 && c <= 57) || // 0..9
   (c >= 65 && c <= 90) || // A...Z
   (c >= 97 && c <= 122) || // a...z
   c == 36 || c == 95 || // $, _,
   c >= 192 // any non-ASCII
 ),
-token = [ float, group, string, id ],
+token = parse.token = [ float, group, string, id ],
 
-// seq = (op,) => {
-//   let list = [String.fromCharCode(op),]
-//   // consume same-op group, do..while both saves op lookups and space
-//   do { skip(), a.push(expr(prec,end)) } while (space()===op)
-//   ret
-// },
-
-operator = [
+operator = parse.operator = [
   // ',': 1,
-  (a,cc,prec,end) => {
-    if (cc===COMMA) {
-      a = [',', a]
-      // consume same-op group, do..while both saves op lookups and space
-      do { skip(), a.push(expr(prec,end)) } while (space()===COMMA)
-      return a
-    }
-  },
+  (a,cc,prec,end) => cc===COMMA && seq(a,cc,prec,end),
   // '||': 6, '&&': 7,
   (a,cc,prec,end) => cc===OR && code(1)===cc && [skip(2), a, expr(prec,end)],
   (a,cc,prec,end) => cc===AND && code(1)===cc && [skip(2), a, expr(prec,end)],
@@ -85,9 +71,9 @@ operator = [
   // '<<': 13, '>>': 13, '>>>': 13,
   (a,cc,prec,end) => (cc===LT || cc===GT) && cc===code(1) && [skip(cc===code(2)?3:2), a, expr(prec,end)],
   // '+': 14, '-': 14,
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=null && code(1) !== cc && [skip(), a, expr(prec,end)],
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=null && code(1) !== cc && seq(a,cc,prec,end),
   // '*': 15, '/': 15, '%': 15
-  (a,cc,prec,end) => ((cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD) && [skip(), a, expr(prec,end)],
+  (a,cc,prec,end) => ((cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD) && seq(a,cc,prec,end),
   // -- ++ unaries
   (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && code(1) === cc && [skip(2), a==null?expr(prec-1,end):a],
   // - + ! unaries
@@ -95,7 +81,7 @@ operator = [
   // '()', '[]', '.': 18
   (a,cc,prec,arg) => (
     // a.b[c](d)
-    cc===PERIOD ? [skip(), a, '"'+(space(), id())+'"'] :
+    cc===PERIOD ? [skip(), a, '"'+(parse.space(), id())+'"'] :
     cc===OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
     cc===OPAREN ? (
       idx++, arg=expr(0,CPAREN), idx++,
@@ -105,6 +91,11 @@ operator = [
     ) : null
   )
 ],
+// consume same-op group, do..while both saves op lookups and space
+seq = (node,cc,prec,end,list=[cur[idx],node]) => {
+  do { skip(), list.push(expr(prec,end)) } while (parse.space()===cc)
+  return list
+},
 
 // fast operator lookup table
 lookup = []

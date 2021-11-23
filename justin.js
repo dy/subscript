@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate, operator} from './evaluate.js'
-import {parse, operator, token, code, char, skip, space, expr} from './parse.js'
+import {parse, operator, token, code, skip, space, expr} from './parse.js'
 
 // undefined
 literal['undefined'] = undefined
