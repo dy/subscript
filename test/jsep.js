@@ -47,7 +47,7 @@ test('Arrays', ()=> {
 });
 
 test('Ops', function (qunit) {
-  parse.binary['**'] = 16; // ES2016, right-associative
+  // parse.binary['**'] = 16; // ES2016, right-associative
 
   is(parse('1'), 1)
   is(parse('1+2'), ['+',1,2])
@@ -129,7 +129,7 @@ test('Missing arguments', ()=> {
   throws(() => parse('check(a b c, d)'), 'spaced args first');
 });
 
-test.only('Uncompleted expression-call/array', ()=> {
+test('Uncompleted expression-call/array', ()=> {
   throws(function () {
     parse('myFunction(a,b');
   }, 'detects unfinished expression call');

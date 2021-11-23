@@ -20,7 +20,13 @@ const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 // **
 evaluate.operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
 parse.operator.splice(parse.operator.length - 3, 0,
-  (a,cc,prec,end) => (cc===42 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
+  (a,cc,prec,end) => {
+    if (cc===42 && code(1) === 42) {
+      let list = ['**', a]
+      do { skip(2), list.push(expr(prec,end)) } while (parse.space()===cc&&code(1)===42)
+      return list
+    }
+  },
 )
 
 // detect custom operators
