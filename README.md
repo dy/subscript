@@ -29,6 +29,7 @@ _Subscript_ is designed to be useful for:
 [_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
 _Subscript_ has [2.5kb](https://npmfs.com/package/subscript/3.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with better performance.
 
+
 ## Operators
 
 Default operators include common operators for the listed languages in the following precedence:
@@ -46,30 +47,11 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-All other operators can be extended via `parse.operator` and `evaluate.operator`.
+All other operators can be extended, see [extension](#extension).
 
-```js
-import { parse, evaluate } from 'subscript.js'
+## Evaluation
 
-// add precedences
-parse.binary['=>'] = 10
-
-// define evaluators
-evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
-evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
-
-let tree = parse(`
-  interval(350)
-  | take(25)
-  | map(gaussian)
-  | map(num => "•".repeat(Math.floor(num * 65)))
-`)
-evaluate(tree, { Math, map, take, interval, gaussian })
-```
-
-## Extending
-
-_Subscript_ generates lispy calltree (compatible with [frisk](https://npmjs.com/frisk)), which is compared to esprima AST has:
+_Subscript_ parser generates lispy calltree (compatible with [frisk](https://npmjs.com/frisk)), which is compared to esprima AST has:
 
 + minimal possible overhead
 + clear precedence
@@ -83,6 +65,8 @@ import {evaluate} from 'subscript.js'
 
 evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
+
+## Extension
 
 By default subscript detects the following tokens:
 
@@ -99,6 +83,28 @@ Token parsers are extensible via `parse.token` list, can be added support of _re
 Operator parsers are applied to parsed tokens and can implement any types of operators (unary/binary/postfix), calls, props or chains. They're extensible via `parse.operator`.
 
 Comments can be implemented via rewriting `parse.space`.
+
+
+```js
+import { parse, evaluate } from 'subscript.js'
+
+// add precedences
+// TODO
+// parse.operator['=>'] = 10
+
+// define evaluators
+// TODO
+// evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
+// evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
+
+let tree = parse(`
+  interval(350)
+  | take(25)
+  | map(gaussian)
+  | map(num => "•".repeat(Math.floor(num * 65)))
+`)
+evaluate(tree, { Math, map, take, interval, gaussian })
+```
 
 
 ## Justin
