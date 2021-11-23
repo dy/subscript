@@ -79,7 +79,7 @@ operator = [
   (a,cc,prec,end) => cc===HAT && [skip(), a, expr(prec,end)],
   (a,cc,prec,end) => cc===AND && [skip(), a, expr(prec,end)],
   // '==': 11, '!=': 11,
-  (a,cc,prec,end) => code(1)===EQ && (cc===EQ || cc===EXCL) && [skip(2), a, expr(prec,end)],
+  (a,cc,prec,end) => (cc===EQ || cc===EXCL) && code(1)===EQ && [skip(2), a, expr(prec,end)],
   // '<': 12, '>': 12, '<=': 12, '>=': 12,
   (a,cc,prec,end) => (cc===GT || cc===LT) && cc!==code(1) && [skip(), a, expr(prec,end)],
   // '<<': 13, '>>': 13, '>>>': 13,
