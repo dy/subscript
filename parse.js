@@ -23,9 +23,11 @@ expr = (prec=0, end, cc=space(), node, from=idx, i=0, mapped) => {
   while (from===idx && i < token.length) node = token[i++](cc)
 
   // postfix or binary
-  for (cc=space(), i=prec; i < operator.length;)
-    if (cc===end) break
-    else if (mapped = operator[i++](node, cc, i, end)) node = mapped, i=prec, cc=space(); // we pass i+1 as precision
+  for (i = Math.max(lookup[cc=space()]||0, prec); i < operator.length;) {
+    if (cc===end || i<prec) break // if lookup got prec lower than current - end group
+    else if (mapped = operator[i++](node, cc, i, end))
+      node = mapped, i = Math.max(lookup[cc=space()]||0, prec); // we pass i+1 as precision
+  }
 
   return node
 },
@@ -52,13 +54,9 @@ id = name => skip(c =>
     c >= 192 // any non-ASCII
   )
 ),
-token = parse.token = [ float, group, string, id ],
+token = [ float, group, string, id ],
 
-// operators
-// FIXME: check if binary op constructor affects performance anyhow, if not - just build condition-based
-// FIXME: seems that we have to consume same-level operators. That speeds up groups, as well as resolves unary issue.
-// ↑ these two can be combined
-operator = parse.operator = [
+operator = [
   // ',': 1,
   (a,cc,prec,end) => {
     if (cc===COMMA) {
@@ -101,6 +99,18 @@ operator = parse.operator = [
       [a, arg]
     ) : null
   )
-]
+],
+
+// fast operator lookup table
+lookup = []
+lookup[COMMA] = 0
+lookup[OR] = 1
+lookup[AND] = 2
+lookup[HAT] = 4
+lookup[EQ] = lookup[EXCL] = 6
+lookup[LT] = lookup[GT] = 7
+lookup[PLUS] = lookup[MINUS] = 9
+lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
+lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
 
 export default parse

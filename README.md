@@ -5,7 +5,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * It has well-known syntax
 * Any _subscript_ fragment can be copy-pasted to any target language
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* It's very fast ([see performance](#performance))
+* It's :rocket: fast ([see performance](#performance))
 * Configurable & extensible
 * Trivial to use...
 

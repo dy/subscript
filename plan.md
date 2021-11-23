@@ -252,8 +252,11 @@
         + it can be easier to organize sub-search (we need to parse precedence only higher than the current one)
       ! there can be a lookup booster checker as well, eg. if code is +, then it's either binary or unary, just fast-forward
       . Seems routing is necessary
-        0. lookup is through all precedences until null returned for all of them.
+        0. ✔ lookup is through all precedences until null returned for all of them.
+          + very fast method
         1. That can be done as global routing function or object `findOperator(prec,c1)()`
         2. That can be done per-precedence function `sum=x=>pass(x)?mapped:mult()`:
           - extending would imply changing prev function in chain - ridiculous
         2.1. We can pass `next` function to levels `sum=(x,next)=>pass(x)?mapped:next()`
+      - Cannot use precedence constructor: it creates fn call stack for condition, besides internals are too different: either number of op chars to skip varies, or unary/non-unary case, overall not worth it
+
