@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, space, code, expr, operator } from '../parse.js'
+import { skip, space, code, char, expr, operator } from '../parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -135,11 +135,7 @@ test('parse: literals', t=> {
   is(evaluate(parse('x(true)'),{x:v=>!!v}), true)
 })
 
-test('parse: E operator', t => {
-  parse.binary['x'] = 5
-  is(parse('1x2'), ['x',1,2])
-  is(parse('1e2'), 100)
-
+test('parse: bad number', t => {
   is(parse('-1.23e-2'),['-',1.23e-2])
   throws(t => parse('.e-1'))
 })
@@ -268,7 +264,7 @@ test('eval: basic', t => {
 
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
-  parse.postfix.unshift(node => (char(2) === 'in' ? (skip(2), ['in', '"' + node + '"', expr()]) : node))
+  parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
@@ -278,27 +274,28 @@ test('ext: in operator', t => {
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  parse.postfix.unshift(node => {
+  let c = 0
+  parse.operator.unshift((node,cc) => {
     let a, b
-    if (code() !== 63) return node
+    if (c++>1e2) throw Error('Whoops')
+    if (cc !== 63) return
     skip(), space(), a = expr(-1,58)
-    if (code() !== 58) return node
+    if (code() !== 58) return
     skip(), space(), b = expr()
     return ['?:',node, a, b]
   })
 
   is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
-
   is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
   is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
 })
 
 test('ext: list', t => {
   evaluate.operator['['] = (...args) => Array(...args)
-  parse.token.unshift((node, arg) =>
-    code() === 91 ?
+  parse.token.unshift((cc, node, arg) =>
+    cc === 91 ?
     (
-      skip(), arg=expr(-1,93),
+      skip(), arg=expr(0,93),
       node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
       skip(), node
     ) : null
@@ -312,8 +309,10 @@ test('ext: list', t => {
 })
 
 test('ext: object', t => {
-  parse.binary[':'] = 2
-  parse.token.unshift((node) => code() === 123 ? (skip(), node = map(['{',expr(-1,125)]), skip(), node) : null)
+  parse.token.unshift((cc, node) => (
+    cc === 123 ? (skip(), node = map(['{',expr(0,125)]), skip(), node) : null
+  ))
+  parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
 

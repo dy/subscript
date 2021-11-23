@@ -9,23 +9,24 @@ export const parse = (str, tree) => (cur=str, idx=end=0, tree=expr(), idx<cur.le
 err = (msg='Bad syntax '+cur[idx]) => { throw Error(msg + ' at ' + idx) },
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
-  else while (is(code(0))) idx++;
+  else while (is(code())) idx++;
   return from<idx ? cur.slice(from, idx) : undefined
 },
-code = i => cur.charCodeAt(idx+i),
+code = (i=0) => cur.charCodeAt(idx+i),
+char = (n=1) => cur.substr(idx, n),
 
 // can be extended with comments, so we export
-space = parse.space = cc => { while (cc = code(0), cc <= SPACE) idx++; return cc },
+space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
 
 // a + b - c
 expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
   // prefix or token
-  while (from===idx && i < token.length) node = token[i++](cc)
+  while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
 
   // postfix or binary
-  for (i = Math.max(lookup[cc=parse.space()]|0, prec); i < operator.length;) {
+  for (i = Math.max(lookup[cc=parse.space()]|0, prec); i < parse.operator.length;) {
     if (cc===end || i<prec) break // if lookup got prec lower than current - end group
-    else if (mapped = operator[i++](node, cc, i, end))
+    else if (mapped = parse.operator[i++](node, cc, i, end))
       node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
   }
 
@@ -37,7 +38,7 @@ token = parse.token = [
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
   (number) => {
     if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
-      if (code(0) === 69 || code(0) === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
+      if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
       return isNaN(number = parseFloat(number)) ? err('Bad number') : number
     }
   },
@@ -46,14 +47,16 @@ token = parse.token = [
   // (...exp)
   (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
   // var or literal
-  c => skip(c =>
+  name => (name = skip(c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
     c >= 192 // any non-ASCII
-  )
+  ), literal.hasOwnProperty(name) ? literal[name] : name)
 ],
+
+literal = parse.literal = {null:null,true:true,false:false},
 
 operator = parse.operator = [
   // ',': 1,
