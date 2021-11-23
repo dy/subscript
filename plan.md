@@ -232,14 +232,14 @@
 * [x] Hardcode subscript parser for smaller size & better perf
 * [x] Make parse/eval first-level
 * [ ] Provide parser examples as chunks
-* [ ] ?: operator is problematic with postfix parsers, since they expect highest precedence and a||b?c:d needs only 4.
+* [x] ?: operator is problematic with postfix parsers, since they expect highest precedence and a||b?c:d needs only 4.
   + also fn checkers unfortunately not as fast as desired.
   1. ‽ group/binary can be merged into a single dict: precedences come under 32, after 32 - ascii chars, denoting character to catch. This way ternary can be organized as `{?: 58}`, and groups as `(: 41`, `[: 93`.
     ? How do we detect tail-parsing?
   2. Make postfix parsing take in account precedence somehow
     ? Parse postfix after every expression group as well, not only after token
   3. Merge binary and postfix somehow: binary is also a kind of postfix extension, isn't it?
-  4. We can regroup binary dict to be a set of parsers: each parser anyways checks for first character to match some condition;
+  4. ✔ We can regroup binary dict to be a set of parsers: each parser anyways checks for first character to match some condition;
     + This way we can customly map .[(
     + This way we can customly map ?:
     + This way we can customly map a+b+c+...
