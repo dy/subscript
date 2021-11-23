@@ -23,10 +23,10 @@ expr = (prec=0, end, cc=space(), node, from=idx, i=0, mapped) => {
   while (from===idx && i < token.length) node = token[i++](cc)
 
   // postfix or binary
-  for (i = Math.max(lookup[cc=space()]||0, prec); i < operator.length;) {
+  for (i = Math.max(lookup[cc=space()]|0, prec); i < operator.length;) {
     if (cc===end || i<prec) break // if lookup got prec lower than current - end group
     else if (mapped = operator[i++](node, cc, i, end))
-      node = mapped, i = Math.max(lookup[cc=space()]||0, prec); // we pass i+1 as precision
+      node = mapped, i = Math.max(lookup[cc=space()]|0, prec); // we pass i+1 as precision
   }
 
   return node
@@ -41,20 +41,25 @@ float = (number) => {
   }
 },
 // "a"
-string = (q, qc) => q === 34 ? (qc = char(), idx++, qc) + skip(c => c-q) + (idx++, qc) : undefined,
+string = (q, qc) => q === 34 && ((qc = char(), idx++, qc) + skip(c => c-q) + (idx++, qc)),
 // (...exp)
-group = (c, node) => c === OPAREN ? (idx++, node = expr(0,CPAREN), idx++, node) : undefined,
+group = (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
 // var or literal
 id = name => skip(c =>
-  (
-    (c >= 48 && c <= 57) || // 0..9
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  )
+  (c >= 48 && c <= 57) || // 0..9
+  (c >= 65 && c <= 90) || // A...Z
+  (c >= 97 && c <= 122) || // a...z
+  c == 36 || c == 95 || // $, _,
+  c >= 192 // any non-ASCII
 ),
 token = [ float, group, string, id ],
+
+// seq = (op,) => {
+//   let list = [String.fromCharCode(op),]
+//   // consume same-op group, do..while both saves op lookups and space
+//   do { skip(), a.push(expr(prec,end)) } while (space()===op)
+//   ret
+// },
 
 operator = [
   // ',': 1,
@@ -67,30 +72,30 @@ operator = [
     }
   },
   // '||': 6, '&&': 7,
-  (a,cc,prec,end) => cc===OR && code(1)===cc ? [skip(2),a,expr(prec,end)] : null,
-  (a,cc,prec,end) => cc===AND && code(1)===cc ? [skip(2),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===OR && code(1)===cc && [skip(2), a, expr(prec,end)],
+  (a,cc,prec,end) => cc===AND && code(1)===cc && [skip(2), a, expr(prec,end)],
   // '|': 8, '^': 9, '&': 10,
-  (a,cc,prec,end) => cc===OR ? [skip(),a,expr(prec,end)] : null,
-  (a,cc,prec,end) => cc===HAT ? [skip(),a,expr(prec,end)] : null,
-  (a,cc,prec,end) => cc===AND ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => cc===OR && [skip(), a, expr(prec,end)],
+  (a,cc,prec,end) => cc===HAT && [skip(), a, expr(prec,end)],
+  (a,cc,prec,end) => cc===AND && [skip(), a, expr(prec,end)],
   // '==': 11, '!=': 11,
-  (a,cc,prec,end) => (code(1)===EQ && (cc===EQ || cc===EXCL)) ? [skip(2),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => code(1)===EQ && (cc===EQ || cc===EXCL) && [skip(2), a, expr(prec,end)],
   // '<': 12, '>': 12, '<=': 12, '>=': 12,
-  (a,cc,prec,end) => (cc===GT || cc===LT) && cc!==code(1) ? [skip(),a,expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===GT || cc===LT) && cc!==code(1) && [skip(), a, expr(prec,end)],
   // '<<': 13, '>>': 13, '>>>': 13,
-  (a,cc,prec,end) => (cc===LT || cc===GT) && cc===code(1) ? [skip(cc===code(2)?3:2), a, expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===LT || cc===GT) && cc===code(1) && [skip(cc===code(2)?3:2), a, expr(prec,end)],
   // '+': 14, '-': 14,
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=null && code(1) !== cc ? [skip(), a, expr(prec,end)] : null,
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=null && code(1) !== cc && [skip(), a, expr(prec,end)],
   // '*': 15, '/': 15, '%': 15
-  (a,cc,prec,end) => (cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD ? [skip(), a, expr(prec,end)] : null,
+  (a,cc,prec,end) => ((cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD) && [skip(), a, expr(prec,end)],
   // -- ++ unaries
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && code(1) === cc ? [skip(2), a==null?expr(prec-1,end):a] : null,
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && code(1) === cc && [skip(2), a==null?expr(prec-1,end):a],
   // - + ! unaries
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS || cc===EXCL)&&a==null ? [skip(1), expr(prec-1,end)] : null,
+  (a,cc,prec,end) => (cc===PLUS || cc===MINUS || cc===EXCL) && a==null && [skip(1), expr(prec-1,end)],
   // '()', '[]', '.': 18
   (a,cc,prec,arg) => (
     // a.b[c](d)
-    cc===PERIOD ? [skip(), a , '"'+(space(), id())+'"'] :
+    cc===PERIOD ? [skip(), a, '"'+(space(), id())+'"'] :
     cc===OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
     cc===OPAREN ? (
       idx++, arg=expr(0,CPAREN), idx++,

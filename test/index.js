@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
-import subscript, {parse, evaluate} from '../subscript.js'
-import { char, skip, space, code, expr } from '../parse.js'
+import subscript, { parse, evaluate } from '../subscript.js'
+import { char, skip, space, code, expr, operator } from '../parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -35,7 +35,7 @@ test('parse: basic', t => {
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
   // parse.binary['**']=16
-  parse.operator.splice(parse.operator.length - 3, 0,
+  operator.splice(operator.length - 3, 0,
     (a,cc,prec,end) => (cc===42 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
   )
 
