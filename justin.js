@@ -64,6 +64,7 @@ evaluate.operator['?:']=(a,b,c)=>a?b:c
 parse.operator.splice(1,0, (node,cc,prec,end) => {
   let a, b
   if (cc !== 63) return
+  if (node==null) err('Bad expression')
   skip(), parse.space(), a = expr(-1,58)
   if (code() !== 58) return
   skip(), parse.space(), b = expr()

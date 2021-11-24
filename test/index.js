@@ -26,10 +26,10 @@ test('parse: basic', t => {
   is(parse(`+-a.b+-!1`), ['+',['+',['-',['.','a','"b"']]], ['-',['!',1]]])
 
   is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
-  any(parse(`( a, , b )`), [',','a',undefined,'b'],  [',',[',','a',null], 'b'])
-  is(parse(`a (  ccc. d, , -+1.0 )`), ['a', ['.', 'ccc', '"d"'], null, ['-',['+',1]]])
+  any(parse(`( a,  b )`), [',','a','b'],  [',',[',','a', 'b']])
+  is(parse(`a (  ccc. d,  -+1.0 )`), ['a', ['.', 'ccc', '"d"'], ['-',['+',1]]])
 
-  is(parse(`a.b (  ccc. d, , -+1.0 ) . e`), ['.',[['.', 'a', '"b"'], ['.', 'ccc', '"d"'], null, ['-',['+',1]]], '"e"'])
+  is(parse(`a.b (  ccc. d , -+1.0 ) . e`), ['.',[['.', 'a', '"b"'], ['.', 'ccc', '"d"'], ['-',['+',1]]], '"e"'])
   is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ['-',['+',['/',['*',['+', 'a', 2],3],2],['*', 'b', 2]],1])
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
@@ -301,9 +301,10 @@ test('ext: list', t => {
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])
-  is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
+  // NOTE: not critical, but generalizes expression errors across envs
+  // is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
+  // is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
   is(parse('[1]+[2]'),['+',['[',1],['[',2]])
-  is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
 })
 
 test('ext: object', t => {

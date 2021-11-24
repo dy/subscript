@@ -2,16 +2,17 @@
 const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, AND=38, OR=124, HAT=94, MUL=42, DIV=47, MOD=37, PERIOD=46, OBRACK=91, CBRACK=93, OPAREN=40, CPAREN=41, COMMA=44, SPACE=32, EXCL=33
 
 // current string & index
-let idx, cur, end
+let idx, cur
 
-export const parse = (str, tree) => (cur=str, idx=end=0, tree=expr(), idx<cur.length ? err() : tree),
+export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
 
 err = (msg='Bad syntax '+cur[idx]) => { throw Error(msg + ' at ' + idx) },
+nerr = (node) => node==null&&err('Bad expression'),
 
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
   else while (is(code())) idx++;
-  return from<idx ? cur.slice(from, idx) : undefined
+  return cur.slice(from, idx) || null
 },
 
 code = (i=0) => cur.charCodeAt(idx+i),
@@ -30,28 +31,10 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
       node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
   }
 
-  if (!prec && end && code()!==end) err('Unclosed paren')
+  if (!prec && end && code()!=end) err('Unclosed paren')
 
   return node
-},
-
-// consume same-op group, do..while both saves op lookups and space
-seq = (node,cc,prec,end,list=[cur[idx],node]) => {
-  do { skip(), list.push(expr(prec,end)) } while (parse.space()===cc)
-  return list
-},
-
-// fast operator lookup table
-lookup = []
-lookup[COMMA] = 0
-lookup[OR] = 1
-lookup[AND] = 2
-lookup[HAT] = 4
-lookup[EQ] = lookup[EXCL] = 6
-lookup[LT] = lookup[GT] = 7
-lookup[PLUS] = lookup[MINUS] = 9
-lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
-lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
+}
 
 
 // can be extended with comments, so we export
@@ -67,9 +50,9 @@ parse.token = [
     }
   },
   // "a"
-  (q, qc) => q === 34 && (skip() + skip(c => c-q) + skip()),
+  (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : null,
   // (...exp)
-  (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
+  (c, a) => c === OPAREN ? (idx++, a = expr(0,CPAREN), nerr(a), idx++, a) : null,
   // var or literal
   name => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -81,41 +64,63 @@ parse.token = [
 ],
 
 parse.operator = [
-  // ',': 1,
-  (a,cc,prec,end) => cc===COMMA && seq(a,cc,prec,end),
-  // '||': 6, '&&': 7,
-  (a,cc,prec,end) => cc===OR && code(1)===cc && [skip(2), a, expr(prec,end)],
-  (a,cc,prec,end) => cc===AND && code(1)===cc && [skip(2), a, expr(prec,end)],
-  // '|': 8, '^': 9, '&': 10,
-  (a,cc,prec,end) => cc===OR && [skip(), a, expr(prec,end)],
-  (a,cc,prec,end) => cc===HAT && [skip(), a, expr(prec,end)],
-  (a,cc,prec,end) => cc===AND && [skip(), a, expr(prec,end)],
-  // '==': 11, '!=': 11,
-  (a,cc,prec,end) => (cc===EQ || cc===EXCL) && code(1)===EQ && [skip(2), a, expr(prec,end)],
-  // '<': 12, '>': 12, '<=': 12, '>=': 12,
-  (a,cc,prec,end) => (cc===GT || cc===LT) && cc!==code(1) && [skip(), a, expr(prec,end)],
-  // '<<': 13, '>>': 13, '>>>': 13,
-  (a,cc,prec,end) => (cc===LT || cc===GT) && cc===code(1) && [skip(cc===code(2)?3:2), a, expr(prec,end)],
-  // '+': 14, '-': 14,
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && a!=null && code(1) !== cc && seq(a,cc,prec,end),
-  // '*': 15, '/': 15, '%': 15
-  (a,cc,prec,end) => ((cc===MUL && code(1) !== MUL) || cc===DIV || cc===MOD) && seq(a,cc,prec,end),
+  // ','
+  (a,cc,prec,end) => cc==COMMA && node(char(),a,prec,end),
+  // '||' '&&'
+  (a,cc,prec,end) => cc==OR && code(1)==cc && node(char(2),a,prec,end),
+  (a,cc,prec,end) => cc==AND && code(1)==cc && node(char(2),a,prec,end),
+  // '|' '^' '&'
+  (a,cc,prec,end) => cc==OR && node(char(),a,prec,end),
+  (a,cc,prec,end) => cc==HAT && node(char(),a,prec,end),
+  (a,cc,prec,end) => cc==AND && node(char(),a,prec,end),
+  // '==' '!='
+  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && node(char(2),a,prec,end),
+  // '<' '>' '<=' '>='
+  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && node(char(),a,prec,end),
+  // '<<' '>>' '>>>'
+  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && node(char(cc==code(2)?3:2),a,prec,end),
+  // '+' '-'
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!=null && code(1) != cc && node(char(),a,prec,end),
+  // '*' '/' '%'
+  (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && node(char(),a,prec,end),
   // -- ++ unaries
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS) && code(1) === cc && [skip(2), a==null?expr(prec-1,end):a],
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && node(skip(2),a==null?expr(prec-1,end):a),
   // - + ! unaries
-  (a,cc,prec,end) => (cc===PLUS || cc===MINUS || cc===EXCL) && a==null && [skip(1), expr(prec-1,end)],
-  // '()', '[]', '.': 18
-  (a,cc,prec,arg) => (
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a==null && node(skip(),expr(prec-1,end)),
+  // '()', '[]', '.'
+  (a,cc,prec,end,b) => (
     // a.b[c](d)
-    cc===PERIOD ? [skip(), a, '"'+expr(prec)+'"'] :
-    cc===OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
-    cc===OPAREN ? (
-      idx++, arg=expr(0,CPAREN), idx++,
-      Array.isArray(arg) && arg[0]===',' ? (arg[0]=a, arg) :
-      arg == null ? [a] :
-      [a, arg]
+    cc==PERIOD ? [skip(), a, '"'+expr(prec,end)+'"'] :
+    cc==OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
+    cc==OPAREN ? (
+      idx++, b=expr(0,CPAREN), idx++,
+      Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
+      b == null ? [a] :
+      [a, b]
     ) : null
   )
 ]
+
+// consume same-op group, do..while both saves op lookups and space
+const node = (op,node,prec,end,list=[op, node],cc=code()) => {
+  nerr(node)
+  if (prec != null) {
+    do { skip(op.length), list.push(node=expr(prec,end)), nerr(node) }
+    while (parse.space()==cc && char(op.length)==op)
+  }
+  return list
+},
+
+// fast operator lookup table
+lookup = []
+lookup[COMMA] = 0
+lookup[OR] = 1
+lookup[AND] = 2
+lookup[HAT] = 4
+lookup[EQ] = lookup[EXCL] = 6
+lookup[LT] = lookup[GT] = 7
+lookup[PLUS] = lookup[MINUS] = 9
+lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
+lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
 
 export default parse
