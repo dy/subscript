@@ -8,8 +8,6 @@ export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length
 
 err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
 
-notNil = (node) => node===nil?err('Bad expression'):node,
-
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
   else while (is(code())) idx++;
@@ -31,6 +29,7 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
   for (i = Math.max(lookup[cc=parse.space()]|0, prec); i < parse.operator.length;) {
     if (cc===end || i<prec) break // if lookup got prec lower than current - end group
     else if (mapped = parse.operator[i++](node, cc, i, end))
+      mapped.indexOf(nil) >=0 && err('Bad expression'),
       node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
   }
 
@@ -56,7 +55,7 @@ parse.token = [
   // "a"
   (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
   // (...exp)
-  c => c === OPAREN ? ++idx && notNil(expr(0,CPAREN), idx++) : nil,
+  c => c === OPAREN ? (++idx, c=expr(0,CPAREN), ++idx, c===nil?err():c) : nil,
   // var or literal
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -78,24 +77,24 @@ parse.operator = [
   (a,cc,prec,end) => cc==HAT && seq(char(),a,prec,end),
   (a,cc,prec,end) => cc==AND && seq(char(),a,prec,end),
   // '==' '!='
-  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(code(1)==code(2)?3:2),notNil(a),notNil(expr(prec,end))],
+  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(code(1)==code(2)?3:2),(a),(expr(prec,end))],
   // '<' '>' '<=' '>='
-  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && [skip(),notNil(a),notNil(expr(prec,end))],
+  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && [skip(),(a),(expr(prec,end))],
   // '<<' '>>' '>>>'
-  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),notNil(a),notNil(expr(prec,end))],
+  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),(a),(expr(prec,end))],
   // '+' '-'
   (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!==nil && code(1) != cc && seq(char(),a,prec,end),
   // '*' '/' '%'
   (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && seq(char(),a,prec,end),
   // -- ++ unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),notNil(a===nil?expr(prec-1,end):a)],
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),(a===nil?expr(prec-1,end):a)],
   // - + ! unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a===nil && [skip(),notNil(expr(prec-1,end))],
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a===nil && [skip(),(expr(prec-1,end))],
   // '()', '[]', '.'
   (a,cc,prec,end,b) => (
     // a.b[c](d)
-    cc==PERIOD ? [skip(), a, typeof (b = notNil(expr(prec,end))) === 'string' ? '"' + b + '"' : b] :
-    cc==OBRACK ? (idx++, a = ['.', a, notNil(expr(0,CBRACK))], idx++, a) :
+    cc==PERIOD ? [skip(), (a), typeof (b = (expr(prec,end))) === 'string' ? '"' + b + '"' : b] :
+    cc==OBRACK ? (idx++, a = ['.', (a), (expr(0,CBRACK))], idx++, a) :
     cc==OPAREN ? (
       idx++, b=expr(0,CPAREN), idx++,
       Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
@@ -106,8 +105,8 @@ parse.operator = [
 ]
 
 // consume same-op group, do..while both saves op lookups and space
-const seq = (op,node,prec,end,list=[op, notNil(node)],cc=code()) => {
-  do { skip(op.length), list.push(notNil(expr(prec,end))) }
+const seq = (op,node,prec,end,list=[op, node],cc=code()) => {
+  do { skip(op.length), list.push(expr(prec,end)) }
   while (parse.space()==cc && char(op.length)==op)
   return list
 },
