@@ -56,7 +56,7 @@ parse.token = [
   (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
   // (...exp)
   c => c === OPAREN ? (++idx, c=expr(0,CPAREN), ++idx, c===nil?err():c) : nil,
-  // var or literal
+  // var
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
@@ -68,14 +68,14 @@ parse.token = [
 
 parse.operator = [
   // ','
-  (a,cc,prec,end) => cc==COMMA && seq(char(),a,prec,end),
+  (a,cc,prec,end) => cc==COMMA && seq(1,a,prec,end),
   // '||' '&&'
-  (a,cc,prec,end) => cc==OR && code(1)==cc && seq(char(2),a,prec,end),
-  (a,cc,prec,end) => cc==AND && code(1)==cc && seq(char(2),a,prec,end),
+  (a,cc,prec,end) => cc==OR && code(1)==cc && seq(2,a,prec,end),
+  (a,cc,prec,end) => cc==AND && code(1)==cc && seq(2,a,prec,end),
   // '|' '^' '&'
-  (a,cc,prec,end) => cc==OR && seq(char(),a,prec,end),
-  (a,cc,prec,end) => cc==HAT && seq(char(),a,prec,end),
-  (a,cc,prec,end) => cc==AND && seq(char(),a,prec,end),
+  (a,cc,prec,end) => cc==OR && seq(1,a,prec,end),
+  (a,cc,prec,end) => cc==HAT && seq(1,a,prec,end),
+  (a,cc,prec,end) => cc==AND && seq(1,a,prec,end),
   // '==' '!='
   (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(code(1)==code(2)?3:2),(a),(expr(prec,end))],
   // '<' '>' '<=' '>='
@@ -83,9 +83,9 @@ parse.operator = [
   // '<<' '>>' '>>>'
   (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),(a),(expr(prec,end))],
   // '+' '-'
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!==nil && code(1) != cc && seq(char(),a,prec,end),
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!==nil && code(1) != cc && seq(1,a,prec,end),
   // '*' '/' '%'
-  (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && seq(char(),a,prec,end),
+  (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && seq(1,a,prec,end),
   // -- ++ unaries
   (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),(a===nil?expr(prec-1,end):a)],
   // - + ! unaries
@@ -105,9 +105,9 @@ parse.operator = [
 ]
 
 // consume same-op group, do..while both saves op lookups and space
-const seq = (op,node,prec,end,list=[op, node],cc=code()) => {
-  do { skip(op.length), list.push(expr(prec,end)) }
-  while (parse.space()==cc && char(op.length)==op)
+const seq = (len,node,prec,end,op,list=[op=char(len), node],cc=code()) => {
+  do { skip(len), list.push(expr(prec,end)) }
+  while (parse.space()==cc && char(len)==op)
   return list
 },
 
