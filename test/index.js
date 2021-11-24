@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr } from '../parse.js'
+import { skip, code, char, expr, nil } from '../parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -107,25 +107,17 @@ test('parse: strings', t => {
   // parse.quote['<--']='-->'
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc"','<--js\nxyz-->'])
 })
-test.todo('parse: comments', t => {
-  const RETURN = 13, NEWLINE = 10
-  parse.token.unshift(() => {
-    console.group('parse', index, current)
-    console.log(0, char(2))
-    if (char(2) === '//') skip(2), console.log('found',char()), skip(c => console.log(1,char())||(c !== RETURN && c !== NEWLINE)), space()
-    console.log(123, char())
-    console.groupEnd()
-  })
-
-  // is(parse(`a /
-  //   // abc
-  //   b`), ['/', 'a', 'b'])
-  is(parse(`'a' + 'b' // concat`),['+',"'a'","'b'"])
-})
-test('parse: literals', t=> {
+test('ext: literals', t=> {
+  parse.token.splice(3,0, c =>
+    c === 116 && char(4) === 'true' && skip(4) ? true :
+    c === 102 && char(5) === 'false' && skip(5) ? false :
+    c === 110 && char(4) === 'null' && skip(4) ? null :
+    c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
+    undefined
+  )
   is(parse('null'), null)
   is(parse('(null)'), null)
-  parse.literal['undefined'] = undefined
+  // parse.literal['undefined'] = undefined
   is(parse('undefined'), undefined)
   is(parse('(undefined)'), undefined)
   is(parse('true||((false))'), ['||', true, false])
@@ -188,7 +180,7 @@ test('parse: postfix unaries', t => {
 
 test('parse: prop access', t => {
   any(parse('a["b"]["c"][0]'),['.',['.',['.','a','"b"'],'"c"'],0],  ['.', 'a', '"b"', '"c"', 0])
-  any(parse('a.b.c.0'), ['.',['.',['.','a','"b"'],'"c"'],'"0"'],  ['.', 'a', '"b"', '"c"', '"0"'])
+  any(parse('a.b.c.0'), ['.',['.',['.','a','"b"'],'"c"'],0],  ['.', 'a', '"b"', '"c"', 0])
   is(evaluate(['.','a','"b"','c',0], {a:{b:{c:[2]}}}), 2)
   is(evaluate(['.',['.',['.','a','"b"'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
 })
@@ -294,7 +286,7 @@ test('ext: list', t => {
     cc === 91 ?
     (
       skip(), arg=expr(0,93),
-      node = arg==null ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+      node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
       skip(), node
     ) : null
   )
@@ -316,7 +308,7 @@ test('ext: object', t => {
   evaluate.operator[':'] = (a,b)=>[a,b]
 
   const map = (n, args) => {
-    if (n[1]==null) args = []
+    if (n[1]===nil) args = []
     else if (n[1][0]==':') args = [n[1]]
     else if (n[1][0]==',') args = n[1].slice(1)
     return ['{', ...args]
@@ -333,6 +325,24 @@ test('ext: justin', async t => {
   const {parse} = await import('../justin.js')
   is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','"y"',['**',2,2]]], '"x"'])
   is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
+})
+
+test('ext: comments', t => {
+  parse.space = cc => {
+    while (cc = code(), cc <= 32) {
+      skip()
+      if (code() === 47)
+        // /**/
+        if (code(1) === 42) skip(2), skip(c => c !== 42 && code(1) !== 47), skip(2)
+        // //
+        else if (code(1) === 47) skip(2), skip(c => c >= 32)
+    }
+    return cc
+  }
+  is(parse(`a /
+    // abc
+    b`), ['/', 'a', 'b'])
+  is(parse(`"a" + "b" // concat`),['+','"a"','"b"'])
 })
 
 test('parse: unfinished sequences', async t => {

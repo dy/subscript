@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../justin.js'
-import { skip, code, expr, char } from '../parse.js'
+import { skip, code, expr, char, nil } from '../parse.js'
 
 test('Expression: Constants', ()=> {
   is(parse('\'abc\''),  "'abc'" );
@@ -81,7 +81,7 @@ test('Custom operators', ()=> {
   throws(() => parse('oneWord ordering anotherWord'));
 
   // parse.unary['#'] = 11;
-  parse.operator.splice(11,0,(a,cc,prec,end) => cc===35 && a==null && [skip(1), expr(prec-1,end)])
+  parse.operator.splice(11,0,(a,cc,prec,end) => cc===35 && a===nil && [skip(1), expr(prec-1,end)])
   is(parse('#a'), ['#','a']);
 
   parse.operator.splice(12,0,(a,cc,prec,end) => a === 'not' && [a, expr(prec-1,end)])
@@ -98,16 +98,6 @@ test('Custom operators', ()=> {
   throws(t => parse('b ands'));
 });
 
-test.skip('Custom identifier characters', ()=> {
-  // NOTE: ain't going to fix: just implement custim idents
-  jsep.addIdentifierChar('@');
-  testParser('@asd', {
-    type: 'Identifier',
-    name: '@asd',
-  });
-  jsep.removeIdentifierChar('@');
-});
-
 test.skip('Bad Numbers', ()=> {
   // NOTE: for custom numbers implement custom number parser
   testParser('1.', { type: 'Literal', value: 1, raw: '1.' });
@@ -118,33 +108,32 @@ test.skip('Bad Numbers', ()=> {
 
 test('Missing arguments', ()=> {
   // NOTE: we accept these cases as useful
-  is(parse('check(,)'), ['check', null, null]);
-  is(parse('check(,1,2)'), ['check', null, 1,2]);
-  is(parse('check(1,,2)'), ['check', 1,null,2]);
-  is(parse('check(1,2,)'), ['check', 1,2, null]);
+  throws(() => parse('check(,)'), ['check', null, null]);
+  throws(() => parse('check(,1,2)'), ['check', null, 1,2]);
+  throws(() => parse('check(1,,2)'), ['check', 1,null,2]);
+  throws(() => parse('check(1,2,)'), ['check', 1,2, null]);
   throws(() => parse('check(a, b c d) '), 'spaced arg after 1 comma');
   throws(() => parse('check(a, b, c d)'), 'spaced arg at end');
   throws(() => parse('check(a b, c, d)'), 'spaced arg first');
   throws(() => parse('check(a b c, d)'), 'spaced args first');
 });
 
-test.only('Uncompleted expression-call/array', ()=> {
-  // throws(function () {
+test('Uncompleted expression-call/array', ()=> {
+  throws(() => parse('(a,b'))
+  throws(function () {
     parse('myFunction(a,b');
-  // }, 'detects unfinished expression call');
+  }, 'detects unfinished expression call');
 
-  // throws(function () {
+  throws(function () {
     parse('[1,2');
-  // }, 'detects unfinished array');
+  }, 'detects unfinished array');
 
   throws(function () {
     parse('-1+2-');
-  }, /Expected expression after - at character 5/,
-  'detects trailing operator');
+  }, 'detects trailing operator');
 });
 
-test.todo(`should throw on invalid expr "${expr}"`, (assert) => {
-
+test(`should throw on invalid expr`, () => {
   throws(() => parse('!'))
   throws(() => parse('*x'))
   throws(() => parse('||x'))
@@ -155,68 +144,54 @@ test.todo(`should throw on invalid expr "${expr}"`, (assert) => {
   throws(() => parse('() + 1'))
 });
 
-test.todo('Esprima Comparison', ()=> {
-  ([
-    '[1,,3]',
-    '[1,,]', // this is actually incorrect in esprima
-    ' true',
-    'false ',
-    ' 1.2 ',
-    ' .2 ',
-    'a',
-    'a .b',
-    'a.b. c',
-    'a [b]',
-    'a.b  [ c ] ',
-    '$foo[ bar][ baz].other12 [\'lawl\'][12]',
-    '$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ',
-    '$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]',
-    '(a(b(c[!d]).e).f+\'hi\'==2) === true',
-    '(1,2)',
-    '(a, a + b > 2)',
-    'a((1 + 2), (e > 0 ? f : g))',
-    '(((1)))',
-    '(Object.variable.toLowerCase()).length == 3',
-    '(Object.variable.toLowerCase())  .  length == 3',
-    '[1] + [2]',
-    '"a"[0]',
-    '[1](2)',
-    '"a".length',
-    'a.this',
-    'a.true',
-  ])
+test('Esprima Comparison', ()=> {
+  // is(parse('[1,,3]'), [])
+  // is(parse('[1,,]'), [])
+  is(parse(' true'), true)
+  is(parse('false '), false)
+  is(parse(' 1.2 '), 1.2)
+  is(parse(' .2 '), .2)
+  is(parse('a'), 'a')
+  is(parse('a .b'), ['.','a','"b"'])
+  any(parse('a.b. c'), ['.','a','"b"','"c"'], ['.',['.','a','"b"'],'"c"'])
+  is(parse('a [b]'), ['.','a','b'])
+  any(parse('a.b  [ c ] '), ['.',['.','a','"b"'],'c'])
+  any(parse('$foo[ bar][ baz].other12 [\'lawl\'][12]'),
+    ['.','$foo','bar','baz','"other12"',"'lawl'",12],
+    ['.',['.',['.',['.',['.','$foo','bar'],'baz'],'"other12"'],"'lawl'"],12]
+  )
+  any(parse('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 '),
+    ['+',['*',['.',['.',['.','$foo',12], ['.','baz','z']],'"other12"'],4],1]
+  )
+  any(parse('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]'),
+    ['.',['.',['.',[['.',['.','$foo','bar'],'baz'], 'a', 'bb', 'c'], '"other12"'],"'lawl'"],12]
+  )
+  is(parse('(a(b(c[!d]).e).f+\'hi\'==2) === true'),
+    ['===',['==',['+',['.',['a',['.',['b',['.','c',['!','d']]],'"e"']],'"f"'],"'hi'"],2],true]
+  )
+  is(parse('(1,2)'), [',',1,2])
+  is(parse('(a, a + b > 2)'), [',','a',['>',['+','a','b'],2]])
+  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
+  is(parse('(((1)))'), 1)
+  is(parse('(Object.variable.toLowerCase()).length == 3'), ['==',['.',[['.',['.','Object','"variable"'],'"toLowerCase"']],'"length"'],3])
+  is(parse('(Object.variable.toLowerCase())  .  length == 3'), ['==',['.',[['.',['.','Object','"variable"'],'"toLowerCase"']],'"length"'],3])
+  is(parse('[1] + [2]'), ['+',['[',1],['[',2]])
+  is(parse('"a"[0]'), ['.','"a"',0])
+  is(parse('[1](2)'), [['[',1],2])
+  is(parse('"a".length'), ['.','"a"','"length"'])
+  is(parse('a.this'), ['.','a','"this"'])
+  is(parse('a.true'), ['.','a',true])
 });
 
 // Should support ternary by default (index.js):
-test.todo('Ternary', ()=> {
-  testParser('a ? b : c', { type: 'ConditionalExpression' });
-  testParser('a||b ? c : d', { type: 'ConditionalExpression' });
+test('Ternary', ()=> {
+  is(parse('a ? b : c'), ['?:', 'a', 'b' ,'c']);
+  is(parse('a||b ? c : d'), ['?:', ['||','a','b'], 'c' ,'d']);
 });
 
 
-test.todo('should allow manipulating what is considered whitespace', (assert) => {
+test('should allow manipulating what is considered whitespace', (assert) => {
   const expr = 'a // skip all this';
-  throws(() => parse(expr));
-
-  jsep.hooks.add('gobble-spaces', function () {
-    if (this.char === '/' && this.expr.charAt(this.index + 1) === '/') {
-      this.index += 2;
-      while (!isNaN(this.code)) {
-        this.index++;
-      }
-    }
-  });
-  testParser('a // skip all this', { type: 'Identifier' });
+  is(parse(expr), 'a');
 });
 
-test.todo('should allow overriding gobbleToken', (assert) => {
-  const expr = '...';
-  throws(() => parse(expr));
-  jsep.hooks.add('gobble-token', function (env) {
-    if ([0, 1, 2].every(i => this.expr.charAt(i) === '.')) {
-      this.index += 3;
-      env.node = { type: 'spread' };
-    }
-  });
-  testParser(expr, { type: 'spread' });
-});

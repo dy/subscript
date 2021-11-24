@@ -110,7 +110,7 @@ evaluate(tree, { Math, map, take, interval, gaussian })
 ## Justin
 
 _Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.<br/>
-It adds support for:
+It adds support of:
 
 + `**` binary operator
 + `~` unary operator
@@ -121,8 +121,9 @@ It adds support for:
 + `in` binary operator
 + `;` expression separator
 + unary word operators
-+ `//, /* */` comments
-+ `undefined` literal
++ `//`, `/* */` comments
++ `true`, `false`, `null`, `undefined` literals
+<!-- + `===`, `!==` operators -->
 <!-- + `?` chaining operator -->
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->

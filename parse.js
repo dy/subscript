@@ -6,18 +6,21 @@ let idx, cur
 
 export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
 
-err = (msg='Bad syntax '+cur[idx]) => { throw Error(msg + ' at ' + idx) },
-notNull = (node) => node==null?err('Bad expression'):node,
+err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
+
+notNil = (node) => node===nil?err('Bad expression'):node,
 
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
   else while (is(code())) idx++;
-  return cur.slice(from, idx) || null
+  return cur.slice(from, idx) || nil
 },
 
 code = (i=0) => cur.charCodeAt(idx+i),
 
 char = (n=1) => cur.substr(idx, n),
+
+nil = '',
 
 // a + b - c
 expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
@@ -48,11 +51,12 @@ parse.token = [
       if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
       return isNaN(number = parseFloat(number)) ? err('Bad number') : number
     }
+    return nil
   },
   // "a"
-  (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : null,
+  (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
   // (...exp)
-  c => c === OPAREN ? ++idx && notNull(expr(0,CPAREN), idx++) : null,
+  c => c === OPAREN ? ++idx && notNil(expr(0,CPAREN), idx++) : nil,
   // var or literal
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -74,36 +78,36 @@ parse.operator = [
   (a,cc,prec,end) => cc==HAT && seq(char(),a,prec,end),
   (a,cc,prec,end) => cc==AND && seq(char(),a,prec,end),
   // '==' '!='
-  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(2),notNull(a),notNull(expr(prec,end))],
+  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(code(1)==code(2)?3:2),notNil(a),notNil(expr(prec,end))],
   // '<' '>' '<=' '>='
-  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && [skip(),notNull(a),notNull(expr(prec,end))],
+  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && [skip(),notNil(a),notNil(expr(prec,end))],
   // '<<' '>>' '>>>'
-  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),notNull(a),notNull(expr(prec,end))],
+  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),notNil(a),notNil(expr(prec,end))],
   // '+' '-'
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!=null && code(1) != cc && seq(char(),a,prec,end),
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!==nil && code(1) != cc && seq(char(),a,prec,end),
   // '*' '/' '%'
   (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && seq(char(),a,prec,end),
   // -- ++ unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),notNull(a==null?expr(prec-1,end):a)],
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),notNil(a===nil?expr(prec-1,end):a)],
   // - + ! unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a==null && [skip(),notNull(expr(prec-1,end))],
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a===nil && [skip(),notNil(expr(prec-1,end))],
   // '()', '[]', '.'
   (a,cc,prec,end,b) => (
     // a.b[c](d)
-    cc==PERIOD ? [skip(), a, '"' + notNull(expr(prec,end)) + '"'] :
-    cc==OBRACK ? (idx++, a = ['.', a, notNull(expr(0,CBRACK))], idx++, a) :
+    cc==PERIOD ? [skip(), a, typeof (b = notNil(expr(prec,end))) === 'string' ? '"' + b + '"' : b] :
+    cc==OBRACK ? (idx++, a = ['.', a, notNil(expr(0,CBRACK))], idx++, a) :
     cc==OPAREN ? (
       idx++, b=expr(0,CPAREN), idx++,
       Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
-      b == null ? [a] :
+      b === nil ? [a] :
       [a, b]
-    ) : null
+    ) : nil
   )
 ]
 
 // consume same-op group, do..while both saves op lookups and space
-const seq = (op,node,prec,end,list=[op, notNull(node)],cc=code()) => {
-  do { skip(op.length), list.push(notNull(expr(prec,end))) }
+const seq = (op,node,prec,end,list=[op, notNil(node)],cc=code()) => {
+  do { skip(op.length), list.push(notNil(expr(prec,end))) }
   while (parse.space()==cc && char(op.length)==op)
   return list
 },
