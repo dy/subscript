@@ -54,7 +54,7 @@ parse.token = [
   // (...exp)
   c => c === OPAREN ? ++idx && notNull(expr(0,CPAREN), idx++) : null,
   // var or literal
-  name => skip(c =>
+  c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
     (c >= 97 && c <= 122) || // a...z
@@ -65,33 +65,33 @@ parse.token = [
 
 parse.operator = [
   // ','
-  (a,cc,prec,end) => cc==COMMA && node(char(),a,prec,end),
+  (a,cc,prec,end) => cc==COMMA && seq(char(),a,prec,end),
   // '||' '&&'
-  (a,cc,prec,end) => cc==OR && code(1)==cc && node(char(2),a,prec,end),
-  (a,cc,prec,end) => cc==AND && code(1)==cc && node(char(2),a,prec,end),
+  (a,cc,prec,end) => cc==OR && code(1)==cc && seq(char(2),a,prec,end),
+  (a,cc,prec,end) => cc==AND && code(1)==cc && seq(char(2),a,prec,end),
   // '|' '^' '&'
-  (a,cc,prec,end) => cc==OR && node(char(),a,prec,end),
-  (a,cc,prec,end) => cc==HAT && node(char(),a,prec,end),
-  (a,cc,prec,end) => cc==AND && node(char(),a,prec,end),
+  (a,cc,prec,end) => cc==OR && seq(char(),a,prec,end),
+  (a,cc,prec,end) => cc==HAT && seq(char(),a,prec,end),
+  (a,cc,prec,end) => cc==AND && seq(char(),a,prec,end),
   // '==' '!='
-  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && node(char(2),a,prec,end),
+  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(2),notNull(a),notNull(expr(prec,end))],
   // '<' '>' '<=' '>='
-  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && node(char(),a,prec,end),
+  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && [skip(),notNull(a),notNull(expr(prec,end))],
   // '<<' '>>' '>>>'
-  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && node(char(cc==code(2)?3:2),a,prec,end),
+  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),notNull(a),notNull(expr(prec,end))],
   // '+' '-'
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!=null && code(1) != cc && node(char(),a,prec,end),
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!=null && code(1) != cc && seq(char(),a,prec,end),
   // '*' '/' '%'
-  (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && node(char(),a,prec,end),
+  (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && seq(char(),a,prec,end),
   // -- ++ unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && node(skip(2),a==null?expr(prec-1,end):a),
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),notNull(a==null?expr(prec-1,end):a)],
   // - + ! unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a==null && node(skip(),expr(prec-1,end)),
+  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a==null && [skip(),notNull(expr(prec-1,end))],
   // '()', '[]', '.'
   (a,cc,prec,end,b) => (
     // a.b[c](d)
-    cc==PERIOD ? [skip(), a, '"'+expr(prec,end)+'"'] :
-    cc==OBRACK ? (idx++, a = ['.', a, expr(0,CBRACK)], idx++, a) :
+    cc==PERIOD ? [skip(), a, '"' + notNull(expr(prec,end)) + '"'] :
+    cc==OBRACK ? (idx++, a = ['.', a, notNull(expr(0,CBRACK))], idx++, a) :
     cc==OPAREN ? (
       idx++, b=expr(0,CPAREN), idx++,
       Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
@@ -102,11 +102,9 @@ parse.operator = [
 ]
 
 // consume same-op group, do..while both saves op lookups and space
-const node = (op,node,prec,end,list=[op, notNull(node)],cc=code()) => {
-  if (prec != null) {
-    do { skip(op.length), list.push(notNull(expr(prec,end))) }
-    while (parse.space()==cc && char(op.length)==op)
-  }
+const seq = (op,node,prec,end,list=[op, notNull(node)],cc=code()) => {
+  do { skip(op.length), list.push(notNull(expr(prec,end))) }
+  while (parse.space()==cc && char(op.length)==op)
   return list
 },
 
