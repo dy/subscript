@@ -69,16 +69,14 @@ parse.token = [
   // (...exp)
   (c, node) => c === OPAREN && (idx++, node = expr(0,CPAREN), idx++, node),
   // var or literal
-  name => (name = skip(c =>
+  name => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  ), parse.literal.hasOwnProperty(name) ? parse.literal[name] : name)
+    (c >= 192 && c != 215 && c != 247) // any non-ASCII
+  )
 ],
-
-parse.literal = {null:null,true:true,false:false},
 
 parse.operator = [
   // ',': 1,

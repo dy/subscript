@@ -3,7 +3,14 @@ import {evaluate} from './evaluate.js'
 import {parse, code, char, skip, expr} from './parse.js'
 
 // undefined
-parse.literal['undefined'] = undefined
+// parse.literal['undefined'] = undefined
+parse.token.splice(3,0, c =>
+  c === 116 && char(4) === 'true' && skip(4) ? true :
+  c === 102 && char(5) === 'false' && skip(5) ? false :
+  c === 110 && char(4) === 'null' && skip(4) ? null :
+  c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
+  undefined
+)
 
 // "' with /
 parse.token[1] = (q, qc, c, str) => {
@@ -30,15 +37,15 @@ parse.operator.splice(parse.operator.length - 3, 0,
 )
 
 // detect custom operators
-parse.token[3] = name => (name = skip(c =>
-  (
-    (c >= 48 && c <= 57) || // 0..9
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  )// && !binary[String.fromCharCode(c)]
-))
+// parse.token[3] = name => (name = skip(c =>
+//   (
+//     (c >= 48 && c <= 57) || // 0..9
+//     (c >= 65 && c <= 90) || // A...Z
+//     (c >= 97 && c <= 122) || // a...z
+//     c == 36 || c == 95 || // $, _,
+//     c >= 192 // any non-ASCII
+//   )// && !binary[String.fromCharCode(c)]
+// ))
 
 // ~
 const unary = parse.operator[parse.operator.length - 2]
