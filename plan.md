@@ -71,8 +71,8 @@
     + that would enable Justin extension
     + that would allow flattening fn calls by default
 * [ ] ;
-* [ ] comments
-* [ ] # operators overloaded (python comments for example)
+* [x] comments
+* [x] # operators overloaded (python comments for example)
 * [x] justin
 * [x] infinite unaries? -+-+a
 * [x] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
@@ -183,7 +183,7 @@
   + better association parse.literal = ...
   + reduces amount of exports
   + no plurals needed
-* [ ] Error cases from jsep (from source)
+* [x] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
 * [x] Make literals direct (passing wrapped numbers to functions isn't good)
 * [x] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
