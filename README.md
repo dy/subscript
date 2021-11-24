@@ -68,23 +68,21 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 
 ## Extension
 
-By default subscript detects the following tokens:
+Tokens are extensible via `parse.token` list, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
+Default tokens include:
 
 * `"abc"` strings
 * `1.2e+3` floats
 * `()` expression groups or fn calls
 * `.`, `[]` property access
 
-<!-- * `true`, `false`, `null` literals -->
-<!-- Literals can be extended via `parse.literal` dict. -->
+Operators can be extended via `parse.operator` to add support for any unary/binary/postfix operators, calls, props or chains.
 
-Token parsers are extensible via `parse.token` list, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
+Comments can be added via extending `parse.space`.
 
-Operator parsers are applied to parsed tokens and can implement any types of operators (unary/binary/postfix), calls, props or chains. They're extensible via `parse.operator`.
+For now see justin extension how things can be done.
 
-Comments can be implemented via rewriting `parse.space`.
-
-
+<!--
 ```js
 import { parse, evaluate } from 'subscript.js'
 
@@ -105,6 +103,7 @@ let tree = parse(`
 `)
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
+-->
 
 
 ## Justin
