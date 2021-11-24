@@ -141,7 +141,7 @@ test(`should throw on invalid expr`, () => {
   throws(() => parse('.'))
   throws(() => parse('()()'))
     // '()', should throw 'unexpected )'...
-  throws(() => parse('() + 1'))
+  throws(() => console.log(parse('() + 1')))
 });
 
 test('Esprima Comparison', ()=> {

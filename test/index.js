@@ -294,6 +294,7 @@ test('ext: list', t => {
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])
+
   // NOTE: not critical, but generalizes expression errors across envs
   // is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
   // is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
