@@ -30,7 +30,7 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
       node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
   }
 
-  if (!prec && end && code()!==CPAREN) err('Unclosed paren')
+  if (!prec && end && code()!==end) err('Unclosed paren')
 
   return node
 },
