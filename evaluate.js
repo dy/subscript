@@ -12,8 +12,8 @@ evaluate = (s, ctx={}, c, op) => {
   }
   if (s && typeof s === 'string')
     return s[0] === '"' ? s.slice(1,-1)
-          : s[0]==='@' ? s.slice(1)
-          : s in ctx ? ctx[s] : s
+      : s[0]==='@' ? s.slice(1)
+      : s in ctx ? ctx[s] : s
 
   return s
 },

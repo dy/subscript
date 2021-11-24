@@ -5,7 +5,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Well-known syntax
 * Any _subscript_ fragment can be copy-pasted to any target language
 * It's tiny <sub>![npm bundle size](https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip)</sub>
-* It's very fast ([see performance](#performance))
+* It's :rocket: fast ([see performance](#performance))
 * Configurable & extensible
 * Trivial to use...
 
@@ -26,14 +26,8 @@ _Subscript_ is designed to be useful for:
 * sandboxes, playgrounds, safe eval
 * custom DSL
 
-[_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you design a tiny module and prefer to keep dependencies as small as possible.
-_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/3.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with same or better performance. It also has more open API and generates lispy calltree (compatible with [frisk](https://npmjs.com/frisk)), compared to esprima AST: minimal possible overhead, clear precedence, overloading by context, manual evaluation, debugging, conventional form, one-liner docs:
-
-```js
-import {evaluate} from 'subscript.js'
-
-evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
-``` 
+[_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
+_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/3.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with better performance.
 
 
 ## Operators
@@ -53,17 +47,55 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-All other operators can be extended via `parse.binary`, `parse.unary` and `evaluate.operator`.
+All other operators can be extended, see [extension](#extension).
+
+## Evaluation
+
+_Subscript_ parser generates lispy calltree (compatible with [frisk](https://npmjs.com/frisk)), which is compared to esprima AST has:
+
++ minimal possible overhead
++ clear precedence
++ overloading by context
++ manual evaluation and debugging
++ conventional form
++ one-liner docs:
+
+```js
+import {evaluate} from 'subscript.js'
+
+evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
+```
+
+## Extension
+
+By default subscript detects the following tokens:
+
+* `"abc"` strings
+* `1.2e+3` floats
+* `()` expression groups or fn calls
+* `.`, `[]` property access
+
+<!-- * `true`, `false`, `null` literals -->
+<!-- Literals can be extended via `parse.literal` dict. -->
+
+Token parsers are extensible via `parse.token` list, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
+
+Operator parsers are applied to parsed tokens and can implement any types of operators (unary/binary/postfix), calls, props or chains. They're extensible via `parse.operator`.
+
+Comments can be implemented via rewriting `parse.space`.
+
 
 ```js
 import { parse, evaluate } from 'subscript.js'
 
 // add precedences
-parse.binary['=>'] = 10
+// TODO
+// parse.operator['=>'] = 10
 
 // define evaluators
-evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
-evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
+// TODO
+// evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
+// evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -74,27 +106,11 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
-## Extending
-
-By default subscript detects the following tokens:
-
-* `"` strings
-* `1.2e+3` floats
-* `true`, `false`, `null` literals
-* `()` expression groups or fn calls
-* `.`, `[]` property access
-
-Literals can be extended via `parse.literal` dict.
-
-Token parsers are extensible via `parse.token` list, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
-
-Postfix parsers are applied to parsed tokens and can be used to provide _property chains_, _function calls_, _postfix operators_, _token mapping_, _ternary operators_ and so on. They're extensible via `parse.postfix`.
-
 
 ## Justin
 
 _Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.<br/>
-It adds support for:
+It adds support of:
 
 + `**` binary operator
 + `~` unary operator
@@ -105,8 +121,9 @@ It adds support for:
 + `in` binary operator
 + `;` expression separator
 + unary word operators
-<!-- + `//, /* */` comments -->
-<!-- + `undefined` literal -->
++ `//`, `/* */` comments
++ `true`, `false`, `null`, `undefined` literals
+<!-- + `===`, `!==` operators -->
 <!-- + `?` chaining operator -->
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
@@ -263,8 +280,8 @@ Subscript shows relatively good performance within other evaluators:
 // 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
 // parse 30k times
 
-subscript: ~280 ms
-jsep: ~281 ms
+subscript: ~220 ms
+jsep: ~280 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms
 new Function: ~1400 ms

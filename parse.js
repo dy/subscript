@@ -1,134 +1,134 @@
-const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, PLUS = 43, MINUS = 45
+// precedence-based parsing
+const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, AND=38, OR=124, HAT=94, MUL=42, DIV=47, MOD=37, PERIOD=46, OBRACK=91, CBRACK=93, OPAREN=40, CPAREN=41, COMMA=44, SPACE=32, EXCL=33
 
-export let index, current, lastOp, end
+// current string & index
+let idx, cur
 
-export const parse = (str, tree) => (current=str, index=lastOp=0, tree=expr(), index < current.length ? err() : tree),
+export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
 
-// ------------ util
-code = () => current.charCodeAt(index), // current char code
-char = (n=1) => current.substr(index, n), // skip n chars
-err = (msg='Bad syntax '+char()) => { throw Error(msg + ' at ' + index) },
-skip = (is=1, from=index) => { // consume N or until condition matches
-  if (typeof is === 'number') index += is
-  else while (is(code())) ++index > current.length && err('End by ' + is) // 1 + true === 2;
-  return index > from ? current.slice(from, index) : null
-},
-space = () => { while (code() <= 32) index++ },
+err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
 
-// ------------- expr
-// consume operator
-operator = (ops, op, prec, l=3) => {
-  // memoize by index - saves 20% to perf
-  if (index && lastOp && lastOp[3] === index) return lastOp
-
-  // ascending lookup is faster for 1-char operators, longer for 2+ char ops, so we use descending
-  while (l) if ((prec=ops[op=char(l--)])!=null) return lastOp = [op, prec, op.length, index] //opinfo
+skip = (is=1, from=idx) => {
+  if (typeof is === 'number') idx += is
+  else while (is(code())) idx++;
+  return cur.slice(from, idx) || nil
 },
 
-expr = (prec=-1, curEnd) => {
-  space()
+code = (i=0) => cur.charCodeAt(idx+i),
 
-  let cc = code(), op, node, i=0, mapped, from=index, prevEnd
+char = (n=1) => cur.substr(idx, n),
 
-  if (curEnd) if (cc === curEnd) return; else prevEnd = end, end = curEnd // global end marker saves operator lookups
+nil = '',
 
-  // parse node by token parsers (direct loop is faster than token.find)
-  while (from===index && i < token.length) node = token[i++](cc)
+// a + b - c
+expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
+  // prefix or token
+  while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
 
-  // unary prefix
-  if (from===index) (op = operator(unary)) && (index += op[2], node = [op[0], expr(op[1])])
-
-  // postfix handlers
-  else {
-    for (space(), cc=code(), i=0; i < postfix.length;)
-      if ((mapped = postfix[i](node, cc)) !== node) node = mapped, space(), cc=code(); else i++
-  }
-  // ALT: seems to be slower
-  // else do {space(), cc=code()} while (postfix.find((parse, mapped) => (mapped = parse(node, cc)) !== node && (node = mapped)))
-
-  // consume binary expression for current precedence or higher
-  while (cc = code() && (cc !== end) && (op = operator(binary)) && op[1] > prec) {
-    node = [op[0], node]
-    // consume same-op group, do..while both saves op lookups and space
-    do { index += op[2], node.push(expr(op[1])) } while (char(op[2]) === op[0])
-    space()
+  // postfix or binary
+  for (i = Math.max(lookup[cc=parse.space()]|0, prec); i < parse.operator.length;) {
+    if (cc===end || i<prec) break // if lookup got prec lower than current - end group
+    else if (mapped = parse.operator[i++](node, cc, i, end))
+      mapped.indexOf(nil) >=0 && err('Bad expression'),
+      node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
   }
 
-  if (curEnd) end = code() !== curEnd ? err('Unclosed paren') : prevEnd
-  // if (node == null) err('Missing argument')
+  if (!prec && end && code()!=end) err('Unclosed paren')
 
-  return node;
+  return node
 },
 
-// ------------------- tokens
-// 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-float = (number) => {
-  if (number = skip(c => (c >= 48 && c <= 57) || c === PERIOD)) {
-    if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
-    return isNaN(number = parseFloat(number)) ? err('Bad number') : number
-  }
-},
+// can be extended with comments, so we export
+space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
 
-// "a"
-string = (q, qc) => q === 34 ? (qc = char(), index++, qc) + skip(c => c-q) + (index++, qc) : null,
-
-// (...exp)
-group = (c, node) => c === OPAREN ? (index++, node = expr(-1,CPAREN), index++, node) : null,
-
-// var or literal
-id = name => (name = skip(c =>
-  (
+// tokens
+token = parse.token = [
+  // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
+  (number) => {
+    if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
+      if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
+      return isNaN(number = parseFloat(number)) ? err('Bad number') : number
+    }
+    return nil
+  },
+  // "a"
+  (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
+  // (...exp)
+  c => c === OPAREN ? (++idx, c=expr(0,CPAREN), ++idx, c===nil?err():c) : nil,
+  // var
+  c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
+    (c >= 192 && c != 215 && c != 247) // any non-ASCII
   )
-)),
-
-// ----------- config
-token = parse.token = [ float, group, string, id ],
-
-literal = parse.literal = {true:true, false:false, null:null},
-
-postfix = parse.postfix = [
-  // postfix parsers merged into 1 for performance & compactness
-  (node, cc, arg) => {
-    // a.b[c](d)
-    if (cc === PERIOD) index++, space(), node = ['.', node, '"'+id()+'"']
-    else if (cc === OBRACK) index++, node = ['.', node, expr(-1,CBRACK)], index++
-    else if (cc === OPAREN)
-      index++, arg=expr(-1,CPAREN),
-      node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
-      index++
-
-    // a++, a--
-    else if ((cc===0x2b || cc===0x2d) && current.charCodeAt(index+1)===cc) node = [skip(2), node]
-
-    // literal
-    else if (typeof node === 'string' && literal.hasOwnProperty(node)) node = literal[node]
-
-    return node
-  }
 ],
 
-unary = parse.unary = {
-  '-': 17,
-  '!': 17,
-  '+': 17,
-  '++': 17,
-  '--': 17
+// create binary operator parser
+binary = (is) => (a,cc,prec,end, list,len,op) => {
+  if (a!==nil && (len = is(cc)|0)) {
+    // consume same-op group, do..while saves op lookups
+    list = [op=char(len),a]
+    do { skip(len), list.push(expr(prec,end)) } while (parse.space()==cc && char(len)==op)
+    return list
+  }
 },
+unary = (is, post=false) => post ?
+  (a,cc,prec,end,l) => a!==nil && (l=is(cc)|0) && [skip(l), a] :
+  (a,cc,prec,end,l) => a===nil && (l=is(cc)|0) && [skip(l), expr(prec-1,end)],
 
-binary = parse.binary = {
-  ',': 1,
-  '||': 6, '&&': 7, '|': 8, '^': 9, '&': 10,
-  '==': 11, '!=': 11,
-  '<': 12, '>': 12, '<=': 12, '>=': 12,
-  '<<': 13, '>>': 13, '>>>': 13,
-  '+': 14, '-': 14,
-  '*': 15, '/': 15, '%': 15
-}
+operator = parse.operator = [
+  // ','
+  binary(c => c==COMMA),
+  // '||' '&&'
+  binary(c => c==OR && code(1)==c && 2),
+  binary(c => c==AND && code(1)==c && 2),
+  // '|' '^' '&'
+  binary(c => c==OR),
+  binary(c => c==HAT),
+  binary(c => c==AND),
+  // '==' '!='
+  binary(c => (c==EQ || c==EXCL) && code(1)==EQ && (code(1)==code(2) ? 3 : 2)),
+  // '<' '>' '<=' '>='
+  binary(c => (c==GT || c==LT) && c!=code(1)),
+  // '<<' '>>' '>>>'
+  binary(c => (c==LT || c==GT) && c==code(1) && (c==code(2) ? 3 : 2)),
+  // '+' '-'
+  binary(c => (c==PLUS || c==MINUS) && code(1)!=c),
+  // '*' '/' '%'
+  binary(c => (c==MUL && code(1) != MUL) || c==DIV || c==MOD),
+  // -- ++ unaries
+  unary(c => (c==PLUS || c==MINUS) && code(1) == c && 2, true),
+  // - + ! unaries
+  unary(c => (c==PLUS || c==MINUS || c==EXCL) && (code(1)==c ? 2 : 1)),
+  // '()', '[]', '.'
+  (a,cc,prec,end,b) => (
+    // a.b[c](d)
+    cc==PERIOD ? [skip(), (a), typeof (b = (expr(prec,end))) === 'string' ? '"' + b + '"' : b] :
+    cc==OBRACK ? (idx++, a = ['.', (a), (expr(0,CBRACK))], idx++, a) :
+    cc==OPAREN ? (
+      idx++, b=expr(0,CPAREN), idx++,
+      Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
+      b === nil ? [a] :
+      [a, b]
+    ) : nil
+  )
+],
+
+// fast operator lookup table
+lookup = []
+
+lookup[COMMA] = 0
+lookup[OR] = 1
+lookup[AND] = 2
+lookup[HAT] = 4
+lookup[EQ] = lookup[EXCL] = 6
+lookup[LT] = lookup[GT] = 7
+lookup[PLUS] = lookup[MINUS] = 9
+lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
+lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
+
 
 
 export default parse

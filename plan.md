@@ -71,8 +71,8 @@
     + that would enable Justin extension
     + that would allow flattening fn calls by default
 * [ ] ;
-* [ ] comments
-* [ ] # operators overloaded (python comments for example)
+* [x] comments
+* [x] # operators overloaded (python comments for example)
 * [x] justin
 * [x] infinite unaries? -+-+a
 * [x] postfix unaries, `7!` (factorial), `5s` (units), `exist?`, `arrᵀ` - transpose,
@@ -183,7 +183,7 @@
   + better association parse.literal = ...
   + reduces amount of exports
   + no plurals needed
-* [ ] Error cases from jsep (from source)
+* [x] Error cases from jsep (from source)
 * [x] Improve perf formula 1 + (a | b ^ c & d) + 2.0 + -3e-3 * +4.4e4 / a.b["c"] - d.e(true)(false)
 * [x] Make literals direct (passing wrapped numbers to functions isn't good)
 * [x] ? Is that possible to build parser from set of test/consume functions, rather than declarative config? (see note below).
@@ -232,3 +232,31 @@
 * [x] Hardcode subscript parser for smaller size & better perf
 * [x] Make parse/eval first-level
 * [ ] Provide parser examples as chunks
+* [x] ?: operator is problematic with postfix parsers, since they expect highest precedence and a||b?c:d needs only 4.
+  + also fn checkers unfortunately not as fast as desired.
+  1. ‽ group/binary can be merged into a single dict: precedences come under 32, after 32 - ascii chars, denoting character to catch. This way ternary can be organized as `{?: 58}`, and groups as `(: 41`, `[: 93`.
+    ? How do we detect tail-parsing?
+  2. Make postfix parsing take in account precedence somehow
+    ? Parse postfix after every expression group as well, not only after token
+  3. Merge binary and postfix somehow: binary is also a kind of postfix extension, isn't it?
+  4. ✔ We can regroup binary dict to be a set of parsers: each parser anyways checks for first character to match some condition;
+    + This way we can customly map .[(
+    + This way we can customly map ?:
+    + This way we can customly map a+b+c+...
+    + This way we can map
+    + We could limit lookup by slicing precendence array, not by comparing fact of found lookup and discarding it
+      → We have to store parsers as [,comma,some,every,or,xor,and,eqneq,comp,shift,sum,mult,unary,propcall]
+        - that's going to be slow to call this set of functions, compared to object lookup
+          + that's faster in fact than descending dict lookup:
+            . we first don't search what we should not search by precedence
+        + it can be easier to organize sub-search (we need to parse precedence only higher than the current one)
+      ! there can be a lookup booster checker as well, eg. if code is +, then it's either binary or unary, just fast-forward
+      . Seems routing is necessary
+        0. ✔ lookup is through all precedences until null returned for all of them.
+          + very fast method
+        1. That can be done as global routing function or object `findOperator(prec,c1)()`
+        2. That can be done per-precedence function `sum=x=>pass(x)?mapped:mult()`:
+          - extending would imply changing prev function in chain - ridiculous
+        2.1. We can pass `next` function to levels `sum=(x,next)=>pass(x)?mapped:next()`
+      - Cannot use precedence constructor: it creates fn call stack for condition, besides internals are too different: either number of op chars to skip varies, or unary/non-unary case, overall not worth it
+
