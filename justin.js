@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, nil} from './parse.js'
+import {parse, code, char, skip, expr, nil, binary, unary} from './parse.js'
 
 // undefined
 parse.token.splice(3,0, c =>
@@ -25,38 +25,15 @@ const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
 // **
 evaluate.operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
-parse.operator.splice(parse.operator.length - 3, 0,
-  (a,cc,prec,end) => {
-    if (cc===42 && code(1) === 42) {
-      let list = ['**', a]
-      do { skip(2), list.push(expr(prec,end)) } while (parse.space()===cc&&code(1)===42)
-      return list
-    }
-  },
-)
-
-// detect custom operators
-// parse.token[3] = name => (name = skip(c =>
-//   (
-//     (c >= 48 && c <= 57) || // 0..9
-//     (c >= 65 && c <= 90) || // A...Z
-//     (c >= 97 && c <= 122) || // a...z
-//     c == 36 || c == 95 || // $, _,
-//     c >= 192 // any non-ASCII
-//   )// && !binary[String.fromCharCode(c)]
-// ))
+parse.operator.splice(parse.operator.length - 3, 0, binary(cc=>cc===42 && code(1) === cc && 2))
 
 // ~
-const unary = parse.operator[parse.operator.length - 2]
-parse.operator[parse.operator.length-2] =
-  (a,cc,prec,end) => (cc===126) && a===nil && [skip(1), expr(prec-1,end)] || unary(a,cc,prec,end)
+parse.operator.splice(parse.operator.length-2, 0, unary(cc => cc === 126))
 evaluate.operator['~'] = a=>~a
 
-// // ...
+// TODO ...
 // // unary[1]['...']=true
 
-// // ;
-// binary[';'] = 1
 
 // ?:
 evaluate.operator['?:']=(a,b,c)=>a?b:c
@@ -69,6 +46,9 @@ parse.operator.splice(1,0, (node,cc,prec,end) => {
   skip(), parse.space(), b = expr()
   return ['?:', node, a, b]
 })
+
+// TODO ;
+// binary[';'] = 1
 
 // /**/, //
 parse.space = cc => {
@@ -85,7 +65,7 @@ parse.space = cc => {
 
 // in
 evaluate.operator['in'] = (a,b)=>a in b
-parse.operator.splice(6,0, (a,cc,prec,end) => (char(2) === 'in' && [skip(2), '"' + a + '"', expr(prec,end)]))
+parse.operator.splice(6,0,(a,cc,prec,end) => (char(2) === 'in' && [skip(2), '"' + a + '"', expr(prec,end)]))
 
 // []
 evaluate.operator['['] = (...args) => Array(...args)
@@ -102,7 +82,7 @@ parse.token.unshift((cc, node, arg) =>
 parse.token.unshift((cc, node) => (
   cc === 123 ? (skip(), node = map(['{',expr(0,125)]), skip(), node) : null
 ))
-parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
+parse.operator.splice(4,0, binary(cc=>cc===58))
 evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 
@@ -113,9 +93,7 @@ const map = (n, args) => {
   return ['{', ...args]
 }
 
-
-
-// // TODO: strings interpolation
+// TODO: strings interpolation
 
 export { default } from './subscript.js';
 export { parse, evaluate }
