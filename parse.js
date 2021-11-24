@@ -52,7 +52,7 @@ parse.token = [
   // "a"
   (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : null,
   // (...exp)
-  c => c === OPAREN ? (idx++, notNull(expr(0,CPAREN), idx++)) : null,
+  c => c === OPAREN ? ++idx && notNull(expr(0,CPAREN), idx++) : null,
   // var or literal
   name => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
