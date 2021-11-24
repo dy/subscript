@@ -38,8 +38,8 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
   return node
 },
 
-createBinary = (is,len=1) => (a,cc,prec,end, list) => {
-  if (is(cc) && a!==nil) {
+createBinary = (is) => (a,cc,prec,end, list, len) => {
+  if (a!==nil && (len = is(cc)|0)) {
     list = [skip(len),a,expr(prec,end)]
     // consume same-op group
     // TODO do..while both saves op lookups and space
@@ -95,22 +95,22 @@ parse.operator = [
   // ','
   createBinary(c=>c==COMMA),
   // '||' '&&'
-  createBinary(c=>c==OR && code(1)==c,2),
-  createBinary(c=>c==AND && code(1)==c,2),
+  createBinary(c=>c==OR && code(1)==c && 2),
+  createBinary(c=>c==AND && code(1)==c && 2),
   // '|' '^' '&'
   createBinary(c=>c==OR),
   createBinary(c=>c==HAT),
   createBinary(c=>c==AND),
   // '==' '!='
-  (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(code(1)==code(2)?3:2),(a),(expr(prec,end))],
+  createBinary(c => (c==EQ || c==EXCL) && code(1)==EQ && (code(1)==code(2) ? 3 : 2)),
   // '<' '>' '<=' '>='
-  (a,cc,prec,end) => (cc==GT || cc==LT) && cc!=code(1) && [skip(),(a),(expr(prec,end))],
+  createBinary(c => (c==GT || c==LT) && c!=code(1)),
   // '<<' '>>' '>>>'
-  (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),(a),(expr(prec,end))],
+  createBinary(c => (c==LT || c==GT) && c==code(1) && (c==code(2) ? 3 : 2)),
   // '+' '-'
-  createBinary(cc=>(cc==PLUS || cc==MINUS) && code(1) != cc),
+  createBinary(c=>(c==PLUS || c==MINUS) && code(1)!=c),
   // '*' '/' '%'
-  createBinary(cc => (cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD),
+  createBinary(c => (c==MUL && code(1) != MUL) || c==DIV || c==MOD),
   // -- ++ unaries
   (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),(a===nil?expr(prec-1,end):a)],
   // - + ! unaries
