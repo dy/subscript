@@ -36,11 +36,36 @@ expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
   if (!prec && end && code()!=end) err('Unclosed paren')
 
   return node
-}
+},
+
+createBinary = (is,len=1) => (a,cc,prec,end, list) => {
+  if (is(cc) && a!==nil) {
+    list = [skip(len),a,expr(prec,end)]
+    // consume same-op group
+    // TODO do..while both saves op lookups and space
+    while (parse.space()===cc) skip(len), list.push(expr(prec,end))
+    return list
+  }
+  // do { skip(len), list.push(expr(prec,end)) }
+  // while (parse.space()==cc && char(len)==op)
+  // return list
+},
+
+// fast operator lookup table
+lookup = []
+lookup[COMMA] = 0
+lookup[OR] = 1
+lookup[AND] = 2
+lookup[HAT] = 4
+lookup[EQ] = lookup[EXCL] = 6
+lookup[LT] = lookup[GT] = 7
+lookup[PLUS] = lookup[MINUS] = 9
+lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
+lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
 
 
 // can be extended with comments, so we export
-parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
+parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc }
 
 // tokens
 parse.token = [
@@ -64,18 +89,18 @@ parse.token = [
     c == 36 || c == 95 || // $, _,
     (c >= 192 && c != 215 && c != 247) // any non-ASCII
   )
-],
+]
 
 parse.operator = [
   // ','
-  (a,cc,prec,end) => cc==COMMA && seq(1,a,prec,end),
+  createBinary(c=>c==COMMA),
   // '||' '&&'
-  (a,cc,prec,end) => cc==OR && code(1)==cc && seq(2,a,prec,end),
-  (a,cc,prec,end) => cc==AND && code(1)==cc && seq(2,a,prec,end),
+  createBinary(c=>c==OR && code(1)==c,2),
+  createBinary(c=>c==AND && code(1)==c,2),
   // '|' '^' '&'
-  (a,cc,prec,end) => cc==OR && seq(1,a,prec,end),
-  (a,cc,prec,end) => cc==HAT && seq(1,a,prec,end),
-  (a,cc,prec,end) => cc==AND && seq(1,a,prec,end),
+  createBinary(c=>c==OR),
+  createBinary(c=>c==HAT),
+  createBinary(c=>c==AND),
   // '==' '!='
   (a,cc,prec,end) => (cc==EQ || cc==EXCL) && code(1)==EQ && [skip(code(1)==code(2)?3:2),(a),(expr(prec,end))],
   // '<' '>' '<=' '>='
@@ -83,9 +108,9 @@ parse.operator = [
   // '<<' '>>' '>>>'
   (a,cc,prec,end) => (cc==LT || cc==GT) && cc==code(1) && [skip(cc==code(2)?3:2),(a),(expr(prec,end))],
   // '+' '-'
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && a!==nil && code(1) != cc && seq(1,a,prec,end),
+  createBinary(cc=>(cc==PLUS || cc==MINUS) && code(1) != cc),
   // '*' '/' '%'
-  (a,cc,prec,end) => ((cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD) && seq(1,a,prec,end),
+  createBinary(cc => (cc==MUL && code(1) != MUL) || cc==DIV || cc==MOD),
   // -- ++ unaries
   (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),(a===nil?expr(prec-1,end):a)],
   // - + ! unaries
@@ -104,23 +129,5 @@ parse.operator = [
   )
 ]
 
-// consume same-op group, do..while both saves op lookups and space
-const seq = (len,node,prec,end,op,list=[op=char(len), node],cc=code()) => {
-  do { skip(len), list.push(expr(prec,end)) }
-  while (parse.space()==cc && char(len)==op)
-  return list
-},
-
-// fast operator lookup table
-lookup = []
-lookup[COMMA] = 0
-lookup[OR] = 1
-lookup[AND] = 2
-lookup[HAT] = 4
-lookup[EQ] = lookup[EXCL] = 6
-lookup[LT] = lookup[GT] = 7
-lookup[PLUS] = lookup[MINUS] = 9
-lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
-lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
 
 export default parse
