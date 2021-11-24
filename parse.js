@@ -7,7 +7,7 @@ let idx, cur
 export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
 
 err = (msg='Bad syntax '+cur[idx]) => { throw Error(msg + ' at ' + idx) },
-nerr = (node) => node==null&&err('Bad expression'),
+notNull = (node) => node==null?err('Bad expression'):node,
 
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
@@ -52,7 +52,7 @@ parse.token = [
   // "a"
   (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : null,
   // (...exp)
-  (c, a) => c === OPAREN ? (idx++, a = expr(0,CPAREN), nerr(a), idx++, a) : null,
+  (c, a) => c === OPAREN ? (idx++, a = notNull(expr(0,CPAREN)), idx++, a) : null,
   // var or literal
   name => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -102,10 +102,9 @@ parse.operator = [
 ]
 
 // consume same-op group, do..while both saves op lookups and space
-const node = (op,node,prec,end,list=[op, node],cc=code()) => {
-  nerr(node)
+const node = (op,node,prec,end,list=[op, notNull(node)],cc=code()) => {
   if (prec != null) {
-    do { skip(op.length), list.push(node=expr(prec,end)), nerr(node) }
+    do { skip(op.length), list.push(notNull(expr(prec,end))) }
     while (parse.space()==cc && char(op.length)==op)
   }
   return list
