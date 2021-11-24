@@ -74,6 +74,9 @@ binary = (is) => (a,cc,prec,end, list,len,op) => {
     return list
   }
 },
+unary = (is, post=false) => post ?
+  (a,cc,prec,end,l) => a!==nil && (l=is(cc)|0) && [skip(l), a] :
+  (a,cc,prec,end,l) => a===nil && (l=is(cc)|0) && [skip(l), expr(prec-1,end)],
 
 operator = parse.operator = [
   // ','
@@ -96,9 +99,9 @@ operator = parse.operator = [
   // '*' '/' '%'
   binary(c => (c==MUL && code(1) != MUL) || c==DIV || c==MOD),
   // -- ++ unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS) && code(1) == cc && [skip(2),(a===nil?expr(prec-1,end):a)],
+  unary(c => (c==PLUS || c==MINUS) && code(1) == c && 2, true),
   // - + ! unaries
-  (a,cc,prec,end) => (cc==PLUS || cc==MINUS || cc==EXCL) && a===nil && [skip(),(expr(prec-1,end))],
+  unary(c => (c==PLUS || c==MINUS || c==EXCL) && (code(1)==c ? 2 : 1)),
   // '()', '[]', '.'
   (a,cc,prec,end,b) => (
     // a.b[c](d)
