@@ -325,6 +325,7 @@ test('ext: object', t => {
 
 test('ext: justin', async t => {
   const {parse} = await import('../justin.js')
+  is(parse('a;b'), [';','a','b'])
   is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','"y"',['**',2,2]]], '"x"'])
   is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
 })

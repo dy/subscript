@@ -70,7 +70,7 @@
     . for that we would need to create transform groups
     + that would enable Justin extension
     + that would allow flattening fn calls by default
-* [ ] ;
+* [x] ;
 * [x] comments
 * [x] # operators overloaded (python comments for example)
 * [x] justin
@@ -85,16 +85,12 @@
     + allows accessing unaries directly
     - can be complicated extension, unless we reference group immediately, not by index
     + allows faster search for unaries
-* [ ] ideas snippets
-  * [ ] !keyed arrays? [a:1, b:2, c:3]
 * [x] . operator is not compatible with others, like a.+b.+c
   - it's neither evaluable: in handler '.':(a,b)=>a[b] b has meaning as "string", not value from context by that key
 * [x] extension: Justin (+JSONs)
-* [ ] string interpolation ` ${} 1 ${} `
   ? make transforms for strings?
 * [x] Bench
 * [x] unary word
-* [ ] Demo
 * [x] Optimizations
   - parser is mode-less: for each character it attempts to check every possible condition. Smart guys don't overcheck and just consume according to current mode. Eg. for s
   - [x] preparate jsep - [x] remove noise, [x] flatten, [x] lispify
@@ -133,7 +129,6 @@
   ? Maybe we should prohibit evaluate exports to simplify internal logic?
   → transform keeping raw literal or turn into constructors.
   → not literals anymore, but tree operators
-* [ ] calltree nodes could stash static values (as in HTM)
 * [x] Minifications
   * [x] ( [ . can be folded to operators, can they?...
   * [x] generalize parsing identifiers: parseFloat works on any string, things like 1.1.2 can be folded, although mb not as performant. Maybe make digits+numbers parseable as single chunks?
@@ -148,7 +143,6 @@
   + it matches reducers
   + formulas are still meaningful this way
   + good for performance
-* [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
 * [x] Transforms for literals/tokens.
   → done as parsers, just implement per-token parsers
   + We need to interpolate strings `a${}b`
@@ -231,7 +225,6 @@
 * [ ] Make eval-only tests
 * [x] Hardcode subscript parser for smaller size & better perf
 * [x] Make parse/eval first-level
-* [ ] Provide parser examples as chunks
 * [x] ?: operator is problematic with postfix parsers, since they expect highest precedence and a||b?c:d needs only 4.
   + also fn checkers unfortunately not as fast as desired.
   1. ‽ group/binary can be merged into a single dict: precedences come under 32, after 32 - ascii chars, denoting character to catch. This way ternary can be organized as `{?: 58}`, and groups as `(: 41`, `[: 93`.
@@ -259,4 +252,11 @@
           - extending would imply changing prev function in chain - ridiculous
         2.1. We can pass `next` function to levels `sum=(x,next)=>pass(x)?mapped:next()`
       - Cannot use precedence constructor: it creates fn call stack for condition, besides internals are too different: either number of op chars to skip varies, or unary/non-unary case, overall not worth it
+* [ ] ideas snippets
+  * [ ] !keyed arrays? [a:1, b:2, c:3]
+  * [ ] parser examples as chunks
+  * [ ] string interpolation ` ${} 1 ${} `
+* [ ] Demo
+* [ ] calltree nodes could stash static values (as in HTM)
+* [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
 

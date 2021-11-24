@@ -2,6 +2,9 @@
 import {evaluate} from './evaluate.js'
 import {parse, code, char, skip, expr, nil, binary, unary} from './parse.js'
 
+// ;
+parse.operator[0] = binary(c => c==44||c==59)
+
 // undefined
 parse.token.splice(3,0, c =>
   c === 116 && char(4) === 'true' && skip(4) ? true :
@@ -46,9 +49,6 @@ parse.operator.splice(1,0, (node,cc,prec,end) => {
   skip(), parse.space(), b = expr()
   return ['?:', node, a, b]
 })
-
-// TODO ;
-// binary[';'] = 1
 
 // /**/, //
 parse.space = cc => {
@@ -95,5 +95,5 @@ const map = (n, args) => {
 
 // TODO: strings interpolation
 
-export { default } from './subscript.js';
+export default parse
 export { parse, evaluate }
