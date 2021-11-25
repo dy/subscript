@@ -70,13 +70,9 @@ token = parse.token = [
 // fast operator lookup table
 lookup = parse.lookup = [],
 
-// TODO: binary must embrace assigning operators, instead of raw access to lookup table, like binary(char, prec, cond)
-// TODO: decorating strategy, opposed to returned length from condition: binary(OR, PREC_OR, 2), binary(OR, PREC_SOME, cond)
-// TODO: binary must do group-consuming and error throw on unknown operator
-// TODO: it should also check for non-null operator to avoid confusion with unary
-binary = (C, PREC, is=1, map, prev=lookup[C]) => (
+binary = (C, PREC, is=1, prev=lookup[C]) => (
   lookup[C] = (c, node, prec, l, list, op) => {
-    if (node===nil) err()
+    if (node===nil) err() // must be non-null
     if (prec<PREC && (l = typeof is === 'function' ? is(c,node) : is)) {
       if (typeof l === 'number') {
         // consume same-op group, do..while saves op lookups
@@ -85,13 +81,10 @@ binary = (C, PREC, is=1, map, prev=lookup[C]) => (
       } else list = l
       return list
     }
+    // decorate already assigned lookup
     else if (prev) return prev(c, node, prec)
   }
 )
-  // prec<PREC && (l=is?is(c)|0:1) ? [skip(l), node, expr(PREC)] : prev&&prev(c, node, prec)
-
-
-// FIXME: catch unfound operator as cond ? node : err()
 
 // ,
 // TODO: add ,, as node here
@@ -126,9 +119,9 @@ binary(EXCL, PREC_EQ, c=>code(1)==code(2)?3:2)
 
 // > >= >> >>>, < <= <<
 binary(GT, PREC_COMP, c=>code(1)==EQ?2:1)
-binary(GT, PREC_SHIFT, c=>code(1)==c && (code(2)===code(1)?3:2))
+binary(GT, PREC_SHIFT, c=>code(1)==GT && (code(2)===code(1)?3:2))
 binary(LT, PREC_COMP, c=>code(1)==EQ?2:1)
-binary(LT, PREC_SHIFT, c=>code(1)==c && 2)
+binary(LT, PREC_SHIFT, c=>code(1)==LT && 2)
 // lookup[LT] = lookup[GT] = (c,node,prec) =>
 //   (code(1)==c && prec<PREC_SHIFT && [skip(code(2)==c?3:2),node,expr(PREC_SHIFT)]) ||
 //   (prec<PREC_COMP && [skip(code(1)==c?2:1),node,expr(PREC_COMP)])
