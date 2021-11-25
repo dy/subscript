@@ -68,15 +68,14 @@ token = parse.token = [
 ],
 
 // fast operator lookup table
-lookup = parse.lookup = [],
+lookup = [],
 
-binary = (C, PREC, is=1, prev=lookup[C]) => (
+operator = (C, PREC=0, is=1, prev=lookup[C]) => (
   lookup[C] = (c, node, prec, l, list, op) => {
-    if (node===nil) err() // must be non-null
     if (prec<PREC && (l = typeof is === 'function' ? is(c,node) : is)) {
       if (typeof l === 'number') {
+        l = l|0, list = [op=char(l),node]
         // consume same-op group, do..while saves op lookups
-        list = [op=char(l),node]
         do { skip(l), list.push(expr(PREC)) } while (parse.space()==c && char(l)==op)
       } else list = l
       return list
@@ -86,77 +85,60 @@ binary = (C, PREC, is=1, prev=lookup[C]) => (
   }
 )
 
+// FIXME: remove c argument
 // ,
 // TODO: add ,, as node here
-binary(COMMA, PREC_COMMA)
-// lookup[COMMA] = (c,node,prec) => !prec&&[skip(),node,expr()]
-
+operator(COMMA, PREC_COMMA)
 
 // ||, |
-binary(OR, PREC_OR)
-binary(OR, PREC_SOME, c=>code(1)==OR && 2)
-// lookup[OR] = (c,node,prec) =>
-//   (code(1)==OR && prec<PREC_SOME && [skip(2),node,expr(PREC_SOME)]) ||
-//   (prec<PREC_OR && [skip(),node,expr(PREC_OR)])
+operator(OR, PREC_OR)
+operator(OR, PREC_SOME, c=>code(1)==OR && 2)
 
 // &&, &
-binary(AND, PREC_AND)
-binary(AND, PREC_EVERY, c=>code(1)==AND && 2)
-// lookup[AND] = (c,node,prec) =>
-//   (code(1)==AND && prec<PREC_EVERY && [skip(2),node,expr(PREC_EVERY)]) ||
-//   (prec<PREC_AND && [skip(),node,expr(PREC_AND)])
+operator(AND, PREC_AND)
+operator(AND, PREC_EVERY, c=>code(1)==AND && 2)
 
 // ^
-binary(HAT, PREC_XOR)
-// lookup[HAT] = (c,node,prec) => prec<PREC_XOR && [skip(1),node,expr(PREC_XOR)]
+operator(HAT, PREC_XOR)
 
 // ==, ===, !==, !=
-binary(EQ, PREC_EQ, c=>code(1)==code(2)?3:2)
-binary(EXCL, PREC_EQ, c=>code(1)==code(2)?3:2)
-// FIXME: remove c argument
-// lookup[EQ] = lookup[EXCL] = (c,node,prec) =>
-//   code(1)==c && prec<PREC_EQ && [skip(code(1)==code(2)?3:2),node,expr(PREC_EQ)]
+operator(EQ, PREC_EQ, c=>code(1)==code(2)?3:2)
+operator(EXCL, PREC_EQ, c=>code(1)==code(2)?3:2)
 
 // > >= >> >>>, < <= <<
-binary(GT, PREC_COMP, c=>code(1)==EQ?2:1)
-binary(GT, PREC_SHIFT, c=>code(1)==GT && (code(2)===code(1)?3:2))
-binary(LT, PREC_COMP, c=>code(1)==EQ?2:1)
-binary(LT, PREC_SHIFT, c=>code(1)==LT && 2)
-// lookup[LT] = lookup[GT] = (c,node,prec) =>
-//   (code(1)==c && prec<PREC_SHIFT && [skip(code(2)==c?3:2),node,expr(PREC_SHIFT)]) ||
-//   (prec<PREC_COMP && [skip(code(1)==c?2:1),node,expr(PREC_COMP)])
+operator(GT, PREC_COMP, c=>code(1)==EQ?2:1)
+operator(GT, PREC_SHIFT, c=>code(1)==GT && (code(2)===code(1)?3:2))
+operator(LT, PREC_COMP, c=>code(1)==EQ?2:1)
+operator(LT, PREC_SHIFT, c=>code(1)==LT && 2)
 
 // + ++ - --
-// binary(PLUS, PREC_SUM)
-// binary(MINUS, PREC_SUM)
-// unary(PLUS, PREC_POSTFIX, c=>code(1)==c && 2, true)
-// unary(PLUS, PREC_UNARY, c=>code(1)==c ? 2 : 1)
-lookup[PLUS] = lookup[MINUS] = (c,node,prec) =>
-  ((node===nil||code(1)==c) && prec<PREC_UNARY && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node]) ||
-  (prec<PREC_SUM && [skip(),node,expr(PREC_SUM)])
+operator(PLUS, PREC_SUM)
+operator(MINUS, PREC_SUM)
+operator(PLUS, PREC_UNARY, (c,node) => (node===nil||code(1)==c) && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator(MINUS, PREC_UNARY, (c,node) => (node===nil||code(1)==c) && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node])
 
 // ! ~
-// unary(EXCL, PREC_UNARY)
-lookup[EXCL] = (c,node,prec) => (node===nil) && prec<PREC_UNARY && [skip(),expr(PREC_UNARY-1)]
+operator(EXCL, PREC_UNARY, (c,node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
 
 // * / %
-binary(MUL, PREC_MULT)
-binary(DIV, PREC_MULT)
-binary(MOD, PREC_MULT)
-// lookup[MUL] = lookup[DIV] = lookup[MOD] = (c,node,prec) => prec<PREC_MULT && [skip(),node,expr(PREC_MULT)]
+operator(MUL, PREC_MULT)
+operator(DIV, PREC_MULT)
+operator(MOD, PREC_MULT)
 
 // a.b
-lookup[PERIOD] = (c,node,prec,b) => prec<PREC_CALL && [skip(), node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b]
+operator(PERIOD, PREC_CALL, (c,node,b) => [skip(),node,typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b])
+
 // a[b]
-lookup[OBRACK] = (c,node,prec) => prec<PREC_CALL && (idx++, node = ['.', node, expr()], idx++, node)
+operator(OBRACK, PREC_CALL, (c,node) => (idx++, node = ['.', node, expr()], idx++, node))
+
 // a(b)
-lookup[OPAREN] = (c,node,prec,b) => prec<PREC_CALL && (
+operator(OPAREN, PREC_CALL, (c,node,b) => (
   idx++, b=expr(), idx++,
   Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
-)
+))
 
 // endings just reset token
-lookup[CBRACK] = lookup[CPAREN] = _=>{}
+operator(CBRACK), operator(CPAREN)
 
 
 

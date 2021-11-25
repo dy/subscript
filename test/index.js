@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr, nil, binary, lookup } from '../parse.js'
+import { skip, code, char, expr, nil, operator } from '../parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -36,7 +36,7 @@ test('parse: basic', t => {
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
-  binary(42, 14, c=>code(1)==c && 2)
+  operator(42, 14, c=>code(1)==c && 2)
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
@@ -256,7 +256,7 @@ test('eval: basic', t => {
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
   // parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
-  binary(105, 10, (c,node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
+  operator(105, 10, (c,node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
@@ -266,14 +266,14 @@ test('ext: in operator', t => {
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  lookup[58] = ()=>{}
-  binary(63, 3, (c,node) => {
+  operator(63, 3, (c,node) => {
     let a, b
     skip(), parse.space(), a = expr(0)
     if (code() !== 58) err('Expected :')
     skip(), parse.space(), b = expr(0)
     return ['?:', node, a, b]
   })
+  operator(58)
 
   is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
   is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
@@ -306,8 +306,8 @@ test('ext: object', t => {
   ))
   // parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
 
-  lookup[125]=()=>{}
-  binary(58, 4, 1)
+  operator(125)
+  operator(58, 4, 1)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
 
