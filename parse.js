@@ -31,13 +31,9 @@ expr = (prec=0, cc=parse.space(), node, from=idx, i=0, map, newNode) => {
   while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
 
   while (
-    (map = lookup[cc=parse.space()]) && (newNode = map(cc, node, prec))
-  ) {
-    // TODO: if map is null, throw error as unknown character maybe?
+    (cc=parse.space()) && (map = operator[cc] || err()) && (newNode = map(cc, node, prec))
+  ) if ((node = newNode).indexOf(nil) >= 0) err()
 
-    // TODO: consume same-op here
-    if ((node = newNode).indexOf(nil) >= 0) err('Bad expression')
-  }
 
   // TODO:
   // if (end && cc!=end) err('Unclosed paren')
@@ -73,60 +69,81 @@ token = parse.token = [
 ],
 
 // fast operator lookup table
-lookup = parse.lookup = []
+operator = parse.operator = []
+
+// TODO: binary must embrace assigning operators, instead of raw access to lookup table, like binary(char, prec, cond)
+// TODO: decorating strategy, opposed to returned length from condition: binary(OR, PREC_OR, 2), binary(OR, PREC_SOME, cond)
+// TODO: binary must do group-consuming and error throw on unknown operator
+// TODO: it should also check for non-null operator to avoid confusion with unary
+// binary = (is,prec1,prec2) =>
+//   (c, node, prec, l=is?is(c)|0:1, newPrec=l>1&&prec2?prec2:prec1) => prec<newPrec && [skip(l||err()), node, expr(newPrec)]
+
+// FIXME: catch unfound operator as cond ? node : err()
 
 // ,
-lookup[COMMA] = (c,node,prec) => !prec&&[skip(),node,expr()]
+// TODO: add ,, as node here
+// binary(COMMA)
+operator[COMMA] = (c,node,prec) => !prec&&[skip(),node,expr()]
 
 // ||, |
-lookup[OR] = (c,node,prec) =>
+// binary(OR, PREC_OR)
+// binary(OR, PREC_SOME, c=>code(1)==OR && 2)
+operator[OR] = (c,node,prec) =>
   (code(1)==OR && prec<PREC_SOME && [skip(2),node,expr(PREC_SOME)]) ||
   (prec<PREC_OR && [skip(),node,expr(PREC_OR)])
 
 // &&, &
-lookup[AND] = (c,node,prec) =>
+// binary(AND, PREC_AND)
+// binary(AND, PREC_EVERY, c=>code(1)==AND && 2)
+operator[AND] = (c,node,prec) =>
   (code(1)==AND && prec<PREC_EVERY && [skip(2),node,expr(PREC_EVERY)]) ||
   (prec<PREC_AND && [skip(),node,expr(PREC_AND)])
 
 // ^
-lookup[HAT] = (c,node,prec) => prec<PREC_XOR && [skip(1),node,expr(PREC_XOR)]
+// binary(HAT, PREC_XOR)
+operator[HAT] = (c,node,prec) => prec<PREC_XOR && [skip(1),node,expr(PREC_XOR)]
 
 // ==, ===, !==, !=
-lookup[EQ] = lookup[EXCL] = (c,node,prec) =>
+// operator[EXCL] = binary(EQ, PREC_EQ, c=>code(1)==code(2)?3:2)
+// FIXME: remove c argument
+operator[EQ] = operator[EXCL] = (c,node,prec) =>
   code(1)==c && prec<PREC_EQ && [skip(code(1)==code(2)?3:2),node,expr(PREC_EQ)]
 
-// < <= <<
-lookup[LT] = lookup[GT] = (c,node,prec) =>
+// > >= >> >>>, < <= <<
+// binary(GT, PREC_COMP, c=>code(1)==EQ?2:1)
+// operator[LT] = binary(GT, PREC_SHIFT, c=>code(1)==c && (code(2)===code(1)?3:2))
+operator[LT] = operator[GT] = (c,node,prec) =>
   (code(1)==c && prec<PREC_SHIFT && [skip(code(2)==c?3:2),node,expr(PREC_SHIFT)]) ||
   (prec<PREC_COMP && [skip(code(1)==c?2:1),node,expr(PREC_COMP)])
 
 // + ++ - --
-lookup[PLUS] = lookup[MINUS] = (c,node,prec) =>
+// binary(PLUS, PREC_SUM)
+// unary(PLUS, PREC_POSTFIX, c=>code(1)==c && 2, true)
+// operator[MINUS] = unary(PLUS, PREC_UNARY, c=>code(1)==c ? 2 : 1)
+operator[PLUS] = operator[MINUS] = (c,node,prec) =>
   ((node===nil||code(1)==c) && prec<PREC_UNARY && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node]) ||
   (prec<PREC_SUM && [skip(),node,expr(PREC_SUM)])
 
 // ! ~
-lookup[EXCL] = (c,node,prec) => (node===nil) && prec<PREC_UNARY && [skip(),expr(PREC_UNARY-1)]
+// unary(EXCL, PREC_UNARY)
+operator[EXCL] = (c,node,prec) => (node===nil) && prec<PREC_UNARY && [skip(),expr(PREC_UNARY-1)]
 
 // * / %
-lookup[MUL] = lookup[DIV] = lookup[MOD] = (c,node,prec) => prec<PREC_MULT && [skip(),node,expr(PREC_MULT)]
+// operator[DIV] = operator[MOD] = unary(MUL, PREC_MULT)
+operator[MUL] = operator[DIV] = operator[MOD] = (c,node,prec) => prec<PREC_MULT && [skip(),node,expr(PREC_MULT)]
 
-// a.b[c](d)
-lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = (cc,a,prec,b) =>
-  prec<PREC_CALL && (
-    cc==PERIOD ? [skip(), a, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b] :
-    cc==OBRACK ? (idx++, a = ['.', a, expr()], idx++, a) :
-    cc==OPAREN ? (
-      idx++, b=expr(), idx++,
-      Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
-      b === nil ? [a] :
-      [a, b]
-    ) : null
-  )
+// a.b
+operator[PERIOD] = (c,node,prec,b) => prec<PREC_CALL && [skip(), node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b]
+// a[b]
+operator[OBRACK] = (c,node,prec) => prec<PREC_CALL && (idx++, node = ['.', node, expr()], idx++, node)
+// a(b)
+operator[OPAREN] = (c,node,prec,b) => prec<PREC_CALL && (
+  idx++, b=expr(), idx++,
+  Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
+)
 
 // endings just reset token
-// FIXME: do we need them? any operator can close the group...
-lookup[CBRACK] = lookup[CPAREN]
+operator[CBRACK] = operator[CPAREN] = _=>{}
 
 
 
