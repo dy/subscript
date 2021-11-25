@@ -83,45 +83,49 @@ binary = (C, PREC, is, prev=operator[C]) =>
 
 // ,
 // TODO: add ,, as node here
-// binary(COMMA, PREC_COMMA)
-operator[COMMA] = (c,node,prec) => !prec&&[skip(),node,expr()]
+binary(COMMA, PREC_COMMA)
+// operator[COMMA] = (c,node,prec) => !prec&&[skip(),node,expr()]
 
 
 // ||, |
-// binary(OR, PREC_OR)
-// binary(OR, PREC_SOME, c=>code(1)==OR && 2)
-operator[OR] = (c,node,prec) =>
-  (code(1)==OR && prec<PREC_SOME && [skip(2),node,expr(PREC_SOME)]) ||
-  (prec<PREC_OR && [skip(),node,expr(PREC_OR)])
+binary(OR, PREC_OR)
+binary(OR, PREC_SOME, c=>code(1)==OR && 2)
+// operator[OR] = (c,node,prec) =>
+//   (code(1)==OR && prec<PREC_SOME && [skip(2),node,expr(PREC_SOME)]) ||
+//   (prec<PREC_OR && [skip(),node,expr(PREC_OR)])
 
 // &&, &
-// binary(AND, PREC_AND)
-// binary(AND, PREC_EVERY, c=>code(1)==AND && 2)
-operator[AND] = (c,node,prec) =>
-  (code(1)==AND && prec<PREC_EVERY && [skip(2),node,expr(PREC_EVERY)]) ||
-  (prec<PREC_AND && [skip(),node,expr(PREC_AND)])
+binary(AND, PREC_AND)
+binary(AND, PREC_EVERY, c=>code(1)==AND && 2)
+// operator[AND] = (c,node,prec) =>
+//   (code(1)==AND && prec<PREC_EVERY && [skip(2),node,expr(PREC_EVERY)]) ||
+//   (prec<PREC_AND && [skip(),node,expr(PREC_AND)])
 
 // ^
-// binary(HAT, PREC_XOR)
-operator[HAT] = (c,node,prec) => prec<PREC_XOR && [skip(1),node,expr(PREC_XOR)]
+binary(HAT, PREC_XOR)
+// operator[HAT] = (c,node,prec) => prec<PREC_XOR && [skip(1),node,expr(PREC_XOR)]
 
 // ==, ===, !==, !=
-// operator[EXCL] = binary(EQ, PREC_EQ, c=>code(1)==code(2)?3:2)
+binary(EQ, PREC_EQ, c=>code(1)==code(2)?3:2)
+binary(EXCL, PREC_EQ, c=>code(1)==code(2)?3:2)
 // FIXME: remove c argument
-operator[EQ] = operator[EXCL] = (c,node,prec) =>
-  code(1)==c && prec<PREC_EQ && [skip(code(1)==code(2)?3:2),node,expr(PREC_EQ)]
+// operator[EQ] = operator[EXCL] = (c,node,prec) =>
+//   code(1)==c && prec<PREC_EQ && [skip(code(1)==code(2)?3:2),node,expr(PREC_EQ)]
 
 // > >= >> >>>, < <= <<
-// binary(GT, PREC_COMP, c=>code(1)==EQ?2:1)
-// operator[LT] = binary(GT, PREC_SHIFT, c=>code(1)==c && (code(2)===code(1)?3:2))
-operator[LT] = operator[GT] = (c,node,prec) =>
-  (code(1)==c && prec<PREC_SHIFT && [skip(code(2)==c?3:2),node,expr(PREC_SHIFT)]) ||
-  (prec<PREC_COMP && [skip(code(1)==c?2:1),node,expr(PREC_COMP)])
+binary(GT, PREC_COMP, c=>code(1)==EQ?2:1)
+binary(GT, PREC_SHIFT, c=>code(1)==c && (code(2)===code(1)?3:2))
+binary(LT, PREC_COMP, c=>code(1)==EQ?2:1)
+binary(LT, PREC_SHIFT, c=>code(1)==c && 2)
+// operator[LT] = operator[GT] = (c,node,prec) =>
+//   (code(1)==c && prec<PREC_SHIFT && [skip(code(2)==c?3:2),node,expr(PREC_SHIFT)]) ||
+//   (prec<PREC_COMP && [skip(code(1)==c?2:1),node,expr(PREC_COMP)])
 
 // + ++ - --
 // binary(PLUS, PREC_SUM)
+// binary(MINUS, PREC_SUM)
 // unary(PLUS, PREC_POSTFIX, c=>code(1)==c && 2, true)
-// operator[MINUS] = unary(PLUS, PREC_UNARY, c=>code(1)==c ? 2 : 1)
+// unary(PLUS, PREC_UNARY, c=>code(1)==c ? 2 : 1)
 operator[PLUS] = operator[MINUS] = (c,node,prec) =>
   ((node===nil||code(1)==c) && prec<PREC_UNARY && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node]) ||
   (prec<PREC_SUM && [skip(),node,expr(PREC_SUM)])
@@ -131,8 +135,10 @@ operator[PLUS] = operator[MINUS] = (c,node,prec) =>
 operator[EXCL] = (c,node,prec) => (node===nil) && prec<PREC_UNARY && [skip(),expr(PREC_UNARY-1)]
 
 // * / %
-// operator[DIV] = operator[MOD] = unary(MUL, PREC_MULT)
-operator[MUL] = operator[DIV] = operator[MOD] = (c,node,prec) => prec<PREC_MULT && [skip(),node,expr(PREC_MULT)]
+binary(MUL, PREC_MULT)
+binary(DIV, PREC_MULT)
+binary(MOD, PREC_MULT)
+// operator[MUL] = operator[DIV] = operator[MOD] = (c,node,prec) => prec<PREC_MULT && [skip(),node,expr(PREC_MULT)]
 
 // a.b
 operator[PERIOD] = (c,node,prec,b) => prec<PREC_CALL && [skip(), node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b]
