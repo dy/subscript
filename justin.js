@@ -1,9 +1,9 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, nil, binary, unary} from './parse.js'
+import {parse, code, char, skip, expr, nil, operator} from './parse.js'
 
 // ;
-parse.operator[0] = binary(c => c==44||c==59)
+operator(59, 1)
 
 // undefined
 parse.token.splice(3,0, c =>
@@ -28,27 +28,24 @@ const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
 // **
 evaluate.operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
-parse.operator.splice(parse.operator.length - 3, 0, binary(cc=>cc===42 && code(1) === cc && 2))
+operator(42, 14, c=>code(1)==42 && 2)
 
 // ~
-parse.operator.splice(parse.operator.length-2, 0, unary(cc => cc === 126))
+operator(126, 13, node => [skip(),expr(15)])
 evaluate.operator['~'] = a=>~a
 
 // TODO ...
-// // unary[1]['...']=true
-
 
 // ?:
 evaluate.operator['?:']=(a,b,c)=>a?b:c
-parse.operator.splice(1,0, (node,cc,prec,end) => {
+operator(63, 3, (node) => {
   let a, b
-  if (cc !== 63) return
-  if (node===nil) err('Bad expression')
-  skip(), parse.space(), a = expr(-1,58)
-  if (code() !== 58) return
-  skip(), parse.space(), b = expr()
+  skip(), parse.space(), a = expr(0)
+  if (code() !== 58) err('Expected :')
+  skip(), parse.space(), b = expr(0)
   return ['?:', node, a, b]
 })
+operator(58)
 
 // /**/, //
 parse.space = cc => {
@@ -65,24 +62,25 @@ parse.space = cc => {
 
 // in
 evaluate.operator['in'] = (a,b)=>a in b
-parse.operator.splice(6,0,(a,cc,prec,end) => (char(2) === 'in' && [skip(2), '"' + a + '"', expr(prec,end)]))
+operator(105, 10, (node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
 // []
 evaluate.operator['['] = (...args) => Array(...args)
 parse.token.unshift((cc, node, arg) =>
-  cc === 91 &&
+  cc === 91 ?
   (
-    skip(), arg=expr(0,93),
+    skip(), arg=expr(),
     node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
     skip(), node
-  )
+  ) : nil
 )
 
 // {}
 parse.token.unshift((cc, node) => (
-  cc === 123 ? (skip(), node = map(['{',expr(0,125)]), skip(), node) : null
+  cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
 ))
-parse.operator.splice(4,0, binary(cc=>cc===58))
+operator(125)
+operator(58, 4, 1)
 evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 

@@ -70,13 +70,14 @@ token = parse.token = [
 // operator lookup table
 lookup = [],
 
+// create operator checker/mapper (see examples)
 operator = (C, PREC=0, map=1, prev=lookup[C]) => (
   lookup[C] = (c, node, prec, l, list, op) => {
-    if (prec<PREC && (l = typeof map === 'function' ? map(node) : map)) {
+    if (prec<PREC && (l = typeof map === 'number' ? map : map(node))) {
       if (typeof l === 'number') {
-        l = l|0, list = [op=char(l),node]
-        // consume same-op group, do..while saves op lookups
-        do { skip(l), list.push(expr(PREC)) } while (parse.space()==c && char(l)==op)
+        l = l|0, list = [op=skip(l),node,expr(PREC)]
+        // consume same-op group
+        while (parse.space()==c && (skip(l)==op||(idx-=l,0))) list.push(expr(PREC))
       } else list = l
       return list
     }

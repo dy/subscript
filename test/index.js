@@ -256,7 +256,6 @@ test('eval: basic', t => {
 
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
-  // parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
   operator(105, 10, (node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
@@ -305,7 +304,6 @@ test('ext: object', t => {
   parse.token.unshift((cc, node) => (
     cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
   ))
-  // parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
 
   operator(125)
   operator(58, 4, 1)
