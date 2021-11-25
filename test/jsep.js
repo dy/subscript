@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../justin.js'
-import { skip, code, expr, char, nil } from '../parse.js'
+import { skip, code, expr, char, nil, operator } from '../parse.js'
 
 test('Expression: Constants', ()=> {
   is(parse('\'abc\''),  "'abc'" );
@@ -71,27 +71,25 @@ test('Custom operators', ()=> {
   // )
   is(parse('a^b'), ['^','a','b']);
 
-  // parse.binary['×'] = 9;
-  parse.operator.splice(9,0,(a,cc,prec,end) => cc===215 && [skip(1), a, expr(prec,end)])
+  operator(215, 9, 1)
   is(parse('a×b'), ['×','a','b']);
 
-  // parse.binary['or'] = 1;
-  parse.operator.splice(1,0,(a,cc,prec,end) => cc===111 && code(1)===114 && code(2)<=32 && [skip(2), a, expr(prec,end)])
+  operator(111,1,node => code(1)===114 && code(2)<=32 && 2)
   is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
   throws(() => parse('oneWord ordering anotherWord'));
 
   // parse.unary['#'] = 11;
-  parse.operator.splice(11,0,(a,cc,prec,end) => cc===35 && a===nil && [skip(1), expr(prec-1,end)])
+  operator(35, 11, (node) => node===nil && [skip(1), expr(10)])
   is(parse('#a'), ['#','a']);
 
-  parse.operator.splice(12,0,(a,cc,prec,end) => a === 'not' && [a, expr(prec-1,end)])
+  operator(97,13, (node) => node === 'not' && [node, expr(12)])
   is(parse('not a'), ['not', 'a']);
 
   // parse.unary['notes'] = 11;
   throws(t => parse('notes 1'));
 
   // parse.binary['and'] = 2;
-  parse.operator.splice(2,0,(a,cc,prec,end) => cc===97 && char(3)==='and' && code(3) <=32 && [skip(3), a, expr(prec,end)])
+  operator(97, 2, (node) => char(3)==='and' && code(3) <=32 && 3)
   is(parse('a and b'),['and','a','b']);
   is(parse('bands'), 'bands');
 
@@ -119,7 +117,7 @@ test('Missing arguments', ()=> {
 });
 
 test('Uncompleted expression-call/array', ()=> {
-  throws(() => parse('(a,b'))
+  throws(() => console.log(parse('(a,b')))
   throws(function () {
     parse('myFunction(a,b');
   }, 'detects unfinished expression call');

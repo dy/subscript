@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, nil, operator} from './parse.js'
+import {parse, code, char, skip, expr, nil, operator, err} from './parse.js'
 
 // ;
 operator(59, 1)
@@ -40,9 +40,9 @@ evaluate.operator['~'] = a=>~a
 evaluate.operator['?:']=(a,b,c)=>a?b:c
 operator(63, 3, (node) => {
   let a, b
-  skip(), parse.space(), a = expr(0)
+  skip(), parse.space(), a = expr(3)
   if (code() !== 58) err('Expected :')
-  skip(), parse.space(), b = expr(0)
+  skip(), parse.space(), b = expr(3)
   return ['?:', node, a, b]
 })
 operator(58)
@@ -80,7 +80,7 @@ parse.token.unshift((cc, node) => (
   cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
 ))
 operator(125)
-operator(58, 4, 1)
+operator(58, 1, 1)
 evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 

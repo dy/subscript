@@ -31,11 +31,12 @@ expr = (prec=0, cc=parse.space(), node, from=idx, i=0, map, newNode) => {
 
   // operator
   while (
-    (cc=parse.space()) && (map = lookup[cc] || err()) && (newNode = map(cc, node, prec))
+    (cc=parse.space()) && (map = lookup[cc] || err()) && (newNode = map(node, prec))
   ) if ((node = newNode).indexOf(nil) >= 0) err()
 
-  // TODO:
-  // if (end && cc!=end) err('Unclosed paren')
+  // console.log(prec, cc, map, node)
+  // TODO
+  // if (!prec && !lookup[cc]) err('Unclosed paren')
 
   return node
 },
@@ -71,19 +72,22 @@ token = parse.token = [
 lookup = [],
 
 // create operator checker/mapper (see examples)
-operator = (C, PREC=0, map=1, prev=lookup[C]) => (
-  lookup[C] = (c, node, prec, l, list, op) => {
+operator = (C, PREC=0, map=1, end, prev=lookup[C]) => (
+  lookup[C] = (node, prec, l, list, op) => {
     if (prec<PREC && (l = typeof map === 'number' ? map : map(node))) {
       if (typeof l === 'number') {
         l = l|0, list = [op=skip(l),node,expr(PREC)]
         // consume same-op group
-        while (parse.space()==c && (skip(l)==op||(idx-=l,0))) list.push(expr(PREC))
+        while (parse.space()==C && (skip(l)==op||(idx-=l,0))) list.push(expr(PREC))
       } else list = l
+      // FIXME
+      // if (end && code()!==end) err('Unclosed paren')
       return list
     }
     // decorate already assigned lookup
-    else if (prev) return prev(c, node, prec)
-  }
+    else if (prev) return prev(node, prec)
+  },
+  end && (lookup[end] = ()=>{})
 )
 
 // ,
@@ -129,16 +133,16 @@ operator(MOD, PREC_MULT)
 operator(PERIOD, PREC_CALL, (node,b) => [skip(),node,typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b])
 
 // a[b]
-operator(OBRACK, PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node))
+operator(OBRACK, PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node), CBRACK)
 
 // a(b)
 operator(OPAREN, PREC_CALL, (node,b) => (
   idx++, b=expr(), idx++,
   Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
-))
+), CPAREN)
 
 // endings just reset token
-operator(CBRACK), operator(CPAREN)
+// operator(CBRACK), operator(CPAREN)
 
 
 
