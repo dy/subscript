@@ -1,9 +1,8 @@
 // precedence-based parsing
 const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, AND=38, OR=124, HAT=94, MUL=42, DIV=47, MOD=37, PERIOD=46, OBRACK=91, CBRACK=93, OPAREN=40, CPAREN=41, COMMA=44, SPACE=32, EXCL=33,
 
-  // TODO: take over precedences from MDN
-  PREC_COMMA=0, PREC_SOME=1, PREC_EVERY=2, PREC_OR=3, PREC_XOR=4, PREC_AND=5,
-  PREC_EQ=6, PREC_COMP=7, PREC_SHIFT=8, PREC_SUM=9, PREC_MULT=10, PREC_UNARY=11, PREC_CALL=12
+  PREC_COMMA=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
+  PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18
 
 
 // current string & index
@@ -30,10 +29,10 @@ expr = (prec=0, cc=parse.space(), node, from=idx, i=0, map, newNode) => {
   // prefix or token
   while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
 
+  // operator
   while (
     (cc=parse.space()) && (map = operator[cc] || err()) && (newNode = map(cc, node, prec))
   ) if ((node = newNode).indexOf(nil) >= 0) err()
-
 
   // TODO:
   // if (end && cc!=end) err('Unclosed paren')
@@ -69,21 +68,24 @@ token = parse.token = [
 ],
 
 // fast operator lookup table
-operator = parse.operator = []
+operator = parse.operator = [],
 
 // TODO: binary must embrace assigning operators, instead of raw access to lookup table, like binary(char, prec, cond)
 // TODO: decorating strategy, opposed to returned length from condition: binary(OR, PREC_OR, 2), binary(OR, PREC_SOME, cond)
 // TODO: binary must do group-consuming and error throw on unknown operator
 // TODO: it should also check for non-null operator to avoid confusion with unary
-// binary = (is,prec1,prec2) =>
-//   (c, node, prec, l=is?is(c)|0:1, newPrec=l>1&&prec2?prec2:prec1) => prec<newPrec && [skip(l||err()), node, expr(newPrec)]
+binary = (C, PREC, is, prev=operator[C]) =>
+  operator[C] = (c, node, prec, l) =>
+    prec<PREC && (l=is?is(c)|0:1) ? [skip(l), node, expr(PREC)] : prev&&prev(c, node, prec)
+
 
 // FIXME: catch unfound operator as cond ? node : err()
 
 // ,
 // TODO: add ,, as node here
-// binary(COMMA)
+// binary(COMMA, PREC_COMMA)
 operator[COMMA] = (c,node,prec) => !prec&&[skip(),node,expr()]
+
 
 // ||, |
 // binary(OR, PREC_OR)
