@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr, nil } from '../parse.js'
+import { skip, code, char, expr, nil, binary, lookup } from '../parse.js'
 
 test('parse: basic', t => {
   is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
@@ -17,6 +17,7 @@ test('parse: basic', t => {
   is(parse(`a(1)`), [['a'], 1])
   is(parse(`a(1).b`), ['.',[['a'], 1],'"b"'])
   any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
+  any(parse('a.b.c'), ['.',['.','a','"b"'],'"c"'],    ['.','a','"b"','"c"'])
   any(parse('a.b.c(d).e'), ['.',[['.',['.','a','"b"'],'"c"'],'d'],'"e"'],    ['.',[['.','a','"b"','"c"'],'d'],'"e"'])
   is(parse(`+-2`), ['+',['-',2]])
   is(parse(`+-a.b`), ['+',['-',['.','a','"b"']]])
@@ -26,7 +27,7 @@ test('parse: basic', t => {
   is(parse(`+-a.b+-!1`), ['+',['+',['-',['.','a','"b"']]], ['-',['!',1]]])
 
   is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
-  any(parse(`( a,  b )`), [',','a','b'],  [',',[',','a', 'b']])
+  is(parse(`( a,  b )`), [',','a','b'])
   is(parse(`a (  ccc. d,  -+1.0 )`), ['a', ['.', 'ccc', '"d"'], ['-',['+',1]]])
 
   is(parse(`a.b (  ccc. d , -+1.0 ) . e`), ['.',[['.', 'a', '"b"'], ['.', 'ccc', '"d"'], ['-',['+',1]]], '"e"'])
@@ -35,10 +36,7 @@ test('parse: basic', t => {
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
-  // parse.binary['**']=16
-  parse.operator.splice(parse.operator.length - 3, 0,
-    (a,cc,prec,end) => (cc===42 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
-  )
+  binary(42, 14, c=>code(1)==c && 2)
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
@@ -257,23 +255,24 @@ test('eval: basic', t => {
 
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
-  parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
+  // parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
+  binary(105, 10, (c,node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
-  // is(parse('b inc'), ['in', '"bin"', 'inc'])
+  throws(() => parse('b inc'))
   is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
 })
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  parse.operator.unshift((node,cc) => {
+  lookup[58] = ()=>{}
+  binary(63, 3, (c,node) => {
     let a, b
-    if (cc !== 63) return
-    skip(), parse.space(), a = expr(-1,58)
-    if (code() !== 58) return
-    skip(), parse.space(), b = expr()
-    return ['?:',node, a, b]
+    skip(), parse.space(), a = expr(0)
+    if (code() !== 58) err('Expected :')
+    skip(), parse.space(), b = expr(0)
+    return ['?:', node, a, b]
   })
 
   is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
@@ -286,10 +285,10 @@ test('ext: list', t => {
   parse.token.unshift((cc, node, arg) =>
     cc === 91 ?
     (
-      skip(), arg=expr(0,93),
+      skip(), arg=expr(),
       node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
       skip(), node
-    ) : null
+    ) : nil
   )
 
   is(parse('[]'),['['])
@@ -303,9 +302,12 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   parse.token.unshift((cc, node) => (
-    cc === 123 ? (skip(), node = map(['{',expr(0,125)]), skip(), node) : null
+    cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
   ))
-  parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
+  // parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
+
+  lookup[125]=()=>{}
+  binary(58, 4, 1)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
 
