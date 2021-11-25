@@ -36,7 +36,8 @@ test('parse: basic', t => {
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
-  operator(42, 14, c=>code(1)==c && 2)
+  // **
+  operator(42, 14, c=>code(1)==42 && 2)
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
@@ -256,7 +257,7 @@ test('eval: basic', t => {
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
   // parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
-  operator(105, 10, (c,node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
+  operator(105, 10, (node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
@@ -266,7 +267,7 @@ test('ext: in operator', t => {
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  operator(63, 3, (c,node) => {
+  operator(63, 3, (node) => {
     let a, b
     skip(), parse.space(), a = expr(0)
     if (code() !== 58) err('Expected :')

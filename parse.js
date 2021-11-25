@@ -67,12 +67,12 @@ token = parse.token = [
   )
 ],
 
-// fast operator lookup table
+// operator lookup table
 lookup = [],
 
 operator = (C, PREC=0, map=1, prev=lookup[C]) => (
   lookup[C] = (c, node, prec, l, list, op) => {
-    if (prec<PREC && (l = typeof map === 'function' ? map(c,node) : map)) {
+    if (prec<PREC && (l = typeof map === 'function' ? map(node) : map)) {
       if (typeof l === 'number') {
         l = l|0, list = [op=char(l),node]
         // consume same-op group, do..while saves op lookups
@@ -85,40 +85,39 @@ operator = (C, PREC=0, map=1, prev=lookup[C]) => (
   }
 )
 
-// FIXME: remove c argument
 // ,
 // TODO: add ,, as node here
 operator(COMMA, PREC_COMMA)
 
 // ||, |
 operator(OR, PREC_OR)
-operator(OR, PREC_SOME, c=>code(1)==OR && 2)
+operator(OR, PREC_SOME, n=>code(1)==OR && 2)
 
 // &&, &
 operator(AND, PREC_AND)
-operator(AND, PREC_EVERY, c=>code(1)==AND && 2)
+operator(AND, PREC_EVERY, n=>code(1)==AND && 2)
 
 // ^
 operator(HAT, PREC_XOR)
 
 // ==, ===, !==, !=
-operator(EQ, PREC_EQ, c=>code(1)==code(2)?3:2)
-operator(EXCL, PREC_EQ, c=>code(1)==code(2)?3:2)
+operator(EQ, PREC_EQ, n=>code(1)==code(2)?3:2)
+operator(EXCL, PREC_EQ, n=>code(1)==code(2)?3:2)
 
 // > >= >> >>>, < <= <<
-operator(GT, PREC_COMP, c=>code(1)==EQ?2:1)
-operator(GT, PREC_SHIFT, c=>code(1)==GT && (code(2)===code(1)?3:2))
-operator(LT, PREC_COMP, c=>code(1)==EQ?2:1)
-operator(LT, PREC_SHIFT, c=>code(1)==LT && 2)
+operator(GT, PREC_COMP, n=>code(1)==EQ?2:1)
+operator(GT, PREC_SHIFT, n=>code(1)==GT && (code(2)===code(1)?3:2))
+operator(LT, PREC_COMP, n=>code(1)==EQ?2:1)
+operator(LT, PREC_SHIFT, n=>code(1)==LT && 2)
 
 // + ++ - --
 operator(PLUS, PREC_SUM)
 operator(MINUS, PREC_SUM)
-operator(PLUS, PREC_UNARY, (c,node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
-operator(MINUS, PREC_UNARY, (c,node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator(PLUS, PREC_UNARY, (node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator(MINUS, PREC_UNARY, (node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
 
 // ! ~
-operator(EXCL, PREC_UNARY, (c,node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
+operator(EXCL, PREC_UNARY, (node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
 
 // * / %
 operator(MUL, PREC_MULT)
@@ -126,13 +125,13 @@ operator(DIV, PREC_MULT)
 operator(MOD, PREC_MULT)
 
 // a.b
-operator(PERIOD, PREC_CALL, (c,node,b) => [skip(),node,typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b])
+operator(PERIOD, PREC_CALL, (node,b) => [skip(),node,typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b])
 
 // a[b]
-operator(OBRACK, PREC_CALL, (c,node) => (idx++, node = ['.', node, expr()], idx++, node))
+operator(OBRACK, PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node))
 
 // a(b)
-operator(OPAREN, PREC_CALL, (c,node,b) => (
+operator(OPAREN, PREC_CALL, (node,b) => (
   idx++, b=expr(), idx++,
   Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
 ))
