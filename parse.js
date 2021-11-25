@@ -21,19 +21,24 @@ char = (n=1) => cur.substr(idx, n),
 nil = '',
 
 // a + b - c
-expr = (prec=0, end, cc=parse.space(), node, from=idx, i=0, mapped) => {
+expr = (prec=0, cc=parse.space(), node, from=idx, i=0, end=0, map, newNode) => {
+  if (prec>SPACE) end=prec, prec=0
+
   // prefix or token
   while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
 
-  // postfix or binary
-  for (i = Math.max(lookup[cc=parse.space()]|0, prec); i < parse.operator.length;) {
-    if (cc===end || i<prec) break // if lookup got prec lower than current - end group
-    else if (mapped = parse.operator[i++](node, cc, i, end))
-      mapped.indexOf(nil) >=0 && err('Bad expression'),
-      node = mapped, i = Math.max(lookup[cc=parse.space()]|0, prec); // we pass i+1 as precision
+  // FIXME: end is safe to get rid of, if we handle groups externally: lookup is super-cheap
+  while (
+    (cc=parse.space()) !== end && (map = lookup[cc]) && (newNode = map(cc, node, prec))
+  ) {
+    // TODO: if map is null, throw error as unknown character maybe?
+
+    // TODO: consume same-op here
+    if ((node = newNode).indexOf(nil) >= 0) err('Bad expression')
   }
 
-  if (!prec && end && code()!=end) err('Unclosed paren')
+console.groupEnd()
+  if (end && cc!=end) err('Unclosed paren')
 
   return node
 },
@@ -54,7 +59,7 @@ token = parse.token = [
   // "a"
   (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
   // (...exp)
-  c => c === OPAREN ? (++idx, c=expr(0,CPAREN), ++idx, c===nil?err():c) : nil,
+  c => c === OPAREN ? (++idx, c=expr(CPAREN), ++idx, c===nil?err():c) : nil,
   // var
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -63,71 +68,59 @@ token = parse.token = [
     c == 36 || c == 95 || // $, _,
     (c >= 192 && c != 215 && c != 247) // any non-ASCII
   )
-],
-
-// create binary operator parser
-binary = (is) => (a,cc,prec,end, list,len,op) => {
-  if (a!==nil && (len = is(cc)|0)) {
-    // consume same-op group, do..while saves op lookups
-    list = [op=char(len),a]
-    do { skip(len), list.push(expr(prec,end)) } while (parse.space()==cc && char(len)==op)
-    return list
-  }
-},
-unary = (is, post=false) => post ?
-  (a,cc,prec,end,l) => a!==nil && (l=is(cc)|0) && [skip(l), a] :
-  (a,cc,prec,end,l) => a===nil && (l=is(cc)|0) && [skip(l), expr(prec-1,end)],
-
-operator = parse.operator = [
-  // ','
-  binary(c => c==COMMA),
-  // '||' '&&'
-  binary(c => c==OR && code(1)==c && 2),
-  binary(c => c==AND && code(1)==c && 2),
-  // '|' '^' '&'
-  binary(c => c==OR),
-  binary(c => c==HAT),
-  binary(c => c==AND),
-  // '==' '!='
-  binary(c => (c==EQ || c==EXCL) && code(1)==EQ && (code(1)==code(2) ? 3 : 2)),
-  // '<' '>' '<=' '>='
-  binary(c => (c==GT || c==LT) && c!=code(1)),
-  // '<<' '>>' '>>>'
-  binary(c => (c==LT || c==GT) && c==code(1) && (c==code(2) ? 3 : 2)),
-  // '+' '-'
-  binary(c => (c==PLUS || c==MINUS) && code(1)!=c),
-  // '*' '/' '%'
-  binary(c => (c==MUL && code(1) != MUL) || c==DIV || c==MOD),
-  // -- ++ unaries
-  unary(c => (c==PLUS || c==MINUS) && code(1) == c && 2, true),
-  // - + ! unaries
-  unary(c => (c==PLUS || c==MINUS || c==EXCL) && (code(1)==c ? 2 : 1)),
-  // '()', '[]', '.'
-  (a,cc,prec,end,b) => (
-    // a.b[c](d)
-    cc==PERIOD ? [skip(), (a), typeof (b = (expr(prec,end))) === 'string' ? '"' + b + '"' : b] :
-    cc==OBRACK ? (idx++, a = ['.', (a), (expr(0,CBRACK))], idx++, a) :
-    cc==OPAREN ? (
-      idx++, b=expr(0,CPAREN), idx++,
-      Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
-      b === nil ? [a] :
-      [a, b]
-    ) : nil
-  )
-],
+]
 
 // fast operator lookup table
-lookup = []
+const lookup = [],
 
+// TODO: take over precedences from MDN
+PREC_COMMA=0, PREC_SOME=1, PREC_EVERY=2, PREC_OR=3, PREC_XOR=4, PREC_AND=5,
+PREC_EQ=6, PREC_COMP=7, PREC_SHIFT=8, PREC_SUM=9, PREC_MULT=10, PREC_UNARY=11, PREC_CALL=12
+
+// ,
 lookup[COMMA] = 0
-lookup[OR] = 1
-lookup[AND] = 2
-lookup[HAT] = 4
-lookup[EQ] = lookup[EXCL] = 6
-lookup[LT] = lookup[GT] = 7
-lookup[PLUS] = lookup[MINUS] = 9
-lookup[MUL] = lookup[DIV] = lookup[MOD] = 10
-lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = 13
+
+// ||, |
+lookup[OR] = (c,node,prec) =>
+  (code(1)==OR && prec<PREC_SOME && [skip(2),node,expr(PREC_SOME)]) ||
+  (prec<PREC_OR && [skip(),node,expr(PREC_OR)])
+
+// &&, &
+lookup[AND] = (c,node,prec) =>
+  (code(1)==AND && prec<PREC_EVERY && [skip(2),node,expr(PREC_EVERY)]) ||
+  (prec<PREC_AND && [skip(),node,expr(PREC_AND)])
+
+// ^
+lookup[HAT] = (c,node,prec) => prec<PREC_XOR && [skip(1),node,expr(PREC_XOR)]
+
+// ==, ===, !==, !=
+lookup[EQ] = lookup[EXCL] = (c,node,prec) =>
+  code(1)==c && prec<PREC_EQ && [skip(code(1)==code(2)?3:2),node,expr(PREC_EQ)]
+
+// < <= <<
+lookup[LT] = lookup[GT] = (c,node,prec) =>
+  (code(1)==c && prec<PREC_SHIFT && [skip(code(2)==c?3:2),node,expr(PREC_SHIFT)]) ||
+  (prec<PREC_COMP && [skip(code(1)==c?2:1),node,expr(PREC_COMP)])
+
+// + ++ - --
+lookup[PLUS] = lookup[MINUS] = (c,node,prec) =>
+  ((node===nil||code(1)==c) && prec<PREC_UNARY && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY):node]) ||
+  (prec<PREC_SUM && [skip(),node,expr(PREC_SUM)])
+
+// * / %
+lookup[MUL] = lookup[DIV] = lookup[MOD] = (c,node,prec) => prec<PREC_MULT && [skip(),node,expr(PREC_MULT)]
+
+// a.b[c](d)
+// FIXME: mb worth moving to a token
+lookup[PERIOD] = lookup[OBRACK] = lookup[OPAREN] = (cc,a,prec,b) =>
+  cc==PERIOD ? [skip(), a, typeof (b = expr(prec)) === 'string' ? '"' + b + '"' : b] :
+  cc==OBRACK ? (idx++, a = ['.', a, expr(CBRACK)], idx++, a) :
+  cc==OPAREN ? (
+    idx++, b=expr(CPAREN), idx++,
+    Array.isArray(b) && b[0]===',' ? (b[0]=a, b) :
+    b === nil ? [a] :
+    [a, b]
+  ) : nil
 
 
 

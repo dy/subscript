@@ -259,4 +259,5 @@
 * [ ] Demo
 * [ ] calltree nodes could stash static values (as in HTM)
 * [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
-
+* [ ] remove first char check into lookup table
+* [ ] Try moving [(. into token?
