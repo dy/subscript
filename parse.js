@@ -70,9 +70,9 @@ token = parse.token = [
 // fast operator lookup table
 lookup = [],
 
-operator = (C, PREC=0, is=1, prev=lookup[C]) => (
+operator = (C, PREC=0, map=1, prev=lookup[C]) => (
   lookup[C] = (c, node, prec, l, list, op) => {
-    if (prec<PREC && (l = typeof is === 'function' ? is(c,node) : is)) {
+    if (prec<PREC && (l = typeof map === 'function' ? map(c,node) : map)) {
       if (typeof l === 'number') {
         l = l|0, list = [op=char(l),node]
         // consume same-op group, do..while saves op lookups
@@ -114,8 +114,8 @@ operator(LT, PREC_SHIFT, c=>code(1)==LT && 2)
 // + ++ - --
 operator(PLUS, PREC_SUM)
 operator(MINUS, PREC_SUM)
-operator(PLUS, PREC_UNARY, (c,node) => (node===nil||code(1)==c) && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node])
-operator(MINUS, PREC_UNARY, (c,node) => (node===nil||code(1)==c) && [skip(code(1)==c?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator(PLUS, PREC_UNARY, (c,node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator(MINUS, PREC_UNARY, (c,node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
 
 // ! ~
 operator(EXCL, PREC_UNARY, (c,node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
