@@ -3,7 +3,7 @@ import {evaluate} from './evaluate.js'
 import {parse, code, char, skip, expr, nil, operator, err} from './parse.js'
 
 // ;
-operator(59, 1)
+operator(';', 1)
 
 // undefined
 parse.token.splice(3,0, c =>
@@ -28,24 +28,24 @@ const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
 // **
 evaluate.operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
-operator(42, 14, c=>code(1)==42 && 2)
+operator('**', 14)
 
 // ~
-operator(126, 13, node => [skip(),expr(15)])
+operator('~', 13, -1)
 evaluate.operator['~'] = a=>~a
 
 // TODO ...
 
 // ?:
 evaluate.operator['?:']=(a,b,c)=>a?b:c
-operator(63, 3, (node) => {
+operator('?', 3, (node) => {
   let a, b
-  skip(), parse.space(), a = expr(3)
+  skip(), parse.space(), a = expr(0)
   if (code() !== 58) err('Expected :')
-  skip(), parse.space(), b = expr(3)
+  skip(), parse.space(), b = expr(0)
   return ['?:', node, a, b]
 })
-operator(58)
+// operator(':')
 
 // /**/, //
 parse.space = cc => {
@@ -62,7 +62,7 @@ parse.space = cc => {
 
 // in
 evaluate.operator['in'] = (a,b)=>a in b
-operator(105, 10, (node) => code(1)===110 && code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
+operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
 // []
 evaluate.operator['['] = (...args) => Array(...args)
@@ -79,8 +79,9 @@ parse.token.unshift((cc, node, arg) =>
 parse.token.unshift((cc, node) => (
   cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
 ))
-operator(125)
-operator(58, 1, 1)
+
+operator('}')
+operator(':', 4)
 evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 
