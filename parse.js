@@ -78,7 +78,7 @@ operator = (op, prec=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], wo
     map,
   lookup[c] = (node, curPrec) => {
     // word operator must have space after
-    if (curPrec < prec && char(l) == op && (word ? code(l) <= SPACE : 1)) {
+    if (curPrec < prec && (l<2 || char(l)==op) && (!word || code(l) <= SPACE)) {
       // custom mapper
       if (map) node = map(node) || (prev && prev(node, curPrec))
       // consume same-op group
