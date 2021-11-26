@@ -1,4 +1,3 @@
-// precedence-based parsing
 const GT=62, LT=60, EQ=61, PLUS=43, MINUS=45, AND=38, OR=124, HAT=94, MUL=42, DIV=47, MOD=37, PERIOD=46, OBRACK=91, CBRACK=93, OPAREN=40, CPAREN=41, COMMA=44, SPACE=32, EXCL=33,
 
   PREC_COMMA=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -72,77 +71,73 @@ token = parse.token = [
 lookup = [],
 
 // create operator checker/mapper (see examples)
-operator = (C, PREC=0, map=1, end, prev=lookup[C]) => (
-  lookup[C] = (node, prec, l, list, op) => {
-    if (prec<PREC && (l = typeof map === 'number' ? map : map(node))) {
-      if (typeof l === 'number') {
-        l = l|0, list = [op=skip(l),node,expr(PREC)]
-        // consume same-op group
-        while (parse.space()==C && (skip(l)==op||(idx-=l,0))) list.push(expr(PREC))
-      } else list = l
+operator = (op, prec=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c]) => (
+  lookup[c] = (node, curPrec, list) => {
+    if (curPrec < prec && char(l) == op && (list = map ? map(node) : (idx+=l, [op,node,expr(prec)]))) {
+      // consume same-op group
+      if (!map) while (parse.space()==c && char(l) == op) idx+=l, list.push(expr(prec))
+
       // FIXME
       // if (end && code()!==end) err('Unclosed paren')
       return list
     }
     // decorate already assigned lookup
-    else if (prev) return prev(node, prec)
-  },
-  end && (lookup[end] = ()=>{})
+    else if (prev) return prev(node,curPrec)
+  }
 )
 
 // ,
 // TODO: add ,, as node here
-operator(COMMA, PREC_COMMA)
+operator(',', PREC_COMMA)
 
-// ||, |
-operator(OR, PREC_OR)
-operator(OR, PREC_SOME, n=>code(1)==OR && 2)
+operator('|', PREC_OR)
+operator('||', PREC_SOME)
 
-// &&, &
-operator(AND, PREC_AND)
-operator(AND, PREC_EVERY, n=>code(1)==AND && 2)
+operator('&', PREC_AND)
+operator('&&', PREC_EVERY)
 
-// ^
-operator(HAT, PREC_XOR)
+operator('^', PREC_XOR)
 
-// ==, ===, !==, !=
-operator(EQ, PREC_EQ, n=>code(1)==code(2)?3:2)
-operator(EXCL, PREC_EQ, n=>code(1)==code(2)?3:2)
+// ==, !=
+operator('==', PREC_EQ)
+operator('!=', PREC_EQ)
 
 // > >= >> >>>, < <= <<
-operator(GT, PREC_COMP, n=>code(1)==EQ?2:1)
-operator(GT, PREC_SHIFT, n=>code(1)==GT && (code(2)===code(1)?3:2))
-operator(LT, PREC_COMP, n=>code(1)==EQ?2:1)
-operator(LT, PREC_SHIFT, n=>code(1)==LT && 2)
+operator('>', PREC_COMP)
+operator('>=', PREC_COMP)
+operator('>>', PREC_SHIFT)
+operator('>>>', PREC_SHIFT)
+operator('<', PREC_COMP)
+operator('<=', PREC_COMP)
+operator('<<', PREC_SHIFT)
 
 // + ++ - --
-operator(PLUS, PREC_SUM)
-operator(MINUS, PREC_SUM)
-operator(PLUS, PREC_UNARY, (node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
-operator(MINUS, PREC_UNARY, (node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator('+', PREC_SUM)
+operator('-', PREC_SUM)
+operator('+', PREC_UNARY, (node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator('-', PREC_UNARY, (node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
 
 // ! ~
-operator(EXCL, PREC_UNARY, (node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
+operator('!', PREC_UNARY, (node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
 
 // * / %
-operator(MUL, PREC_MULT)
-operator(DIV, PREC_MULT)
-operator(MOD, PREC_MULT)
+operator('*', PREC_MULT)
+operator('/', PREC_MULT)
+operator('%', PREC_MULT)
 
 // a.b
-operator(PERIOD, PREC_CALL, (node,b) => [skip(),node,typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b])
+operator('.', PREC_CALL, (node,b) => [skip(),node,typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b])
 
 // a[b]
-operator(OBRACK, PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node), CBRACK)
+operator('[', PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node))
+operator(']')
 
 // a(b)
-operator(OPAREN, PREC_CALL, (node,b) => (
+operator('(', PREC_CALL, (node,b) => (
   idx++, b=expr(), idx++,
   Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
-), CPAREN)
-
-// endings just reset token
-// operator(CBRACK), operator(CPAREN)
+))
+operator(')')
 
 
 
