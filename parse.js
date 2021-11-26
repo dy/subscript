@@ -72,8 +72,13 @@ lookup = [],
 
 // create operator checker/mapper (see examples)
 operator = (op, prec=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c]) => (
+  map = typeof map === 'number' ? map > 0 ?
+    node => node !== nil && [skip(l), node] : // postfix unary
+    node => node === nil && [skip(l), expr(prec-1)] : // prefix unary
+    map,
   lookup[c] = (node, curPrec) => {
     if (curPrec < prec && char(l) == op) {
+      // custom mapper
       if (map) node = map(node) || (prev && prev(node, curPrec))
       // consume same-op group
       else {
@@ -118,12 +123,15 @@ operator('<<', PREC_SHIFT)
 
 // + ++ - --
 operator('+', PREC_SUM)
+operator('+', PREC_UNARY, -1)
+operator('++', PREC_UNARY, -1)
+operator('++', PREC_UNARY, +1)
 operator('-', PREC_SUM)
-// operator('+', PREC_UNARY, -1)
-// operator('++', PREC_UNARY, -2)
-// operator('++', PREC_UNARY, +2)
-operator('+', PREC_UNARY, (node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
-operator('-', PREC_UNARY, (node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+operator('-', PREC_UNARY, -1)
+operator('--', PREC_UNARY, -1)
+operator('--', PREC_UNARY, +1)
+// operator('+', PREC_UNARY, (node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
+// operator('-', PREC_UNARY, (node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
 
 // ! ~
 operator('!', PREC_UNARY, (node) => node===nil && [skip(1),expr(PREC_UNARY-1)])
