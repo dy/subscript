@@ -72,17 +72,22 @@ lookup = [],
 
 // create operator checker/mapper (see examples)
 operator = (op, prec=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c]) => (
-  lookup[c] = (node, curPrec, list) => {
-    if (curPrec < prec && char(l) == op && (list = map ? map(node) : (idx+=l, [op,node,expr(prec)]))) {
+  lookup[c] = (node, curPrec) => {
+    if (curPrec < prec && char(l) == op) {
+      if (map) node = map(node) || (prev && prev(node, curPrec))
       // consume same-op group
-      if (!map) while (parse.space()==c && char(l) == op) idx+=l, list.push(expr(prec))
+      else {
+        node = [op, node]
+        do { idx+=l, node.push(expr(prec)) } while (parse.space()==c && char(l) == op)
+      }
 
       // FIXME
       // if (end && code()!==end) err('Unclosed paren')
-      return list
     }
+    else node = prev && prev(node, curPrec)
+
     // decorate already assigned lookup
-    else if (prev) return prev(node,curPrec)
+    return node
   }
 )
 
@@ -114,6 +119,9 @@ operator('<<', PREC_SHIFT)
 // + ++ - --
 operator('+', PREC_SUM)
 operator('-', PREC_SUM)
+// operator('+', PREC_UNARY, -1)
+// operator('++', PREC_UNARY, -2)
+// operator('++', PREC_UNARY, +2)
 operator('+', PREC_UNARY, (node) => (node===nil||code(1)==PLUS) && [skip(code(1)==PLUS?2:1),node===nil?expr(PREC_UNARY-1):node])
 operator('-', PREC_UNARY, (node) => (node===nil||code(1)==MINUS) && [skip(code(1)==MINUS?2:1),node===nil?expr(PREC_UNARY-1):node])
 
