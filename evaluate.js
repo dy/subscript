@@ -18,6 +18,8 @@ evaluate = (s, ctx={}, c, op) => {
   return s
 },
 
+reducer=fn=>(...a)=>a.reduce(fn),
+
 // op evaluators
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
 operator = evaluate.operator = {
@@ -25,13 +27,13 @@ operator = evaluate.operator = {
   '++':a=>++a,
   '--':a=>--a,
 
-  '.':(...a)=>a.reduce((a,b)=>a?a[b]:a),
+  '.':reducer((a,b)=>a?a[b]:a),
 
-  '%':(...a)=>a.reduce((a,b)=>a%b),
-  '/':(...a)=>a.reduce((a,b)=>a/b),
-  '*':(...a)=>a.reduce((a,b)=>a*b),
+  '%':reducer((a,b)=>a%b),
+  '/':reducer((a,b)=>a/b),
+  '*':reducer((a,b)=>a*b),
 
-  '+':(...a)=>a.reduce((a,b)=>a+b),
+  '+':reducer((a,b)=>a+b),
   '-':(...a)=>a.length < 2 ? -a : a.reduce((a,b)=>a-b),
 
   '>>>':(a,b)=>a>>>b,
@@ -51,7 +53,7 @@ operator = evaluate.operator = {
   '|':(a,b)=>a|b,
   '&&':(...a)=>a.every(Boolean),
   '||':(...a)=>a.some(Boolean),
-  ',':(...a)=>a.reduce((a,b)=>(a,b))
+  ',':reducer((a,b)=>(a,b))
 }
 
 export default evaluate

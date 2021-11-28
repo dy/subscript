@@ -64,32 +64,25 @@ test('Ops', function (qunit) {
   is(parse('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)'), ['*',['**',['**',2,3],4],['**',5,6,7],['+',8,9]])
 });
 
-test('Custom operators', ()=> {
-  // parse.binary['^'] = 10;
-  // parse.operator.splice(10, 0,
-  //   (a,cc,prec,end) => (cc===94 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
-  // )
-  is(parse('a^b'), ['^','a','b']);
+test.only('Custom operators', ()=> {
+  // is(parse('a^b'), ['^','a','b']);
 
-  operator(215, 9, 1)
-  is(parse('a×b'), ['×','a','b']);
+  // operator('×', 9)
+  // is(parse('a×b'), ['×','a','b']);
 
-  operator(111,1,node => code(1)===114 && code(2)<=32 && 2)
-  is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
-  throws(() => parse('oneWord ordering anotherWord'));
+  // operator('or',1)
+  // is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
+  // throws(() => parse('oneWord ordering anotherWord'));
 
-  // parse.unary['#'] = 11;
-  operator(35, 11, (node) => node===nil && [skip(1), expr(10)])
-  is(parse('#a'), ['#','a']);
+  // operator('#', 11, -1)
+  // is(parse('#a'), ['#','a']);
 
-  operator(97,13, (node) => node === 'not' && [node, expr(12)])
+  operator('not', 13, (node) => node === 'not' && [node, expr(12)])
   is(parse('not a'), ['not', 'a']);
 
-  // parse.unary['notes'] = 11;
   throws(t => parse('notes 1'));
 
-  // parse.binary['and'] = 2;
-  operator(97, 2, (node) => char(3)==='and' && code(3) <=32 && 3)
+  operator('and', 2)
   is(parse('a and b'),['and','a','b']);
   is(parse('bands'), 'bands');
 

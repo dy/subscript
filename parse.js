@@ -26,7 +26,7 @@ nil = '',
 // a + b - c
 expr = (prec=0, cc=parse.space(), node, from=idx, i=0, map, newNode) => {
   // prefix or token
-  while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
+  while (from===idx && /*!lookup[cc] &&*/ i < parse.token.length) node = parse.token[i++](cc)
 
   // operator
   while (

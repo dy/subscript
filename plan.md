@@ -262,3 +262,13 @@
 * [ ] remove first char check into lookup table
 * [ ] Try moving [(. into token?
 * [ ] Unknown operator test case, like <<< or >==
+* [x] FIXME: is that possible to merge tokens with operators lookup table?
+  . it seems we uniquely identify tokens by first character as well (with fallback to non-spacy UTF for ids)
+  . but since next loop is infinite consume-map until end reached, we could just safely check newNode to be not nil
+  . that would allow to avoid confusion of `not` operator detected as token
+  . also that would shrink parse.token to a bunch of lookups
+  . TODO: also space can be done via lookup as well
+  - nope: tokens lookup introduce separate rules dict, which is almost identical to tokens that we expose now, it is even technically parsed differently
+  - cognitive load it adds is sort of impersonal brahman - hard intellectual grasp, opposed to easy token meaning
+  - not operator can be worked around by checking lookup table in tokens parsing as well
+* [ ] pass end character as expr argument
