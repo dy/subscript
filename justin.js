@@ -5,6 +5,10 @@ import {parse, code, char, skip, expr, nil, operator, err} from './parse.js'
 // ;
 operator(';', 1)
 
+// ===, !==
+operator('===', 9)
+operator('!==', 9)
+
 // undefined
 parse.token.splice(3,0, c =>
   c === 116 && char(4) === 'true' && skip(4) ? true :
