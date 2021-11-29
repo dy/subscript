@@ -1,7 +1,7 @@
 const PERIOD=46, OPAREN=40, CPAREN=41, SPACE=32,
 
   PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-  PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18
+  PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 
 // current string & index
@@ -26,12 +26,12 @@ nil = '',
 // a + b - c
 expr = (prec=0, cc=parse.space(), node, from=idx, i=0, map, newNode) => {
   // prefix or token
-  while (from===idx && /*!lookup[cc] &&*/ i < parse.token.length) node = parse.token[i++](cc)
+  while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
 
   // operator
   while (
     (cc=parse.space()) && (map = lookup[cc] || err()) && (newNode = map(node, prec))
-  ) if ((node = newNode).indexOf(nil) >= 0) err()
+  ) node=newNode//if ((node = newNode).indexOf?.(nil) >= 0) err()
 
   // console.log(prec, cc, map, node)
   // TODO
@@ -55,8 +55,6 @@ token = parse.token = [
   },
   // "a"
   (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
-  // (...exp)
-  c => c === OPAREN ? (++idx, c=expr(), ++idx, c===nil?err():c) : nil,
   // id
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -153,6 +151,8 @@ for (let i = 0, ops = [
     idx++, b=expr(), idx++,
     Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
   ),
+  // (a+b)
+  '(', PREC_GROUP, (node,b) => node===nil && (++idx, b=expr(), ++idx, b),
   ')',,,
 ]; i < ops.length;) operator(ops[i++],ops[i++],ops[i++])
 
