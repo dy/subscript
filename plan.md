@@ -273,7 +273,7 @@
   . We need truish wrapper objects with correct valueOf returning undefined etc.
   . Real primitives are actually available, we can still unwrap them into tree
   ? Maybe first merge expr loop, then find out if single-point unwrapping is available
-* [ ] ? Separate subscript setup from core eval/parse?
+* [x] ? Separate subscript setup from core eval/parse?
   + Some languages have precedence other than JS. Subscript forces JS precedence with no way to redefine it.
   + That would compactify justin, although with some duplication. Or maybe not, if we build from subscript.
   - that leaves parse unworkable and meaningless. Minimal level thing maybe?
