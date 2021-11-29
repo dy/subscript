@@ -252,16 +252,8 @@
           - extending would imply changing prev function in chain - ridiculous
         2.1. We can pass `next` function to levels `sum=(x,next)=>pass(x)?mapped:next()`
       - Cannot use precedence constructor: it creates fn call stack for condition, besides internals are too different: either number of op chars to skip varies, or unary/non-unary case, overall not worth it
-* [ ] ideas snippets
-  * [ ] !keyed arrays? [a:1, b:2, c:3]
-  * [ ] parser examples as chunks
-  * [ ] string interpolation ` ${} 1 ${} `
-* [ ] Demo
-* [ ] calltree nodes could stash static values (as in HTM)
-* [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
 * [x] remove first char check into lookup table
 * [x] ~~Try moving [(. into token?~~ nope, splitting to lookup table is better
-* [ ] Unknown operator test case, like <<< or >==
 * [x] is that possible to merge tokens with operators lookup table?
   + it seems we uniquely identify tokens by first character as well (with fallback to non-spacy UTF for ids)
   + that's faster
@@ -281,3 +273,14 @@
   . We need truish wrapper objects with correct valueOf returning undefined etc.
   . Real primitives are actually available, we can still unwrap them into tree
   ? Maybe first merge expr loop, then find out if single-point unwrapping is available
+* [ ] ? Separate subscript setup from core eval/parse?
+  + Some languages have precedence other than JS. Subscript forces JS precedence with no way to redefine it.
+  + That would compactify justin, although with some duplication. Or maybe not, if we build from subscript.
+* [ ] ideas snippets
+  * [ ] !keyed arrays? [a:1, b:2, c:3]
+  * [ ] parser examples as chunks
+  * [ ] string interpolation ` ${} 1 ${} `
+* [ ] Demo
+* [ ] calltree nodes could stash static values (as in HTM)
+* [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
+* [ ] Unknown operator test case, like <<< or >==
