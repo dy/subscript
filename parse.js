@@ -23,8 +23,9 @@ char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
 expr = (prec=0, cc=parse.space(), node, i=0, map, newNode) => {
+  // FIXME: well, you see these 2 loops are very similar... is there a graceful way to merge them?
   // prefix or token
-  while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc)));
+  while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc) || err()));
 
   // operator
   while (
@@ -71,8 +72,8 @@ lookup = [],
 // @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
 operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op, isop) => (
   isop = l<2 ? // word operator must have space after
-    !word ? ()=>1 : ()=>code(1)<=SPACE :
-    !word ? ()=>char(l)==op : ()=>char(l)==op&&code(l)<=SPACE,
+    !word ? c=>1 : c=>code(1)<=SPACE :
+    !word ? c=>char(l)==op : c=>char(l)==op&&code(l)<=SPACE,
 
   map = !type ? node => { // binary, consume same-op group
       node = [op, node]
@@ -131,15 +132,14 @@ for (let i = 0, ops = [
   '%', PREC_MULT,,
 
   // a.b
-  '.', PREC_CALL, (node,b) => node&&[skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b],
+  '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b],
 
   // a[b]
   '[', PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node),
   ']',,,
 
   // a(b)
-  '(', PREC_CALL, (node,b) => (
-    idx++, b=expr(), idx++,
+  '(', PREC_CALL, (node,b) => ( idx++, b=expr(), idx++,
     Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b] : [node]
   ),
   // (a+b)
