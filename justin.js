@@ -10,12 +10,13 @@ operator('===', 9)
 operator('!==', 9)
 
 // undefined
+const v = v => ({valueOf:()=>v})
 parse.token.splice(3,0, c =>
-  c === 116 && char(4) === 'true' && skip(4) ? true :
-  c === 102 && char(5) === 'false' && skip(5) ? false :
-  c === 110 && char(4) === 'null' && skip(4) ? null :
-  c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
-  undefined
+  c === 116 && char(4) === 'true' && skip(4) ? v(true) :
+  c === 102 && char(5) === 'false' && skip(5) ? v(false) :
+  c === 110 && char(4) === 'null' && skip(4) ? v(null) :
+  c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
+  null
 )
 
 // "' with /

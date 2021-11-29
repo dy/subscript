@@ -274,3 +274,8 @@
 * [x] ~~pass end character as expr argument~~ nope - it requires idx++, which is behind expr purpose
 * [x] make group an operator, not token
 * [x] token must wrap found result in an object, otherwise ignore falsish stuff - that will align method with operators, no nil
+  ? How do we handle it then?
+  . With strings - we return them wrapped as `"something"`. We don't return actual strings.
+  . We need truish wrapper objects with correct valueOf returning undefined etc.
+  . Real primitives are actually available, we can still unwrap them into tree
+  ? Maybe first merge expr loop, then find out if single-point unwrapping is available
