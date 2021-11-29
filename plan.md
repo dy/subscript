@@ -273,4 +273,4 @@
   - not operator can be worked around by checking lookup table in tokens parsing as well
 * [x] ~~pass end character as expr argument~~ nope - it requires idx++, which is behind expr purpose
 * [x] make group an operator, not token
-* [ ] token must wrap found result in an object, otherwise ignore falsish stuff - that will align method with operators, no nil
+* [x] token must wrap found result in an object, otherwise ignore falsish stuff - that will align method with operators, no nil
