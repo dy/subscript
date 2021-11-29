@@ -25,7 +25,7 @@ char = (n=1) => cur.substr(idx, n),
 expr = (prec=0, cc=parse.space(), node, i=0, map, newNode) => {
   // FIXME: well, you see these 2 loops are very similar... is there a graceful way to merge them?
   // prefix or token
-  while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc) || err()));
+  while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc)));
 
   // operator
   while (
