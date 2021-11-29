@@ -1,7 +1,7 @@
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
   PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-  PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
+  PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19, PREC_TOKEN=30
 
 
 // current string & index
@@ -23,13 +23,9 @@ char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
 expr = (prec=0, end, cc=parse.space(), node, i=0, map, newNode) => {
-  // FIXME: well, you see these 2 loops are very similar... is there a graceful way to merge them?
-  // prefix or token
-  while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc)));
-
-  // operator
+  // chunk/token parser
   while (
-    (cc=parse.space()) && (map = lookup[cc] || err()) && (newNode = map(node, prec))
+    (cc=parse.space()) && (newNode = lookup[cc]?.(node, prec) || (!node && token(cc)) )
   ) node = newNode;
 
   if (end && cc !== end) err()
@@ -41,7 +37,7 @@ expr = (prec=0, end, cc=parse.space(), node, i=0, map, newNode) => {
 space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
 
 // tokens
-token = parse.token = [
+tokens = parse.token = [
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
   (number) => (
     (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) && (
@@ -49,8 +45,6 @@ token = parse.token = [
       isNaN(number = new Number(number)) ? err('Bad number') : number
     )
   ),
-  // "a"
-  (q, qc) => q === 34 && (skip() + skip(c => c-q) + skip()),
   // id
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -60,6 +54,8 @@ token = parse.token = [
     (c >= 192 && c != 215 && c != 247) // any non-ASCII
   )
 ],
+
+token = (c,i=0,node) => { while(i<tokens.length) if (node = tokens[i++](c)) return node },
 
 // operator lookup table
 lookup = [],
@@ -143,6 +139,9 @@ for (let i = 0, ops = [
   // (a+b)
   '(', PREC_GROUP, (node,b) => !node && (++idx, b=expr(0,CPAREN) || err(), ++idx, b),
   ')',,,
+
+  // "abc"
+  '"', PREC_TOKEN, node => skip() + skip(c => c-34) + skip(),
 ]; i < ops.length;) operator(ops[i++],ops[i++],ops[i++])
 
 
