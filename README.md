@@ -49,15 +49,6 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 
 ## Extending
 
-Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
-Default tokens include:
-
-* `"abc"` strings
-* `1.2e+3` floats
-* identifiers
-
-Operators can be extended via `parse.operator` function for any unary/binary/postfix operators, calls, props or chains, groups, arrays, objects etc.
-
 Default operators include common operators for the listed languages in the following precedence:
 
 * `++ --` unary postfix
@@ -73,12 +64,13 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Comments can be added via extending `parse.space`.
+Operators can be extended via `parse.operator(operator, precedence, type)` function for any unary/binary/postfix operators, calls, props, groups, arrays, objects etc.
 
 ```js
 import { parse, evaluate } from 'subscript.js'
 
-parse.operator('=>', 10)
+parse.operator('=>', 10) // precedence=10, type=default (0 - binary, 1 - postfix, -1 - prefix)
+
 evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
 evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
 
@@ -90,6 +82,24 @@ let tree = parse(`
 `)
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
+
+Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
+Default tokens include:
+
+* `"abc"` strings
+* `1.2e+3` floats
+* identifiers
+
+```js
+import parse, {char} from 'subscript/parse.js'
+import evaluate from 'subscript/evaluate.js'
+
+conts ctx = {x:1}
+parse.token.unshift(c => char(4) === 'this' ? ctx : null)
+evaluate(parse(`this.x`)) // 1
+```
+
+Comments can be added via extending `parse.space`. See [justin.js](./justin.js) for more examples.
 
 
 ## Justin
