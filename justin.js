@@ -2,27 +2,68 @@
 import {evaluate} from './evaluate.js'
 import {parse, code, char, skip, expr, err} from './parse.js'
 
-// literals
+const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
+
+PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
+PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
+
+
+// tokens
 const v = v => ({valueOf:()=>v})
-parse.token.splice(2,0, c =>
-  c === 116 && char(4) === 'true' && skip(4) ? v(true) :
-  c === 102 && char(5) === 'false' && skip(5) ? v(false) :
-  c === 110 && char(4) === 'null' && skip(4) ? v(null) :
-  c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
-  null
+parse.token.push(
+  // TODO: better parser
+  // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
+  (number) => (
+    (number = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
+      (code() == 69 || code() == 101) && (number += skip(2) + skip(c => c >= 48 && c <= 57)),
+      isNaN(number = new Number(number)) ? err('Bad number') : number
+    )
+  ),
+
+  // "' with /
+  (q, qc, c, str) => {
+    if (q !== 34 && q !== 39) return
+    qc = char(), skip(), str = ''
+    while (c=code(), c-q) {
+      if (c === 92) skip(), str += escape[char()] || char(); else str+=char()
+      skip()
+    }
+    return skip(), qc + str + qc
+  },
+
+  // {}
+  (cc, node) => (
+    cc === 123 && (skip(), node = mapObj(['{', expr(0,125)]), skip(), node)
+  ),
+
+  // literal
+  c =>
+    c === 116 && char(4) === 'true' && skip(4) ? v(true) :
+    c === 102 && char(5) === 'false' && skip(5) ? v(false) :
+    c === 110 && char(4) === 'null' && skip(4) ? v(null) :
+    c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
+    null,
+
+  // id
+  c => skip(c =>
+    (c >= 48 && c <= 57) || // 0..9
+    (c >= 65 && c <= 90) || // A...Z
+    (c >= 97 && c <= 122) || // a...z
+    c == 36 || c == 95 || // $, _,
+    (c >= 192 && c != 215 && c != 247) // any non-ASCII
+  )
 )
 
-// "' with /
-parse.token[1] = (q, qc, c, str) => {
-  if (q !== 34 && q !== 39) return
-  qc = char(), skip(), str = ''
-  while (c=code(), c-q) {
-    if (c === 92) skip(), str += escape[char()] || char(); else str+=char()
-    skip()
-  }
-  return skip(), qc + str + qc
-}
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
+
+// {}
+const mapObj = (n, args) => (
+  args = !n[1] ? [] :
+  (n[1][0]==':') ? [n[1]] :
+  (n[1][0]==',') ? n[1].slice(1) : args,
+  ['{', ...args]
+)
+
 
 // /**/, //
 parse.space = cc => {
@@ -37,19 +78,72 @@ parse.space = cc => {
   return cc
 }
 
-// {}
-parse.token.unshift((cc, node) => (
-  cc === 123 && (skip(), node = map(['{', expr(0,125)]), skip(), node)
-))
-const map = (n, args) => {
-  if (!n[1]) args = []
-  else if (n[1][0]==':') args = [n[1]]
-  else if (n[1][0]==',') args = n[1].slice(1)
-  return ['{', ...args]
+
+// operators
+const addOps = (add, stride=2, list) => {
+  for (let i = 0; i < list.length; i+=stride) add(list[i], list[i+1], list[i+2])
 }
 
-// parse operators
-for (let i = 0, ops = [
+addOps(parse.operator, 3, [
+  // subscript ones
+  // TODO: add ,, as node here
+  ',', PREC_SEQ,,
+
+  '|', PREC_OR,,
+  '||', PREC_SOME,,
+
+  '&', PREC_AND,,
+  '&&', PREC_EVERY,,
+
+  '^', PREC_XOR,,
+
+  // ==, !=
+  '==', PREC_EQ,,
+  '!=', PREC_EQ,,
+
+  // > >= >> >>>, < <= <<
+  '>', PREC_COMP,,
+  '>=', PREC_COMP,,
+  '>>', PREC_SHIFT,,
+  '>>>', PREC_SHIFT,,
+  '<', PREC_COMP,,
+  '<=', PREC_COMP,,
+  '<<', PREC_SHIFT,,
+
+  // + ++ - --
+  '+', PREC_SUM,,
+  '+', PREC_UNARY, -1,
+  '++', PREC_UNARY, -1,
+  '++', PREC_UNARY, +1,
+  '-', PREC_SUM,,
+  '-', PREC_UNARY, -1,
+  '--', PREC_UNARY, -1,
+  '--', PREC_UNARY, +1,
+
+  // !
+  '!', PREC_UNARY, -1,
+
+  // * / %
+  '*', PREC_MULT,,
+  '/', PREC_MULT,,
+  '%', PREC_MULT,,
+
+  // a.b
+  '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b.valueOf()],
+
+  // a[b]
+  '[', PREC_CALL, (node) => (skip(), node = ['.', node, expr(0,CBRACK).valueOf()], skip(), node),
+  ']',,,
+
+  // a(b)
+  '(', PREC_CALL, (node,b) => ( skip(), b=expr(0,CPAREN), skip(),
+    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b.valueOf()] : [node]
+  ),
+  // (a+b)
+  '(', PREC_GROUP, (node,b) => !node && (skip(), b=expr(0,CPAREN) || err(), skip(), b),
+  ')',,,
+
+  // justin extension
   ';', 1,,
   '===', 9,,
   '!==', 9,,
@@ -70,20 +164,46 @@ for (let i = 0, ops = [
     skip(), arg=expr(0,93), skip(),
     !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
   )
-]; i < ops.length;) parse.operator(ops[i++],ops[i++],ops[i++])
+])
 
-// evaluate operators
-for (let i = 0, ops = [
-  // **
+addOps(evaluate.operator, 2, [
+  // subscript
+  '!', a=>!a,
+  '++', a=>++a,
+  '--', a=>--a,
+
+  '.', (a,b)=>a?a[b]:a,
+
+  '%', (a,b)=>a%b,
+  '/', (a,b)=>a/b,
+  '*', (a,b)=>a*b,
+
+  '+', (a,b)=>a+b,
+  '-', (...a)=>a.length < 2 ? -a : a.reduce((a,b)=>a-b),
+
+  '>>>', (a,b)=>a>>>b,
+  '>>', (a,b)=>a>>b,
+  '<<', (a,b)=>a<<b,
+
+  '>=', (a,b)=>a>=b,
+  '>', (a,b)=>a>b,
+  '<=', (a,b)=>a<=b,
+  '<', (a,b)=>a<b,
+
+  '!=', (a,b)=>a!=b,
+  '==', (a,b)=>a==b,
+
+  '&', (a,b)=>a&b,
+  '^', (a,b)=>a^b,
+  '|', (a,b)=>a|b,
+  '&&', (...a)=>a.every(Boolean),
+  '||', (...a)=>a.some(Boolean),
+  ',', (a,b)=>(a,b),
+
+  // justin extension
   '**', (...args)=>args.reduceRight((a,b)=>Math.pow(b,a)),
-
-  // ~
   '~', a=>~a,
-
-  // ?:
   '?:', (a,b,c)=>a?b:c,
-  // parse.operator(':')
-  // in
   'in', (a,b)=>a in b,
 
   // []
@@ -91,10 +211,12 @@ for (let i = 0, ops = [
   // as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
   '{', (...args)=>Object.fromEntries(args),
   ':', (a,b)=>[a,b]
-]; i < ops.length;) evaluate.operator(ops[i++],ops[i++])
+])
 
 // TODO ...
 // TODO: strings interpolation
 
-export default parse
 export { parse, evaluate }
+
+// code → evaluator
+export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))

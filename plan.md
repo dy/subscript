@@ -276,6 +276,7 @@
 * [ ] ? Separate subscript setup from core eval/parse?
   + Some languages have precedence other than JS. Subscript forces JS precedence with no way to redefine it.
   + That would compactify justin, although with some duplication. Or maybe not, if we build from subscript.
+  - that leaves parse unworkable and meaningless. Minimal level thing maybe?
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks

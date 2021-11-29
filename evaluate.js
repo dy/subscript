@@ -22,38 +22,4 @@ lookup = {},
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
 operator = evaluate.operator = (op, fn) => lookup[op] = fn.length == 2 ? (...a)=>a.reduce(fn) : fn
 
-for (let fn,ops = [
-  '!', a=>!a,
-  '++', a=>++a,
-  '--', a=>--a,
-
-  '.', (a,b)=>a?a[b]:a,
-
-  '%', (a,b)=>a%b,
-  '/', (a,b)=>a/b,
-  '*', (a,b)=>a*b,
-
-  '+', (a,b)=>a+b,
-  '-', (...a)=>a.length < 2 ? -a : a.reduce((a,b)=>a-b),
-
-  '>>>', (a,b)=>a>>>b,
-  '>>', (a,b)=>a>>b,
-  '<<', (a,b)=>a<<b,
-
-  '>=', (a,b)=>a>=b,
-  '>', (a,b)=>a>b,
-  '<=', (a,b)=>a<=b,
-  '<', (a,b)=>a<b,
-
-  '!=', (a,b)=>a!=b,
-  '==', (a,b)=>a==b,
-
-  '&', (a,b)=>a&b,
-  '^', (a,b)=>a^b,
-  '|', (a,b)=>a|b,
-  '&&', (...a)=>a.every(Boolean),
-  '||', (...a)=>a.some(Boolean),
-  ',', (a,b)=>(a,b)
-]; fn=ops.pop();) operator(ops.pop(),fn)
-
 export default evaluate
