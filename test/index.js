@@ -262,8 +262,8 @@ test('eval: basic', t => {
 })
 
 test('ext: in operator', t => {
-  evaluate.operator['in'] = (a,b)=>a in b
-  operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
+  evaluate.operator('in', (a,b)=>a in b)
+  parse.operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
@@ -272,12 +272,13 @@ test('ext: in operator', t => {
 })
 
 test('ext: ternary', t => {
-  evaluate.operator['?:']=(a,b,c)=>a?b:c
-  operator('?', 3, (node) => {
+  evaluate.operator('?:', (a,b,c)=>a?b:c)
+  parse.operator('?', 3, (node) => {
+    if (!node) err('Expected expression')
     let a, b
-    skip(), parse.space(), a = expr(0)
+    skip(), parse.space(), a = expr()
     if (code() !== 58) err('Expected :')
-    skip(), parse.space(), b = expr(0)
+    skip(), parse.space(), b = expr()
     return ['?:', node, a, b]
   })
   operator(':')
@@ -288,7 +289,7 @@ test('ext: ternary', t => {
 })
 
 test('ext: list', t => {
-  evaluate.operator['['] = (...args) => Array(...args)
+  evaluate.operator('[', (...args) => Array(...args))
   // parse.token.unshift((cc, node, arg) =>
   //   cc === 91 &&
   //   (
@@ -319,8 +320,8 @@ test('ext: object', t => {
 
   operator('}')
   operator(':', 4)
-  evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
-  evaluate.operator[':'] = (a,b)=>[a,b]
+  evaluate.operator('{', (...args)=>Object.fromEntries(args))
+  evaluate.operator(':', (a,b)=>[a,b])
 
   const map = (n, args) => {
     if (!n[1]) args = []

@@ -1,15 +1,8 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, operator, err} from './parse.js'
+import {parse, code, char, skip, expr, err} from './parse.js'
 
-// ;
-operator(';', 1)
-
-// ===, !==
-operator('===', 9)
-operator('!==', 9)
-
-// undefined
+// literals
 const v = v => ({valueOf:()=>v})
 parse.token.splice(2,0, c =>
   c === 116 && char(4) === 'true' && skip(4) ? v(true) :
@@ -31,28 +24,6 @@ parse.token[1] = (q, qc, c, str) => {
 }
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
-// **
-evaluate.operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
-operator('**', 14)
-
-// ~
-operator('~', 13, -1)
-evaluate.operator['~'] = a=>~a
-
-// TODO ...
-
-// ?:
-evaluate.operator['?:']=(a,b,c)=>a?b:c
-operator('?', 3, (node) => {
-  if (!node) err('Expected expression')
-  let a, b
-  skip(), parse.space(), a = expr()
-  if (code() !== 58) err('Expected :')
-  skip(), parse.space(), b = expr()
-  return ['?:', node, a, b]
-})
-// operator(':')
-
 // /**/, //
 parse.space = cc => {
   while (cc = code(), cc <= 32) {
@@ -66,28 +37,10 @@ parse.space = cc => {
   return cc
 }
 
-// in
-evaluate.operator['in'] = (a,b)=>a in b
-operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
-
-// []
-evaluate.operator['['] = (...args) => Array(...args)
-// as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
-operator('[', 20, (node,arg) => !node && (
-  skip(), arg=expr(0,93), skip(),
-  !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
-))
-
 // {}
 parse.token.unshift((cc, node) => (
   cc === 123 && (skip(), node = map(['{', expr(0,125)]), skip(), node)
 ))
-
-operator('}')
-operator(':', 0)
-evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
-evaluate.operator[':'] = (a,b)=>[a,b]
-
 const map = (n, args) => {
   if (!n[1]) args = []
   else if (n[1][0]==':') args = [n[1]]
@@ -95,6 +48,52 @@ const map = (n, args) => {
   return ['{', ...args]
 }
 
+// parse operators
+for (let i = 0, ops = [
+  ';', 1,,
+  '===', 9,,
+  '!==', 9,,
+  '**', 14,,
+  '~', 13, -1,
+  '?', 3, (node) => {
+    if (!node) err('Expected expression')
+    let a, b
+    skip(), parse.space(), a = expr()
+    if (code() !== 58) err('Expected :')
+    skip(), parse.space(), b = expr()
+    return ['?:', node, a, b]
+  },
+  '}',,,
+  ':', 0,,
+  'in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)],
+  '[', 20, (node,arg) => !node && (
+    skip(), arg=expr(0,93), skip(),
+    !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
+  )
+]; i < ops.length;) parse.operator(ops[i++],ops[i++],ops[i++])
+
+// evaluate operators
+for (let i = 0, ops = [
+  // **
+  '**', (...args)=>args.reduceRight((a,b)=>Math.pow(b,a)),
+
+  // ~
+  '~', a=>~a,
+
+  // ?:
+  '?:', (a,b,c)=>a?b:c,
+  // parse.operator(':')
+  // in
+  'in', (a,b)=>a in b,
+
+  // []
+  '[', (...args) => Array(...args),
+  // as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
+  '{', (...args)=>Object.fromEntries(args),
+  ':', (a,b)=>[a,b]
+]; i < ops.length;) evaluate.operator(ops[i++],ops[i++])
+
+// TODO ...
 // TODO: strings interpolation
 
 export default parse

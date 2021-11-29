@@ -64,15 +64,15 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Operators can be extended via `parse.operator(operator, precedence, type)` function for any unary/binary/postfix operators, calls, props, groups, arrays, objects etc.
+Operators can be extended via `parse.operator(str, prec, type)` and `evaluate.operator(str, fn)` functions for any unary/binary/postfix operators, calls, props, groups, arrays, objects etc.
 
 ```js
 import { parse, evaluate } from 'subscript.js'
 
 parse.operator('=>', 10) // precedence=10, type=default (0 - binary, 1 - postfix, -1 - prefix)
 
-evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
-evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
+evaluate.operator('=>', ( args, body ) => evaluate(body, args))
+evaluate.operator('|', ( a, ...b ) => a.pipe(...b))
 
 let tree = parse(`
   interval(350)

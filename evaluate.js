@@ -4,10 +4,9 @@ export const isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd
 evaluate = (s, ctx={}, c, op) => {
   if (isCmd(s)) {
     c = s[0]
-    if (typeof c === 'string') op = operator[c]
+    if (typeof c === 'string') op = lookup[c]
     c = op || evaluate(c, ctx) // [[a,b], c]
     if (typeof c !== 'function') return c
-
     return c.call(...s.map(a => evaluate(a,ctx)))
   }
   if (s && typeof s === 'string')
@@ -17,43 +16,44 @@ evaluate = (s, ctx={}, c, op) => {
 
   return s
 },
-
-reducer=fn=>(...a)=>a.reduce(fn),
+lookup = {},
 
 // op evaluators
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
-operator = evaluate.operator = {
-  '!':a=>!a,
-  '++':a=>++a,
-  '--':a=>--a,
+operator = evaluate.operator = (op, fn) => lookup[op] = fn.length == 2 ? (...a)=>a.reduce(fn) : fn
 
-  '.':reducer((a,b)=>a?a[b]:a),
+for (let fn,ops = [
+  '!', a=>!a,
+  '++', a=>++a,
+  '--', a=>--a,
 
-  '%':reducer((a,b)=>a%b),
-  '/':reducer((a,b)=>a/b),
-  '*':reducer((a,b)=>a*b),
+  '.', (a,b)=>a?a[b]:a,
 
-  '+':reducer((a,b)=>a+b),
-  '-':(...a)=>a.length < 2 ? -a : a.reduce((a,b)=>a-b),
+  '%', (a,b)=>a%b,
+  '/', (a,b)=>a/b,
+  '*', (a,b)=>a*b,
 
-  '>>>':(a,b)=>a>>>b,
-  '>>':(a,b)=>a>>b,
-  '<<':(a,b)=>a<<b,
+  '+', (a,b)=>a+b,
+  '-', (...a)=>a.length < 2 ? -a : a.reduce((a,b)=>a-b),
 
-  '>=':(a,b)=>a>=b,
-  '>':(a,b)=>a>b,
-  '<=':(a,b)=>a<=b,
-  '<':(a,b)=>a<b,
+  '>>>', (a,b)=>a>>>b,
+  '>>', (a,b)=>a>>b,
+  '<<', (a,b)=>a<<b,
 
-  '!=':(a,b)=>a!=b,
-  '==':(a,b)=>a==b,
+  '>=', (a,b)=>a>=b,
+  '>', (a,b)=>a>b,
+  '<=', (a,b)=>a<=b,
+  '<', (a,b)=>a<b,
 
-  '&':(a,b)=>a&b,
-  '^':(a,b)=>a^b,
-  '|':(a,b)=>a|b,
-  '&&':(...a)=>a.every(Boolean),
-  '||':(...a)=>a.some(Boolean),
-  ',':reducer((a,b)=>(a,b))
-}
+  '!=', (a,b)=>a!=b,
+  '==', (a,b)=>a==b,
+
+  '&', (a,b)=>a&b,
+  '^', (a,b)=>a^b,
+  '|', (a,b)=>a|b,
+  '&&', (...a)=>a.every(Boolean),
+  '||', (...a)=>a.some(Boolean),
+  ',', (a,b)=>(a,b)
+]; fn=ops.pop();) operator(ops.pop(),fn)
 
 export default evaluate

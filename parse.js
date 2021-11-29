@@ -66,7 +66,7 @@ lookup = [],
 // @param op is operator string
 // @param prec is operator precedenc to check
 // @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
-parse.operator = operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op, isop) => (
+operator = parse.operator =  (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op, isop) => (
   isop = l<2 ? // word operator must have space after
     !word ? c=>1 : c=>code(1)<=SPACE :
     !word ? c=>char(l)==op : c=>char(l)==op&&code(l)<=SPACE,
