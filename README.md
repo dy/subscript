@@ -83,6 +83,8 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
+---
+
 Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
 Default tokens include:
 
@@ -98,6 +100,8 @@ conts ctx = {x:1}
 parse.token.unshift(c => char(4) === 'this' ? ctx : null)
 evaluate(parse(`this.x`)) // 1
 ```
+
+---
 
 Comments can be added via extending `parse.space`. See [justin.js](./justin.js) for more examples.
 
