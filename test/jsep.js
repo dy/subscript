@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../justin.js'
-import { skip, code, expr, char, nil, operator } from '../parse.js'
+import { skip, code, expr, char, operator } from '../parse.js'
 
 test('Expression: Constants', ()=> {
   is(parse('\'abc\''),  "'abc'" );
@@ -64,20 +64,20 @@ test('Ops', function (qunit) {
   is(parse('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)'), ['*',['**',['**',2,3],4],['**',5,6,7],['+',8,9]])
 });
 
-test.only('Custom operators', ()=> {
+test('Custom operators', ()=> {
   // is(parse('a^b'), ['^','a','b']);
 
-  // operator('×', 9)
-  // is(parse('a×b'), ['×','a','b']);
+  operator('×', 9)
+  is(parse('a×b'), ['×','a','b']);
 
-  // operator('or',1)
-  // is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
-  // throws(() => parse('oneWord ordering anotherWord'));
+  operator('or',1)
+  is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
+  throws(() => parse('oneWord ordering anotherWord'));
 
-  // operator('#', 11, -1)
-  // is(parse('#a'), ['#','a']);
+  operator('#', 11, -1)
+  is(parse('#a'), ['#','a']);
 
-  operator('not', 13, (node) => node === 'not' && [node, expr(12)])
+  operator('not', 13, (node) => char(3) === 'not' && [skip(3), expr(12)])
   is(parse('not a'), ['not', 'a']);
 
   throws(t => parse('notes 1'));
@@ -98,11 +98,11 @@ test.skip('Bad Numbers', ()=> {
 });
 
 test('Missing arguments', ()=> {
-  // NOTE: we accept these cases as useful
-  throws(() => parse('check(,)'), ['check', null, null]);
-  throws(() => parse('check(,1,2)'), ['check', null, 1,2]);
-  throws(() => parse('check(1,,2)'), ['check', 1,null,2]);
-  throws(() => parse('check(1,2,)'), ['check', 1,2, null]);
+  // NOTE: these cases don't matter as much, can be either for or against
+  throws(() => is(parse('check(,)'), ['check', null, null]));
+  throws(() => is(parse('check(,1,2)'), ['check', null, 1,2]));
+  throws(() => is(parse('check(1,,2)'), ['check', 1,null,2]));
+  throws(() => is(parse('check(1,2,)'), ['check', 1,2, null]));
   throws(() => parse('check(a, b c d) '), 'spaced arg after 1 comma');
   throws(() => parse('check(a, b, c d)'), 'spaced arg at end');
   throws(() => parse('check(a b, c, d)'), 'spaced arg first');
@@ -112,7 +112,7 @@ test('Missing arguments', ()=> {
 test('Uncompleted expression-call/array', ()=> {
   throws(() => console.log(parse('(a,b')))
   throws(function () {
-    parse('myFunction(a,b');
+    console.log(parse('myFunction(a,b'));
   }, 'detects unfinished expression call');
 
   throws(function () {
@@ -125,12 +125,12 @@ test('Uncompleted expression-call/array', ()=> {
 });
 
 test(`should throw on invalid expr`, () => {
-  throws(() => parse('!'))
+  throws(() => console.log(parse('!')))
   throws(() => parse('*x'))
   throws(() => parse('||x'))
   throws(() => parse('?a:b'))
   throws(() => parse('.'))
-  throws(() => parse('()()'))
+  throws(() => console.log(parse('()()')))
     // '()', should throw 'unexpected )'...
   throws(() => console.log(parse('() + 1')))
 });

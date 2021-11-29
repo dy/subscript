@@ -74,8 +74,7 @@ operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=looku
     !word ? c=>char(l)==op : c=>char(l)==op&&code(l)<=SPACE,
 
   map = !type ? node => { // binary, consume same-op group
-      if (!node) err('Missing operand')
-      node = [op, node]
+      node = [op, node || err()]
       do { idx+=l, node.push(expr(prec) || err()) } while (parse.space()==c && isop())
       return node
     } :
