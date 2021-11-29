@@ -1,4 +1,4 @@
-const PERIOD=46, OPAREN=40, CPAREN=41, SPACE=32,
+const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
   PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
   PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
@@ -22,7 +22,7 @@ code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
-expr = (prec=0, cc=parse.space(), node, i=0, map, newNode) => {
+expr = (prec=0, end, cc=parse.space(), node, i=0, map, newNode) => {
   // FIXME: well, you see these 2 loops are very similar... is there a graceful way to merge them?
   // prefix or token
   while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc)));
@@ -30,11 +30,9 @@ expr = (prec=0, cc=parse.space(), node, i=0, map, newNode) => {
   // operator
   while (
     (cc=parse.space()) && (map = lookup[cc] || err()) && (newNode = map(node, prec))
-  ) node=newNode//if ((node = newNode).indexOf?.(nil) >= 0) err()
+  ) node = newNode;
 
-  // console.log(prec, cc, map, node)
-  // TODO
-  // if (!prec && !lookup[cc]) err('Unclosed paren')
+  if (end && cc !== end) err()
 
   return node
 },
@@ -76,12 +74,13 @@ operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=looku
     !word ? c=>char(l)==op : c=>char(l)==op&&code(l)<=SPACE,
 
   map = !type ? node => { // binary, consume same-op group
+      if (!node) err('Missing operand')
       node = [op, node]
-      do { idx+=l, node.push(expr(prec)) } while (parse.space()==c && isop())
+      do { idx+=l, node.push(expr(prec) || err()) } while (parse.space()==c && isop())
       return node
     } :
     type > 0 ? node => node && [skip(l), node] : // postfix unary
-    type < 0 ? node => !node && [skip(l), expr(prec-1)] : // prefix unary
+    type < 0 ? node => !node && [skip(l), expr(prec-1) || err()] : // prefix unary
     type,
 
   lookup[c] = (node, curPrec) => curPrec < prec && isop() && map(node) || (prev && prev(node, curPrec))
@@ -135,15 +134,15 @@ for (let i = 0, ops = [
   '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b],
 
   // a[b]
-  '[', PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node),
+  '[', PREC_CALL, (node) => (idx++, node = ['.', node, expr(0,CBRACK)], idx++, node),
   ']',,,
 
   // a(b)
-  '(', PREC_CALL, (node,b) => ( idx++, b=expr(), idx++,
+  '(', PREC_CALL, (node,b) => ( idx++, b=expr(0,CPAREN), idx++,
     Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b] : [node]
   ),
   // (a+b)
-  '(', PREC_GROUP, (node,b) => !node && (++idx, b=expr(), ++idx, b),
+  '(', PREC_GROUP, (node,b) => !node && (++idx, b=expr(0,CPAREN) || err(), ++idx, b),
   ')',,,
 ]; i < ops.length;) operator(ops[i++],ops[i++],ops[i++])
 

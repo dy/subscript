@@ -43,10 +43,11 @@ evaluate.operator['~'] = a=>~a
 // ?:
 evaluate.operator['?:']=(a,b,c)=>a?b:c
 operator('?', 3, (node) => {
+  if (!node) err('Expected expression')
   let a, b
-  skip(), parse.space(), a = expr(0)
+  skip(), parse.space(), a = expr()
   if (code() !== 58) err('Expected :')
-  skip(), parse.space(), b = expr(0)
+  skip(), parse.space(), b = expr()
   return ['?:', node, a, b]
 })
 // operator(':')
@@ -72,17 +73,17 @@ operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 evaluate.operator['['] = (...args) => Array(...args)
 // as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
 operator('[', 20, (node,arg) => !node && (
-  skip(), arg=expr(), skip(),
+  skip(), arg=expr(0,93), skip(),
   !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
 ))
 
 // {}
 parse.token.unshift((cc, node) => (
-  cc === 123 && (skip(), node = map(['{', expr()]), skip(), node)
+  cc === 123 && (skip(), node = map(['{', expr(0,125)]), skip(), node)
 ))
 
 operator('}')
-operator(':', 4)
+operator(':', 0)
 evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 
