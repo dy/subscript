@@ -24,7 +24,7 @@ char = (n=1) => cur.substr(idx, n),
 // a + b - c
 expr = (prec=0, cc=parse.space(), node, i=0, map, newNode) => {
   // prefix or token
-  while (i < parse.token.length && !(node = parse.token[i++](cc)));
+  while (i < parse.token.length && !(node = lookup[cc]?.(node, prec) || parse.token[i++](cc)));
 
   // operator
   while (
@@ -131,7 +131,7 @@ for (let i = 0, ops = [
   '%', PREC_MULT,,
 
   // a.b
-  '.', PREC_CALL, (node,b) => [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b],
+  '.', PREC_CALL, (node,b) => node&&[skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b],
 
   // a[b]
   '[', PREC_CALL, (node) => (idx++, node = ['.', node, expr()], idx++, node),

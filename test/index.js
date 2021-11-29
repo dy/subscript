@@ -283,15 +283,19 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   evaluate.operator['['] = (...args) => Array(...args)
-  // FIXME: mb that's better out as operator?
-  parse.token.unshift((cc, node, arg) =>
-    cc === 91 &&
-    (
-      skip(), arg=expr(),
-      node = !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
-      skip(), node
-    )
-  )
+  // parse.token.unshift((cc, node, arg) =>
+  //   cc === 91 &&
+  //   (
+  //     skip(), arg=expr(),
+  //     node = !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+  //     skip(), node
+  //   )
+  // )
+  // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
+  operator('[', 20, (node,arg) => !node && (
+    skip(), arg=expr(), skip(),
+    !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
+  ))
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])

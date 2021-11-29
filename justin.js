@@ -70,14 +70,11 @@ operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
 // []
 evaluate.operator['['] = (...args) => Array(...args)
-parse.token.unshift((cc, node, arg) =>
-  cc === 91 &&
-  (
-    skip(), arg=expr(),
-    node = !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
-    skip(), node
-  )
-)
+// as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
+operator('[', 20, (node,arg) => !node && (
+  skip(), arg=expr(), skip(),
+  !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
+))
 
 // {}
 parse.token.unshift((cc, node) => (
