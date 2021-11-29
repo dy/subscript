@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, nil, operator, err} from './parse.js'
+import {parse, code, char, skip, expr, operator, err} from './parse.js'
 
 // ;
 operator(';', 1)
@@ -71,17 +71,17 @@ operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 // []
 evaluate.operator['['] = (...args) => Array(...args)
 parse.token.unshift((cc, node, arg) =>
-  cc === 91 ?
+  cc === 91 &&
   (
     skip(), arg=expr(),
-    node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+    node = !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
     skip(), node
-  ) : nil
+  )
 )
 
 // {}
 parse.token.unshift((cc, node) => (
-  cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
+  cc === 123 && (skip(), node = map(['{', expr()]), skip(), node)
 ))
 
 operator('}')
@@ -90,7 +90,7 @@ evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 
 const map = (n, args) => {
-  if (n[1]===nil) args = []
+  if (!n[1]) args = []
   else if (n[1][0]==':') args = [n[1]]
   else if (n[1][0]==',') args = n[1].slice(1)
   return ['{', ...args]

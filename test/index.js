@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr, nil, operator } from '../parse.js'
+import { skip, code, char, expr, operator } from '../parse.js'
 
 test('parse: basic', t => {
   any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
@@ -90,7 +90,7 @@ test('readme', t => {
 })
 
 
-test.skip('parse: interpolate string', t => {
+test.todo('ext: interpolate string', t => {
   is(parse`a+1`, ['+','a',1])
   is(subscript`a+1`({a:1}), 2)
 })
@@ -108,12 +108,13 @@ test('parse: strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc"','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  parse.token.splice(3,0, c =>
-    c === 116 && char(4) === 'true' && skip(4) ? true :
-    c === 102 && char(5) === 'false' && skip(5) ? false :
-    c === 110 && char(4) === 'null' && skip(4) ? null :
-    c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
-    undefined
+  const v = v => ({valueOf:()=>v})
+  parse.token.splice(2,0, c =>
+    c === 116 && char(4) === 'true' && skip(4) ? v(true) :
+    c === 102 && char(5) === 'false' && skip(5) ? v(false) :
+    c === 110 && char(4) === 'null' && skip(4) ? v(null) :
+    c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
+    null
   )
   is(parse('null'), null)
   is(parse('(null)'), null)
@@ -282,13 +283,14 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   evaluate.operator['['] = (...args) => Array(...args)
+  // FIXME: mb that's better out as operator?
   parse.token.unshift((cc, node, arg) =>
-    cc === 91 ?
+    cc === 91 &&
     (
       skip(), arg=expr(),
-      node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+      node = !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
       skip(), node
-    ) : nil
+    )
   )
 
   is(parse('[]'),['['])
@@ -311,7 +313,7 @@ test('ext: object', t => {
   evaluate.operator[':'] = (a,b)=>[a,b]
 
   const map = (n, args) => {
-    if (n[1]===nil) args = []
+    if (!n[1]) args = []
     else if (n[1][0]==':') args = [n[1]]
     else if (n[1][0]==',') args = n[1].slice(1)
     return ['{', ...args]
