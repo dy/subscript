@@ -136,7 +136,7 @@ test(`should throw on invalid expr`, () => {
 });
 
 test('Esprima Comparison', ()=> {
-  // is(parse('[1,,3]'), [])
+  // is(parse('[1,,3]'), [1,null,3])
   // is(parse('[1,,]'), [])
   is(parse(' true'), true)
   is(parse('false '), false)

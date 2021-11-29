@@ -262,7 +262,7 @@
 * [x] remove first char check into lookup table
 * [x] ~~Try moving [(. into token?~~ nope, splitting to lookup table is better
 * [ ] Unknown operator test case, like <<< or >==
-* [ ] is that possible to merge tokens with operators lookup table?
+* [x] is that possible to merge tokens with operators lookup table?
   + it seems we uniquely identify tokens by first character as well (with fallback to non-spacy UTF for ids)
   + that's faster
   + that supposedly allows merging tokens/ops loop
