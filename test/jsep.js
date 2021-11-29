@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../justin.js'
-import { skip, code, expr, char, nil } from '../parse.js'
+import { skip, code, expr, char, operator } from '../parse.js'
 
 test('Expression: Constants', ()=> {
   is(parse('\'abc\''),  "'abc'" );
@@ -65,33 +65,24 @@ test('Ops', function (qunit) {
 });
 
 test('Custom operators', ()=> {
-  // parse.binary['^'] = 10;
-  // parse.operator.splice(10, 0,
-  //   (a,cc,prec,end) => (cc===94 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
-  // )
-  is(parse('a^b'), ['^','a','b']);
+  // is(parse('a^b'), ['^','a','b']);
 
-  // parse.binary['×'] = 9;
-  parse.operator.splice(9,0,(a,cc,prec,end) => cc===215 && [skip(1), a, expr(prec,end)])
+  operator('×', 9)
   is(parse('a×b'), ['×','a','b']);
 
-  // parse.binary['or'] = 1;
-  parse.operator.splice(1,0,(a,cc,prec,end) => cc===111 && code(1)===114 && code(2)<=32 && [skip(2), a, expr(prec,end)])
+  operator('or',1)
   is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
   throws(() => parse('oneWord ordering anotherWord'));
 
-  // parse.unary['#'] = 11;
-  parse.operator.splice(11,0,(a,cc,prec,end) => cc===35 && a===nil && [skip(1), expr(prec-1,end)])
+  operator('#', 11, -1)
   is(parse('#a'), ['#','a']);
 
-  parse.operator.splice(12,0,(a,cc,prec,end) => a === 'not' && [a, expr(prec-1,end)])
+  operator('not', 13, (node) => char(3) === 'not' && [skip(3), expr(12)])
   is(parse('not a'), ['not', 'a']);
 
-  // parse.unary['notes'] = 11;
   throws(t => parse('notes 1'));
 
-  // parse.binary['and'] = 2;
-  parse.operator.splice(2,0,(a,cc,prec,end) => cc===97 && char(3)==='and' && code(3) <=32 && [skip(3), a, expr(prec,end)])
+  operator('and', 2)
   is(parse('a and b'),['and','a','b']);
   is(parse('bands'), 'bands');
 
@@ -107,11 +98,11 @@ test.skip('Bad Numbers', ()=> {
 });
 
 test('Missing arguments', ()=> {
-  // NOTE: we accept these cases as useful
-  throws(() => parse('check(,)'), ['check', null, null]);
-  throws(() => parse('check(,1,2)'), ['check', null, 1,2]);
-  throws(() => parse('check(1,,2)'), ['check', 1,null,2]);
-  throws(() => parse('check(1,2,)'), ['check', 1,2, null]);
+  // NOTE: these cases don't matter as much, can be either for or against
+  throws(() => is(parse('check(,)'), ['check', null, null]));
+  throws(() => is(parse('check(,1,2)'), ['check', null, 1,2]));
+  throws(() => is(parse('check(1,,2)'), ['check', 1,null,2]));
+  throws(() => is(parse('check(1,2,)'), ['check', 1,2, null]));
   throws(() => parse('check(a, b c d) '), 'spaced arg after 1 comma');
   throws(() => parse('check(a, b, c d)'), 'spaced arg at end');
   throws(() => parse('check(a b, c, d)'), 'spaced arg first');
@@ -119,9 +110,9 @@ test('Missing arguments', ()=> {
 });
 
 test('Uncompleted expression-call/array', ()=> {
-  throws(() => parse('(a,b'))
+  throws(() => console.log(parse('(a,b')))
   throws(function () {
-    parse('myFunction(a,b');
+    console.log(parse('myFunction(a,b'));
   }, 'detects unfinished expression call');
 
   throws(function () {
@@ -134,18 +125,18 @@ test('Uncompleted expression-call/array', ()=> {
 });
 
 test(`should throw on invalid expr`, () => {
-  throws(() => parse('!'))
+  throws(() => console.log(parse('!')))
   throws(() => parse('*x'))
   throws(() => parse('||x'))
   throws(() => parse('?a:b'))
   throws(() => parse('.'))
-  throws(() => parse('()()'))
+  throws(() => console.log(parse('()()')))
     // '()', should throw 'unexpected )'...
   throws(() => console.log(parse('() + 1')))
 });
 
 test('Esprima Comparison', ()=> {
-  // is(parse('[1,,3]'), [])
+  // is(parse('[1,,3]'), [1,null,3])
   // is(parse('[1,,]'), [])
   is(parse(' true'), true)
   is(parse('false '), false)

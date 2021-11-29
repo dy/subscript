@@ -1,10 +1,10 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr, nil } from '../parse.js'
+import { skip, code, char, expr, operator } from '../parse.js'
 
 test('parse: basic', t => {
-  is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
   any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
+  is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
   any(parse('1 + 2 + 3 + 4'), ['+', ['+', ['+', 1, 2], 3], 4],   ['+', 1, 2, 3, 4])
   is(parse('1 * 2 + 3'), ['+', ['*', 1, 2], 3])
   any(parse('1 + 2 * 3 + 4'), ['+', ['+', 1, ['*', 2, 3]], 4],    ['+', 1, ['*', 2, 3], 4])
@@ -17,6 +17,7 @@ test('parse: basic', t => {
   is(parse(`a(1)`), [['a'], 1])
   is(parse(`a(1).b`), ['.',[['a'], 1],'"b"'])
   any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
+  any(parse('a.b.c'), ['.',['.','a','"b"'],'"c"'],    ['.','a','"b"','"c"'])
   any(parse('a.b.c(d).e'), ['.',[['.',['.','a','"b"'],'"c"'],'d'],'"e"'],    ['.',[['.','a','"b"','"c"'],'d'],'"e"'])
   is(parse(`+-2`), ['+',['-',2]])
   is(parse(`+-a.b`), ['+',['-',['.','a','"b"']]])
@@ -26,7 +27,7 @@ test('parse: basic', t => {
   is(parse(`+-a.b+-!1`), ['+',['+',['-',['.','a','"b"']]], ['-',['!',1]]])
 
   is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
-  any(parse(`( a,  b )`), [',','a','b'],  [',',[',','a', 'b']])
+  is(parse(`( a,  b )`), [',','a','b'])
   is(parse(`a (  ccc. d,  -+1.0 )`), ['a', ['.', 'ccc', '"d"'], ['-',['+',1]]])
 
   is(parse(`a.b (  ccc. d , -+1.0 ) . e`), ['.',[['.', 'a', '"b"'], ['.', 'ccc', '"d"'], ['-',['+',1]]], '"e"'])
@@ -35,10 +36,8 @@ test('parse: basic', t => {
   is(parse('a()()()'),[[['a']]])
   is(parse('a(b)(c)'),[['a', 'b'],'c'])
 
-  // parse.binary['**']=16
-  parse.operator.splice(parse.operator.length - 3, 0,
-    (a,cc,prec,end) => (cc===42 && code(1) === 42) ? [skip(2), a, expr(prec,end)] : null,
-  )
+  // **
+  operator('**', 14)
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
@@ -91,7 +90,7 @@ test('readme', t => {
 })
 
 
-test.skip('parse: interpolate string', t => {
+test.todo('ext: interpolate string', t => {
   is(parse`a+1`, ['+','a',1])
   is(subscript`a+1`({a:1}), 2)
 })
@@ -109,15 +108,22 @@ test('parse: strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc"','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  parse.token.splice(3,0, c =>
-    c === 116 && char(4) === 'true' && skip(4) ? true :
-    c === 102 && char(5) === 'false' && skip(5) ? false :
-    c === 110 && char(4) === 'null' && skip(4) ? null :
-    c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
-    undefined
+  const v = v => ({valueOf:()=>v})
+  parse.token.splice(2,0, c =>
+    c === 116 && char(4) === 'true' && skip(4) ? v(true) :
+    c === 102 && char(5) === 'false' && skip(5) ? v(false) :
+    c === 110 && char(4) === 'null' && skip(4) ? v(null) :
+    c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
+    null
   )
   is(parse('null'), null)
   is(parse('(null)'), null)
+  is(parse('!null'), ['!',null])
+  is(parse('false++'), ['++',false])
+  is(parse('++false'), ['++',false])
+  is(parse('(a)(null)'), ['a',null])
+  is(parse('false&true'), ['&',false,true])
+  is(parse('(false)||((null))'), ['||',false,null])
   // parse.literal['undefined'] = undefined
   is(parse('undefined'), undefined)
   is(parse('(undefined)'), undefined)
@@ -257,24 +263,24 @@ test('eval: basic', t => {
 
 test('ext: in operator', t => {
   evaluate.operator['in'] = (a,b)=>a in b
-  parse.operator.unshift(node => (char(2) === 'in' && (skip(2), ['in', '"' + node + '"', expr()])))
+  operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
   is(parse('inc in bin'), ['in', '"inc"', 'bin'])
   is(parse('bin in inc'), ['in', '"bin"', 'inc'])
-  // is(parse('b inc'), ['in', '"bin"', 'inc'])
+  throws(() => parse('b inc'))
   is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
 })
 
 test('ext: ternary', t => {
   evaluate.operator['?:']=(a,b,c)=>a?b:c
-  parse.operator.unshift((node,cc) => {
+  operator('?', 3, (node) => {
     let a, b
-    if (cc !== 63) return
-    skip(), parse.space(), a = expr(-1,58)
-    if (code() !== 58) return
-    skip(), parse.space(), b = expr()
-    return ['?:',node, a, b]
+    skip(), parse.space(), a = expr(0)
+    if (code() !== 58) err('Expected :')
+    skip(), parse.space(), b = expr(0)
+    return ['?:', node, a, b]
   })
+  operator(':')
 
   is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
   is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
@@ -283,14 +289,19 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   evaluate.operator['['] = (...args) => Array(...args)
-  parse.token.unshift((cc, node, arg) =>
-    cc === 91 ?
-    (
-      skip(), arg=expr(0,93),
-      node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
-      skip(), node
-    ) : null
-  )
+  // parse.token.unshift((cc, node, arg) =>
+  //   cc === 91 &&
+  //   (
+  //     skip(), arg=expr(),
+  //     node = !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
+  //     skip(), node
+  //   )
+  // )
+  // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
+  operator('[', 20, (node,arg) => !node && (
+    skip(), arg=expr(), skip(),
+    !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
+  ))
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])
@@ -303,14 +314,16 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   parse.token.unshift((cc, node) => (
-    cc === 123 ? (skip(), node = map(['{',expr(0,125)]), skip(), node) : null
+    cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
   ))
-  parse.operator.splice(4,0,(node,cc,prec,end) => cc===58 && [skip(),node,expr(prec,end)])
+
+  operator('}')
+  operator(':', 4)
   evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
   evaluate.operator[':'] = (a,b)=>[a,b]
 
   const map = (n, args) => {
-    if (n[1]===nil) args = []
+    if (!n[1]) args = []
     else if (n[1][0]==':') args = [n[1]]
     else if (n[1][0]==',') args = n[1].slice(1)
     return ['{', ...args]

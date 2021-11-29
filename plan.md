@@ -259,4 +259,25 @@
 * [ ] Demo
 * [ ] calltree nodes could stash static values (as in HTM)
 * [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
-
+* [x] remove first char check into lookup table
+* [x] ~~Try moving [(. into token?~~ nope, splitting to lookup table is better
+* [ ] Unknown operator test case, like <<< or >==
+* [x] is that possible to merge tokens with operators lookup table?
+  + it seems we uniquely identify tokens by first character as well (with fallback to non-spacy UTF for ids)
+  + that's faster
+  + that supposedly allows merging tokens/ops loop
+  + that would allow to avoid confusion of `not` operator detected as token
+  + also that would shrink parse.token to a bunch of lookups
+  + also space can be done via lookup as well
+  - tokens lookup introduce separate rules dict, which is almost identical to tokens that we expose now, it is even technically parsed differently
+  - cognitive load it adds is sort of impersonal - hard intellectual grasp, opposed to easy token meaning
+  - not operator can be worked around by checking lookup table in tokens parsing as well
+  + interpolated strings eval can act as operator a``, `` - not token.
+* [x] ~~pass end character as expr argument~~ nope - it requires idx++, which is behind expr purpose
+* [x] make group an operator, not token
+* [x] token must wrap found result in an object, otherwise ignore falsish stuff - that will align method with operators, no nil
+  ? How do we handle it then?
+  . With strings - we return them wrapped as `"something"`. We don't return actual strings.
+  . We need truish wrapper objects with correct valueOf returning undefined etc.
+  . Real primitives are actually available, we can still unwrap them into tree
+  ? Maybe first merge expr loop, then find out if single-point unwrapping is available

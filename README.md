@@ -27,7 +27,7 @@ _Subscript_ is designed to be useful for:
 * custom DSL
 
 [_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
-_Subscript_ has [2.8kb](https://npmfs.com/package/subscript/4.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with better performance.
+_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/4.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with better performance.
 
 
 ## Operators
@@ -279,7 +279,7 @@ Subscript shows relatively good performance within other evaluators:
 // 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
 // parse 30k times
 
-subscript: ~220 ms
+subscript: ~200 ms
 jsep: ~280 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms

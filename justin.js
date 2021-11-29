@@ -1,17 +1,22 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, nil, binary, unary} from './parse.js'
+import {parse, code, char, skip, expr, operator, err} from './parse.js'
 
 // ;
-parse.operator[0] = binary(c => c==44||c==59)
+operator(';', 1)
+
+// ===, !==
+operator('===', 9)
+operator('!==', 9)
 
 // undefined
-parse.token.splice(3,0, c =>
-  c === 116 && char(4) === 'true' && skip(4) ? true :
-  c === 102 && char(5) === 'false' && skip(5) ? false :
-  c === 110 && char(4) === 'null' && skip(4) ? null :
-  c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
-  undefined
+const v = v => ({valueOf:()=>v})
+parse.token.splice(2,0, c =>
+  c === 116 && char(4) === 'true' && skip(4) ? v(true) :
+  c === 102 && char(5) === 'false' && skip(5) ? v(false) :
+  c === 110 && char(4) === 'null' && skip(4) ? v(null) :
+  c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
+  null
 )
 
 // "' with /
@@ -28,27 +33,25 @@ const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
 
 // **
 evaluate.operator['**'] = (...args)=>args.reduceRight((a,b)=>Math.pow(b,a))
-parse.operator.splice(parse.operator.length - 3, 0, binary(cc=>cc===42 && code(1) === cc && 2))
+operator('**', 14)
 
 // ~
-parse.operator.splice(parse.operator.length-2, 0, unary(cc => cc === 126))
+operator('~', 13, -1)
 evaluate.operator['~'] = a=>~a
 
 // TODO ...
-// // unary[1]['...']=true
-
 
 // ?:
 evaluate.operator['?:']=(a,b,c)=>a?b:c
-parse.operator.splice(1,0, (node,cc,prec,end) => {
+operator('?', 3, (node) => {
+  if (!node) err('Expected expression')
   let a, b
-  if (cc !== 63) return
-  if (node===nil) err('Bad expression')
-  skip(), parse.space(), a = expr(-1,58)
-  if (code() !== 58) return
+  skip(), parse.space(), a = expr()
+  if (code() !== 58) err('Expected :')
   skip(), parse.space(), b = expr()
   return ['?:', node, a, b]
 })
+// operator(':')
 
 // /**/, //
 parse.space = cc => {
@@ -65,29 +68,28 @@ parse.space = cc => {
 
 // in
 evaluate.operator['in'] = (a,b)=>a in b
-parse.operator.splice(6,0,(a,cc,prec,end) => (char(2) === 'in' && [skip(2), '"' + a + '"', expr(prec,end)]))
+operator('in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)])
 
 // []
 evaluate.operator['['] = (...args) => Array(...args)
-parse.token.unshift((cc, node, arg) =>
-  cc === 91 &&
-  (
-    skip(), arg=expr(0,93),
-    node = arg===nil ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg],
-    skip(), node
-  )
-)
+// as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
+operator('[', 20, (node,arg) => !node && (
+  skip(), arg=expr(0,93), skip(),
+  !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
+))
 
 // {}
 parse.token.unshift((cc, node) => (
-  cc === 123 ? (skip(), node = map(['{',expr(0,125)]), skip(), node) : null
+  cc === 123 && (skip(), node = map(['{', expr(0,125)]), skip(), node)
 ))
-parse.operator.splice(4,0, binary(cc=>cc===58))
+
+operator('}')
+operator(':', 0)
 evaluate.operator['{'] = (...args)=>Object.fromEntries(args)
 evaluate.operator[':'] = (a,b)=>[a,b]
 
 const map = (n, args) => {
-  if (n[1]===nil) args = []
+  if (!n[1]) args = []
   else if (n[1][0]==':') args = [n[1]]
   else if (n[1][0]==',') args = n[1].slice(1)
   return ['{', ...args]
