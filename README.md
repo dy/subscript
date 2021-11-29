@@ -1,4 +1,4 @@
-# <img alt="subscript" src="/subscript3.svg" height=42/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
+# <sub><img alt="subscript" src="/subscript3.svg" height=42/></sub> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>-->
 
 _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust, Swift, Objective C, Kotlin etc.<br/>
 
