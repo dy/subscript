@@ -118,6 +118,12 @@ test('ext: literals', t=> {
   )
   is(parse('null'), null)
   is(parse('(null)'), null)
+  is(parse('!null'), ['!',null])
+  is(parse('false++'), ['++',false])
+  is(parse('++false'), ['++',false])
+  is(parse('(a)(null)'), ['a',null])
+  is(parse('false&true'), ['&',false,true])
+  is(parse('(false)||((null))'), ['||',false,null])
   // parse.literal['undefined'] = undefined
   is(parse('undefined'), undefined)
   is(parse('(undefined)'), undefined)

@@ -7,7 +7,7 @@ const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 // current string & index
 let idx, cur
 
-export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree),
+export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree.valueOf()),
 
 err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
 
@@ -73,11 +73,11 @@ operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=looku
 
   map = !type ? node => { // binary, consume same-op group
       node = [op, node || err()]
-      do { idx+=l, node.push(expr(prec) || err()) } while (parse.space()==c && isop())
+      do { idx+=l, node.push((expr(prec) || err()).valueOf()) } while (parse.space()==c && isop())
       return node
     } :
     type > 0 ? node => node && [skip(l), node] : // postfix unary
-    type < 0 ? node => !node && [skip(l), expr(prec-1) || err()] : // prefix unary
+    type < 0 ? node => !node && [skip(l), (expr(prec-1) || err()).valueOf()] : // prefix unary
     type,
 
   lookup[c] = (node, curPrec) => curPrec < prec && isop() && map(node) || (prev && prev(node, curPrec))
@@ -128,15 +128,15 @@ for (let i = 0, ops = [
   '%', PREC_MULT,,
 
   // a.b
-  '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b],
+  '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b.valueOf()],
 
   // a[b]
-  '[', PREC_CALL, (node) => (idx++, node = ['.', node, expr(0,CBRACK)], idx++, node),
+  '[', PREC_CALL, (node) => (idx++, node = ['.', node, expr(0,CBRACK).valueOf()], idx++, node),
   ']',,,
 
   // a(b)
   '(', PREC_CALL, (node,b) => ( idx++, b=expr(0,CPAREN), idx++,
-    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b] : [node]
+    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b.valueOf()] : [node]
   ),
   // (a+b)
   '(', PREC_GROUP, (node,b) => !node && (++idx, b=expr(0,CPAREN) || err(), ++idx, b),
