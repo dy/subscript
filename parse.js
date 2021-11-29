@@ -14,19 +14,17 @@ err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx)
 skip = (is=1, from=idx) => {
   if (typeof is === 'number') idx += is
   else while (is(code())) idx++;
-  return cur.slice(from, idx) || nil
+  return cur.slice(from, idx)
 },
 
 code = (i=0) => cur.charCodeAt(idx+i),
 
 char = (n=1) => cur.substr(idx, n),
 
-nil = '',
-
 // a + b - c
 expr = (prec=0, cc=parse.space(), node, from=idx, i=0, map, newNode) => {
   // prefix or token
-  while (from===idx && i < parse.token.length) node = parse.token[i++](cc)
+  while (i < parse.token.length && !(node = parse.token[i++](cc)));
 
   // operator
   while (
@@ -46,15 +44,14 @@ space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc 
 // tokens
 token = parse.token = [
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-  (number) => {
-    if (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) {
-      if (code() === 69 || code() === 101) number += skip(2) + skip(c => c >= 48 && c <= 57)
-      return isNaN(number = parseFloat(number)) ? err('Bad number') : number
-    }
-    return nil
-  },
+  (number) => (
+    (number = skip(c => (c > 47 && c < 58) || c === PERIOD)) && (
+      (code() === 69 || code() === 101) && (number += skip(2) + skip(c => c >= 48 && c <= 57)),
+      isNaN(number = new Number(number)) ? err('Bad number') : number
+    )
+  ),
   // "a"
-  (q, qc) => q === 34 ? (skip() + skip(c => c-q) + skip()) : nil,
+  (q, qc) => q === 34 && (skip() + skip(c => c-q) + skip()),
   // id
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -69,30 +66,24 @@ token = parse.token = [
 lookup = [],
 
 // create operator checker/mapper (see examples)
-operator = (op, prec=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op) => (
-  map = typeof map === 'number' ? map > 0 ?
-    node => node !== nil && [skip(l), node] : // postfix unary
-    node => node === nil && [skip(l), expr(prec-1)] : // prefix unary
-    map,
-  lookup[c] = (node, curPrec) => {
-    // word operator must have space after
-    if (curPrec < prec && (l<2 || char(l)==op) && (!word || code(l) <= SPACE)) {
-      // custom mapper
-      if (map) node = map(node) || (prev && prev(node, curPrec))
-      // consume same-op group
-      else {
-        node = [op, node]
-        do { idx+=l, node.push(expr(prec)) } while (parse.space()==c && char(l) == op && (word ? code(l) <= SPACE : 1))
-      }
+// @param op is operator string
+// @param prec is operator precedenc to check
+// @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
+operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op, isop) => (
+  isop = l<2 ? // word operator must have space after
+    !word ? ()=>1 : ()=>code(1)<=SPACE :
+    !word ? ()=>char(l)==op : ()=>char(l)==op&&code(l)<=SPACE,
 
-      // FIXME
-      // if (end && code()!==end) err('Unclosed paren')
-    }
-    else node = prev && prev(node, curPrec)
+  map = !type ? node => { // binary, consume same-op group
+      node = [op, node]
+      do { idx+=l, node.push(expr(prec)) } while (parse.space()==c && isop())
+      return node
+    } :
+    type > 0 ? node => node && [skip(l), node] : // postfix unary
+    type < 0 ? node => !node && [skip(l), expr(prec-1)] : // prefix unary
+    type,
 
-    // decorate already assigned lookup
-    return node
-  }
+  lookup[c] = (node, curPrec) => curPrec < prec && isop() && map(node) || (prev && prev(node, curPrec))
 )
 
 // ,
@@ -149,10 +140,10 @@ for (let i = 0, ops = [
   // a(b)
   '(', PREC_CALL, (node,b) => (
     idx++, b=expr(), idx++,
-    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b === nil ? [node] : [node, b]
+    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b] : [node]
   ),
   // (a+b)
-  '(', PREC_GROUP, (node,b) => node===nil && (++idx, b=expr(), ++idx, b),
+  '(', PREC_GROUP, (node,b) => !node && (++idx, b=expr(), ++idx, b),
   ')',,,
 ]; i < ops.length;) operator(ops[i++],ops[i++],ops[i++])
 
