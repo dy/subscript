@@ -30,25 +30,6 @@ _Subscript_ is designed to be useful for:
 _Subscript_ has [2.5kb](https://npmfs.com/package/subscript/4.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with better performance.
 
 
-## Operators
-
-Default operators include common operators for the listed languages in the following precedence:
-
-* `++ --` unary postfix
-* `! + - ++ --` unary prefix
-* `* / %`
-* `+ -`
-* `<< >> >>>`
-* `< <= > >=`
-* `== !=`
-* `&`
-* `^`
-* `|`
-* `&&`
-* `||`
-
-All other operators can be extended, see [extension](#extension).
-
 ## Evaluation
 
 _Subscript_ parser generates lispy calltree (compatible with [frisk](https://npmjs.com/frisk)), which is compared to esprima AST has:
@@ -66,34 +47,40 @@ import {evaluate} from 'subscript.js'
 evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300sec"
 ```
 
-## Extension
+## Extending
 
-Tokens are extensible via `parse.token` list, can be added support of _regex_, _array_, _object_, _interpolated string_ and others.
+Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
 Default tokens include:
 
 * `"abc"` strings
 * `1.2e+3` floats
-* `()` expression groups or fn calls
-* `.`, `[]` property access
+* identifiers
 
-Operators can be extended via `parse.operator` to add support for any unary/binary/postfix operators, calls, props or chains.
+Operators can be extended via `parse.operator` function for any unary/binary/postfix operators, calls, props or chains, groups, arrays, objects etc.
+
+Default operators include common operators for the listed languages in the following precedence:
+
+* `++ --` unary postfix
+* `! + - ++ --` unary prefix
+* `* / %`
+* `+ -`
+* `<< >> >>>`
+* `< <= > >=`
+* `== !=`
+* `&`
+* `^`
+* `|`
+* `&&`
+* `||`
 
 Comments can be added via extending `parse.space`.
 
-For now see justin extension how things can be done.
-
-<!--
 ```js
 import { parse, evaluate } from 'subscript.js'
 
-// add precedences
-// TODO
-// parse.operator['=>'] = 10
-
-// define evaluators
-// TODO
-// evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
-// evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
+parse.operator('=>', 10)
+evaluate.operator['=>'] = ( args, body ) => evaluate(body, args)
+evaluate.operator['|'] = ( a, ...b ) => a.pipe(...b)
 
 let tree = parse(`
   interval(350)
@@ -103,7 +90,6 @@ let tree = parse(`
 `)
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
--->
 
 
 ## Justin
@@ -111,6 +97,7 @@ evaluate(tree, { Math, map, take, interval, gaussian })
 _Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.<br/>
 It adds support of:
 
++ `===`, `!==` operators
 + `**` binary operator
 + `~` unary operator
 + `'` strings
@@ -122,7 +109,6 @@ It adds support of:
 + unary word operators
 + `//`, `/* */` comments
 + `true`, `false`, `null`, `undefined` literals
-<!-- + `===`, `!==` operators -->
 <!-- + `?` chaining operator -->
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
@@ -279,7 +265,7 @@ Subscript shows relatively good performance within other evaluators:
 // 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
 // parse 30k times
 
-subscript: ~200 ms
+subscript: ~220 ms
 jsep: ~280 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms
