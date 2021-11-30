@@ -306,21 +306,13 @@ test('ext: list', t => {
 })
 
 test('ext: object', t => {
-  parse.token.unshift((cc, node) => (
-    cc === 123 ? (skip(), node = map(['{', expr()]), skip(), node) : null
-  ))
-
+  operator('{', 20, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
+    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['[',arg])
+  )
   operator('}')
   operator(':', 4)
   evaluate.operator('{', (...args)=>Object.fromEntries(args))
   evaluate.operator(':', (a,b)=>[a,b])
-
-  const map = (n, args) => {
-    if (!n[1]) args = []
-    else if (n[1][0]==':') args = [n[1]]
-    else if (n[1][0]==',') args = n[1].slice(1)
-    return ['{', ...args]
-  }
 
   is(parse('{}'), ['{'])
   is(parse('{x: 1}'), ['{',[':', 'x', 1]])

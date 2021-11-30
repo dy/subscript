@@ -5,7 +5,8 @@ import {parse, code, char, skip, expr, err} from './parse.js'
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
+PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19,
+PREC_EXP=14, PREC_TOKEN=20
 
 
 // tokens
@@ -31,11 +32,6 @@ parse.token.push(
     return skip(), qc + str + qc
   },
 
-  // {}
-  (cc, node) => (
-    cc === 123 && (skip(), node = mapObj(['{', expr(0,125)]), skip(), node)
-  ),
-
   // literal
   c =>
     c === 116 && char(4) === 'true' && skip(4) ? v(true) :
@@ -55,14 +51,6 @@ parse.token.push(
 )
 
 const escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'}
-
-// {}
-const mapObj = (n, args) => (
-  args = !n[1] ? [] :
-  (n[1][0]==':') ? [n[1]] :
-  (n[1][0]==',') ? n[1].slice(1) : args,
-  ['{', ...args]
-)
 
 
 // /**/, //
@@ -144,11 +132,11 @@ addOps(parse.operator, 3, [
   ')',,,
 
   // justin extension
-  ';', 1,,
-  '===', 9,,
-  '!==', 9,,
-  '**', 14,,
-  '~', 13, -1,
+  ';', PREC_SEQ,,
+  '===', PREC_EQ,,
+  '!==', PREC_EQ,,
+  '**', PREC_EXP,,
+  '~', PREC_UNARY, -1,
   '?', 3, (node) => {
     if (!node) err('Expected expression')
     let a, b
@@ -158,12 +146,19 @@ addOps(parse.operator, 3, [
     return ['?:', node, a, b]
   },
   '}',,,
-  ':', 0,,
+  ':',,,
   'in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)],
-  '[', 20, (node,arg) => !node && (
+
+  // [a,b,c]
+  '[', PREC_TOKEN, (node,arg) => !node && (
     skip(), arg=expr(0,93), skip(),
-    !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
-  )
+    !arg ? ['['] : arg[0] == ',' ? (arg[0]='[',arg) : ['[',arg]
+  ),
+
+  // {}
+  '{', PREC_TOKEN, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
+    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['[',arg])
+  ,
 ])
 
 addOps(evaluate.operator, 2, [
