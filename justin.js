@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import {evaluate} from './evaluate.js'
-import {parse, code, char, skip, expr, err} from './parse.js'
+import {parse, code, char, skip, expr, err, val} from './parse.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
@@ -156,7 +156,7 @@ addOps(parse.operator, 3, [
 
   // {a:0, b:1}
   '{', PREC_TOKEN, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
-    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['[',arg])
+    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['{',arg])
   ,
 ])
 

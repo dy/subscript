@@ -308,7 +308,7 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   operator('{', 20, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
-    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['[',arg])
+    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['{',arg])
   )
   operator('}')
   operator(':', 4)
@@ -316,6 +316,7 @@ test('ext: object', t => {
   evaluate.operator(':', (a,b)=>[a,b])
 
   is(parse('{}'), ['{'])
+  is(parse('{x}'), ['{','x'])
   is(parse('{x: 1}'), ['{',[':', 'x', 1]])
   is(parse('{x: 1, "y":2}'), ['{', [':','x',1], [':','"y"',2]])
   is(parse('{x: 1+2, y:a(3)}'), ['{', [':','x',['+',1,2]], [':', 'y',['a',3]]])
