@@ -58,11 +58,11 @@ addOps(parseOp, 3, [
   '+', PREC_SUM,,
   '+', PREC_UNARY, -1,
   '++', PREC_UNARY, -1,
-  '++', PREC_UNARY, +1,
+  '++', PREC_POSTFIX, +1,
   '-', PREC_SUM,,
   '-', PREC_UNARY, -1,
   '--', PREC_UNARY, -1,
-  '--', PREC_UNARY, +1,
+  '--', PREC_POSTFIX, +1,
 
   // ! ~
   '!', PREC_UNARY, -1,
