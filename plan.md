@@ -291,3 +291,4 @@
   + descent can be implemented manually
   - makes no point to host pre/postfix index then
   - it's nice to have it a separate feature
+* [ ] Radical nanoscript: remove descent; binaries-only defs; eval binaries only; no char, no code, no err; space via skip; no word operators;
