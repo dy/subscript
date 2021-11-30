@@ -24,7 +24,8 @@ expr = (prec=0, end, cc, node, i=0, map, newNode) => {
     (cc=parse.space()) && (newNode = lookup[cc]?.(node, prec) || (!node && token(cc)) )
   ) node = newNode;
 
-  if (end && cc !== end) err('Unclosed paren')
+  // skip end character, if expected
+  if (end) cc != end ? err('Unclosed paren') : skip()
 
   return node
 },

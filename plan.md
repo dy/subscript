@@ -278,6 +278,7 @@
   - that leaves parse unworkable and meaningless. Minimal level thing maybe?
 * [x] Test low-precedence unary, like  `-2*a^3 + -a^2`
 * [x] Unknown operator test case, like <<< or >==
+* [x] expr can skip end, if passed: low-hanging fruit
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -285,3 +286,8 @@
 * [ ] Demo
 * [ ] Make eval-only tests
 * [ ] calltree nodes could stash static values (as in HTM)
+* [ ] ? externalize operator lookup descent?
+  + fast op lookups are single functions, not stack of meanings: it can boost perf and shorten size
+  + descent can be implemented manually
+  - makes no point to host pre/postfix index then
+  - it's nice to have it a separate feature
