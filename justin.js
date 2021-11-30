@@ -120,12 +120,12 @@ addOps(parse.operator, 3, [
   '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b.valueOf()],
 
   // a[b]
-  '[', PREC_CALL, (node) => (skip(), node = ['.', node, expr(0,CBRACK).valueOf()], skip(), node),
+  '[', PREC_CALL, (node) => (skip(), node = ['.', node, val(expr(0,CBRACK))], skip(), node),
   ']',,,
 
   // a(b)
   '(', PREC_CALL, (node,b) => ( skip(), b=expr(0,CPAREN), skip(),
-    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, b.valueOf()] : [node]
+    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, val(b)] : [node]
   ),
   // (a+b)
   '(', PREC_GROUP, (node,b) => !node && (skip(), b=expr(0,CPAREN) || err(), skip(), b),
