@@ -52,6 +52,8 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 
 ## Extending
 
+### Operators 
+
 Default operators include common operators for the listed languages in the following precedence:
 
 * `++ --` unary postfix
@@ -86,7 +88,7 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
----
+### Tokens
 
 Default tokens include:
 
@@ -105,7 +107,7 @@ parse.token.unshift(c => char(4) === 'this' ? ctx : null)
 evaluate(parse(`this.x`)) // 1
 ```
 
----
+### Spaces/comments
 
 Comments can be added via extending `parse.space`. See [justin.js](./justin.js) for more examples.
 
