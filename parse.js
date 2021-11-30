@@ -43,11 +43,15 @@ lookup = [],
 // @param op is operator string
 // @param prec is operator precedenc to check
 // @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
-operator = parse.operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op) => (
+operator = parse.operator = (
+  op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length,
+  prev=lookup[c],
+  spaced=type<=0&&op.toUpperCase()!==op // non-postfix word operator must have space after
+) => (
   map = !type ? node => { // binary, consume same-op group
       node = [op, node || err()]
       do { idx+=l, node.push(val(expr(prec))) }
-      while (parse.space()==c && (l<2||char(l)==op) && (!word||code(l)<=SPACE)) // word operator must have space after
+      while (parse.space()==c && (l<2||char(l)==op) && (!spaced||code(l)<=SPACE))
       return node
     } :
     type > 0 ? node => node && [skip(l), val(node)] : // postfix unary
@@ -55,7 +59,7 @@ operator = parse.operator = (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.l
     type,
 
   lookup[c] = (node, curPrec) =>
-    curPrec < prec && (l<2||char(l)==op) && (!word||code(l)<=SPACE) &&
+    curPrec < prec && (l<2||char(l)==op) && (!spaced||code(l)<=SPACE) &&
     map(node) || (prev && prev(node, curPrec))
 ),
 

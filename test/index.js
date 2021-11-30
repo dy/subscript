@@ -109,13 +109,18 @@ test('parse: strings', t => {
 })
 test('ext: literals', t=> {
   const v = v => ({valueOf:()=>v})
-  parse.token.splice(2,0, c =>
-    c === 116 && char(4) === 'true' && skip(4) ? v(true) :
-    c === 102 && char(5) === 'false' && skip(5) ? v(false) :
-    c === 110 && char(4) === 'null' && skip(4) ? v(null) :
-    c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
-    null
-  )
+  // parse.token.splice(2,0, c =>
+  //   c === 116 && char(4) === 'true' && skip(4) ? v(true) :
+  //   c === 102 && char(5) === 'false' && skip(5) ? v(false) :
+  //   c === 110 && char(4) === 'null' && skip(4) ? v(null) :
+  //   c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
+  //   null
+  // )
+  operator('null',30,node=>!node&&(skip(4),v(null)))
+  operator('false',30,node=>!node&&(skip(5),v(false)))
+  operator('true',30,node=>!node&&(skip(4),v(true)))
+  operator('undefined',30,node=>!node&&(skip(9),v(undefined)))
+
   is(parse('null'), null)
   is(parse('(null)'), null)
   is(parse('!null'), ['!',null])

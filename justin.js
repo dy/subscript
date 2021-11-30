@@ -10,7 +10,6 @@ PREC_EXP=14, PREC_TOKEN=20
 
 
 // tokens
-const v = v => ({valueOf:()=>v})
 parse.token.push(
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
   (number) => (
@@ -30,14 +29,6 @@ parse.token.push(
     }
     return skip(), qc + str + qc
   },
-
-  // literal
-  c =>
-    c === 116 && char(4) === 'true' && skip(4) ? v(true) :
-    c === 102 && char(5) === 'false' && skip(5) ? v(false) :
-    c === 110 && char(4) === 'null' && skip(4) ? v(null) :
-    c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
-    null,
 
   // id
   c => skip(c =>
@@ -149,6 +140,7 @@ addOps(parse.operator, 3, [
   ':',,,
   'in', PREC_COMP, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(PREC_COMP)],
 
+  // as operator it's faster to lookup (no need to extra rule check), smaller and no conflict with word names
   // [a,b,c]
   '[', PREC_TOKEN, (node,arg) => !node && (
     skip(), arg=expr(0,93), skip(),
@@ -159,7 +151,14 @@ addOps(parse.operator, 3, [
   '{', PREC_TOKEN, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
     !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['{',arg])
   ,
+
+  // literals
+  'null', PREC_TOKEN, node=>!node&&(skip(4),v(null)),
+  'false', PREC_TOKEN, node=>!node&&(skip(5),v(false)),
+  'true', PREC_TOKEN, node=>!node&&(skip(4),v(true)),
+  'undefined', PREC_TOKEN, node=>!node&&(skip(9),v(undefined)),
 ])
+const v = v => ({valueOf:()=>v})
 
 addOps(evaluate.operator, 2, [
   // subscript
@@ -201,9 +200,7 @@ addOps(evaluate.operator, 2, [
   '?:', (a,b,c)=>a?b:c,
   'in', (a,b)=>a in b,
 
-  // []
   '[', (...args) => Array(...args),
-  // as operator it's faster to lookup (no need to call extra rule check), smaller and no conflict with word names
   '{', (...args)=>Object.fromEntries(args),
   ':', (a,b)=>[a,b]
 ])
