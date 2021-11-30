@@ -1,7 +1,7 @@
 # <img alt="subscript" src="/subscript2.svg" height=42/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>--> 
-
-<a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a>
-<a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue"/></a>
+<a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a>
+<a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript?color=orangered"/></a>
+<a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
 _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust, Swift, Objective C, Kotlin etc.<br/>
 
@@ -30,7 +30,7 @@ _Subscript_ is designed to be useful for:
 * custom DSL
 
 [_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
-_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/5.2.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with better performance.
+_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/5.2.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with _jsep_ and more test coverage and better performance.
 
 
 ## Evaluation
@@ -51,6 +51,8 @@ evaluate(['+', ['*', 'min', 60], '"sec"'], { min: 5 }) // min*60 + "sec" == "300
 ```
 
 ## Extending
+
+### Operators 
 
 Default operators include common operators for the listed languages in the following precedence:
 
@@ -86,13 +88,13 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
----
+### Tokens
 
 Default tokens include:
 
 * `"abc"` strings
 * `1.2e+3` floats
-* identifiers
+* `name` identifiers
 
 Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
 
@@ -105,7 +107,7 @@ parse.token.unshift(c => char(4) === 'this' ? ctx : null)
 evaluate(parse(`this.x`)) // 1
 ```
 
----
+### Spaces/comments
 
 Comments can be added via extending `parse.space`. See [justin.js](./justin.js) for more examples.
 
