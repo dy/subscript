@@ -1,6 +1,6 @@
 # <img alt="subscript" src="/subscript2.svg" height=42/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>--> 
 <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a>
-<a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript?color=indianred"/></a>
+<a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript?color=orangered"/></a>
 <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
 _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust, Swift, Objective C, Kotlin etc.<br/>
