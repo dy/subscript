@@ -94,7 +94,7 @@ Default tokens include:
 
 * `"abc"` strings
 * `1.2e+3` floats
-* identifiers
+* `name` identifiers
 
 Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
 
