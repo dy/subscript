@@ -332,16 +332,19 @@ test('ext: justin', async t => {
 
 test('ext: comments', t => {
   parse.space = cc => {
-    while (cc = code(), cc <= 32) {
-      skip()
-      if (code() === 47)
+    let x = 0
+    while (cc = code(), cc <= 32 || cc === 47) {
+      if (cc <= 32) skip()
+      else if (cc === 47)
         // /**/
         if (code(1) === 42) skip(2), skip(c => c !== 42 && code(1) !== 47), skip(2)
         // //
         else if (code(1) === 47) skip(2), skip(c => c >= 32)
+        else break
     }
     return cc
   }
+  is(parse('/* x */1/* y */+/* z */2'), ['+', 1, 2])
   is(parse(`a /
     // abc
     b`), ['/', 'a', 'b'])
