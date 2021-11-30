@@ -4,7 +4,7 @@ import {parse, code, char, skip, expr, err} from './parse.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
-PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
+PREC_SEQ=1, PREC_TERN=3, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19,
 PREC_EXP=14, PREC_TOKEN=20
 
@@ -12,7 +12,6 @@ PREC_EXP=14, PREC_TOKEN=20
 // tokens
 const v = v => ({valueOf:()=>v})
 parse.token.push(
-  // TODO: better parser
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
   (number) => (
     (number = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
@@ -74,7 +73,7 @@ const addOps = (add, stride=2, list) => {
 
 addOps(parse.operator, 3, [
   // subscript ones
-  // TODO: add ,, as node here
+  // TODO: add ,, as node here?
   ',', PREC_SEQ,,
 
   '|', PREC_OR,,
@@ -137,7 +136,7 @@ addOps(parse.operator, 3, [
   '!==', PREC_EQ,,
   '**', PREC_EXP,,
   '~', PREC_UNARY, -1,
-  '?', 3, (node) => {
+  '?', PREC_TERN, (node) => {
     if (!node) err('Expected expression')
     let a, b
     skip(), parse.space(), a = expr()
@@ -147,7 +146,7 @@ addOps(parse.operator, 3, [
   },
   '}',,,
   ':',,,
-  'in', 10, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(10)],
+  'in', PREC_COMP, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(PREC_COMP)],
 
   // [a,b,c]
   '[', PREC_TOKEN, (node,arg) => !node && (
@@ -155,7 +154,7 @@ addOps(parse.operator, 3, [
     !arg ? ['['] : arg[0] == ',' ? (arg[0]='[',arg) : ['[',arg]
   ),
 
-  // {}
+  // {a:0, b:1}
   '{', PREC_TOKEN, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
     !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['[',arg])
   ,
