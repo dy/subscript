@@ -222,7 +222,6 @@
   + makes shorter & cleaner main exports, extension is possible by importing from src/
   - requires bundling
 * [x] Node tests
-* [ ] Make eval-only tests
 * [x] Hardcode subscript parser for smaller size & better perf
 * [x] Make parse/eval first-level
 * [x] ?: operator is problematic with postfix parsers, since they expect highest precedence and a||b?c:d needs only 4.
@@ -277,11 +276,12 @@
   + Some languages have precedence other than JS. Subscript forces JS precedence with no way to redefine it.
   + That would compactify justin, although with some duplication. Or maybe not, if we build from subscript.
   - that leaves parse unworkable and meaningless. Minimal level thing maybe?
+* [x] Test low-precedence unary, like  `-2*a^3 + -a^2`
+* [x] Unknown operator test case, like <<< or >==
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
   * [ ] string interpolation ` ${} 1 ${} `
 * [ ] Demo
+* [ ] Make eval-only tests
 * [ ] calltree nodes could stash static values (as in HTM)
-* [ ] Test low-precedence unary, like  `-2*a^3 + -a^2`
-* [ ] Unknown operator test case, like <<< or >==

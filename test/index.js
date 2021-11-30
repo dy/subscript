@@ -119,6 +119,7 @@ test('ext: literals', t=> {
   is(parse('null'), null)
   is(parse('(null)'), null)
   is(parse('!null'), ['!',null])
+  is(parse('null++'), ['++',null])
   is(parse('false++'), ['++',false])
   is(parse('++false'), ['++',false])
   is(parse('(a)(null)'), ['a',null])
@@ -350,6 +351,18 @@ test('parse: unfinished sequences', async t => {
   throws(() => parse('a+b)+c'))//, ['+','a','b'])
   throws(() => parse('(a+(b)))+c'))//, ['+','a','b'])
   throws(() => parse('a+b+)c'))//, ['+','a','b',null])
+})
+
+test('parse: non-existing operators', t => {
+  throws(() => parse('a <<< b'))
+  throws(() => parse('a >== b'))
+  throws(() => parse('a -> b'))
+})
+
+test('parse: low-precedence unary', t => {
+  parse.operator('&',13,-1)
+  is(parse('&a+b*c'), ['+',['&','a'],['*','b','c']])
+  is(parse('&a*b+c'), ['+',['&',['*','a','b']],'c'])
 })
 
 test('eval: edge cases', t => {

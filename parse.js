@@ -3,7 +3,7 @@ const SPACE=32
 // current string & index
 let idx, cur
 
-export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree.valueOf()),
+export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : val(tree)),
 
 err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
 
@@ -44,21 +44,22 @@ lookup = [],
 // @param prec is operator precedenc to check
 // @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
 operator = parse.operator =  (op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c], word=op.toUpperCase()!==op, isop) => (
-  isop = l<2 ? // word operator must have space after
-    !word ? c=>1 : c=>code(1)<=SPACE :
-    !word ? c=>char(l)==op : c=>char(l)==op&&code(l)<=SPACE,
-
   map = !type ? node => { // binary, consume same-op group
       node = [op, node || err()]
-      // in order to support literal tokens, we call valueOf any time we create or modify calltree node
-      do { idx+=l, node.push((expr(prec) || err()).valueOf()) } while (parse.space()==c && isop())
+      do { idx+=l, node.push(val(expr(prec))) }
+      while (parse.space()==c && (l<2||char(l)==op) && (!word||code(l)<=SPACE)) // word operator must have space after
       return node
     } :
-    type > 0 ? node => node && [skip(l), node] : // postfix unary
-    type < 0 ? node => !node && [skip(l), (expr(prec-1) || err()).valueOf()] : // prefix unary
+    type > 0 ? node => node && [skip(l), val(node)] : // postfix unary
+    type < 0 ? node => !node && [skip(l), val(expr(prec-1))] : // prefix unary
     type,
 
-  lookup[c] = (node, curPrec) => curPrec < prec && isop() && map(node) || (prev && prev(node, curPrec))
-)
+  lookup[c] = (node, curPrec) =>
+    curPrec < prec && (l<2||char(l)==op) && (!word||code(l)<=SPACE) &&
+    map(node) || (prev && prev(node, curPrec))
+),
+
+// in order to support literal tokens, we call valueOf any time we create or modify calltree node
+val = node => Array.isArray(node) ? node : (node || err()).valueOf()
 
 export default parse
