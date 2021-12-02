@@ -136,7 +136,7 @@ test('jsep-strip', async t => {
 })
 
 
-test('jsep x3', async t => {
+test.skip('jsep x3', async t => {
   const jsep = await import('../lib/parser/expression-eval.module.js');
 
   let ast = jsep.parse(src(0))
@@ -157,7 +157,7 @@ test('jsep x3', async t => {
   console.timeEnd('jsep eval')
 })
 
-test('subscript x3', async t => {
+test.skip('subscript x3', async t => {
   const {parse, evaluate} = await import('../subscript.js');
 
   let ast = parse(src(0))
@@ -284,4 +284,23 @@ test.skip('new Function', async t => {
     fn(a,b,c,d,f,i,k)
   }
   console.timeEnd('new Function eval')
+})
+
+test('direct fn', async t => {
+  const createFn = (n) => (a,b, c, d, f, i, k) => 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(n)
+
+  console.time('direct fn')
+  for (let n = 0; n < RUNS; n++){
+    let fn = createFn(n)
+    // fn(3, 4)
+  }
+  console.timeEnd('direct fn')
+
+  console.time('direct fn eval')
+  let {a,b,c,d,f,i,k} = args
+  for (let n = 0; n < RUNS; n++){
+    let fn = createFn(n)
+    fn(a,b,c,d,f,i,k)
+  }
+  console.timeEnd('direct fn eval')
 })
