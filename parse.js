@@ -25,7 +25,7 @@ expr = (prec=0, end, cc, node, i=0, map, newNode) => {
   ) node = newNode;
 
   // skip end character, if expected
-  if (end) cc != end ? err('Unclosed paren') : skip()
+  if (end) cc != end ? err('Unclosed paren') : idx++
 
   return node
 },
