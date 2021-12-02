@@ -19,9 +19,9 @@
     "test": "test"
   },
   "scripts": {
-    "build": "esbuild ./src/subscript.js --bundle --format=esm --outfile=subscript.js",
+    "build": "esbuild ./src/subscript.js --bundle --format=esm --minify --outfile=subscript.js",
     "minify": "terser subscript.js -o subscript.min.js --module -c passes=3 -m",
-    "build-justin": "esbuild ./src/justin.js --bundle --format=esm --outfile=justin.js",
+    "build-justin": "esbuild ./src/justin.js --bundle --format=esm --minify --outfile=justin.js",
     "minify-justin": "terser justin.js -o justin.min.js --module -c passes=3 -m",
     "test": "node test"
   },
