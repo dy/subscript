@@ -50,7 +50,7 @@ operator = parse.operator = (
   spaced=type<=0&&op.toUpperCase()!==op // non-postfix word operator must have space after
 ) => (
   map = !type ? node => { // binary, consume same-op group
-      node = [op, node || err()]
+      node = [op, val(node)]
       do { idx+=l, node.push(val(expr(prec))) }
       while (parse.space()==c && (l<2||char(l)==op) && (!spaced||code(l)<=SPACE))
       return node

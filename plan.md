@@ -292,3 +292,4 @@
   - makes no point to host pre/postfix index then
   - it's nice to have it a separate feature
 * [ ] Radical nanoscript: remove descent; binaries-only defs; eval binaries only; no char, no code, no err; space via skip; no word operators;
+  * [ ] Make mapper configurable: binaries-only vs flat nodes must be a feature of configurator, not built-in. As well as word operators. As well as reducer in evaluator.
