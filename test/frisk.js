@@ -1,5 +1,5 @@
 import test, {is, any} from '../lib/test.js'
-import subscript, {parse, evaluate} from '../src/subscript.js'
+import subscript, {parse, evaluate} from '../subscript.js'
 
 test('atoms: numbers', function() {
     is(evaluate([1]), [1]);

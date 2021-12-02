@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
-import subscript, {parse, evaluate} from '../src/justin.js'
-import { skip, code, expr, char, operator } from '../src/parse.js'
+import subscript, {parse, evaluate} from '../justin.js'
+import { skip, code, expr, char, operator } from '../parse.js'
 
 test('Expression: Constants', ()=> {
   is(parse('\'abc\''),  "'abc'" );
