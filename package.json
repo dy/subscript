@@ -10,7 +10,8 @@
     "subscript.js",
     "subscript.min.js",
     "justin.js",
-    "justin.min.js"
+    "justin.min.js",
+    "src"
   ],
   "directories": {
     "lib": "lib",
@@ -18,10 +19,10 @@
     "test": "test"
   },
   "scripts": {
-    "build": "esbuild subscript.js --bundle --format=esm --minify --outfile=subscript.min.js",
-    "minify": "terser subscript.min.js -o subscript.min.js --module -c passes=3 -m",
-    "build-justin": "esbuild justin.js --bundle --format=esm --minify --outfile=justin.min.js",
-    "minify-justin": "terser justin.min.js -o justin.min.js --module -c passes=3 -m",
+    "build": "esbuild ./src/subscript.js --bundle --format=esm --minify --outfile=subscript.js",
+    "minify": "terser subscript.js -o subscript.min.js --module -c passes=3 -m",
+    "build-justin": "esbuild ./src/justin.js --bundle --format=esm --minify --outfile=justin.js",
+    "minify-justin": "terser justin.js -o justin.min.js --module -c passes=3 -m",
     "test": "node test"
   },
   "repository": {
