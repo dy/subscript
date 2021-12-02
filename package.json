@@ -18,9 +18,9 @@
     "test": "test"
   },
   "scripts": {
-    "build": "esbuild subscript.js --bundle --format=esm --minify --outfile=subscript.min.js",
+    "build": "rollup subscript.js --file subscript.min.js --format esm --name \"Subscript\"",
     "minify": "terser subscript.min.js -o subscript.min.js --module -c passes=3 -m",
-    "build-justin": "esbuild justin.js --bundle --format=esm --minify --outfile=justin.min.js",
+    "build-justin": "rollup justin.js --file justin.min.js --format esm --name \"Justin\"",
     "minify-justin": "terser justin.min.js -o justin.min.js --module -c passes=3 -m",
     "test": "node test"
   },
@@ -54,7 +54,7 @@
   },
   "homepage": "https://github.com/spectjs/subscript#readme",
   "devDependencies": {
-    "esbuild": "^0.13.14",
+    "rollup": "^2.60.2",
     "terser": "^5.10.0"
   }
 }

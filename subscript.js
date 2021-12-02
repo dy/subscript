@@ -1,4 +1,4 @@
-import parse, {skip, expr, code, tokens, val, operator as parseOp} from './parse.js'
+import parse, {skip, expr, code, tokens, val, operator as parseOp, err} from './parse.js'
 import evaluate, {operator as evalOp} from './evaluate.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
