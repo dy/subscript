@@ -375,5 +375,7 @@ test('parse: low-precedence unary', t => {
 })
 
 test('eval: edge cases', t => {
+  is(evaluate(parse('pow(a, 3)'), {pow:Math.pow, a:1}), 1)
+  is(evaluate(parse('Math.pow(a, 3)'), {Math, a:1}), 1)
   is(evaluate(parse('Math.pow(a, 3) / 2 + b * 2 - 1'), {Math, a:1, b:1}), 1.5)
 })

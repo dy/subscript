@@ -11,7 +11,8 @@ test('atoms: nested lists', function() {
     is(evaluate([1, 2, [3, 4]]), [1, 2, [3, 4]]);
 });
 test('atoms: strings', function() {
-    is(evaluate(['@foo']), 'foo');
+    // is(evaluate(['@foo']), 'foo'); // NOTE: this is wrong extension
+    is(evaluate('@foo'), 'foo');
 });
 
 

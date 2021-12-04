@@ -21,9 +21,7 @@ test('expr-eval', async t => {
   console.timeEnd('expr-eval')
 
   console.time('expr-eval2')
-  eeparser = new Parser();
-  for (let i = 0; i < RUNS; i++){
-    let expr = eeparser.parse(src(i));
+  for (let i = 0; i < RUNS; i++) {
     expr.evaluate(args);
   }
   console.timeEnd('expr-eval2')
@@ -42,9 +40,9 @@ test('subscript', async t => {
     // evaluate(ast, args)
   }
   console.timeEnd('subscript')
+
   console.time('subscript eval')
   for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
     evaluate(ast, args)
   }
   console.timeEnd('subscript eval')
@@ -64,9 +62,10 @@ test('jsep', async t => {
     // jsep.eval(ast, args)
   }
   console.timeEnd('jsep')
+
+
   console.time('jsep eval')
-  for (let i = 0; i < RUNS; i++){
-    let ast = jsep.parse(src(i));
+  for (let i = 0; i < RUNS; i++) {
     jsep.eval(ast, args)
   }
   console.timeEnd('jsep eval')
@@ -87,8 +86,7 @@ test('subscript x2', async t => {
   }
   console.timeEnd('subscript')
   console.time('subscript eval')
-  for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
+  for (let i = 0; i < RUNS; i++) {
     evaluate(ast, args)
   }
   console.timeEnd('subscript eval')
@@ -107,16 +105,16 @@ test('jsep x2', async t => {
     // jsep.eval(ast, args)
   }
   console.timeEnd('jsep')
+
   console.time('jsep eval')
   for (let i = 0; i < RUNS; i++){
-    let ast = jsep.parse(src(i));
     jsep.eval(ast, args)
   }
   console.timeEnd('jsep eval')
 })
 
 
-test('jsep-strip', async t => {
+test.skip('jsep-strip', async t => {
   const {parse} = await import('../lib/parser/jsep-strip.js');
 
   let ast= parse(src(0))
@@ -182,7 +180,7 @@ test('justin', async t => {
   const {parse, evaluate} = await import('../justin.js');
 
   let ast = parse(src(0))
-  // console.log(ast);
+  console.log(ast);
   is(evaluate(ast, args), result);
 
   console.time('justin')
@@ -193,7 +191,6 @@ test('justin', async t => {
   console.timeEnd('justin')
   console.time('justin eval')
   for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
     evaluate(ast, args)
   }
   console.timeEnd('justin eval')
@@ -205,18 +202,19 @@ test('jexl', async t => {
 
   let jexl = new Jexl, expr, jexlArgs = Object.assign({}, args, {i:[1]}),
     src = x => `1 + (a * b / c % d) - 2.0 + -0.003 * 44000 / f.g[0] - i[0]`
+
   is(jexl.evalSync(src(0),jexlArgs), result);
 
-  // console.time('jexl')
-  // jexl = new Jexl
-  // for (let i = 0; i < RUNS; i++){
-  //   jexl.evalSync(src(i), args)
-  // }
-  // console.timeEnd('jexl')
-  console.time('jexl eval')
-  jexl = new Jexl
+  console.time('jexl')
   for (let i = 0; i < RUNS; i++){
-    jexl.evalSync(src(i), args)
+    jexl.compile(src(i))
+  }
+  console.timeEnd('jexl')
+
+  console.time('jexl eval')
+  let src0 = src(0)
+  for (let i = 0; i < RUNS; i++){
+    jexl.evalSync(src0, args)
   }
   console.timeEnd('jexl eval')
 })
@@ -251,7 +249,6 @@ test.skip('subscript-refs', async t => {
   console.timeEnd('dislex eval')
 })
 
-
 test.skip('subscript-v1', async t => {
   const {default:v1,parse:v1parse,evaluate} = await import('../lib/parser/subscript-lex.js');
   console.time('subscript1')
@@ -269,18 +266,18 @@ test.skip('subscript-v1', async t => {
 })
 
 
-test.skip('new Function', async t => {
+test('new Function', async t => {
   console.time('new Function')
   for (let n = 0; n < RUNS; n++){
     let fn = new Function('a','b', 'c', 'd', 'f', 'i', 'k', 'return '+src(n))
     // f(3, 4)
   }
   console.timeEnd('new Function')
-  console.time('new Function eval')
 
   let {a,b,c,d,f,i,k} = args
+  let fn = new Function('a','b', 'c', 'd', 'f', 'i', 'k', 'return '+src(0))
+  console.time('new Function eval')
   for (let n = 0; n < RUNS; n++){
-    let fn = new Function('a','b', 'c', 'd', 'f', 'i', 'k', 'return '+src(n))
     fn(a,b,c,d,f,i,k)
   }
   console.timeEnd('new Function eval')
@@ -296,10 +293,10 @@ test('direct fn', async t => {
   }
   console.timeEnd('direct fn')
 
-  console.time('direct fn eval')
+  let fn = createFn(0)
   let {a,b,c,d,f,i,k} = args
+  console.time('direct fn eval')
   for (let n = 0; n < RUNS; n++){
-    let fn = createFn(n)
     fn(a,b,c,d,f,i,k)
   }
   console.timeEnd('direct fn eval')
