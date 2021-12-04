@@ -25,7 +25,7 @@ _Subscript_ is designed to be useful for:
 * templates (perfect match with [template parts](https://github.com/github/template-parts))
 * expressions evaluators, calculators
 * configurable subsets of languages (eg. [justin](#justin)) <!-- see sonr, mineural -->
-* mocking language features (eg. pipe operator)
+* pluggable/mock language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
 * custom DSL
 
