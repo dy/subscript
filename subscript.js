@@ -101,7 +101,7 @@ addOps(evalOp, 2, [
   '/', (a,b)=>a/b,
   '*', (a,b)=>a*b,
 
-  '+', (a,b)=>a+b,
+  '+', (a,b=0)=>a+b,
   '-', (...a)=>a.length < 2 ? -a : a.reduce((a,b)=>a-b),
 
   '>>>', (a,b)=>a>>>b,

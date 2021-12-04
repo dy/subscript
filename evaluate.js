@@ -1,18 +1,20 @@
-export const isCmd = a => Array.isArray(a) && (typeof a[0] === 'string' || isCmd(a[0])),
+const cache = new WeakMap
 
 // calltree → result
-evaluate = (s, ctx={}) => {
-  if (isCmd(s)) {
-    let [c, ...args] = s, op, preargs=args
-    // [[a,b], c] or ['+', a, b] or ['myfn', a, b], or
-    c = typeof c === 'string' ? (lookup[c] || ctx[c]) : evaluate(c, ctx)
-    return c.apply(ctx, args.map(a => evaluate(a,ctx)))
-  }
-  if (s && typeof s === 'string')
-    return s[0] === '"' ? s.slice(1,-1) : s[0]==='@' ? s.slice(1)
-      : s in ctx ? ctx[s] : s
+export const evaluate = (node, ctx={},x, fn) => {
+  // if (fn=cache.get(node)) return fn(ctx)
 
-  return s
+  if (typeof node === 'string')
+    return node[0] === '"' ? node.slice(1,-1) : node[0]==='@' ? node.slice(1) : node in ctx ? ctx[node] : node
+
+  if (Array.isArray(node)) {
+    // [[a,b], c] or ['+', a, b] or ['myfn', a, b], or
+    let [c, ...args] = node, fn = typeof c === 'string' ? (lookup[c] || ctx[c]) : evaluate(c, ctx)
+    args = args.map(a => evaluate(a, ctx))
+    return fn.apply(c,args)
+  }
+
+  return node
 },
 lookup = {},
 

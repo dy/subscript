@@ -30,7 +30,7 @@ _Subscript_ is designed to be useful for:
 * custom DSL
 
 [_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
-_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/5.2.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_, with _jsep+_ test coverage and better performance.
+_Subscript_ has [2.5kb](https://npmfs.com/package/subscript/5.2.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with _jsep_ test coverage and better performance.
 
 
 ## Evaluation

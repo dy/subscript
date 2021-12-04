@@ -137,7 +137,7 @@ addOps(parse.operator, 3, [
     return ['?:', node, a, b]
   },
   '}',,,
-  ':',,,
+  ':',2,,
   'in', PREC_COMP, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(PREC_COMP)],
 
   // as operator it's faster to lookup (no need to extra rule check), smaller and no conflict with word names

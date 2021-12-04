@@ -279,13 +279,15 @@
 * [x] Test low-precedence unary, like  `-2*a^3 + -a^2`
 * [x] Unknown operator test case, like <<< or >==
 * [x] expr can skip end, if passed: low-hanging fruit
+* [x] Make eval-only tests
+* [ ] Eval optimizations:
+  * [ ] calltree nodes can stash static values (as in HTM)
+  * [ ] node can pre-figure out what function must be used on it
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
   * [ ] string interpolation ` ${} 1 ${} `
 * [ ] Demo
-* [ ] Make eval-only tests
-* [ ] calltree nodes could stash static values (as in HTM)
 * [ ] ? externalize operator lookup descent?
   + fast op lookups are single functions, not stack of meanings: it can boost perf and shorten size
   + descent can be implemented manually

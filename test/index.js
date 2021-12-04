@@ -194,7 +194,7 @@ test('parse: postfix unaries', t => {
 test('parse: prop access', t => {
   any(parse('a["b"]["c"][0]'),['.',['.',['.','a','"b"'],'"c"'],0],  ['.', 'a', '"b"', '"c"', 0])
   any(parse('a.b.c.0'), ['.',['.',['.','a','"b"'],'"c"'],0],  ['.', 'a', '"b"', '"c"', 0])
-  is(evaluate(['.','a','"b"','c',0], {a:{b:{c:[2]}}}), 2)
+  is(evaluate(['.','a','"b"',new String('c'),0], {a:{b:{c:[2]}}}), 2)
   is(evaluate(['.',['.',['.','a','"b"'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
 })
 
@@ -265,6 +265,8 @@ test('eval: basic', t => {
   is(evaluate(['-', 5, 2, 1, 1]), 1)
   is(evaluate(['+',['-',1]]), -1)
   is(evaluate(['-',['+',1],2]), -1)
+
+  is(evaluate('x',{x:1}), 1)
 })
 
 test('ext: in operator', t => {
@@ -312,11 +314,11 @@ test('ext: list', t => {
 })
 
 test('ext: object', t => {
-  operator('{', 20, (node,arg) => !node && (skip(), arg=expr(0,125), skip(),
+  operator('{', 20, (node,arg) => !node && (skip(), arg=expr(0,125),
     !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['{',arg])
   )
   operator('}')
-  operator(':', 4)
+  operator(':',2)
   evaluate.operator('{', (...args)=>Object.fromEntries(args))
   evaluate.operator(':', (a,b)=>[a,b])
 
