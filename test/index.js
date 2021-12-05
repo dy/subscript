@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr, operator } from '../parse.js'
+import { skip, code, char, expr, operator, err } from '../parse.js'
 
 test('parse: basic', t => {
   any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
@@ -41,7 +41,6 @@ test('parse: basic', t => {
 
   any(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
   is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
-  // is(parse(`"abcd" + 'efgh'`), ['+','"abcd"',"'efgh'"])
   is(parse(`"abcd" + "efgh"`), ['+','"abcd"','"efgh"'])
 
   any(parse('0 + 1 + 2.0'), ['+',['+',0,1],2],  ['+',0,1,2])
@@ -285,13 +284,12 @@ test('ext: ternary', t => {
     if (!node) err('Expected expression')
     let a, b
     skip(), parse.space(), a = expr()
-    if (code() !== 58) err('Expected :')
-    skip(), parse.space(), b = expr()
-    return ['?:', node, a, b]
+    return ['?:', node, a[1], a[2]]
   })
-  operator(':')
+  operator(':',2)
 
   is(parse('a ? b : c'),['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
+  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
   is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
   is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
 })
@@ -332,8 +330,10 @@ test('ext: object', t => {
 
 test('ext: justin', async t => {
   const {parse} = await import('../justin.js')
+  is(parse(`"abcd" + 'efgh'`), ['+','"abcd"',"'efgh'"])
   is(parse('a;b'), [';','a','b'])
   is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','"y"',['**',2,2]]], '"x"'])
+  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
   is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
 })
 

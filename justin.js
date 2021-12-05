@@ -132,9 +132,7 @@ addOps(parse.operator, 3, [
     if (!node) err('Expected expression')
     let a, b
     skip(), parse.space(), a = expr()
-    if (code() !== 58) err('Expected :')
-    skip(), parse.space(), b = expr()
-    return ['?:', node, a, b]
+    return ['?:', node, a[1], a[2]]
   },
   '}',,,
   ':',2,,
