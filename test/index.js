@@ -266,6 +266,7 @@ test('eval: basic', t => {
   is(evaluate(['-',['+',1],2]), -1)
 
   is(evaluate('x',{x:1}), 1)
+  is(evaluate(['+',1],{}), 1)
 })
 
 test('ext: in operator', t => {

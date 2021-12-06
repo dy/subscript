@@ -180,7 +180,6 @@ test('justin', async t => {
   const {parse, evaluate} = await import('../justin.js');
 
   let ast = parse(src(0))
-  console.log(ast);
   is(evaluate(ast, args), result);
 
   console.time('justin')

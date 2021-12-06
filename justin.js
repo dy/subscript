@@ -170,7 +170,7 @@ addOps(evaluate.operator, 2, [
   '/', (a,b)=>a/b,
   '*', (a,b)=>a*b,
 
-  '+', (a,b)=>a+b,
+  '+', (a,b=0)=>a+b,
   '-', (a,b)=>b==null ? -a : a-b,
 
   '>>>', (a,b)=>a>>>b,
