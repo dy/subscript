@@ -49,7 +49,7 @@ test('identity: first', function() {
     is(evaluate(['first', 2, 1],{first:a=>a}), 2);
 });
 test('identity: rest', function() {
-    is(evaluate(['rest', 2, 1, 2, 3],{rest:(a,...args)=>args}), [1, 2, 3]);
+    is(evaluate(['rest', 2, 1, 2, 3],{rest:(...args)=>args.slice(1)}), [1, 2, 3]);
 });
 
 // test('let', function() {
