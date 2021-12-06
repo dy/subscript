@@ -1,9 +1,5 @@
-const cache = new WeakMap
-
 // calltree → result
-export const evaluate = (node, ctx={},x, fn) => {
-  // if (fn=cache.get(node)) return fn(ctx)
-
+export const evaluate = (node, ctx={}) => {
   if (typeof node === 'string')
     return node[0] === '"' ? node.slice(1,-1) : node[0]==='@' ? node.slice(1) : node in ctx ? ctx[node] : node
 
@@ -20,6 +16,6 @@ lookup = {},
 
 // op evaluators
 // multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
-operator = evaluate.operator = (op, fn) => lookup[op] = fn//.length == 2 ? (...a)=>a.reduce(fn) : fn
+operator = evaluate.operator = (op, fn) => lookup[op] = fn
 
 export default evaluate
