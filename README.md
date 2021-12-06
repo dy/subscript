@@ -77,7 +77,7 @@ import { parse, evaluate } from 'subscript.js'
 parse.operator('=>', 10) // precedence=10, type=default (0 - binary, 1 - postfix, -1 - prefix)
 
 evaluate.operator('=>', ( args, body ) => evaluate(body, args))
-evaluate.operator('|', ( a, ...b ) => a.pipe(...b))
+evaluate.operator('|', ( a, b ) => a.pipe(b))
 
 let tree = parse(`
   interval(350)
