@@ -7,10 +7,10 @@ export const evaluate = (node, ctx={},x, fn) => {
   if (typeof node === 'string')
     return node[0] === '"' ? node.slice(1,-1) : node[0]==='@' ? node.slice(1) : node in ctx ? ctx[node] : node
 
-  if (Array.isArray(node) && (typeof node[0] === 'string' || Array.isArray(node[0]))) {
+  if (Array.isArray(node)) {
     // [[a,b], c] or ['+', a, b] or ['myfn', a, b], or
-    let [c, ...args] = node, fn = typeof c === 'string' ? (lookup[c] || ctx[c]) : evaluate(c, ctx)
-    args = args.map(a => evaluate(a, ctx))
+    let c = node[0], fn = Array.isArray(c) ? evaluate(c, ctx) : (lookup[c] || ctx[c] || c), args=[], i = 1
+    for (;i<node.length;i++) args.push(evaluate(node[i], ctx))
     return fn.apply(c,args)
   }
 
