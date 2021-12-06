@@ -18,10 +18,10 @@ code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
-expr = (prec=0, end, cc, node, i=0, map, newNode) => {
+expr = (prec=0, end, cc, node, i=0, newNode, op) => {
   // chunk/token parser
   while (
-    (cc=parse.space()) && (newNode = lookup[cc]?.(node, prec) || (!node && token(cc)) )
+    (cc=parse.space()) && (newNode = (op=lookup[cc]) && op(node, prec) || (!node && token(cc)) )
   ) node = newNode;
 
   // skip end character, if expected
@@ -49,9 +49,9 @@ operator = parse.operator = (
   prev=lookup[c],
   spaced=type<=0&&op.toUpperCase()!==op // non-postfix word operator must have space after
 ) => (
-  map = !type ? node => { // binary, consume same-op group
+  map = !type ? node => { // binary
       node = [op, val(node)]
-      do { idx+=l, node.push(val(expr(prec))) }
+      do { idx+=l, node.push(val(expr(prec))) } // consume same-op group
       while (parse.space()==c && (l<2||char(l)==op) && (!spaced||code(l)<=SPACE))
       return node
     } :

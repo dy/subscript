@@ -283,6 +283,7 @@
 * [ ] Eval optimizations:
   * [ ] calltree nodes can stash static values (as in HTM)
   * [ ] node can pre-figure out what function must be used on it
+    - doesn't give much perf, but increases size
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
