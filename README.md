@@ -136,7 +136,7 @@ It adds support of:
 ```js
 import { parse, evaluate } from 'subscript/justin.js'
 
-let xy = parse('{ x: 1, "y": 2+2 }["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '"x"']
+let xy = parse('{ x: 1, "y": 2+2 }["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '@x']
 evaluate(xy)  // 1
 ```
 
