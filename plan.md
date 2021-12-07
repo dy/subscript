@@ -281,6 +281,19 @@
 * [x] expr can skip end, if passed: low-hanging fruit
 * [x] Make eval-only tests
 * [x] Remove spaced check: word operators are exceptional and better be conditioned manually
+* [ ] Strings:
+  1. new String(abc)
+    + shorter eval code (potentially)
+    + correlates with val for literals (any literal can be a wrapper)
+    - dirty tree
+    - uneasy manual eval
+  2. '@abc'
+    + frisk-compatible
+  3. '"abc"', "'abc'"
+    - not generic: need support for each type of token
+  4. 'str:abc', 'data:abc'
+    + URL schema-compatible
+    + 'int:1.12', 'float:2.25', 'bool:true', 'literal:this'
 * [ ] Eval optimizations:
   * [ ] calltree nodes can stash static values (as in HTM)
   * [ ] node can pre-figure out what function must be used on it

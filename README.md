@@ -69,7 +69,7 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Operators can be extended via `parse.operator(str, prec, type)` and `evaluate.operator(str, fn)` functions for any unary/binary/postfix operators, calls, props, groups, arrays, objects etc.
+Operators can be extended via `parse.operator(str, prec, type)` and `evaluate.operator(str, fn)` functions for any unary/binary/postfix operators, calls, prop chains, groups etc.
 
 ```js
 import { parse, evaluate } from 'subscript.js'

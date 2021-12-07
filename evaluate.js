@@ -5,9 +5,17 @@ export const evaluate = (node, ctx={}) => {
 
   if (Array.isArray(node)) {
     // [[a,b], c] or ['+', a, b] or ['myfn', a, b], or
-    let c = node[0], fn = Array.isArray(c) ? evaluate(c, ctx) : (lookup[c] || ctx[c] || c), args=[], i = 1
-    for (;i<node.length;i++) args.push(evaluate(node[i], ctx))
-    return args.length > fn.length && fn.length ? args.reduce(fn) : fn.apply(c,args)
+    let c = node[0],
+        fn = Array.isArray(c) ? evaluate(c, ctx) : (lookup[c] || ctx[c] || c),
+        i=2, res=evaluate(node[1], ctx), args = []
+
+    if (fn.ab) do { res = fn(res, evaluate(node[i++],ctx)) } while ( i < node.length )
+    // multiple args caused by:
+    // ||&& shortcuts, lisp compatiblity, manual eval, functions multiple arguments, right precedence
+    else { i=1; while (i<node.length) args.push(evaluate(node[i++], ctx)); res = fn.apply(c,args) }
+    // res = fn.apply(c,node.slice(1).map(v=>evaluate(v,ctx)))
+
+    return res
   }
 
   return node
@@ -15,7 +23,6 @@ export const evaluate = (node, ctx={}) => {
 lookup = {},
 
 // op evaluators
-// multiple args allows shortcuts, lisp compatible, easy manual eval, functions anyways take multiple arguments
-operator = evaluate.operator = (op, fn) => lookup[op] = fn
+operator = evaluate.operator = (op, fn) => (lookup[op] = fn, fn.ab = fn.length==2)
 
 export default evaluate

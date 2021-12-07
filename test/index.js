@@ -263,6 +263,8 @@ test('eval: basic', t => {
 
   is(evaluate('x',{x:1}), 1)
   is(evaluate(['+',1],{}), 1)
+
+  is(evaluate(['x',1,2,3], {x(a,b,c){return a+b+c}}), 6)
 })
 
 test('ext: in operator', t => {
@@ -301,11 +303,16 @@ test('ext: list', t => {
 
   is(parse('[]'),['['])
   is(parse('[1]'),['[',1])
+  is(parse('[1,2,3]'),['[',1,2,3])
+  is(parse('[1]+[2]'),['+',['[',1],['[',2]])
 
   // NOTE: not critical, but generalizes expression errors across envs
   // is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
   // is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
-  is(parse('[1]+[2]'),['+',['[',1],['[',2]])
+
+  is(evaluate(parse('[]')),[])
+  is(evaluate(parse('[1]')),[1])
+  is(evaluate(parse('[1,2,3]')),[1,2,3])
 })
 
 test('ext: object', t => {
