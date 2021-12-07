@@ -119,8 +119,8 @@ addOps(evalOp, 2, [
   '&', (a,b)=>a&b,
   '^', (a,b)=>a^b,
   '|', (a,b)=>a|b,
-  '&&', (...a)=>a.every(Boolean),
-  '||', (...a)=>a.some(Boolean),
+  '&&', (a,b)=>a&&b,
+  '||', (a,b)=>a||b,
   ',', (a,b)=>(a,b)
 ])
 
