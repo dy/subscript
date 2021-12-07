@@ -1,7 +1,7 @@
 // calltree → result
 export const evaluate = (node, ctx={}) => {
   if (typeof node === 'string')
-    return node[0] === '"' ? node.slice(1,-1) : node[0]==='@' ? node.slice(1) : node in ctx ? ctx[node] : node
+    return node[0]==='@' ? node.slice(1) : ctx[node]
 
   if (Array.isArray(node)) {
     // [[a,b], c] or ['+', a, b] or ['myfn', a, b], or

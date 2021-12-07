@@ -3,27 +3,27 @@ import subscript, {parse, evaluate} from '../justin.js'
 import { skip, code, expr, char, operator } from '../parse.js'
 
 test('Expression: Constants', ()=> {
-  is(parse('\'abc\''),  "'abc'" );
-  is(parse('"abc"'),  '"abc"' );
+  is(parse('\'abc\''),  "@abc" );
+  is(parse('"abc"'),  '@abc' );
   is(parse('123'),  123 );
   is(parse('12.3'),  12.3 );
 });
 
 test('String escapes', () => {
-  is(parse("'a \\w b'"), "'a w b'")
-  is(parse("'a \\' b'"), "'a ' b'")
-  is(parse("'a \\n b'"), "'a \n b'")
-  is(parse("'a \\r b'"), "'a \r b'")
-  is(parse("'a \\t b'"), "'a \t b'")
-  is(parse("'a \\b b'"), "'a \b b'")
-  is(parse("'a \\f b'"), "'a \f b'")
-  is(parse("'a \\v b'"), "'a \v b'")
-  is(parse("'a \\\ b'"), "'a \ b'")
+  is(parse("'a \\w b'"), "@a w b")
+  is(parse("'a \\' b'"), "@a ' b")
+  is(parse("'a \\n b'"), "@a \n b")
+  is(parse("'a \\r b'"), "@a \r b")
+  is(parse("'a \\t b'"), "@a \t b")
+  is(parse("'a \\b b'"), "@a \b b")
+  is(parse("'a \\f b'"), "@a \f b")
+  is(parse("'a \\v b'"), "@a \v b")
+  is(parse("'a \\\ b'"), "@a \ b")
 });
 
 test('Variables', ()=> {
   is(parse('abc'), 'abc');
-  is(parse('a.b[c[0]]'), ['.',['.', 'a' ,'"b"'], ['.', 'c', 0]]);
+  is(parse('a.b[c[0]]'), ['.',['.', 'a' ,'@b'], ['.', 'c', 0]]);
   is(parse('Δέλτα'), 'Δέλτα');
 });
 test.todo('Question operator', () => {
@@ -33,8 +33,8 @@ test.todo('Question operator', () => {
 test('Function Calls', ()=> {
   is(parse("a(b, c(d,e), f)"), ['a', 'b', ['c','d','e'], 'f'])
   throws(t => parse('a b + c'))
-  is(parse("'a'.toString()"), [['.', "'a'", '"toString"']])
-  is(parse('[1].length'), ['.',['[',1],'"length"'])
+  is(parse("'a'.toString()"), [['.', '@a', '@toString']])
+  is(parse('[1].length'), ['.',['[',1],'@length'])
   // is(parse(';'), {})
   // // allow all spaces or all commas to separate arguments
   // is(parse('check(a, b, c, d)'), {})
@@ -65,7 +65,7 @@ test('Ops', function (qunit) {
 });
 
 test('Custom operators', ()=> {
-  // is(parse('a^b'), ['^','a','b']);
+  is(parse('a^b'), ['^','a','b']);
 
   operator('×', 9)
   is(parse('a×b'), ['×','a','b']);
@@ -82,7 +82,7 @@ test('Custom operators', ()=> {
 
   throws(t => parse('notes 1'));
 
-  operator('and', 2)
+  operator('and', 2, node => code(3) <= 32 && [skip(3), node, expr(2)])
   is(parse('a and b'),['and','a','b']);
   is(parse('bands'), 'bands');
 
@@ -138,40 +138,41 @@ test(`should throw on invalid expr`, () => {
 test('Esprima Comparison', ()=> {
   // is(parse('[1,,3]'), [1,null,3])
   // is(parse('[1,,]'), [])
+
   is(parse(' true'), true)
   is(parse('false '), false)
   is(parse(' 1.2 '), 1.2)
   is(parse(' .2 '), .2)
   is(parse('a'), 'a')
-  is(parse('a .b'), ['.','a','"b"'])
-  any(parse('a.b. c'), ['.','a','"b"','"c"'], ['.',['.','a','"b"'],'"c"'])
+  is(parse('a .b'), ['.','a','@b'])
+  any(parse('a.b. c'), ['.','a','@b','@c'], ['.',['.','a','@b'],'@c'])
   is(parse('a [b]'), ['.','a','b'])
-  any(parse('a.b  [ c ] '), ['.',['.','a','"b"'],'c'])
+  any(parse('a.b  [ c ] '), ['.',['.','a','@b'],'c'])
   any(parse('$foo[ bar][ baz].other12 [\'lawl\'][12]'),
-    ['.','$foo','bar','baz','"other12"',"'lawl'",12],
-    ['.',['.',['.',['.',['.','$foo','bar'],'baz'],'"other12"'],"'lawl'"],12]
+    ['.','$foo','bar','baz','@other12','@lawl',12],
+    ['.',['.',['.',['.',['.','$foo','bar'],'baz'],'@other12'],'@lawl'],12]
   )
   any(parse('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 '),
-    ['+',['*',['.',['.',['.','$foo',12], ['.','baz','z']],'"other12"'],4],1]
+    ['+',['*',['.',['.',['.','$foo',12], ['.','baz','z']],'@other12'],4],1]
   )
   any(parse('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]'),
-    ['.',['.',['.',[['.',['.','$foo','bar'],'baz'], 'a', 'bb', 'c'], '"other12"'],"'lawl'"],12]
+    ['.',['.',['.',[['.',['.','$foo','bar'],'baz'], 'a', 'bb', 'c'], '@other12'],'@lawl'],12]
   )
   is(parse('(a(b(c[!d]).e).f+\'hi\'==2) === true'),
-    ['===',['==',['+',['.',['a',['.',['b',['.','c',['!','d']]],'"e"']],'"f"'],"'hi'"],2],true]
+    ['===',['==',['+',['.',['a',['.',['b',['.','c',['!','d']]],'@e']],'@f'],'@hi'],2],true]
   )
   is(parse('(1,2)'), [',',1,2])
   is(parse('(a, a + b > 2)'), [',','a',['>',['+','a','b'],2]])
   is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
   is(parse('(((1)))'), 1)
-  is(parse('(Object.variable.toLowerCase()).length == 3'), ['==',['.',[['.',['.','Object','"variable"'],'"toLowerCase"']],'"length"'],3])
-  is(parse('(Object.variable.toLowerCase())  .  length == 3'), ['==',['.',[['.',['.','Object','"variable"'],'"toLowerCase"']],'"length"'],3])
+  is(parse('(Object.variable.toLowerCase()).length == 3'), ['==',['.',[['.',['.','Object','@variable'],'@toLowerCase']],'@length'],3])
+  is(parse('(Object.variable.toLowerCase())  .  length == 3'), ['==',['.',[['.',['.','Object','@variable'],'@toLowerCase']],'@length'],3])
   is(parse('[1] + [2]'), ['+',['[',1],['[',2]])
-  is(parse('"a"[0]'), ['.','"a"',0])
+  is(parse('"a"[0]'), ['.','@a',0])
   is(parse('[1](2)'), [['[',1],2])
-  is(parse('"a".length'), ['.','"a"','"length"'])
-  is(parse('a.this'), ['.','a','"this"'])
-  is(parse('a.true'), ['.','a',true])
+  is(parse('"a".length'), ['.','@a','@length'])
+  is(parse('a.this'), ['.','a','@this'])
+  is(parse('a.true'), ['.','a','@true'])
 });
 
 // Should support ternary by default (index.js):

@@ -45,14 +45,12 @@ lookup = [],
 // @param prec is operator precedenc to check
 // @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
 operator = parse.operator = (
-  op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length,
-  prev=lookup[c],
-  spaced=type<=0&&op.toUpperCase()!==op // non-postfix word operator must have space after
+  op, prec=0, type=0, map, c=op.charCodeAt(0), l=op.length, prev=lookup[c]
 ) => (
   map = !type ? node => { // binary
       node = [op, val(node)]
       do { idx+=l, node.push(val(expr(prec))) } // consume same-op group
-      while (parse.space()==c && (l<2||char(l)==op) && (!spaced||code(l)<=SPACE))
+      while (parse.space()==c && (l<2||char(l)==op))
       return node
     } :
     type > 0 ? node => node && [skip(l), val(node)] : // postfix unary
@@ -60,8 +58,7 @@ operator = parse.operator = (
     type,
 
   lookup[c] = (node, curPrec) =>
-    curPrec < prec && (l<2||char(l)==op) && (!spaced||code(l)<=SPACE) &&
-    map(node) || (prev && prev(node, curPrec))
+    curPrec < prec && (l<2||char(l)==op) && map(node) || (prev && prev(node, curPrec))
 ),
 
 // in order to support literal tokens, we call valueOf any time we create or modify calltree node

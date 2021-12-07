@@ -27,7 +27,7 @@ parse.token.push(
       if (c === 92) skip(), str += escape[char()] || char(); else str+=char()
       skip()
     }
-    return skip(), qc + str + qc
+    return skip(), '@' + str
   },
 
   // id
@@ -65,8 +65,7 @@ const addOps = (add, stride=2, list) => {
 
 addOps(parse.operator, 3, [
   // subscript ones
-  // TODO: add ,, as node here?
-  ',', PREC_SEQ,,
+ ',', PREC_SEQ,,
 
   '|', PREC_OR,,
   '||', PREC_SOME,,
@@ -93,13 +92,13 @@ addOps(parse.operator, 3, [
   '+', PREC_SUM,,
   '+', PREC_UNARY, -1,
   '++', PREC_UNARY, -1,
-  '++', PREC_UNARY, +1,
+  '++', PREC_POSTFIX, +1,
   '-', PREC_SUM,,
   '-', PREC_UNARY, -1,
   '--', PREC_UNARY, -1,
-  '--', PREC_UNARY, +1,
+  '--', PREC_POSTFIX, +1,
 
-  // !
+  // ! ~
   '!', PREC_UNARY, -1,
 
   // * / %
@@ -108,14 +107,14 @@ addOps(parse.operator, 3, [
   '%', PREC_MULT,,
 
   // a.b
-  '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b.valueOf()],
+  '.', PREC_CALL, (node,b) => node && [skip(), node, '@' + expr(PREC_CALL)],
 
   // a[b]
   '[', PREC_CALL, (node) => (skip(), node = ['.', node, val(expr(0,CBRACK))], node),
   ']',,,
 
   // a(b)
-  '(', PREC_CALL, (node,b) => ( skip(), b=expr(0,CPAREN),
+  '(', PREC_CALL, (node,b) => (skip(), b=expr(0,CPAREN),
     Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, val(b)] : [node]
   ),
   // (a+b)
@@ -134,9 +133,8 @@ addOps(parse.operator, 3, [
     skip(), parse.space(), a = expr()
     return ['?:', node, a[1], a[2]]
   },
-  '}',,,
-  ':',2,,
-  'in', PREC_COMP, (node) => code(2) <= 32 && [skip(2), '"'+node+'"', expr(PREC_COMP)],
+  ':', PREC_COMP,,
+  'in', PREC_COMP, (node) => code(2)<=32 && [skip(2), '@'+node, expr(PREC_COMP)],
 
   // as operator it's faster to lookup (no need to extra rule check), smaller and no conflict with word names
   // [a,b,c]
@@ -147,8 +145,9 @@ addOps(parse.operator, 3, [
 
   // {a:0, b:1}
   '{', PREC_TOKEN, (node,arg) => !node && (skip(), arg=expr(0,125),
-    !arg ? ['{'] : arg[0] == ':' ? ['{',arg] : arg[0] == ',' ? (arg[0]='{',arg) : ['{',arg])
-  ,
+    !arg ? ['{'] : arg[0] == ':' ? ['{',strkey(arg)] : arg[0] == ',' ? (arg[0]='{',arg.map(strkey)) : ['{',arg]),
+  '}',,,
+
 
   // literals
   'null', PREC_TOKEN, node=>!node&&(skip(4),v(null)),
@@ -156,6 +155,7 @@ addOps(parse.operator, 3, [
   'true', PREC_TOKEN, node=>!node&&(skip(4),v(true)),
   'undefined', PREC_TOKEN, node=>!node&&(skip(9),v(undefined)),
 ])
+const strkey = a => Array.isArray(a) ? (a[1]=(a[1][0]==='@'?'':'@')+a[1],a) : a
 const v = v => ({valueOf:()=>v})
 
 addOps(evaluate.operator, 2, [

@@ -280,6 +280,7 @@
 * [x] Unknown operator test case, like <<< or >==
 * [x] expr can skip end, if passed: low-hanging fruit
 * [x] Make eval-only tests
+* [x] Remove spaced check: word operators are exceptional and better be conditioned manually
 * [ ] Eval optimizations:
   * [ ] calltree nodes can stash static values (as in HTM)
   * [ ] node can pre-figure out what function must be used on it

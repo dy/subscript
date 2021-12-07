@@ -15,7 +15,7 @@ tokens.push(
     )
   ),
   // "a"
-  (q, qc) => q == 34 && (skip() + skip(c => c-q) + skip()),
+  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), '@'+v),
   // id
   c => skip(c =>
     (c >= 48 && c <= 57) || // 0..9
@@ -73,14 +73,14 @@ addOps(parseOp, 3, [
   '%', PREC_MULT,,
 
   // a.b
-  '.', PREC_CALL, (node,b) => node && [skip(),node, typeof (b = expr(PREC_CALL)) === 'string' ? '"' + b + '"' : b.valueOf()],
+  '.', PREC_CALL, (node,b) => node && [skip(), node, '@' + expr(PREC_CALL)],
 
   // a[b]
   '[', PREC_CALL, (node) => (skip(), node = ['.', node, val(expr(0,CBRACK))], node),
   ']',,,
 
   // a(b)
-  '(', PREC_CALL, (node,b) => ( skip(), b=expr(0,CPAREN),
+  '(', PREC_CALL, (node,b) => (skip(), b=expr(0,CPAREN),
     Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, val(b)] : [node]
   ),
   // (a+b)
