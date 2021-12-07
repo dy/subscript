@@ -281,6 +281,16 @@
 * [x] expr can skip end, if passed: low-hanging fruit
 * [x] Make eval-only tests
 * [x] Remove spaced check: word operators are exceptional and better be conditioned manually
+* [x] Eval optimizations:
+  * [x] ~~calltree nodes can stash static values (as in HTM)~~
+    - doesn't give much perf, but increases size - that's 1 fn call + 1 check
+  * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
+* [x] ? externalize operator lookup descent?
+  + fast op lookups are single functions, not stack of meanings: it can boost perf and shorten size
+  + descent can be implemented manually
+  - makes no point to host pre/postfix index then
+  - it's nice to have it a separate feature
+  - blocks >>> vs >> vs > vs >= detection
 * [ ] Strings:
   1. new String(abc)
     + shorter eval code (potentially)
@@ -294,20 +304,11 @@
   4. 'str:abc', 'data:abc'
     + URL schema-compatible
     + 'int:1.12', 'float:2.25', 'bool:true', 'literal:this'
-* [ ] Eval optimizations:
-  * [ ] calltree nodes can stash static values (as in HTM)
-  * [ ] node can pre-figure out what function must be used on it
-    - doesn't give much perf, but increases size
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
   * [ ] string interpolation ` ${} 1 ${} `
 * [ ] Demo
-* [ ] ? externalize operator lookup descent?
-  + fast op lookups are single functions, not stack of meanings: it can boost perf and shorten size
-  + descent can be implemented manually
-  - makes no point to host pre/postfix index then
-  - it's nice to have it a separate feature
 * [ ] Radical nanoscript: remove descent; binaries-only defs; eval binaries only; no char, no code, no err; space via skip; no word operators;
   * [ ] Make mapper configurable: binaries-only vs flat nodes must be a feature of configurator, not built-in. As well as word operators. As well as reducer in evaluator.
     - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide special reducer or what in `(` parser - that doesn't save that much space
