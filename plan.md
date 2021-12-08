@@ -299,18 +299,25 @@
     - uneasy manual eval
   2. '@abc'
     + frisk-compatible
-    - eval is not completely frisk-compatible
+    - eval is not completely frisk-compatible, eg. [1,2,3] node is not valid in subscript
     - it's unnatural notation
   3. '"abc"', "'abc'"
     - not generic: need support for each type of token
   4. 'str:abc', 'data:abc'
     + URL schema-compatible
     + 'int:1.12', 'float:2.25', 'bool:true', 'literal:this'
+    ? merging with literals somehow would save space
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
   * [ ] string interpolation ` ${} 1 ${} `
 * [ ] Demo
-* [ ] Radical nanoscript: remove descent; binaries-only defs; eval binaries only; no char, no code, no err; space via skip; no word operators;
-  * [ ] Make mapper configurable: binaries-only vs flat nodes must be a feature of configurator, not built-in. As well as word operators. As well as reducer in evaluator.
-    - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide special reducer or what in `(` parser - that doesn't save that much space
+* [ ] Radical nanoscript?
+  . remove descent;
+  . binaries-only defs;
+  . eval binaries only;
+  . no char, no code, no err;
+  . space via skip;
+  . no word operators;
+* [ ] Make mapper configurable: binaries-only vs flat nodes must be a feature of configurator, not built-in. As well as word operators. As well as reducer in evaluator.
+  - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide special reducer or what in `(` parser - that doesn't save that much space
