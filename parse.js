@@ -18,7 +18,7 @@ code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
-expr = (prec=0, end, cc, node, i=0, newNode, op) => {
+expr = (prec=0, end, cc, node, newNode, op) => {
   // chunk/token parser
   while (
     (cc=parse.space()) && (newNode = (op=lookup[cc]) && op(node, prec) || (!node && token(cc)) )
