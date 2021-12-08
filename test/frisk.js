@@ -1,18 +1,18 @@
 import test, {is, any} from '../lib/test.js'
 import subscript, {parse, evaluate} from '../subscript.js'
 
-test('atoms: numbers', function() {
-    // is(evaluate([1]), [1]);
-    is(evaluate(1), [1]);
+test.skip('atoms: numbers', function() {
+    is(evaluate([1]), [1]);
+    // is(evaluate(1), [1]);
 });
 test.skip('atoms: lists', function() {
-    // is(evaluate([1, 2]), [1, 2]);
-    is(evaluate(['[',1, 2]), [1, 2]);
+    is(evaluate([1, 2]), [1, 2]);
+    // is(evaluate(['[',1, 2]), [1, 2]);
 });
 test.skip('atoms: nested lists', function() {
     is(evaluate([1, 2, [3, 4]]), [1, 2, [3, 4]]);
 });
-test('atoms: strings', function() {
+test.skip('atoms: strings', function() {
     // is(evaluate(['@foo']), 'foo'); // NOTE: this is wrong extension
     is(evaluate('@foo'), 'foo');
 });

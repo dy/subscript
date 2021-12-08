@@ -293,12 +293,14 @@
   - blocks >>> vs >> vs > vs >= detection
 * [ ] Strings:
   1. new String(abc)
-    + shorter eval code (potentially)
+    + shorter eval code
     + correlates with val for literals (any literal can be a wrapper)
     - dirty tree
     - uneasy manual eval
   2. '@abc'
     + frisk-compatible
+    - eval is not completely frisk-compatible
+    - it's unnatural notation
   3. '"abc"', "'abc'"
     - not generic: need support for each type of token
   4. 'str:abc', 'data:abc'
