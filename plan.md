@@ -295,6 +295,7 @@
   1. new String(abc)
     + shorter eval code
     + correlates with val for literals (any literal can be a wrapper)
+    + natural wrapper parser as well: new Number - parses string
     - dirty tree
     - uneasy manual eval
   2. '@abc'
@@ -306,7 +307,16 @@
   4. 'str:abc', 'data:abc'
     + URL schema-compatible
     + 'int:1.12', 'float:2.25', 'bool:true', 'literal:this'
-    ? merging with literals somehow would save space
+  5. ? merging with literals somehow
+    + would save space from val function
+    + would allow static pre-eval
+    + would let evaluators decide how to handle literals (no need for explicit unwrapping strings for `.` operator)
+    + would let evaluators implement reducers logic
+    + if we store literals as [value], that'd be also compatible with frisk
+      - array is confusable with, say [0] or [null] - this will attempt to get these values from context
+        + we can facilitate that by making sure value is not a string
+      - strings as ['abc'] would be confusable with fn call
+    . note that a(b,c) is ( operator with b, c, ... args (comma acts as flattener)
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -319,5 +329,8 @@
   . no char, no code, no err;
   . space via skip;
   . no word operators;
-* [ ] Make mapper configurable: binaries-only vs flat nodes must be a feature of configurator, not built-in. As well as word operators. As well as reducer in evaluator.
-  - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide special reducer or what in `(` parser - that doesn't save that much space
+* [ ] Make mapper configurable:
+  * [ ] binaries-only vs flat nodes must be a feature of configurator, not built-in.
+    - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide a special reducer in `(` parser - that doesn't save that much space
+  * [x] As well as word operators. → trivially solved as custom mapper with next-char check
+  * [ ] As well as reducer in evaluator.
