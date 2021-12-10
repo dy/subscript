@@ -45,7 +45,9 @@
     "calculator",
     "calc",
     "lisp",
-    "frisk"
+    "frisk",
+    "math.js",
+    "math-codegen"
   ],
   "author": "Dmitry Iv.",
   "license": "ISC",

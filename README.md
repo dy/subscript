@@ -314,5 +314,7 @@ new Function: ~7 ms
 * [jsep](https://github.com/EricSmekens/jsep)
 * [string-math](https://github.com/devrafalko/string-math)
 * [nerdamer](https://github.com/jiggzson/nerdamer)
+* [math-codegen](https://github.com/mauriciopoppe/math-codegen)
+* [math.js](https://mathjs.org/docs/expressions/parsing.html)
 
 <p align=center>🕉</p>
