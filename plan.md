@@ -281,16 +281,17 @@
 * [x] expr can skip end, if passed: low-hanging fruit
 * [x] Make eval-only tests
 * [x] Remove spaced check: word operators are exceptional and better be conditioned manually
-* [x] Eval optimizations:
-  * [x] ~~calltree nodes can stash static values (as in HTM)~~
-    - doesn't give much perf, but increases size - that's 1 fn call + 1 check
-  * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
 * [x] ? externalize operator lookup descent?
   + fast op lookups are single functions, not stack of meanings: it can boost perf and shorten size
   + descent can be implemented manually
   - makes no point to host pre/postfix index then
   - it's nice to have it a separate feature
   - blocks >>> vs >> vs > vs >= detection
+* [x] Eval optimizations:
+  * [x] ~~calltree nodes can stash static values (as in HTM)~~
+    - doesn't give much perf, but increases size - that's 1 fn call + 1 check
+  * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
+* [ ] Eval: cache static parts
 * [ ] Strings:
   1. new String(abc)
     + shorter eval code
@@ -307,7 +308,7 @@
   4. 'str:abc', 'data:abc'
     + URL schema-compatible
     + 'int:1.12', 'float:2.25', 'bool:true', 'literal:this'
-  5. ? merging with literals somehow
+  5. ? merging with literals somehow - like [value]?
     + would save space from val function
     + would allow static pre-eval
     + would let evaluators decide how to handle literals (no need for explicit unwrapping strings for `.` operator)
@@ -317,10 +318,33 @@
         + we can facilitate that by making sure value is not a string
       - strings as ['abc'] would be confusable with fn call
     . note that a(b,c) is ( operator with b, c, ... args (comma acts as flattener)
+  6. Functional types/evaluators, like id={valueOf(){ return ctx[id] }}, lit={valueOf(){ return literal[lit] }}
+    + allows to get rid of evaluator ad-hocs
+    + all 5.s
+    . in fact .evaluate can be a node's method, so evaluator would be trivial
+    + that can be meld with 1.
+    ? simply string can be meant ref to context, other tokens are all valueOfs
+  7. Relegate types to cast operators, eg. `int 123` → `['int', '123']`, `['bool', 'true']`, `['', null]`
+    + same as functional wrapper, but via built-in method
+    + lispy logic, consistent
+    ? how to differentiate statics? Anything that's not node?
+    - if operator evaluators were built-in into nodes, we wouldn't have to keep cast type evaluators at all.
+  8. Direct evaluators instead of nodes
+    + merges config into single definition
+    . types of evaluators: binary op, prop access, fn call, group, array, object, literal, context variable
+      → there are common types of evaluators, like, binary, unary, multi, but can be custom
+    . We keep ctx access as direct strings, allowing defining prop getter evaluator
+    + We save space on node operator definitions
+    ! fn can have with valueOf, calling itself.
+    ? How do we detect static parts? Mark parsed tokens?
+* [ ] inside-expression skip can be combined into operator, if we're able to indicate whan operator we're defining
+  * [ ] by precedence we can detect what type of function is passed: unary, binary or postfix
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
   * [ ] string interpolation ` ${} 1 ${} `
+  * [ ] readme ideas
+  * [ ] [double.js](https://github.com/munrocket/double.js) scripting
 * [ ] Demo
 * [ ] Radical nanoscript?
   . remove descent;
