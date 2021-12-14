@@ -292,7 +292,7 @@
     - doesn't give much perf, but increases size - that's 1 fn call + 1 check
   * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
 * [ ] Eval: cache static parts
-* [ ] Strings:
+* [ ] string token:
   1. new String(abc)
     + shorter eval code
     + correlates with val for literals (any literal can be a wrapper)
@@ -337,8 +337,11 @@
     + We save space on node operator definitions
     ! fn can have with valueOf, calling itself.
     ? How do we detect static parts? Mark parsed tokens?
-* [ ] inside-expression skip can be combined into operator, if we're able to indicate whan operator we're defining
-  * [ ] by precedence we can detect what type of function is passed: unary, binary or postfix
+      + via parse.literals returning evaluator with 0 args!
+    ? How do we define custom parsers?
+* [x] inside-expression skip can be combined into operator, if we're able to indicate whan operator we're defining
+  ? by precedence we can detect what type of function is passed: unary, binary or postfix
+* [ ] merge char/code into skip - conditional skip checks if next chars equal cond string
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
