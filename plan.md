@@ -347,11 +347,17 @@
       . seems that operator decides not only how to evaluate operands, but also what semantic they have. Ie. they're responsible for what meaning token parts have.
       . or either - `a.b` is not an operator but a kind of identifier access.
         - still `a,b in c` is special construct. Same as `let a,b` or `a of b`
+        → can be solved via checking in id if ctx is passed and returning self otherwise
       . v6 is less flexible, in sense that there's no easy way to redefine parsing
+      → ok, passing map is the most flexible and generic:
+        + allows redefining calc which is -1 stack call
+        + allows flexible parser
+        - although it adds 20 commas and redundant parsing - we usually deal with operators on nexpressions - mb just a case of evaluator?
 * [ ] inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining
   ? by precedence we can detect what type of function is passed: unary, binary or postfix
 * [ ] test `a ++` postfix spacing
 * [ ] merge char/code into skip - conditional skip checks if next chars equal cond string
+* [ ] try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
