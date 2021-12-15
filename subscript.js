@@ -1,130 +1,78 @@
-import parse, {skip, expr, code, tokens, val, operator as parseOp, err} from './parse.js'
-import evaluate, {operator as evalOp} from './evaluate.js'
+import parse, {skip, expr, code, literals, operator, err} from './parse.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
-tokens.push(
+literals.push(
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-  (number) => (
-    (number = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
-      (code() == 69 || code() == 101) && (number += skip(2) + skip(c => c >= 48 && c <= 57)),
-      isNaN(number = new Number(number)) ? err('Bad number') : number
-    )
+  n => (n = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
+    skip(c => c == 69 || c == 101) && (n += skip(2) + skip(c => c >= 48 && c <= 57)),
+    +n
   ),
   // "a"
-  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), '@'+v),
-  // id
-  c => skip(c =>
-    (c >= 48 && c <= 57) || // 0..9
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  )
+  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), v)
 )
 
-const addOps = (add, stride=2, list) => {
-  for (let i = 0; i < list.length; i+=stride) add(list[i], list[i+1], list[i+2])
-}
+for (let i = 0, list = [
+  ',', PREC_SEQ, (a,b)=>(a,b),
 
-addOps(parseOp, 3, [
-  ',', PREC_SEQ,,
+  '|', PREC_OR, (a,b)=>a|b,
+  '||', PREC_SOME, (a,b)=>a||b,
 
-  '|', PREC_OR,,
-  '||', PREC_SOME,,
+  '&', PREC_AND, (a,b)=>a&b,
+  '&&', PREC_EVERY, (a,b)=>a&&b,
 
-  '&', PREC_AND,,
-  '&&', PREC_EVERY,,
-
-  '^', PREC_XOR,,
+  '^', PREC_XOR, (a,b)=>a^b,
 
   // ==, !=
-  '==', PREC_EQ,,
-  '!=', PREC_EQ,,
+  '==', PREC_EQ, (a,b)=>a==b,
+  '!=', PREC_EQ, (a,b)=>a!=b,
 
   // > >= >> >>>, < <= <<
-  '>', PREC_COMP,,
-  '>=', PREC_COMP,,
-  '>>', PREC_SHIFT,,
-  '>>>', PREC_SHIFT,,
-  '<', PREC_COMP,,
-  '<=', PREC_COMP,,
-  '<<', PREC_SHIFT,,
+  '>', PREC_COMP, (a,b)=>a>b,
+  '>=', PREC_COMP, (a,b)=>a>=b,
+  '>>', PREC_SHIFT, (a,b)=>a>>b,
+  '>>>', PREC_SHIFT, (a,b)=>a>>>b,
+  '<', PREC_COMP, (a,b)=>a<b,
+  '<=', PREC_COMP, (a,b)=>a<=b,
+  '<<', PREC_SHIFT, (a,b)=>a<<b,
 
   // + ++ - --
-  '+', PREC_SUM,,
-  '+', PREC_UNARY, -1,
-  '++', PREC_UNARY, -1,
-  '++', PREC_POSTFIX, +1,
-  '-', PREC_SUM,,
-  '-', PREC_UNARY, -1,
-  '--', PREC_UNARY, -1,
-  '--', PREC_POSTFIX, +1,
+  '+', PREC_SUM, (a,b)=>a+b,
+  '+', PREC_UNARY, (a=0)=>+a,
+  '++', PREC_UNARY, (a=0)=>++a,
+  '++', PREC_POSTFIX, a=>a++,
+  '-', PREC_SUM, (a,b)=>a-b,
+  '-', PREC_UNARY, (a=0)=>-a,
+  '--', PREC_UNARY, (a=0)=>--a,
+  '--', PREC_POSTFIX, a=>a++,
 
   // ! ~
-  '!', PREC_UNARY, -1,
+  '!', PREC_UNARY, (a=0)=>!a,
 
   // * / %
-  '*', PREC_MULT,,
-  '/', PREC_MULT,,
-  '%', PREC_MULT,,
-
-  // a.b
-  '.', PREC_CALL, (node,b) => node && [skip(), node, '@' + expr(PREC_CALL)],
+  '*', PREC_MULT, (a,b)=>a*b,
+  '/', PREC_MULT, (a,b)=>a/b,
+  '%', PREC_MULT, (a,b)=>a%b,
 
   // a[b]
-  '[', PREC_CALL, (node) => (skip(), node = ['.', node, val(expr(0,CBRACK))], node),
-  ']',,,
+  ['[',']'], PREC_CALL, (a,b) => a[b],
+
+  // a.b
+  // FIXME: these 2 - how
+  '.', PREC_CALL, (a,b) => a[b], (a,b) => (b=expr(PREC_CALL), ctx => fn(a(ctx),b())) :
 
   // a(b)
-  '(', PREC_CALL, (node,b) => (skip(), b=expr(0,CPAREN),
-    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, val(b)] : [node]
+  ['(',')'], PREC_CALL, (a,b) => (
+    b.map && b[0]===',' ? (b[0]=node, b) : b ? [node, b||err()] : [node]
   ),
   // (a+b)
-  '(', PREC_GROUP, (node,b) => !node && (skip(), b=expr(0,CPAREN) || err(), b),
-  ')',,,
-])
+  ['(',')'], PREC_GROUP, (a=0) => a
+]; i < list.length;) operator(list[i++], list[i++], list[i++])
 
-
-// evaluators
-addOps(evalOp, 2, [
-  '!', a=>!a,
-  '++', a=>++a,
-  '--', a=>--a,
-
-  '.', (a,b)=>a?a[b]:a,
-
-  '%', (a,b)=>a%b,
-  '/', (a,b)=>a/b,
-  '*', (a,b)=>a*b,
-
-  '+', (a,b)=>a+(b||0),
-  '-', (a,b)=>b==null ? -a : a-b,
-
-  '>>>', (a,b)=>a>>>b,
-  '>>', (a,b)=>a>>b,
-  '<<', (a,b)=>a<<b,
-
-  '>=', (a,b)=>a>=b,
-  '>', (a,b)=>a>b,
-  '<=', (a,b)=>a<=b,
-  '<', (a,b)=>a<b,
-
-  '!=', (a,b)=>a!=b,
-  '==', (a,b)=>a==b,
-
-  '&', (a,b)=>a&b,
-  '^', (a,b)=>a^b,
-  '|', (a,b)=>a|b,
-  '&&', (a,b)=>a&&b,
-  '||', (a,b)=>a||b,
-  ',', (a,b)=>(a,b)
-])
-
-export { parse, evaluate }
+export { parse }
 
 // code → evaluator
 export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))

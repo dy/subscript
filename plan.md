@@ -338,9 +338,19 @@
     ! fn can have with valueOf, calling itself.
     ? How do we detect static parts? Mark parsed tokens?
       + via parse.literals returning evaluator with 0 args!
-    ? How do we define custom parsers?
-* [x] inside-expression skip can be combined into operator, if we're able to indicate whan operator we're defining
+    ? How do we define function call and id?
+      . As a couple of parsers, instead of evaluators?
+      . direct fn reducer is extra call, can slow down evaluation. Defining token-based calls would add some code, but make evals faster
+      . a(b,c) operator is the main blocker against non-reducer binaries. If we somehow managed to handle `,` via binaries, we'd reduce flat-reducers code, even static optimizers would flatten (+faster +shorter)
+      . `.` and `in` operators treat args as literals, not ids. Is there a way to parse them as literals?
+      . it should not be a hack, it should be conceptually right
+      . seems that operator decides not only how to evaluate operands, but also what semantic they have. Ie. they're responsible for what meaning token parts have.
+      . or either - `a.b` is not an operator but a kind of identifier access.
+        - still `a,b in c` is special construct. Same as `let a,b` or `a of b`
+      . v6 is less flexible, in sense that there's no easy way to redefine parsing
+* [ ] inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining
   ? by precedence we can detect what type of function is passed: unary, binary or postfix
+* [ ] test `a ++` postfix spacing
 * [ ] merge char/code into skip - conditional skip checks if next chars equal cond string
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]

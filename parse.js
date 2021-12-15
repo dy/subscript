@@ -9,14 +9,14 @@ err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx)
 
 skip = (is=1, from=idx, i=0) => {
   if (typeof is === 'number') idx += is
-  else if (is.trim) while (code()==is.charCodeAt(i++)) idx++
+  else if (is.trim) while (code() == is.charCodeAt(i++)) idx++
   // else if (is.trim) {if (cur.substr(idx, is.length) === is) idx+=is.length }
   else while (is(code())) idx++;
   return cur.slice(from, idx)
 },
 
+// FIXME: merge into skip
 code = () => cur.charCodeAt(idx),
-
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
@@ -48,7 +48,7 @@ id = (c, v) => (v = skip(c =>
   (c >= 97 && c <= 122) || // a...z
   c == 36 || c == 95 || // $, _,
   c >= 192 // any non-ASCII
-), ctx => ctx[v])
+), ctx => ctx ? ctx[v] : v), // switch to direct id for no-context calls cases (needed for some operators)
 
 // operator lookup table
 lookup = [],
@@ -62,29 +62,20 @@ operator = parse.operator = (
   end=op.map && (op=op[0],operator(op[1])),
   c=op.charCodeAt(0),
   l=op.length,
-  prev=fn && lookup[c]
+  prev=fn && lookup[c],
+  argc=fn.length
 ) => (
   map = map ||
-    // binary
-    fn.length>1 ?
-      (a,b,args=[a],staticBit=a.length,evaluate) => {
-        // if (!a) return // not needed since binary is last resort case
-        // same-op group, collect if evaluator is static, ie. depends on context (arg.length)
-        do { idx+=l, b=expr(end?0:prec, end)||err(), staticBit|=b.length, args.push(b) }
-        while (parse.space()==c && (l<2||char(l)==op))
+    argc > 1 ? // binary
+      (a,b) => (
+        b=expr(end?0:prec,end),
+        !a.length && !b.length ? fn(a(),b()) : // static pre-eval
+        ctx => fn(a(ctx),b(ctx))
+      ) :
+    argc ? a => ctx => fn(a(ctx)) : // unary postfix
+    a => (a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
 
-        return args.length == 2 ? ctx => fn(a(ctx),b(ctx)) : // direct boolean shortcut
-          (ctx, i=1, res=a(ctx)) => { do { res = fn(res, args[i++](ctx)) } while ( i < l ) return res }
-
-        return staticBit ? evaluate : (arg = evaluate(), () => arg) // static pre-eval
-      } :
-    // unary postfix
-    fn.length ?
-      a => a && (idx+=l, ctx => fn(a(ctx))) :
-    // unary prefix (0 args)
-      a => !a && (idx+=l, a = expr(end?0:prec-1, end), ctx => fn(a(ctx))),
-
-  lookup[c] = (a, curPrec) => (curPrec < prec && (l<2||char(l)==op) && map(a) || (prev && prev(a, curPrec) || err())),
+  lookup[c] = (a, curPrec) => (curPrec < prec && (l<2||char(l)==op) && ((a || !argc && !a) && (idx+=l, map(a))) || (prev && prev(a, curPrec) || err())),
   c
 )
 
