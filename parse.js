@@ -42,21 +42,18 @@ literal = (c,i=0,node,from=idx) => {
 },
 
 // variable identifier
-id = (c, v) => (v = skip(c =>
+id = parse.id = (c, v) => (v = skip(c =>
   (c >= 48 && c <= 57) || // 0..9
   (c >= 65 && c <= 90) || // A...Z
   (c >= 97 && c <= 122) || // a...z
   c == 36 || c == 95 || // $, _,
   c >= 192 // any non-ASCII
-), ctx => ctx ? ctx[v] : v), // switch to direct id for no-context calls cases (needed for some operators)
+), ctx => ctx ? ctx[v] : v), // return raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
 
 // operator lookup table
 lookup = [],
 
 // create operator checker/mapper (see examples)
-// @param op is operator string
-// @param prec is operator precedenc to check
-// @param map is either number +1 - postfix unary, -1 prefix unary, 0 binary, else - custom mapper function
 operator = parse.operator = (
   op, prec=0, fn, map,
   end=op.map && (op=op[0],operator(op[1])),
@@ -65,12 +62,11 @@ operator = parse.operator = (
   prev=fn && lookup[c],
   argc=fn.length
 ) => (
-  map = map ||
-    argc > 1 ? // binary
+  map = argc > 1 ? // binary
       (a,b) => (
         b=expr(end?0:prec,end),
         !a.length && !b.length ? fn(a(),b()) : // static pre-eval
-        ctx => fn(a(ctx),b(ctx))
+        argc > 2 ? ctx => fn(a, b, ctx) : ctx => fn(a(ctx),b(ctx)) // 3 args is extended case when user controls eval
       ) :
     argc ? a => ctx => fn(a(ctx)) : // unary postfix
     a => (a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
