@@ -20,7 +20,7 @@ code = () => cur.charCodeAt(idx),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
-expr = (prec=0, end, cc, node, newNode, op) => {
+expr = (prec=0, end, cc, node, newNode, op,x) => {
   // chunk/token parser
   while (
     (cc=parse.space()) && (newNode = (op=lookup[cc]) && op(node, prec) || (!node && (literal(cc) || id(cc) || err())) )
@@ -56,23 +56,26 @@ lookup = [],
 // create operator checker/mapper (see examples)
 operator = parse.operator = (
   op, prec=0, fn, map,
-  end=op.map && (op=op[0],operator(op[1])),
+  end=op.map && (operator(op[1]),op=op[0]),
   c=op.charCodeAt(0),
   l=op.length,
   prev=fn && lookup[c],
-  argc=fn.length
+  argc=fn && fn.length
 ) => (
   map = argc > 1 ? // binary
       (a,b) => (
+        idx+=l,
         b=expr(end?0:prec,end),
-        !a.length && !b.length ? fn(a(),b()) : // static pre-eval
+        !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval
         argc > 2 ? ctx => fn(a, b, ctx) : ctx => fn(a(ctx),b(ctx)) // 3 args is extended case when user controls eval
       ) :
-    argc ? a => ctx => fn(a(ctx)) : // unary postfix
-    a => (a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
+    argc ? a => a && (idx+=l, ctx => fn(a(ctx))) : // unary postfix
+    a => (!a) && (idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
 
-  lookup[c] = (a, curPrec) => (curPrec < prec && (l<2||char(l)==op) && ((a || !argc && !a) && (idx+=l, map(a))) || (prev && prev(a, curPrec) || err())),
+  // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
+  lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && map(a) || (prev && prev(a, curPrec)),
   c
 )
 
-export default parse
+export default (s, ...fields) => parse(s.raw ? String.raw(s, ...fields) : s)
+
