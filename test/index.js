@@ -1,40 +1,41 @@
 import test, {is, any, throws} from '../lib/test.js'
-import subscript, { parse, evaluate } from '../subscript.js'
-import { skip, code, char, expr, operator, err } from '../parse.js'
+import script from '../subscript.js'
+import { skip, code, char, expr, operator, err } from '../index.js'
 
-test('parse: basic', t => {
-  any(parse('1 + 2 + 3'), ['+', ['+', 1, 2], 3],   ['+', 1, 2, 3])
-  is(parse('1 + 2 * 3'), ['+',1, ['*', 2, 3]])
-  any(parse('1 + 2 + 3 + 4'), ['+', ['+', ['+', 1, 2], 3], 4],   ['+', 1, 2, 3, 4])
-  is(parse('1 * 2 + 3'), ['+', ['*', 1, 2], 3])
-  any(parse('1 + 2 * 3 + 4'), ['+', ['+', 1, ['*', 2, 3]], 4],    ['+', 1, ['*', 2, 3], 4])
-  is(parse(`(1+2)`), ['+',1, 2])
-  is(parse(`1+(2+3)`), ['+',1, ['+',2,3]])
-  is(parse(`1+(2)`), ['+',1, 2])
-  any(parse(`1+(2)+3+((4))`), ['+',['+',['+',1, 2],3],4],  ['+',1, 2,3,4])
-  is(parse(`-2`), ['-',2])
-  is(parse(`a ( c ) . e`), ['.',['a', 'c'], '@e'])
-  is(parse(`a(1)`), [['a'], 1])
-  is(parse(`a(1).b`), ['.',[['a'], 1],'@b'])
-  any(parse('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
-  any(parse('a.b.c'), ['.',['.','a','@b'],'@c'],    ['.','a','@b','@c'])
-  any(parse('a.b.c(d).e'), ['.',[['.',['.','a','@b'],'@c'],'d'],'@e'],    ['.',[['.','a','@b','@c'],'d'],'@e'])
-  is(parse(`+-2`), ['+',['-',2]])
-  is(parse(`+-a.b`), ['+',['-',['.','a','@b']]])
-  is(parse(`1+-2`), ['+',1,['-',2]])
-  is(parse(`-a.b+1`), ['+',['-',['.','a','@b']], 1])
-  is(parse(`-a-b`), ['-',['-','a'], 'b'])
-  is(parse(`+-a.b+-!1`), ['+',['+',['-',['.','a','@b']]], ['-',['!',1]]])
+test.only('parse: basic', t => {
+  // is(script`1 + 2`(), 3)
+  // is(script`1 + 2 + 3`(), 6)
+  // is(script('1 + 2 * 3')(), 7)
+  // is(script('1 + 2 + 3 + 4')(), 10)
+  // is(script('1 * 2 + 3')(), 5)
+  // is(script('1 + 2 * 3 + 4')(), 11)
+  is(script(`(1+2)`)(), 3)
+  is(script(`1+(2+3)`), ['+',1, ['+',2,3]])
+  is(script(`1+(2)`), ['+',1, 2])
+  any(script(`1+(2)+3+((4))`), ['+',['+',['+',1, 2],3],4],  ['+',1, 2,3,4])
+  is(script(`-2`), ['-',2])
+  is(script(`a ( c ) . e`), ['.',['a', 'c'], '@e'])
+  is(script(`a(1)`), [['a'], 1])
+  is(script(`a(1).b`), ['.',[['a'], 1],'@b'])
+  any(script('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
+  any(script('a.b.c'), ['.',['.','a','@b'],'@c'],    ['.','a','@b','@c'])
+  any(script('a.b.c(d).e'), ['.',[['.',['.','a','@b'],'@c'],'d'],'@e'],    ['.',[['.','a','@b','@c'],'d'],'@e'])
+  is(script(`+-2`), ['+',['-',2]])
+  is(script(`+-a.b`), ['+',['-',['.','a','@b']]])
+  is(script(`1+-2`), ['+',1,['-',2]])
+  is(script(`-a.b+1`), ['+',['-',['.','a','@b']], 1])
+  is(script(`-a-b`), ['-',['-','a'], 'b'])
+  is(script(`+-a.b+-!1`), ['+',['+',['-',['.','a','@b']]], ['-',['!',1]]])
 
-  is(parse(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
-  is(parse(`( a,  b )`), [',','a','b'])
-  is(parse(`a (  ccc. d,  -+1.0 )`), ['a', ['.', 'ccc', '@d'], ['-',['+',1]]])
+  is(script(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
+  is(script(`( a,  b )`), [',','a','b'])
+  is(script(`a (  ccc. d,  -+1.0 )`), ['a', ['.', 'ccc', '@d'], ['-',['+',1]]])
 
-  is(parse(`a.b (  ccc. d , -+1.0 ) . e`), ['.',[['.', 'a', '@b'], ['.', 'ccc', '@d'], ['-',['+',1]]], '@e'])
-  is(parse(`a * 3 / 2`), ['/',['*','a',3],2])
-  is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ['-',['+',['/',['*',['+', 'a', 2],3],2],['*', 'b', 2]],1])
-  is(parse('a()()()'),[[['a']]])
-  is(parse('a(b)(c)'),[['a', 'b'],'c'])
+  is(script(`a.b (  ccc. d , -+1.0 ) . e`), ['.',[['.', 'a', '@b'], ['.', 'ccc', '@d'], ['-',['+',1]]], '@e'])
+  is(script(`a * 3 / 2`), ['/',['*','a',3],2])
+  is(script(`(a + 2) * 3 / 2 + b * 2 - 1`), ['-',['+',['/',['*',['+', 'a', 2],3],2],['*', 'b', 2]],1])
+  is(script('a()()()'),[[['a']]])
+  is(script('a(b)(c)'),[['a', 'b'],'c'])
 
   // **
   operator('**', 14)
@@ -103,18 +104,21 @@ test('parse: strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  const v = v => ({valueOf:()=>v})
-  // parse.token.splice(2,0, c =>
-  //   c === 116 && char(4) === 'true' && skip(4) ? v(true) :
-  //   c === 102 && char(5) === 'false' && skip(5) ? v(false) :
-  //   c === 110 && char(4) === 'null' && skip(4) ? v(null) :
-  //   c === 117 && char(9) === 'undefined' && skip(9) ? v(undefined) :
-  //   null
-  // )
-  operator('null',30,node=>!node&&(skip(4),v(null)))
-  operator('false',30,node=>!node&&(skip(5),v(false)))
-  operator('true',30,node=>!node&&(skip(4),v(true)))
-  operator('undefined',30,node=>!node&&(skip(9),v(undefined)))
+  parse.literal.push(c =>
+    skip('true') ? true :
+    skip('false') ? false :
+    skip('null') ? null :
+    skip('undefined') ? undefined :
+    // c === 116 && char(4) === 'true' && skip(4) ? true :
+    // c === 102 && char(5) === 'false' && skip(5) ? false :
+    // c === 110 && char(4) === 'null' && skip(4) ? null :
+    // c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
+    null
+  )
+  // operator('null',30,node=>!node&&(skip(4),v(null)))
+  // operator('false',30,node=>!node&&(skip(5),v(false)))
+  // operator('true',30,node=>!node&&(skip(4),v(true)))
+  // operator('undefined',30,node=>!node&&(skip(9),v(undefined)))
 
   is(parse('null'), null)
   is(parse('(null)'), null)
@@ -187,8 +191,8 @@ test('parse: postfix unaries', t => {
 })
 
 test('parse: prop access', t => {
-  any(parse('a["b"]["c"][0]'),['.',['.',['.','a','@b'],'@c'],0],  ['.', 'a', '@b', '@c', 0])
-  any(parse('a.b.c.0'), ['.',['.',['.','a','@b'],'@c'],'@0'],  ['.', 'a', '@b', '@c', '@0'])
+  // any(parse('a["b"]["c"][0]'),['.',['.',['.','a','@b'],'@c'],0],  ['.', 'a', '@b', '@c', 0])
+  // any(parse('a.b.c.0'), ['.',['.',['.','a','@b'],'@c'],'@0'],  ['.', 'a', '@b', '@c', '@0'])
   is(evaluate(['.','a','@b',new String('c'),0], {a:{b:{c:[2]}}}), 2)
   is(evaluate(['.',['.',['.','a','@b'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
 })
@@ -294,9 +298,9 @@ test('ext: ternary', t => {
 })
 
 test('ext: list', t => {
-  evaluate.operator('[', (...args) => Array(...args))
+  // evaluate.operator('[', (...args) => Array(...args))
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  operator('[', 20, (node,arg) => !node && (
+  operator('[', 20, (node,arg) => (
     skip(), arg=expr(), skip(),
     !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
   ))
