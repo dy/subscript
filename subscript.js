@@ -64,7 +64,7 @@ for (let i = 0, list = [
   '.', PREC_CALL, (a,b,ctx) => a(ctx)[b()],
 
   // a(b)
-  ['(',')'], PREC_CALL, (a,b,ctx) => b&&b._$ ? a(ctx).apply(ctx,b) : a(ctx)(b),
+  ['(',')'], PREC_CALL, (a,b,ctx) => b&&b._$ ? a(ctx).apply(ctx,b(ctx)) : a(ctx)(b(ctx)),
   // (a+b)
   ['(',')'], PREC_GROUP, (a=0)=>a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])

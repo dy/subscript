@@ -2,7 +2,7 @@ import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
 import { skip, code, char, expr, operator, err } from '../index.js'
 
-test.only('parse: basic', t => {
+test.only('basic', t => {
   // is(script`1 + 2`(), 3)
   // is(script`1 + 2 + 3`(), 6)
   // is(script('1 + 2 * 3')(), 7)
@@ -14,20 +14,20 @@ test.only('parse: basic', t => {
   // is(script(`1+(2)`)(), 3)
   // is(script(`1+(2)+3+((4))`)(), 10)
   // is(script(`-2`)(), -2)
-  is(script(`a(1)`)({a:v=>v}), 1)
-  is(script(`a ( c ) . e`)({ a:(c)=>({e:c}), c:1 }), 1)
-  is(script(`a(1).b`), ['.',[['a'], 1],'@b'])
-  is(script('a[b][c]'),['.','a', 'b', 'c'], ['.',['.', 'a', 'b'], 'c'])
-  is(script('a.b.c'), ['.',['.','a','@b'],'@c'],    ['.','a','@b','@c'])
-  is(script('a.b.c(d).e'), ['.',[['.',['.','a','@b'],'@c'],'d'],'@e'],    ['.',[['.','a','@b','@c'],'d'],'@e'])
-  is(script(`+-2`), ['+',['-',2]])
-  is(script(`+-a.b`), ['+',['-',['.','a','@b']]])
-  is(script(`1+-2`), ['+',1,['-',2]])
-  is(script(`-a.b+1`), ['+',['-',['.','a','@b']], 1])
-  is(script(`-a-b`), ['-',['-','a'], 'b'])
-  is(script(`+-a.b+-!1`), ['+',['+',['-',['.','a','@b']]], ['-',['!',1]]])
+  // is(script(`a(1)`)({a:v=>v}), 1)
+  // is(script(`a(1).b`)({a:v=>({b:v})}), 1)
+  // is(script(`a ( c ) . e`)({ a:v=>({e:v}), c:1 }), 1)
+  // is(script('a[b][c]')({a:{b:{c:1}}, b:'b', c:'c'}), 1)
+  // is(script('a.b.c')({a:{b:{c:1}}}), 1)
+  // is(script('a.b.c(d).e')({a:{b:{c:e=>({e})}}, d:1}), 1)
+  // is(script(`+-2`)(), -2)
+  // is(script(`+-a.b`)({a:{b:1}}), -1)
+  // is(script(`1+-2`)(), -1)
+  // is(script(`-a.b+1`)({a:{b:1}}), 0)
+  // is(script(`-a-b`)({a:1,b:2}), -3)
+  // is(script(`+-a.b+-!1`)({a:{b:1}}), -1)
 
-  is(script(`   .1   +   -1.0 -  2.3e+1 `), ['-', ['+', .1, ['-',1]], 23])
+  is(script(`   .1   +   -1.0 -  2.3e+1 `)(), .1-1.0-2.3e+1)
   is(script(`( a,  b )`), [',','a','b'])
   is(script(`a (  ccc. d,  -+1.0 )`), ['a', ['.', 'ccc', '@d'], ['-',['+',1]]])
 
@@ -91,7 +91,7 @@ test.todo('ext: interpolate string', t => {
   is(subscript`a+1`({a:1}), 2)
 })
 
-test('parse: strings', t => {
+test('strings', t => {
   is(parse('"a'), '@a')
   is(parse('a + b'), ['+', 'a', 'b'])
   is(parse('"a" + "b'), ['+', '@a', '@b'])
@@ -139,12 +139,12 @@ test('ext: literals', t=> {
   is(evaluate(parse('x(true)'),{x:v=>!!v}), true)
 })
 
-test('parse: bad number', t => {
+test('bad number', t => {
   is(parse('-1.23e-2'),['-',1.23e-2])
   throws(t => parse('.e-1'))
 })
 
-test('parse: intersecting binary', t => {
+test('intersecting binary', t => {
   is(parse('a | b'), ['|', 'a', 'b'], 'a|b')
   is(parse('a || b'), ['||', 'a', 'b'], 'a||b')
   is(parse('a & b'), ['&', 'a', 'b'], 'a&b')
@@ -153,7 +153,7 @@ test('parse: intersecting binary', t => {
   is(parse('a >> b'), ['>>', 'a', 'b'], 'a>>b')
   is(parse('a >>> b'), ['>>>', 'a', 'b'], 'a>>>b')
 })
-test('parse: signs', t => {
+test('signs', t => {
   is(parse('+-1'),['+',['-',1]])
   is(parse('a(+1)'),['a',['+',1]])
   is(parse('a[+1]'),['.', 'a',['+',1]])
@@ -175,7 +175,7 @@ test('parse: signs', t => {
   is(parse('+1 -2'),['-',['+',1],2])
   is(parse('-1 +2'),['+',['-',1],2])
 })
-test('parse: unaries', t => {
+test('unaries', t => {
   is(parse('-2'),['-',2])
   is(parse('+-2'),['+',['-',2]])
   is(parse('-+-2'),['-',['+',['-',2]]])
@@ -184,20 +184,20 @@ test('parse: unaries', t => {
   is(parse('1-+!2'),['-',1,['+',['!',2]]])
   is(parse('1 * -1'),['*',1,['-',1]])
 })
-test('parse: postfix unaries', t => {
+test('postfix unaries', t => {
   is(parse('2--'),['--',2])
   is(parse('2++'),['++',2])
   is(parse('1++(b)'),[['++',1],'b']) // NOTE: not supported by JS btw
 })
 
-test('parse: prop access', t => {
+test('prop access', t => {
   // any(parse('a["b"]["c"][0]'),['.',['.',['.','a','@b'],'@c'],0],  ['.', 'a', '@b', '@c', 0])
   // any(parse('a.b.c.0'), ['.',['.',['.','a','@b'],'@c'],'@0'],  ['.', 'a', '@b', '@c', '@0'])
   is(evaluate(['.','a','@b',new String('c'),0], {a:{b:{c:[2]}}}), 2)
   is(evaluate(['.',['.',['.','a','@b'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
 })
 
-test('parse: parens', t => {
+test('parens', t => {
   is(parse('1+(b)()'),['+',1,['b']])
   is(parse('(1)+-b()'),['+',1,['-',['b']]])
   is(parse('1+a(b)'),['+',1,['a','b']])
@@ -220,7 +220,7 @@ test('parse: parens', t => {
   is(parse('(1,2,3)'),[',',1,2,3])
 })
 
-test('parse: functions', t => {
+test('functions', t => {
   is(parse('a()'),['a'])
   is(parse('(c,d)'),[',', 'c','d'])
   is(parse('a(b)(d)'),[['a', 'b'], 'd'])
@@ -233,7 +233,7 @@ test('parse: functions', t => {
   is(parse('a.b(c.d)'),[['.','a','@b'],['.', 'c','@d']])
 })
 
-test('parse: chains', t => {
+test('chains', t => {
   any(parse('a["b"]["c"]["d"]'),['.','a','@b','@c','@d'], ['.',['.',['.','a','@b'],'@c'],'@d'])
   any(parse('a.b.c.d'),['.','a','@b','@c','@d'], ['.',['.',['.','a','@b'],'@c'],'@d'])
   any(parse('a.b[c.d].e.f'),['.',['.',['.',['.','a','@b'], ['.','c','@d']],'@e'],'@f'],  ['.',['.',['.','a','@b'],['.','c','@d']],'@e','@f'])
@@ -367,19 +367,19 @@ test('ext: comments', t => {
   is(parse(`"a" + "b" // concat`),['+','@a','@b'])
 })
 
-test('parse: unfinished sequences', async t => {
+test('unfinished sequences', async t => {
   throws(() => parse('a+b)+c'))//, ['+','a','b'])
   throws(() => parse('(a+(b)))+c'))//, ['+','a','b'])
   throws(() => parse('a+b+)c'))//, ['+','a','b',null])
 })
 
-test('parse: non-existing operators', t => {
+test('non-existing operators', t => {
   throws(() => parse('a <<< b'))
   throws(() => parse('a >== b'))
   throws(() => parse('a -> b'))
 })
 
-test('parse: low-precedence unary', t => {
+test('low-precedence unary', t => {
   parse.operator('&',13,-1)
   is(parse('&a+b*c'), ['+',['&','a'],['*','b','c']])
   is(parse('&a*b+c'), ['+',['&',['*','a','b']],'c'])
