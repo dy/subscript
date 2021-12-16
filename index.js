@@ -27,6 +27,7 @@ expr = (prec=0, end, cc, node, newNode, op,x) => {
   ) node = newNode;
 
   // skip end character, if expected
+console.log(end, char(10))
   if (end) cc != end ? err('Unclosed paren') : idx++
 
   return node
@@ -55,12 +56,12 @@ lookup = [],
 
 // create operator checker/mapper (see examples)
 operator = parse.operator = (
-  op, prec=0, fn, map,
-  end=op.map && (operator(op[1]),op=op[0]),
+  op, prec=0, fn=0, map,
+  end=op.map && operator(op[1],(op=op[0],0)),
   c=op.charCodeAt(0),
   l=op.length,
   prev=fn && lookup[c],
-  argc=fn && fn.length
+  argc=fn.length
 ) => (
   map = argc > 1 ? // binary
       (a,b) => (
@@ -73,7 +74,7 @@ operator = parse.operator = (
     a => (!a) && (idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
 
   // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
-  lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && map(a) || (prev && prev(a, curPrec)),
+  lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (map(a)) || (prev && prev(a, curPrec)),
   c
 )
 
