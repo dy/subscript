@@ -358,6 +358,7 @@
 * [ ] test `a ++` postfix spacing
 * [ ] merge char/code into skip - conditional skip checks if next chars equal cond string
 * [ ] try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently
+* [ ] flat into single subscript.js file, unminified.
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks

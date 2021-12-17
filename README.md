@@ -7,14 +7,14 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 
 * Well-known syntax
 * Any _subscript_ fragment can be copy-pasted to any target language
-* It's tiny <sub><a href="https://bundlephobia.com/package/subscript@5.5.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
+* It's tiny <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
 * It's :rocket: fast ([see performance](#performance))
 * Configurable & extensible
 * Trivial to use...
 
 ```js
-import subscript from 'subscript.js'
-let fn = subscript(`a.b + c(d - 1)`)
+import script from 'subscript.js'
+let fn = script`a.b + c(d - 1)`
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 ```
 
@@ -30,29 +30,12 @@ _Subscript_ is designed to be useful for:
 * custom DSL
 
 [_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
-_Subscript_ has [2.4kb](https://npmfs.com/package/subscript/5.5.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with _jsep_ test coverage and better performance.
+_Subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with _jsep_ test coverage and better performance.
 
 
-## Evaluation
+## Design
 
-_Subscript_ parser generates lispy calltree (compatible with [frisk](https://npmjs.com/frisk)), which is compared to esprima AST has:
-
-+ minimal possible overhead
-+ clear precedence
-+ overloading by context
-+ manual evaluation and debugging
-+ conventional form
-+ one-liner docs:
-
-```js
-import {evaluate} from 'subscript.js'
-
-evaluate(['+', ['*', 'min', 60], '@sec'], { min: 5 }) // min*60 + "sec" == "300sec"
-```
-
-## Extending
-
-### Operators 
+### Operators
 
 Default operators include common operators for the listed languages in the following precedence:
 
@@ -69,15 +52,13 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Operators can be extended via `parse.operator(str, prec, type)` and `evaluate.operator(str, fn)` functions for any unary/binary/postfix operators, calls, prop chains, groups etc.
+Operators can be extended via `operator(char|chars, precedence, fn)` for any unary/binary/postfix operators, calls, prop chains, groups etc.
 
 ```js
-import { parse, evaluate } from 'subscript.js'
+import script from 'subscript.js'
 
-parse.operator('=>', 10) // precedence=10, type=default (0 - binary, 1 - postfix, -1 - prefix)
-
-evaluate.operator('=>', ( args, body ) => evaluate(body, args))
-evaluate.operator('|', ( a, b ) => a.pipe(b))
+script.operator('=>', 10, ( args, body ) => evaluate(body, args))
+script.operator('|', 10, ( a, b ) => a.pipe(b))
 
 let tree = parse(`
   interval(350)
@@ -88,24 +69,26 @@ let tree = parse(`
 evaluate(tree, { Math, map, take, interval, gaussian })
 ```
 
-### Tokens
+### Literals
 
-Default tokens include:
+Default literals include:
 
 * `"abc"` strings
 * `1.2e+3` floats
-* `name` identifiers
 
-Tokens are extensible via `parse.token` list, can be added support of _literals_, _regexes_, _strings_, _numbers_ and others.
+Literals are extensible via `literal` list, can be added support of _booleans_, _regexes_, _strings_, _numbers_ and others.
 
 ```js
-import parse, {char} from 'subscript/parse.js'
-import evaluate from 'subscript/evaluate.js'
+import script from 'subscript.js'
 
-conts ctx = {x:1}
-parse.token.unshift(c => char(4) === 'this' ? ctx : null)
-evaluate(parse(`this.x`)) // 1
+script.literal.unshift(c => skip('this') && {x:1})
+script`this.x`() // 1
 ```
+
+### Identifiers
+
+Identifiers include
+
 
 ### Spaces/comments
 
@@ -304,7 +287,7 @@ jexl: ~100 ms
 new Function: ~7 ms
 ```
 
-## See also
+## Competitors
 
 * [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
@@ -315,6 +298,7 @@ new Function: ~7 ms
 * [string-math](https://github.com/devrafalko/string-math)
 * [nerdamer](https://github.com/jiggzson/nerdamer)
 * [math-codegen](https://github.com/mauriciopoppe/math-codegen)
+* [math-parser](https://www.npmjs.com/package/math-parser)
 * [math.js](https://mathjs.org/docs/expressions/parsing.html)
 
 <p align=center>🕉</p>

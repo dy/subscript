@@ -30,7 +30,7 @@ char = (n=1) => cur.substr(idx, n),
 expr = (prec=0, end, cc, node, newNode, op,x) => {
   // chunk/token parser
   while (
-    (cc=parse.space()) && (newNode = (op=lookup[cc]) && op(node, prec) || (!node && (literal(cc) || id(cc) || err())) )
+    (cc=parse.space()) && (newNode = (op=lookup[cc]) && op(node, prec) || (!node && (lit(cc) || id(cc) || err())) )
   ) node = newNode;
 
   // skip end character, if expected
@@ -43,14 +43,14 @@ expr = (prec=0, end, cc, node, newNode, op,x) => {
 space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
 
 // literals - static tokens in code (useful for collapsing static expressions)
-literals = parse.literal = [],
-literal = (c,i=0,node,from=idx) => {
-  while(i<literals.length) if (node=literals[i++](c), idx>from) return () => node // 0 args indicate static evaluator
+literal = parse.literal = [],
+lit = (c,i=0,node,from=idx) => {
+  while(i<literal.length) if (node=literal[i++](c), idx>from) return () => node // 0 args indicate static evaluator
 },
 
 // variable identifier
 // returns raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
-id = (c, v=skip(isId)) => ctx => ctx ? ctx[v] : v,
+id = parse.id = (c, v=skip(isId)) => ctx => ctx ? ctx[v] : v,
 
 // operator lookup table
 lookup = [],
@@ -66,7 +66,7 @@ operator = parse.operator = (
   word=op.toUpperCase()!==op // make sure word break comes after word operator
 ) => (
   map = argc > 1 ? // binary
-      (a,b) => a && ( // a.b needs making sure a exists
+      (a,b) => a && ( // a.b needs making sure `a` exists (since 1.0 can also be a token) - generally binary is not the last stop
         idx+=l,
         b=expr(end?0:prec,end),
         argc > 2 ? ctx => fn(a, b, ctx) : // custom eval logic

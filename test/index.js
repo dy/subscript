@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, char, expr, operator, err } from '../index.js'
+import { skip, code, char, expr, operator, err, literal } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -101,7 +101,7 @@ test.todo('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test.todo('ext: literals', t=> {
-  parse.literal.push(c =>
+  literal.push(c =>
     skip('true') ? true :
     skip('false') ? false :
     skip('null') ? null :
@@ -117,23 +117,23 @@ test.todo('ext: literals', t=> {
   // operator('true',30,node=>!node&&(skip(4),v(true)))
   // operator('undefined',30,node=>!node&&(skip(9),v(undefined)))
 
-  is(parse('null'), null)
-  is(parse('(null)'), null)
-  is(parse('!null'), ['!',null])
-  is(parse('null++'), ['++',null])
-  is(parse('false++'), ['++',false])
-  is(parse('++false'), ['++',false])
-  is(parse('(a)(null)'), ['a',null])
-  is(parse('false&true'), ['&',false,true])
-  is(parse('(false)||((null))'), ['||',false,null])
-  // parse.literal['undefined'] = undefined
-  is(parse('undefined'), undefined)
-  is(parse('(undefined)'), undefined)
-  is(parse('true||((false))'), ['||', true, false])
-  is(parse('a(true)'), ['a', true])
-  is(parse('a0'), 'a0')
-  is(evaluate(parse('x(0)'),{x:v=>!!v}), false)
-  is(evaluate(parse('x(true)'),{x:v=>!!v}), true)
+  is(script('null')({}), null)
+  is(script('(null)')({}), null)
+  // is(script('!null')(), ['!',null])
+  // is(script('null++')(), ['++',null])
+  // is(script('false++'), ['++',false])
+  // is(script('++false'), ['++',false])
+  // is(script('(a)(null)'), ['a',null])
+  // is(script('false&true'), ['&',false,true])
+  // is(script('(false)||((null))'), ['||',false,null])
+  // // script.literal['undefined'] = undefined
+  // is(script('undefined'), undefined)
+  // is(script('(undefined)'), undefined)
+  // is(script('true||((false))'), ['||', true, false])
+  // is(script('a(true)'), ['a', true])
+  // is(script('a0'), 'a0')
+  // is(evaluate(parse('x(0)'),{x:v=>!!v}), false)
+  // is(evaluate(parse('x(true)'),{x:v=>!!v}), true)
 })
 
 test('bad number', t => {
@@ -263,19 +263,12 @@ test('ext: in operator', t => {
 })
 
 test('ext: ternary', t => {
-  evaluate.operator('?:', (a,b,c)=>a?b:c)
-  parse.operator('?', 3, (node) => {
-    if (!node) err('Expected expression')
-    let a, b
-    skip(), parse.space(), a = expr()
-    return ['?:', node, a[1], a[2]]
-  })
-  operator(':', 2)
+  operator(':', 3.1, (a,b) => [a,b])
+  operator('?', 3, (a,b) => a ? b[0] : b[1])
 
-  is(parse('a ? b : c'), ['?:','a','b','c']) // ['?:', 'a', 'b', 'c']
-  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
-  is(evaluate(parse('a?b:c'), {a:true,b:1,c:2}), 1)
-  is(evaluate(parse('a?b:c'), {a:false,b:1,c:2}), 2)
+  evalTest('a?b:c', {a:true,b:1,c:2})
+  evalTest('a?b:c', {a:false,b:1,c:2})
+  evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
 })
 
 test('ext: list', t => {
@@ -286,18 +279,18 @@ test('ext: list', t => {
     !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
   ))
 
-  is(parse('[]'))
-  is(parse('[1]'),['[',1])
-  is(parse('[1,2,3]'),['[',1,2,3])
-  is(parse('[1]+[2]'),['+',['[',1],['[',2]])
+  is(script('[]')(), [])
+  is(script('[1]')(),[1])
+  is(script('[1,2,3]')(),[1,2,3])
+  is(script('[1]+[2]')(),[1,2])
 
   // NOTE: not critical, but generalizes expression errors across envs
   // is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
   // is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
 
-  is(evaluate(parse('[]')),[])
-  is(evaluate(parse('[1]')),[1])
-  is(evaluate(parse('[1,2,3]')),[1,2,3])
+  evalTest('[]')
+  evalTest('[1]')
+  evalTest('[1,2,3]')
 })
 
 test('ext: object', t => {
@@ -349,25 +342,25 @@ test('ext: comments', t => {
 })
 
 test('unfinished sequences', async t => {
-  throws(() => parse('a+b)+c'))//, ['+','a','b'])
-  throws(() => parse('(a+(b)))+c'))//, ['+','a','b'])
-  throws(() => parse('a+b+)c'))//, ['+','a','b',null])
+  throws(() => script('a+b)+c'))//, ['+','a','b'])
+  throws(() => script('(a+(b)))+c'))//, ['+','a','b'])
+  throws(() => script('a+b+)c'))//, ['+','a','b',null])
 })
 
 test('non-existing operators', t => {
-  throws(() => parse('a <<< b'))
-  throws(() => parse('a >== b'))
-  throws(() => parse('a -> b'))
+  throws(() => script('a <<< b'))
+  throws(() => script('a >== b'))
+  throws(() => script('a -> b'))
 })
 
 test('low-precedence unary', t => {
-  parse.operator('&',13,-1)
-  is(parse('&a+b*c'), ['+',['&','a'],['*','b','c']])
-  is(parse('&a*b+c'), ['+',['&',['*','a','b']],'c'])
+  operator('&',13,(a=true)=>~a)
+  is(script('&a+b*c')({a:1,b:2,c:3}), 4)
+  is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })
 
 test('eval: edge cases', t => {
-  is(evaluate(parse('pow(a, 3)'), {pow:Math.pow, a:1}), 1)
-  is(evaluate(parse('Math.pow(a, 3)'), {Math, a:1}), 1)
-  is(evaluate(parse('Math.pow(a, 3) / 2 + b * 2 - 1'), {Math, a:1, b:1}), 1.5)
+  is(script('pow(a, 3)')({pow:Math.pow, a:1}), 1)
+  is(script('Math.pow(a, 3)')({Math, a:1}), 1)
+  is(script('Math.pow(a, 3) / 2 + b * 2 - 1')({Math, a:1, b:1}), 1.5)
 })
