@@ -28,11 +28,11 @@ test('expr-eval', async t => {
 })
 
 test('subscript', async t => {
-  const {parse, evaluate} = await import('../subscript.js');
+  const {default:parse} = await import('../subscript.js');
 
   let ast = parse(src(0))
   // console.log(ast);
-  is(evaluate(ast, args), result);
+  is(ast(args), result);
 
   console.time('subscript')
   for (let i = 0; i < RUNS; i++){
@@ -43,7 +43,7 @@ test('subscript', async t => {
 
   console.time('subscript eval')
   for (let i = 0; i < RUNS; i++){
-    evaluate(ast, args)
+    ast(args)
   }
   console.timeEnd('subscript eval')
 })
