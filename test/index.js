@@ -2,7 +2,7 @@ import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
 import { skip, code, char, expr, operator, err } from '../index.js'
 
-const evalTest = (str, ctx) => {
+const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
 
   return is(ss(ctx), fn(...Object.values(ctx)))
@@ -21,6 +21,15 @@ test.only('basic', t => {
   is(script(`1+(2)`)(), 3)
   is(script(`1+(2)+3+((4))`)(), 10)
   is(script(`-2`)(), -2)
+  evalTest('0 + 1 + 2.0')
+  evalTest('0 + (1 + 2)')
+  evalTest('-2 - 2')
+  evalTest('0 + 1 - 2')
+  evalTest('0 - 1 + 2')
+  evalTest('0 + 1 + 2 - 1 - 2 + 1')
+  evalTest('0 * 1 * 2 / 1 / 2 * 1')
+  evalTest('0 + 1 - 2 * 3')
+  evalTest('1 * 2 - 3')
   is(script(`a(1)`)({a:v=>v}), 1)
   is(script(`a(1).b`)({a:v=>({b:v})}), 1)
   is(script(`a ( c ) . e`)({ a:v=>({e:v}), c:1 }), 1)
@@ -38,6 +47,9 @@ test.only('basic', t => {
   is(script(`( a,  b )`)({a:1,b:2}), 2)
   is(script(`a( b,  (c, d) )`)({ a:(b,c)=>b+c, b:2, c:3, d:4 }), 6)
 
+  evalTest('a.b', {a:{b:2}})
+  evalTest('1 + a.b + 3.5', {a:{b:3}})
+  evalTest('1 + (a.b + 3.5)', {a:{b:4}})
   evalTest(`a (  ccc. d,  -+1.0 )`, {a:(b,c)=>b+c, ccc:{d:1}})
   evalTest(`a.b (  ccc. d , -+1.0 ) . e`, {a:{b:(c,d)=>({e:c+d}) }, ccc:{d:10}})
   evalTest(`a * 3 / 2`, {a:42})
@@ -48,43 +60,22 @@ test.only('basic', t => {
   // **
   operator('**', 14, (a,b)=>a**b)
 
-  is(parse('1 + 2 * 3 ** 4 + 5'), ['+', ['+', 1, ['*', 2, ['**', 3, 4]]], 5],  ['+', 1, ['*', 2, ['**', 3, 4]], 5])
-  is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**','c', 'd']]], 'e'])
-  is(parse(`"abcd" + "efgh"`), ['+','@abcd','@efgh'])
+  evalTest('1 + 2 * 3 ** 4 + 5', {})
+  evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
+  evalTest(`"abcd" + "efgh"`)
 
-  is(parse('0 + 1 + 2.0'), ['+',['+',0,1],2],  ['+',0,1,2])
-  is(parse('0 + (1 + 2)'), ['+',0,['+',1,2]])
-  is(parse('-2 - 2'), ['-',['-',2],2])
-  is(parse('0 + 1 - 2'), ['-',['+',0,1],2])
-  is(parse('0 - 1 + 2'), ['+',['-',0,1],2])
-  is(parse('0 + 1 + 2 - 1 - 2 + 1'), ['+',['-',['-',['+',['+',0,1],2],1],2],1], ['+',['-',['+',0,1,2],1,2],1])
-  is(parse('0 * 1 * 2 / 1 / 2 * 1'), ['*',['/',['/',['*',['*',0,1],2],1],2],1], ['*',['/',['*',0,1,2],1,2],1])
-  is(parse('0 + 1 - 2 * 3'), ['-',['+',0,1],['*',2,3]])
-  is(parse('1 * 2 - 3'), ['-',['*',1,2],3])
-  is(parse('a.b'), ['.','a','@b'])
-  is(parse('1 + a.b + 3.5'), ['+',['+',1,['.','a','@b']],3.5], ['+',1,['.','a','@b'],3.5])
-  is(parse('1 + (a.b + 3.5)'), ['+',1,['+',['.','a','@b'],3.5]])
-  is(parse('x(a + 3)'), ['x',['+','a',3]])
-  is(parse('1 + x(a.b + 3.5)'), ['+',1,['x',['+',['.','a','@b'],3.5]]])
-  is(parse('a[b]'), ['.','a','b'])
-  is(parse('(a(b) + 3.5)'), ['+',['a','b'],3.5])
-  is(parse('1 + x(a[b] + 3.5)'), ['+',1,['x',['+',['.','a','b'],3.5]]])
-  is(parse('x.y.z,123'), [',',['.','x','@y','@z'],123],  [',',['.',['.','x','@y'],'@z'],123])
-  is(parse('x.y.z(123)'), [['.','x','@y','@z'],123],[['.',['.','x','@y'],'@z'],123])
-  is(parse('x.y.z(123 + c[456]) + n'), ['+',[['.','x','@y','@z'],['+',123,['.','c',456]]],'n'],   ['+', [['.',['.','x','@y'],'@z'],['+',123, ['.','c',456]]],'n'])
-  is(parse('1 || 1'), ['||', 1, 1])
-  is(parse('-1%2'), ['%',['-',1], 2])
-  is(parse('-(1%2)'), ['-',['%',1, 2]])
-  is(parse('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n'),
-    ['||',
-      ['-',['*',['+',1],['-',['.','a','@b'],3.5]], '@asdf'],
-      ['+',[['.','x','@y','@z'], ['+',123,['.','c',456]]],'n']
-    ],
-    ['||',
-      ['-',['*',['+',1],['-',['.','a','@b'],3.5]], '@asdf'],
-      ['+',[['.',['.','x','@y'],'@z'], ['+',123,['.','c',456]]],'n']
-    ]
-  )
+  evalTest('x(a + 3)',{x:v=>v+1,a:3})
+  evalTest('1 + x(a.b + 3.5)', {x:v=>v+1, a:{b:1}})
+  evalTest('a[b]', {a:{x:1}, b:'x'})
+  evalTest('(a(b) + 3.5)', {a:v=>v*2, b:3})
+  evalTest('1 + x(a[b] + 3.5)', {x:v=>v+1, a:{y:1}, b:'y'})
+  evalTest('x.y.z,123', {x:{y:{z:345}}})
+  evalTest('x.y.z(123)', {x:{y:{z:x=>x}}})
+  evalTest('x.y.z(123 + c[456]) + n', {x:{y:{z:v=>v+1}}, c:{456:789}, n:1})
+  evalTest('1 || 1')
+  evalTest('-1%2')
+  evalTest('-(1%2)')
+  evalTest('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', {a:{b:1}, x:{y:{z:v=>v}}, c:{456:789}, n:1})
 })
 
 test('readme', t => {
