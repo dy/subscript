@@ -28,10 +28,10 @@ test.only('basic', t => {
   // is(script(`-a-b`)({a:1,b:2}), -3)
   // is(script(`+-a.b+-!1`)({a:{b:1}}), -1)
 
-  // is(script(`   .1   +   -1.0 -  2.3e+1 `)(), .1-1.0-2.3e+1)
-  // is(script(`( a,  b )`)({a:1,b:2}), 2)
-  // is(script(`a( b,  (c, d) )`)({ a:(b,c)=>b+c, b:2, c:3, d:4 }), 6)
-  is(script(`a (  ccc. d,  -+1.0 )`,{}))
+  is(script(`   .1   +   -1.0 -  2.3e+1 `)(), .1-1.0-2.3e+1)
+  is(script(`( a,  b )`)({a:1,b:2}), 2)
+  is(script(`a( b,  (c, d) )`)({ a:(b,c)=>b+c, b:2, c:3, d:4 }), 6)
+  // is(script(`a (  ccc. d,  -+1.0 )`,{}))
 
   is(script(`a.b (  ccc. d , -+1.0 ) . e`), ['.',[['.', 'a', '@b'], ['.', 'ccc', '@d'], ['-',['+',1]]], '@e'])
   is(script(`a * 3 / 2`), ['/',['*','a',3],2])

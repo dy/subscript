@@ -3,8 +3,7 @@ import subscript, {parse, skip, char, code} from './index.js'
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19,
-call = '('
+PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 parse.literal.push(
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
@@ -16,9 +15,9 @@ parse.literal.push(
   (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), v)
 )
 
-for (let i = 0, list = [
-  ',', PREC_SEQ, (a,b,ctx,args=ctx[call])=> args ?
-      (ctx[call]=0, !args.length && args.push(a(ctx)), args.push(b(ctx)), ctx[call]=args) : // args reducer for fn calls
+for (let i = 0, call, list = [
+  ',', PREC_SEQ, (a,b,ctx,args=call)=> args ?
+      (call=0, (args=args==1?[a(ctx)]:args).push(b(ctx)), call=args) : // args reducer for fn calls
       b(ctx),
 
   '|', PREC_OR, (a,b)=>a|b,
@@ -67,8 +66,8 @@ for (let i = 0, list = [
   '.', PREC_CALL, (a,b,ctx) => a(ctx)[b()],
 
   // a(b)
-  ['(',')'], PREC_CALL, (a,b,ctx,prev=ctx[call]) => (
-    a=a(ctx), ctx[call]=[], b=b(ctx), b=ctx[call].length ? a.apply(ctx,b) : a(b), ctx[call]=prev, b
+  ['(',')'], PREC_CALL, (a,b,ctx,prev=call) => (
+    a=a(ctx), call=1, b=b(ctx), b=call.map ? a.apply(ctx,b) : a(b), call=prev, b
   ),
   // (a+b)
   ['(',')'], PREC_GROUP, (a=0)=>a
