@@ -66,8 +66,9 @@ operator = parse.operator = (
       (a,b) => a && ( // a.b needs making sure a exists
         idx+=l,
         b=expr(end?0:prec,end),
+        argc > 2 ? ctx => fn(a, b, ctx) : // custom eval logic
         !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval
-        argc > 2 ? ctx => fn(a, b, ctx) : ctx => fn(a(ctx),b(ctx)) // 3 args is extended case when user controls eval
+        ctx => fn(a(ctx),b(ctx)) // 3 args is extended case when user controls eval
       ) :
     argc ? a => a && (idx+=l, ctx => fn(a(ctx))) : // unary postfix
     a => (!a) && (idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
