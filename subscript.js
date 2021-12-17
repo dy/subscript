@@ -1,14 +1,15 @@
-import subscript, {parse, skip} from './index.js'
+import subscript, {parse, skip, char, code} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
+PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19,
+call = '('
 
 parse.literal.push(
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-  n => (n = skip(c => c == PERIOD || c > 47 && c < 58)) && (
-    skip(c => c == 69 || c == 101) && (n += skip(2) + skip(c => c >= 48 && c <= 57)),
+  n => (n = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
+    (code() == 69 || code() == 101) && (n += skip(2) + skip(c => c >= 48 && c <= 57)),
     +n
   ),
   // "a"
@@ -16,7 +17,9 @@ parse.literal.push(
 )
 
 for (let i = 0, list = [
-  ',', PREC_SEQ, (a,b)=>(a&&a._$?a.push(b):((a=[a,b])._$=1))&&a,
+  ',', PREC_SEQ, (a,b,ctx,args=ctx[call])=> args ?
+      (ctx[call]=0, !args.length && args.push(a(ctx)), args.push(b(ctx)), ctx[call]=args) : // args reducer for fn calls
+      b(ctx),
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -64,7 +67,9 @@ for (let i = 0, list = [
   '.', PREC_CALL, (a,b,ctx) => a(ctx)[b()],
 
   // a(b)
-  ['(',')'], PREC_CALL, (a,b,ctx) => b&&b._$ ? a(ctx).apply(ctx,b(ctx)) : a(ctx)(b(ctx)),
+  ['(',')'], PREC_CALL, (a,b,ctx,prev=ctx[call]) => (
+    a=a(ctx), ctx[call]=[], b=b(ctx), b=ctx[call].length ? a.apply(ctx,b) : a(b), ctx[call]=prev, b
+  ),
   // (a+b)
   ['(',')'], PREC_GROUP, (a=0)=>a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])

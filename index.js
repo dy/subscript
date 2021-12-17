@@ -27,7 +27,6 @@ expr = (prec=0, end, cc, node, newNode, op,x) => {
   ) node = newNode;
 
   // skip end character, if expected
-console.log(end, char(10))
   if (end) cc != end ? err('Unclosed paren') : idx++
 
   return node
@@ -64,7 +63,7 @@ operator = parse.operator = (
   argc=fn.length
 ) => (
   map = argc > 1 ? // binary
-      (a,b) => (
+      (a,b) => a && ( // a.b needs making sure a exists
         idx+=l,
         b=expr(end?0:prec,end),
         !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval
