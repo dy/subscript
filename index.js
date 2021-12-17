@@ -1,9 +1,16 @@
 const SPACE=32
 
 // current string & index
-let idx, cur
+export let idx, cur,
 
-export const parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree || err()),
+parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree || err()),
+
+isId = c =>
+  (c >= 48 && c <= 57) || // 0..9
+  (c >= 65 && c <= 90) || // A...Z
+  (c >= 97 && c <= 122) || // a...z
+  c == 36 || c == 95 || // $, _,
+  (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
 err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
 
@@ -16,7 +23,7 @@ skip = (is=1, from=idx, i=0) => {
 },
 
 // FIXME: merge into skip
-code = () => cur.charCodeAt(idx),
+code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
@@ -42,13 +49,8 @@ literal = (c,i=0,node,from=idx) => {
 },
 
 // variable identifier
-id = parse.id = (c, v) => (v = skip(c =>
-  (c >= 48 && c <= 57) || // 0..9
-  (c >= 65 && c <= 90) || // A...Z
-  (c >= 97 && c <= 122) || // a...z
-  c == 36 || c == 95 || // $, _,
-  c >= 192 // any non-ASCII
-), ctx => ctx ? ctx[v] : v), // return raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
+// returns raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
+id = (c, v=skip(isId)) => ctx => ctx ? ctx[v] : v,
 
 // operator lookup table
 lookup = [],
@@ -60,7 +62,8 @@ operator = parse.operator = (
   c=op.charCodeAt(0),
   l=op.length,
   prev=fn && lookup[c],
-  argc=fn.length
+  argc=fn.length,
+  word=op.toUpperCase()!==op // make sure word break comes after word operator
 ) => (
   map = argc > 1 ? // binary
       (a,b) => a && ( // a.b needs making sure a exists
@@ -74,9 +77,10 @@ operator = parse.operator = (
     a => (!a) && (idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
 
   // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
-  lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (map(a)) || (prev && prev(a, curPrec)),
+  lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec)),
   c
 )
 
+// accound for template literals
 export default (s, ...fields) => parse(s.raw ? String.raw(s, ...fields) : s)
 

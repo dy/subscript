@@ -253,27 +253,13 @@ test('chains', t => {
   is(parse('a(1)(b)("c")'), [[['a', 1], 'b'], '@c'])
 })
 
-test('eval: basic', t => {
-  is(evaluate(['+', 1, 2]), 3)
-  is(evaluate(['+', 1, ['-', 3, 2]]), 2)
-  is(evaluate(['-', 5, 2, 1, 1]), 1)
-  is(evaluate(['+',['-',1]]), -1)
-  is(evaluate(['-',['+',1],2]), -1)
-
-  is(evaluate('x',{x:1}), 1)
-  is(evaluate(['+',1],{}), 1)
-
-  is(evaluate(['x',1,2,3], {x(a,b,c){return a+b+c}}), 6)
-})
-
 test('ext: in operator', t => {
-  evaluate.operator('in', (a,b) => a in b)
-  parse.operator('in', 10, node => code(2)<=32 && [skip(2), '@'+node, expr(10)])
+  operator('in', 10, (a,b) => a in b)
 
-  is(parse('inc in bin'), ['in', '@inc', 'bin'])
-  is(parse('bin in inc'), ['in', '@bin', 'inc'])
-  throws(() => parse('b inc'))
-  is(evaluate(parse('inc in bin'), {bin:{inc:1}}), true)
+  evalTest('inc in bin', {bin:{inc:1}, inc:'inc'})
+  evalTest('bin in inc', {inc:{bin:1}, bin:'bin'})
+  evalTest('bin in(inc)', {bin:'bin', inc:{bin:1}})
+  throws(() => script('b inc'))
 })
 
 test('ext: ternary', t => {
