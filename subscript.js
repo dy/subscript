@@ -1,4 +1,4 @@
-import subscript, {parse, skip, char, code} from './index.js'
+import subscript, {parse, skip, char, code, seq, nil, Seq} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
@@ -15,10 +15,9 @@ parse.literal.push(
   (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), v)
 )
 
-for (let i = 0, call, u, list = [
-  ',', PREC_SEQ, (a,b,ctx,args=call)=> args ?
-      (call=0, (args=args==1?[a(ctx)]:args).push(b(ctx)), call=args) : // args reducer for fn calls
-      b(ctx),
+for (let i = 0, u, list = [
+  // we have to account for nil-id cases like `,a,,b`
+  ',', PREC_SEQ, (a,b) => (a=seq(a==nil?u:a)).push(...seq(b==nil?u:b)) && a,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -66,11 +65,9 @@ for (let i = 0, call, u, list = [
   '.', PREC_CALL, (a,b,ctx) => a(ctx)[b()],
 
   // a(b)
-  ['(',')'], PREC_CALL, (a,b,ctx,prev=call) => (
-    a=a(ctx), call=1, b=b(ctx), b=call.map ? a.apply(ctx,b) : a(b), call=prev, b
-  ),
+  ['(',')'], PREC_CALL, (a,b) => b instanceof Seq ? a(...b) : a(b),
   // (a+b)
-  ['(',')'], PREC_GROUP, (a=u)=>a
+  ['(',')'], PREC_GROUP, (a=u) => a instanceof Seq ? a.pop() : a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])
 
 export default subscript

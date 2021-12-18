@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, char, expr, operator, err, literal } from '../index.js'
+import { skip, code, char, expr, operator, err, literal, seq } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -9,7 +9,6 @@ const evalTest = (str, ctx={}) => {
 }
 
 test('basic', t => {
-  // FIXME: tests can be rewritten to compare with eval.
   is(script`1 + 2`(), 3)
   is(script`1 + 2 + 3`(), 6)
   is(script('1 + 2 * 3')(), 7)
@@ -69,7 +68,7 @@ test('basic', t => {
   evalTest('a[b]', {a:{x:1}, b:'x'})
   evalTest('(a(b) + 3.5)', {a:v=>v*2, b:3})
   evalTest('1 + x(a[b] + 3.5)', {x:v=>v+1, a:{y:1}, b:'y'})
-  evalTest('x.y.z,123', {x:{y:{z:345}}})
+  is(script('x.y.z,123')({x:{y:{z:345}}}), [345,123])
   evalTest('x.y.z(123)', {x:{y:{z:x=>x}}})
   evalTest('x.y.z(123 + c[456]) + n', {x:{y:{z:v=>v+1}}, c:{456:789}, n:1})
   evalTest('1 || 1')
@@ -263,26 +262,28 @@ test('ext: ternary', t => {
   evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
 })
 
-test.only('ext: list', t => {
-  // evaluate.operator('[', (...args) => Array(...args))
+test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  operator('[', 20, (node,arg) => (
-    skip(), arg=expr(), skip(),
-    !arg ? ['['] : arg[0] === ',' ? (arg[0]='[',arg) : ['[',arg]
-  ))
+  operator(['[',']'], 20, (a=undefined) => [...seq(a)])
 
   is(script('[]')(), [])
   is(script('[1]')(),[1])
   is(script('[1,2,3]')(),[1,2,3])
-  is(script('[1]+[2]')(),[1,2])
+  // is(script('[1]+[2]')(),[1,2])
 
-  // NOTE: not critical, but generalizes expression errors across envs
-  // is(parse('[1,,2,b]'),['[',1,undefined,2,'b'])
-  // is(evaluate(parse('[1,,2,b]'),{b:3}),[1,undefined,2,3])
+  is(script('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
+  is(script('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
+  is(script('[1,,2,b]')({b:3}),[1,undefined,2,3])
 
-  evalTest('[]')
   evalTest('[1]')
   evalTest('[1,2,3]')
+  evalTest('[]',{})
+  evalTest('[0]',{})
+  evalTest('[""]',{})
+  evalTest('[true]',{})
+  evalTest('[false]',{})
+  evalTest('[null]',{})
+  evalTest('[undefined]',{})
 })
 
 test('ext: object', t => {

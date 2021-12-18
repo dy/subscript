@@ -3,7 +3,7 @@ const SPACE=32
 // current string & index
 export let idx, cur,
 
-parse = (s, ...fields) => (cur=s.raw ? String.raw(s,...fields) : s, idx=0, s=expr(), idx < cur.length ? err() : s || err()),
+parse = (s, ...fields) => (cur=s.raw ? String.raw(s,...fields) : s, idx=0, !(s=expr())||idx<cur.length ? err() : ctx=>s(ctx||{})),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -50,7 +50,7 @@ lit = (c,i=0,node,from=idx) => {
 
 // variable identifier
 // returns raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
-id = parse.id = (c, v=skip(isId)) => ctx => ctx ? ctx[v] : v,
+id = parse.id = (c, v=skip(isId)) => !v ? ()=>nil : (ctx => ctx ? ctx[v] : v),
 
 // operator lookup table
 lookup = [],
@@ -74,12 +74,15 @@ operator = parse.operator = (
         ctx => fn(a(ctx),b(ctx)) // 3 args is extended case when user controls eval
       ) :
     argc ? a => a && (idx+=l, ctx => fn(a(ctx))) : // unary postfix
-    a => (!a) && (idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
+    a => (!a) && ( idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx))), // unary prefix (0 args)
 
   // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
   lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec)),
   c
-)
+),
+Seq = class extends Array {},
+nil = new Seq,
+seq = a => a instanceof Seq ? a : Seq.from([a]) // for arguments in fn call, array primitive etc.
 
 // accound for template literals
 export default parse
