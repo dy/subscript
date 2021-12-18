@@ -100,40 +100,31 @@ test.todo('strings', t => {
   // parse.quote['<--']='-->'
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
-test.todo('ext: literals', t=> {
+test('ext: literals', t=> {
   literal.push(c =>
     skip('true') ? true :
     skip('false') ? false :
     skip('null') ? null :
     skip('undefined') ? undefined :
-    // c === 116 && char(4) === 'true' && skip(4) ? true :
-    // c === 102 && char(5) === 'false' && skip(5) ? false :
-    // c === 110 && char(4) === 'null' && skip(4) ? null :
-    // c === 117 && char(9) === 'undefined' && skip(9) ? undefined :
     null
   )
-  // operator('null',30,node=>!node&&(skip(4),v(null)))
-  // operator('false',30,node=>!node&&(skip(5),v(false)))
-  // operator('true',30,node=>!node&&(skip(4),v(true)))
-  // operator('undefined',30,node=>!node&&(skip(9),v(undefined)))
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
-  // is(script('!null')(), ['!',null])
+  is(script('!null')(), true)
+  is(script('(a)(null)')({a:v=>v}), null)
+  is(script('false&true')({}), 0)
+  is(script('(false)||((null))')({}), null)
+  is(script('undefined')({}), undefined)
+  is(script('(undefined)')({}), undefined)
+  is(script('true||((false))')({}), true)
+  is(script('a(true)')({a:v=>v}), true)
+  is(script('a0')({a0:1}), 1)
+  is(script('x(0)')({x:v=>!!v}), false)
+  is(script('x(true)')({x:v=>!!v}), true)
   // is(script('null++')(), ['++',null])
   // is(script('false++'), ['++',false])
   // is(script('++false'), ['++',false])
-  // is(script('(a)(null)'), ['a',null])
-  // is(script('false&true'), ['&',false,true])
-  // is(script('(false)||((null))'), ['||',false,null])
-  // // script.literal['undefined'] = undefined
-  // is(script('undefined'), undefined)
-  // is(script('(undefined)'), undefined)
-  // is(script('true||((false))'), ['||', true, false])
-  // is(script('a(true)'), ['a', true])
-  // is(script('a0'), 'a0')
-  // is(evaluate(parse('x(0)'),{x:v=>!!v}), false)
-  // is(evaluate(parse('x(true)'),{x:v=>!!v}), true)
 })
 
 test('bad number', t => {
@@ -231,6 +222,7 @@ test('functions', t => {
 test('chains', t => {
   evalTest('a["b"]["c"]["d"]',{a:{b:{c:{d:1}}}})
   evalTest('a.b.c.d',{a:{b:{c:{d:1}}}})
+  evalTest('a.f',{a:{f:1}})
   evalTest('a.b[c.d].e.f',{a:{b:{d:{e:{f:1}}}}, c:{d:'d'}})
   evalTest('a.b(1)(2).c',{a:{b:v=>w=>({c:v+w})}})
   evalTest('a.b(1)(2)',{a:{b:v=>w=>v+w}})
@@ -271,7 +263,7 @@ test('ext: ternary', t => {
   evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
 })
 
-test('ext: list', t => {
+test.only('ext: list', t => {
   // evaluate.operator('[', (...args) => Array(...args))
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   operator('[', 20, (node,arg) => (
@@ -321,8 +313,8 @@ test('ext: justin', async t => {
 })
 
 test('ext: comments', t => {
-  parse.space = cc => {
-    let x = 0
+  script.space = cc => {
+    // FIXME: condition can be moved bottom
     while (cc = code(), cc <= 32 || cc === 47) {
       if (cc <= 32) skip()
       else if (cc === 47)
@@ -334,11 +326,11 @@ test('ext: comments', t => {
     }
     return cc
   }
-  is(parse('/* x */1/* y */+/* z */2'), ['+', 1, 2])
-  is(parse(`a /
+  is(script('/* x */1/* y */+/* z */2')({}), 3)
+  is(script(`a /
     // abc
-    b`), ['/', 'a', 'b'])
-  is(parse(`"a" + "b" // concat`),['+','@a','@b'])
+    b`)({a:1,b:2}), 1/2)
+  is(script(`"a" + "b" // concat`)(), 'ab')
 })
 
 test('unfinished sequences', async t => {

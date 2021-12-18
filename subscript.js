@@ -70,7 +70,7 @@ for (let i = 0, call, list = [
     a=a(ctx), call=1, b=b(ctx), b=call.map ? a.apply(ctx,b) : a(b), call=prev, b
   ),
   // (a+b)
-  ['(',')'], PREC_GROUP, (a=0)=>a
+  ['(',')'], PREC_GROUP, (a=undefined)=>a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])
 
 export default subscript

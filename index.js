@@ -3,7 +3,7 @@ const SPACE=32
 // current string & index
 export let idx, cur,
 
-parse = (str, tree) => (cur=str, idx=0, tree=expr(), idx<cur.length ? err() : tree || err()),
+parse = (s, ...fields) => (cur=s.raw ? String.raw(s,...fields) : s, idx=0, s=expr(), idx < cur.length ? err() : s || err()),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -14,11 +14,11 @@ isId = c =>
 
 err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
 
-skip = (is=1, from=idx, i=0) => {
-  if (typeof is === 'number') idx += is
-  else if (is.trim) while (code() == is.charCodeAt(i++)) idx++
-  // else if (is.trim) {if (cur.substr(idx, is.length) === is) idx+=is.length }
-  else while (is(code())) idx++;
+skip = (is=1, from=idx, l) => {
+  if (typeof is == 'number') idx += is
+  else if (l = is.trim && is.length) idx+=char(l)==is?l:0
+  else while (is(code())) idx++
+
   return cur.slice(from, idx)
 },
 
@@ -82,5 +82,5 @@ operator = parse.operator = (
 )
 
 // accound for template literals
-export default (s, ...fields) => parse(s.raw ? String.raw(s, ...fields) : s)
+export default parse
 
