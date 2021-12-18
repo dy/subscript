@@ -15,7 +15,7 @@ parse.literal.push(
   (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), v)
 )
 
-for (let i = 0, call, list = [
+for (let i = 0, call, u, list = [
   ',', PREC_SEQ, (a,b,ctx,args=call)=> args ?
       (call=0, (args=args==1?[a(ctx)]:args).push(b(ctx)), call=args) : // args reducer for fn calls
       b(ctx),
@@ -43,16 +43,16 @@ for (let i = 0, call, list = [
 
   // + ++ - --
   '+', PREC_SUM, (a,b)=>a+b,
-  '+', PREC_UNARY, (a=0)=>+a,
-  '++', PREC_UNARY, (a=0)=>++a,
+  '+', PREC_UNARY, (a=u)=>+a,
+  '++', PREC_UNARY, (a=u)=>++a,
   '++', PREC_POSTFIX, a=>a++,
   '-', PREC_SUM, (a,b)=>a-b,
-  '-', PREC_UNARY, (a=0)=>-a,
-  '--', PREC_UNARY, (a=0)=>--a,
+  '-', PREC_UNARY, (a=u)=>-a,
+  '--', PREC_UNARY, (a=u)=>--a,
   '--', PREC_POSTFIX, a=>a++,
 
   // ! ~
-  '!', PREC_UNARY, (a=0)=>!a,
+  '!', PREC_UNARY, (a=u)=>!a,
 
   // * / %
   '*', PREC_MULT, (a,b)=>a*b,
@@ -70,7 +70,7 @@ for (let i = 0, call, list = [
     a=a(ctx), call=1, b=b(ctx), b=call.map ? a.apply(ctx,b) : a(b), call=prev, b
   ),
   // (a+b)
-  ['(',')'], PREC_GROUP, (a=undefined)=>a
+  ['(',')'], PREC_GROUP, (a=u)=>a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])
 
 export default subscript
