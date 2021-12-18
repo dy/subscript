@@ -1,4 +1,4 @@
-import subscript, {parse, skip, char, code, seq, nil, Seq} from './index.js'
+import subscript, {parse, skip, char, code, seq, nil} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
@@ -17,7 +17,7 @@ parse.literal.push(
 
 for (let i = 0, u, list = [
   // we have to account for nil-id cases like `,a,,b`
-  ',', PREC_SEQ, (a,b) => (a=seq(a==nil?u:a)).push(...seq(b==nil?u:b)) && a,
+  ',', PREC_SEQ, (a,b) => (a=seq(a)).push(b===nil?u:b) && a,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -65,9 +65,9 @@ for (let i = 0, u, list = [
   '.', PREC_CALL, (a,b,ctx) => a(ctx)[b()],
 
   // a(b)
-  ['(',')'], PREC_CALL, (a,b) => b instanceof Seq ? a(...b) : a(b),
+  ['(',')'], PREC_CALL, (a,b) => b&&b.args ? a(...b) : a(b),
   // (a+b)
-  ['(',')'], PREC_GROUP, (a=u) => a instanceof Seq ? a.pop() : a
+  ['(',')'], PREC_GROUP, (a=u) => a&&a.args ? a.pop() : a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])
 
 export default subscript

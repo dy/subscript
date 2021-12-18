@@ -80,9 +80,8 @@ operator = parse.operator = (
   lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec)),
   c
 ),
-Seq = class extends Array {},
-nil = new Seq,
-seq = a => a instanceof Seq ? a : Seq.from([a]) // for arguments in fn call, array primitive etc.
+nil = [], // indicates 0 identifier, like a(), (), [], {}
+seq = a => a&&a.args ? a : (a=a===nil?[,]:[a]).args=a // for arguments in fn call, array primitive etc.
 
 // accound for template literals
 export default parse

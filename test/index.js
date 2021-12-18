@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, char, expr, operator, err, literal, seq } from '../index.js'
+import { skip, code, char, expr, operator, err, literal, seq, nil } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -264,7 +264,7 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  operator(['[',']'], 20, (a=undefined) => [...seq(a)])
+  operator(['[',']'], 20, (a=undefined) => a===nil?[]:[...seq(a)])
 
   is(script('[]')(), [])
   is(script('[1]')(),[1])
