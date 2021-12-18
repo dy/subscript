@@ -87,7 +87,7 @@ test('ext: interpolate string', t => {
   is(script`a+1`({a:1}), 2)
 })
 
-test.only('strings', t => {
+test('strings', t => {
   is(script('"a"')(), 'a')
   throws(x => script('"a'))
   throws(x => script('"a" + "b'))
@@ -179,6 +179,7 @@ test('postfix unaries', t => {
 
 test('prop access', t => {
   evalTest('a["b"]["c"][0]',{a:{b:{c:[1]}}})
+  is(script('a.b.c')({a:{b:{c:[1]}}}), [1])
   is(script('a.b.c.0')({a:{b:{c:[1]}}}), 1)
 })
 
@@ -288,9 +289,9 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   // FIXME: seems we still have to be able to support advanced unary eval: {x} requires to have both id and its value.
-  operator(['{','}'], 20, (a=undefined) => a===nil?{}:Object.fromEntries(seq(a)))
+  operator(['{','}'], 20, (a=undefined,aid) => a===nil?{}:Object.fromEntries(seq(aid?[aid,a]:a)))
   // FIXME: mb having parent operator for custom eval cases would be useful
-  operator(':', 3.1, (a,b,ctx) => [a(),b(ctx)])
+  operator(':', 3.1, (a,b,aid) => [aid||a,b])
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})

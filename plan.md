@@ -291,8 +291,8 @@
   * [x] ~~calltree nodes can stash static values (as in HTM)~~
     - doesn't give much perf, but increases size - that's 1 fn call + 1 check
   * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
-* [ ] Eval: cache static parts
-* [ ] string token:
+* [x] Eval: cache static parts
+* [x] string token:
   1. new String(abc)
     + shorter eval code
     + correlates with val for literals (any literal can be a wrapper)
@@ -329,7 +329,7 @@
     + lispy logic, consistent
     ? how to differentiate statics? Anything that's not node?
     - if operator evaluators were built-in into nodes, we wouldn't have to keep cast type evaluators at all.
-  8. Direct evaluators instead of nodes
+  8. ✔ Direct evaluators instead of nodes
     + merges config into single definition
     . types of evaluators: binary op, prop access, fn call, group, array, object, literal, context variable
       → there are common types of evaluators, like, binary, unary, multi, but can be custom
@@ -358,7 +358,7 @@
 * [ ] test `a ++` postfix spacing
 * [ ] merge char/code into skip - conditional skip checks if next chars equal cond string
 * [ ] try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently
-* [ ] flat into single subscript.js file, unminified.
+* [ ] flat into single subscript.js file, unminified: saving redundant exports and conventions
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -373,8 +373,9 @@
   . no char, no code, no err;
   . space via skip;
   . no word operators;
-* [ ] Make mapper configurable:
-  * [ ] binaries-only vs flat nodes must be a feature of configurator, not built-in.
+* [x] ~~Make mapper configurable:~~
+  * [x] binaries-only vs flat nodes must be a feature of configurator, not built-in.
     - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide a special reducer in `(` parser - that doesn't save that much space
   * [x] As well as word operators. → trivially solved as custom mapper with next-char check
-  * [ ] As well as reducer in evaluator.
+  * [x] As well as reducer in evaluator.
+  → not needed anymore as direct evals supercede v5 scheme

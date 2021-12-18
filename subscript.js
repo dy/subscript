@@ -62,7 +62,7 @@ for (let i = 0, u, list = [
   ['[',']'], PREC_CALL, (a,b) => a[b],
 
   // a.b
-  '.', PREC_CALL, (a,b,ctx) => a(ctx)[b()],
+  '.', PREC_CALL, (a,b,aid,bid) => a[bid||b],
 
   // a(b)
   ['(',')'], PREC_CALL, (a,b) => b&&b.args ? a(...b) : a(b),
