@@ -87,11 +87,11 @@ test('ext: interpolate string', t => {
   is(script`a+1`({a:1}), 2)
 })
 
-test.todo('strings', t => {
-  is(parse('"a'), '@a')
-  is(parse('a + b'), ['+', 'a', 'b'])
-  is(parse('"a" + "b'), ['+', '@a', '@b'])
-  is(parse('"a" + ("1" + "2")'), ['+', '@a', ['+', '@1', '@2']])
+test.only('strings', t => {
+  is(script('"a"')(), 'a')
+  throws(x => script('"a'))
+  throws(x => script('"a" + "b'))
+  is(script('"a" + ("1" + "2")')(), "a12")
 
   // parse.quote['<?']='?>'
   // is(parse('"abc" + <?js\nxyz?>'), ['+','"abc','<?js\nxyz?>'])
@@ -287,21 +287,17 @@ test('ext: list', t => {
 })
 
 test('ext: object', t => {
-  operator('{', 20, (node,arg) => !node && (skip(), arg=expr(0,125),
-    !arg ? ['{'] : arg[0] == ':' ? ['{',strkey(arg)] : arg[0] == ',' ? (arg[0]='{',arg.map(strkey)) : ['{',arg])
-  )
-  const strkey = a => Array.isArray(a) ? (a[1]=(a[1][0]==='@'?'':'@')+a[1],a) : a
-  operator('}')
-  operator(':',2)
-  evaluate.operator('{', (...args)=>Object.fromEntries(args))
-  evaluate.operator(':', (a,b)=>[a,b])
+  // FIXME: seems we still have to be able to support advanced unary eval: {x} requires to have both id and its value.
+  operator(['{','}'], 20, (a=undefined) => a===nil?{}:Object.fromEntries(seq(a)))
+  // FIXME: mb having parent operator for custom eval cases would be useful
+  operator(':', 3.1, (a,b,ctx) => [a(),b(ctx)])
 
-  is(parse('{}'), ['{'])
-  is(parse('{x}'), ['{','x'])
-  is(parse('{x: 1}'), ['{',[':', '@x', 1]])
-  is(parse('{x: 1, "y":2}'), ['{', [':','@x',1], [':','@y',2]])
-  is(parse('{x: 1+2, y:a(3)}'), ['{', [':','@x',['+',1,2]], [':', '@y',['a',3]]])
-  is(evaluate(parse('{x: 1+2, y:a(3)}'),{a:x=>x*2}), {x:3, y:6})
+  evalTest('{}',{})
+  evalTest('{x: 1}',{})
+  evalTest('{x: 1, "y":2}',{})
+  evalTest('{x: 1+2, y:a(3)}',{a:v=>v+1})
+  evalTest('{x: 1+2, y:a(3)}',{a:x=>x*2})
+  evalTest('{x}',{x:1})
 })
 
 test('ext: justin', async t => {
