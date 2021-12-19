@@ -1,4 +1,4 @@
-import subscript, {parse, skip, char, code, seq, nil} from './index.js'
+import subscript, {parse, skip, char, code, seq, err} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
@@ -9,15 +9,15 @@ parse.literal.push(
   // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
   n => (n = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
     (code() == 69 || code() == 101) && (n += skip(2) + skip(c => c >= 48 && c <= 57)),
-    +n
+    n=+n, n!=n?err('Bad number'):n
   ),
   // "a"
-  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), v)
+  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip() || err('Unclosed string'), v)
 )
 
 for (let i = 0, u, list = [
   // we have to account for nil-id cases like `,a,,b`
-  ',', PREC_SEQ, (a,b) => (a=seq(a)).push(b===nil?u:b) && a,
+  ',', PREC_SEQ, (a,b,aid,bid) => (a=seq(a)).push(bid===''?u:b) && a,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,

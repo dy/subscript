@@ -30,7 +30,10 @@ char = (n=1) => cur.substr(idx, n),
 expr = (prec=0, end, cc, node, newNode, op,x) => {
   // chunk/token parser
   while (
-    (cc=parse.space()) && (newNode = (op=lookup[cc]) && op(node, prec) || (!node && (lit(cc) || id(cc) || err())) )
+    (cc=parse.space()) && (
+      newNode = (op=lookup[cc]) && op(node, prec) || // if operator with higher precedence isn't found
+      (!node && (lit(cc) || id(cc, end))) // parse literal or end expression
+    )
   ) node = newNode;
 
   // skip end character, if expected
@@ -50,7 +53,7 @@ lit = (c,i=0,node,from=idx) => {
 
 // variable identifier
 // returns raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
-id = parse.id = (c, id=skip(isId), v=!id ? ()=>nil : ctx=>ctx[id]) => (v._=id, v),
+id = parse.id = (c, end, id=skip(isId), v=!id ? ()=>nil : ctx=>ctx[id]) => (v.id=id, v),
 
 // operator lookup table
 lookup = [],
@@ -69,11 +72,11 @@ operator = parse.operator = (
       (a,b) => a && ( // a.b needs making sure `a` exists (since 1.0 can also be a token) - generally binary is not the last stop
         idx+=l,
         b=expr(end?0:prec,end),
-        !a.length && !b.length ? (a=fn(a(),b(),a._,b._), ()=>a) : // static pre-eval
-        ctx => fn(a(ctx),b(ctx),a._,b._) // 3 args is extended case when user controls eval
+        !a.length && !b.length ? (a=fn(a(),b(),a.id,b.id), ()=>a) : // static pre-eval
+        ctx => fn(a(ctx),b(ctx),a.id,b.id) // 3 args is extended case when user controls eval
       ) :
-    argc ? a => a && (idx+=l, ctx => fn(a(ctx),a._)) : // unary postfix
-    a => (!a) && ( idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx),a._)), // unary prefix (0 args)
+    argc ? a => a && (idx+=l, ctx => fn(a(ctx),a.id)) : // unary postfix
+    a => (!a) && ( idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx),a.id)), // unary prefix (0 args)
 
   // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
   lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec)),
