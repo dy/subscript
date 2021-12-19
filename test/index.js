@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, char, expr, operator, err, literal, seq } from '../index.js'
+import { skip, code, char, expr, operator, err, literal } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -29,6 +29,7 @@ test('basic', t => {
   evalTest('0 * 1 * 2 / 1 / 2 * 1')
   evalTest('0 + 1 - 2 * 3')
   evalTest('1 * 2 - 3')
+  is(script(`a()`)({a:v=>1}), 1)
   is(script(`a(1)`)({a:v=>v}), 1)
   is(script(`a(1).b`)({a:v=>({b:v})}), 1)
   is(script(`a ( c ) . e`)({ a:v=>({e:v}), c:1 }), 1)
@@ -265,17 +266,18 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  operator(['[',']'], 20, (a=undefined,aid) => aid===''?[]:[...seq(a)])
+  operator(['[',']'], 20, (a=undefined,aid) => aid===''?[]:[a])
+  operator(['[',']'], 20, (...a) => a)
 
   is(script('[]')(), [])
   is(script('[1]')(),[1])
   is(script('[1,2,3]')(),[1,2,3])
   // is(script('[1]+[2]')(),[1,2])
 
-  // is(script('[,]')({b:3}),[undefined])
-  // is(script('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
-  // is(script('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
-  // is(script('[1,,2,b]')({b:3}),[1,undefined,2,3])
+  is(script('[,]')({b:3}),[undefined])
+  is(script('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
+  is(script('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
+  is(script('[1,,2,b]')({b:3}),[1,undefined,2,3])
 
   evalTest('[1]')
   evalTest('[1,2,3]')
@@ -338,12 +340,31 @@ test('unfinished sequences', async t => {
   throws(() => script('a+b+)c'))//, ['+','a','b',null])
 })
 
-test('non-existing operators', t => {
+test('err: unknown operators', t => {
   throws(() => script('a <<< b'))
   throws(() => script('a >== b'))
   throws(() => script('a -> b'))
   throws(() => script('a ->'))
   throws(() => script('-> a'))
+  throws(() => script('#a'))
+  throws(() => script('~a'))
+  throws(() => script('a !'))
+  throws(() => script('a#b'))
+  throws(() => script('b @'))
+})
+
+test('err: missing arguments', t => {
+  throws(() => script('a[]'))
+  throws(() => script('a[  ]'))
+  throws(() => script('()+1'))
+  throws(() => script('(  )+1'))
+  throws(() => script('a+'))
+  throws(() => script('(a / )'))
+})
+test('err: unclosed parens', t => {
+  throws(() => script('a[  '))
+  throws(() => script('(  +1'))
+  throws(() => script('(a / '))
 })
 
 test('low-precedence unary', t => {

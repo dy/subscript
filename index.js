@@ -27,12 +27,12 @@ code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
-expr = (prec=0, end, cc, node, newNode, op,x) => {
+expr = (prec=0, end, cc, node, newNode, op) => {
   // chunk/token parser
   while (
     (cc=parse.space()) && (
       newNode = (op=lookup[cc]) && op(node, prec) || // if operator with higher precedence isn't found
-      (!node && (lit(cc) || id(cc, end))) // parse literal or end expression
+      (!node && (lit(cc) || id(cc))) // parse literal or quit -  token seqs are prohibited: `a b`, `a "b"`, `1.32 a`
     )
   ) node = newNode;
 
@@ -42,7 +42,7 @@ expr = (prec=0, end, cc, node, newNode, op,x) => {
   return node
 },
 
-// can be extended with comments, so we export
+// can be extended with comments, so we expose
 space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
 
 // literals - static tokens in code (useful for collapsing static expressions)
@@ -52,8 +52,7 @@ lit = (c,i=0,node,from=idx) => {
 },
 
 // variable identifier
-// returns raw id for no-context calls (needed for ops like a.b, a in b, a of b, let a, b)
-id = parse.id = (c, end, id=skip(isId), v=!id ? ()=>nil : ctx=>ctx[id]) => (v.id=id, v),
+id = (c, id=skip(isId), v) => id && ((v=ctx=>ctx[id]).id=id, v),
 
 // operator lookup table
 lookup = [],
@@ -65,25 +64,24 @@ operator = parse.operator = (
   c=op.charCodeAt(0),
   l=op.length,
   prev=fn && lookup[c],
-  argc=fn.length,
+  arity=fn.length,
+  multi=/\.{3}\w+\)/.test(fn), // if b is a sequence
   word=op.toUpperCase()!==op // make sure word break comes after word operator
 ) => (
-  map = argc > 1 ? // binary
-      (a,b) => a && ( // a.b needs making sure `a` exists (since 1.0 can also be a token) - generally binary is not the last stop
-        idx+=l,
-        b=expr(end?0:prec,end),
+  map = arity > 1 ? // binary
+    (a,b) => a && // `a` must exist (.0 can be a token → a.b should not block it) - generally binary is not the last stop
+      (idx+=l, b=expr(end?0:prec,end)) && // b is not empty
+      (
         !a.length && !b.length ? (a=fn(a(),b(),a.id,b.id), ()=>a) : // static pre-eval
         ctx => fn(a(ctx),b(ctx),a.id,b.id) // 3 args is extended case when user controls eval
       ) :
-    argc ? a => a && (idx+=l, ctx => fn(a(ctx),a.id)) : // unary postfix
-    a => (!a) && ( idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx),a.id)), // unary prefix (0 args)
+    arity ? a => a && (idx+=l, ctx => fn(a(ctx),a.id)) : // unary postfix
+    a => !a && ( idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx),a.id)), // unary prefix (0 args)
 
   // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
   lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec)),
   c
-),
-nil = [], // indicates 0 identifier, like a(), (), [], {}
-seq = a => a&&a.args ? a : (a=a===nil?[,]:[a]).args=a // for arguments in fn call, array primitive etc.
+)
 
 // accound for template literals
 export default parse

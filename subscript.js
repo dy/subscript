@@ -1,4 +1,4 @@
-import subscript, {parse, skip, char, code, seq, err} from './index.js'
+import subscript, {parse, skip, char, code, err} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
 
@@ -15,9 +15,9 @@ parse.literal.push(
   (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip() || err('Unclosed string'), v)
 )
 
-for (let i = 0, u, list = [
+for (let i = 0, u, group, list = [
   // we have to account for nil-id cases like `,a,,b`
-  ',', PREC_SEQ, (a,b,aid,bid) => (a=seq(a)).push(bid===''?u:b) && a,
+  ',', PREC_SEQ, (a,b) => b,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -64,10 +64,15 @@ for (let i = 0, u, list = [
   // a.b
   '.', PREC_CALL, (a,b,aid,bid) => a[bid||b],
 
+  // a()
+  group=['(',')'], PREC_CALL, a => a(),
   // a(b)
-  ['(',')'], PREC_CALL, (a,b) => b&&b.args ? a(...b) : a(b),
+  group, PREC_CALL, (a,b) => a(b),
+  // a(b,c,d)
+  // g, PREC_CALL, (a,...b) => a(...b),
+
   // (a+b)
-  ['(',')'], PREC_GROUP, (a=u) => a&&a.args ? a.pop() : a
+  ['(',')'], PREC_GROUP, (a=u) => a
 ]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])
 
 export default subscript
