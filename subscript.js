@@ -26,7 +26,7 @@ for (list=[
   '"',, v => (v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
 
   // a[b]
-  '[',, (a, b) => a && (b=expr(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),
+  '[',, (a, b) => a && (b=expr()||err(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),
 
   // a(b), (a,b)
   '(',, (a, b, args) => (
@@ -34,7 +34,7 @@ for (list=[
     // a(), a(b), a(b,c,d)
     a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args?._args||[args])) :
     // (a+b)
-    ctx => (args=b(ctx), args?._args?args.pop():args)
+    b ? ctx => (args=b(ctx), args?._args?args.pop():args) : err()
   ),
 
   // operators

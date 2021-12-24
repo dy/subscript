@@ -62,7 +62,7 @@ set = parse.set = (
     // binary
     arity > 1 ? (a,b) => a &&
       (
-        b=expr(prec),
+        b=expr(prec)||err(),
         !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
         ctx => fn(a(ctx),b(ctx))
       )

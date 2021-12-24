@@ -331,20 +331,8 @@ test('ext: justin', async t => {
 })
 
 test('ext: comments', t => {
-  // script.space = cc => {
-  //   // FIXME: condition can be moved bottom
-  //   while (cc = code(), cc <= 32 || cc === 47) {
-  //     if (cc <= 32) skip()
-  //     else if (cc === 47)
-  //       // /**/
-  //       if (code(1) === 42) skip(2), skip(c => c !== 42 && code(1) !== 47), skip(2)
-  //       // //
-  //       else if (code(1) === 47) skip(2), skip(c => c >= 32)
-  //       else break
-  //   }
-  //   return cc
-  // }
-  // set('/*', 0, (a, prec) => ())
+  set('/*', 0, (a, prec) => (skip(c => c !== 42 && code(1) !== 47), skip(2), a||expr(prec)) )
+  set('//', 0, (a, prec) => (skip(c => c >= 32), a||expr(prec)) )
   is(script('/* x */1/* y */+/* z */2')({}), 3)
   is(script(`a /
     // abc
@@ -372,12 +360,12 @@ test('err: unknown operators', t => {
 })
 
 test('err: missing arguments', t => {
-  throws(() => script('a[]'))
-  throws(() => script('a[  ]'))
-  throws(() => script('()+1'))
-  throws(() => script('(  )+1'))
-  throws(() => script('a+'))
-  throws(() => script('(a / )'))
+  throws(() => console.log(script('a[]')))
+  throws(() => console.log(script('a[  ]')))
+  throws(() => console.log(script('()+1')))
+  throws(() => console.log(script('(  )+1')))
+  throws(() => console.log(script('a+')))
+  throws(() => console.log(script('(a / )')))
 })
 test('err: unclosed parens', t => {
   throws(() => script('a[  '))
