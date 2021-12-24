@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, char, expr, operator, err, literal } from '../index.js'
+import { skip, code, char, expr, operator, err } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -8,7 +8,7 @@ const evalTest = (str, ctx={}) => {
   return is(ss(ctx), fn(...Object.values(ctx)))
 }
 
-test('basic', t => {
+test.only('basic', t => {
   is(script`1 + 2`(), 3)
   is(script`1 + 2 + 3`(), 6)
   is(script('1 + 2 * 3')(), 7)
@@ -30,11 +30,14 @@ test('basic', t => {
   evalTest('0 + 1 - 2 * 3')
   evalTest('1 * 2 - 3')
   is(script(`a()`)({a:v=>1}), 1)
+  is(script(`a( )`)({a:v=>1}), 1)
   is(script(`a(1)`)({a:v=>v}), 1)
+  is(script(`a.b`)({a:{b:1}}), 1)
+  is(script(`a . b`)({a:{b:1}}), 1)
+  is(script('a.b.c')({a:{b:{c:1}}}), 1)
   is(script(`a(1).b`)({a:v=>({b:v})}), 1)
   is(script(`a ( c ) . e`)({ a:v=>({e:v}), c:1 }), 1)
   is(script('a[b][c]')({a:{b:{c:1}}, b:'b', c:'c'}), 1)
-  is(script('a.b.c')({a:{b:{c:1}}}), 1)
   is(script('a.b.c(d).e')({a:{b:{c:e=>({e})}}, d:1}), 1)
   is(script(`+-2`)(), -2)
   is(script(`+-a.b`)({a:{b:1}}), -1)
@@ -100,7 +103,7 @@ test('strings', t => {
   // parse.quote['<--']='-->'
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
-test('ext: literals', t=> {
+test.only('ext: literals', t=> {
   literal.push(c =>
     skip('true') ? true :
     skip('false') ? false :
@@ -209,6 +212,8 @@ test('parens', t => {
 
 test('functions', t => {
   evalTest('a()', {a:v=>123})
+  evalTest('a(1)', {a:(v)=>v})
+  evalTest('a(1,2)', {a:(v,w)=>v+w})
   evalTest('(c,d)', {a:v=>++v, c:1,d:2})
   evalTest('a(b)(d)', {a:v=>w=>v+w, b:1,d:2})
   evalTest('a(b,c)(d)', {a:(v,w)=>z=>z+v+w, b:1,c:2,d:3})
@@ -228,6 +233,7 @@ test('chains', t => {
   evalTest('a.b(1)(2).c',{a:{b:v=>w=>({c:v+w})}})
   evalTest('a.b(1)(2)',{a:{b:v=>w=>v+w}})
   evalTest('a()()()',{a:()=>()=>()=>2})
+  evalTest('a( )( )( )',{a:()=>()=>()=>2})
   evalTest('a.b()()',{a:{b:()=>()=>2}})
   evalTest('(a)()()',{a:()=>()=>2})
   evalTest('a.b(c.d).e.f',{a:{b:v=>({e:{f:v}})}, c:{d:123}})
@@ -264,16 +270,18 @@ test('ext: ternary', t => {
   evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
 })
 
-test('ext: list', t => {
+test.only('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  operator(['[',']'], 20, (a=undefined,aid) => aid===''?[]:[a])
-  operator(['[',']'], 20, (...a) => a)
+  operator(['[',']'], 20, (a=undefined) => a&&a._args?a.slice():[a])
+  // operator(['[',']'], 20, () => [])
+  // literal.push()
 
-  is(script('[]')(), [])
-  is(script('[1]')(),[1])
   is(script('[1,2,3]')(),[1,2,3])
+  is(script('[1]')(),[1])
   // is(script('[1]+[2]')(),[1,2])
 
+  is(script('[]')(), [])
+  is(script('[ ]')(), [])
   is(script('[,]')({b:3}),[undefined])
   is(script('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
   is(script('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
@@ -281,7 +289,6 @@ test('ext: list', t => {
 
   evalTest('[1]')
   evalTest('[1,2,3]')
-  evalTest('[]',{})
   evalTest('[0]',{})
   evalTest('[""]',{})
   evalTest('[true]',{})

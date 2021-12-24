@@ -1,23 +1,44 @@
-import subscript, {parse, skip, char, code, err} from './index.js'
+import subscript, {parse, operator, lookup, skip, char, code, err, expr, isId, space} from './index.js'
 
-const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
-
+const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
-parse.literal.push(
-  // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-  n => (n = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
-    (code() == 69 || code() == 101) && (n += skip(2) + skip(c => c >= 48 && c <= 57)),
-    n=+n, n!=n?err('Bad number'):n
-  ),
-  // "a"
-  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip() || err('Unclosed string'), v)
-)
+let u, list, op, prec, fn,
+    // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
+    num = n => (
+      n = skip(c=>c==PERIOD || c>=_0 && c<=_9),
+      (code() == 69 || code() == 101) && (n += skip(2) + skip(c => c>=_0 && c<=_9)),
+      n=+n, n!=n ? err('Bad number') : ()=>n // 0 args means token is static
+    )
 
-for (let i = 0, u, group, list = [
-  // we have to account for nil-id cases like `,a,,b`
-  ',', PREC_SEQ, (a,b) => b,
+// numbers
+for (op=_0;op<=_9;) lookup[op++] = num
+
+// operators
+for (list=[
+  // direct tokens
+  // a.b, .2, 1.2 parser in one
+  PERIOD, (a, id) => a&&a.length ? (skip(), space(), id=skip(isId)||err(), ctx => a(ctx)[id]) : num(),,
+  // "a"
+  DQUOTE, v => (skip(), v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),,
+
+  // a[b]
+  OBRACK, (a, b) => a && (skip(), b=expr(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),,
+  // [a,b,c]
+  // ['[',',',']'], PREC_ARRAY, a => a,
+
+  OPAREN, (a, b, args) => (
+    skip(), b=expr(), code()==CPAREN?skip():err(),
+    // a(), a(b), a(b,c,d)
+    a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args._args||[args])) :
+    // (a+b)
+    ctx => (args=b(ctx), args._args?args.pop():args)
+  ),,
+
+  // operators
+  // FIXME: we have to account for nil-id cases like `,a,,b`
+  ',', PREC_SEQ, (a,b) => (a=a&&a._args||((a=[a])._args=a)).push(b)&&a,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -44,11 +65,12 @@ for (let i = 0, u, group, list = [
   '+', PREC_SUM, (a,b)=>a+b,
   '+', PREC_UNARY, (a=u)=>+a,
   '++', PREC_UNARY, (a=u)=>++a,
-  '++', PREC_POSTFIX, a=>a++,
+  '++', PREC_POSTFIX, (a)=>a++,
+
   '-', PREC_SUM, (a,b)=>a-b,
   '-', PREC_UNARY, (a=u)=>-a,
   '--', PREC_UNARY, (a=u)=>--a,
-  '--', PREC_POSTFIX, a=>a++,
+  '--', PREC_POSTFIX, (a)=>a--,
 
   // ! ~
   '!', PREC_UNARY, (a=u)=>!a,
@@ -56,23 +78,7 @@ for (let i = 0, u, group, list = [
   // * / %
   '*', PREC_MULT, (a,b)=>a*b,
   '/', PREC_MULT, (a,b)=>a/b,
-  '%', PREC_MULT, (a,b)=>a%b,
-
-  // a[b]
-  ['[',']'], PREC_CALL, (a,b) => a[b],
-
-  // a.b
-  '.', PREC_CALL, (a,b,aid,bid) => a[bid||b],
-
-  // a()
-  group=['(',')'], PREC_CALL, a => a(),
-  // a(b)
-  group, PREC_CALL, (a,b) => a(b),
-  // a(b,c,d)
-  // g, PREC_CALL, (a,...b) => a(...b),
-
-  // (a+b)
-  ['(',')'], PREC_GROUP, (a=u) => a
-]; i < list.length;) parse.operator(list[i++], list[i++], list[i++])
+  '%', PREC_MULT, (a,b)=>a%b
+]; [op,prec,fn,...list]=list, op;) fn ? operator(op,prec,fn) : lookup[op] = prec
 
 export default subscript

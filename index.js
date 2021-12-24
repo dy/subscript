@@ -3,7 +3,7 @@ const SPACE=32
 // current string & index
 export let idx, cur,
 
-parse = (s, ...fields) => (cur=s.raw ? String.raw(s,...fields) : s, idx=0, !(s=expr())||idx<cur.length ? err() : ctx=>s(ctx||{})),
+parse = (s, ...fields) => (cur=s.raw ? String.raw(s,...fields) : s, idx=0, !(s=expr())||cur[idx] ? err() : ctx=>s(ctx||{})),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -16,72 +16,65 @@ err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx)
 
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
-  else if (l = is.trim && is.length) idx+=char(l)==is?l:0
   else while (is(code())) idx++
 
   return cur.slice(from, idx)
 },
 
-// FIXME: merge into skip
+// FIXME: instead of code try storing last global code
 code = (i=0) => cur.charCodeAt(idx+i),
 char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
-expr = (prec=0, end, cc, node, newNode, op) => {
+expr = (prec=0, cc, token, newNode, fn) => {
   // chunk/token parser
   while (
-    (cc=parse.space()) && (
-      newNode = (op=lookup[cc]) && op(node, prec) || // if operator with higher precedence isn't found
-      (!node && (lit(cc) || id(cc))) // parse literal or quit -  token seqs are prohibited: `a b`, `a "b"`, `1.32 a`
+    (cc=parse.space()) && // till not end
+    ( newNode =
+      (fn=lookup[cc]) ? fn(token, prec) : // if operator with higher precedence isn't found
+      !token && id() // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )
-  ) node = newNode;
+  ) token = newNode;
 
   // skip end character, if expected
-  if (end) cc != end ? err('Unclosed paren') : idx++
+  // if (end) cc != end ? err('Unclosed paren') : idx++
 
-  return node
+  return token
 },
 
 // can be extended with comments, so we expose
-space = parse.space = cc => { while (cc = code(), cc <= SPACE) idx++; return cc },
-
-// literals - static tokens in code (useful for collapsing static expressions)
-literal = parse.literal = [],
-lit = (c,i=0,node,from=idx) => {
-  while(i<literal.length) if (node=literal[i++](c), idx>from) return () => node // 0 args indicate static evaluator
-},
+// FIXME: ideally make via lookup as well or... maybe expose comment entries still and make not exportable
+space = parse.space = cc => { while ((cc = code()) <= SPACE) idx++; return cc },
 
 // variable identifier
-id = (c, id=skip(isId), v) => id && ((v=ctx=>ctx[id]).id=id, v),
+id = (name=skip(isId)) => name ? ctx => ctx[name] : 0,
 
-// operator lookup table
+// operator/token lookup table
 lookup = [],
 
 // create operator checker/mapper (see examples)
 operator = parse.operator = (
-  op, prec=0, fn=0, map,
-  end=op.map && operator(op[1],(op=op[0],0)),
+  op, prec=0, fn=0,
   c=op.charCodeAt(0),
   l=op.length,
-  prev=fn && lookup[c],
+  prev=lookup[c],
   arity=fn.length,
-  multi=/\.{3}\w+\)/.test(fn), // if b is a sequence
-  word=op.toUpperCase()!==op // make sure word break comes after word operator
-) => (
-  map = arity > 1 ? // binary
-    (a,b) => a && // `a` must exist (.0 can be a token → a.b should not block it) - generally binary is not the last stop
-      (idx+=l, b=expr(end?0:prec,end)) && // b is not empty
+  word=op.toUpperCase()!==op, // make sure word break comes after word operator
+  map=
+    // binary
+    arity > 1 ? (a,b) => a &&
       (
-        !a.length && !b.length ? (a=fn(a(),b(),a.id,b.id), ()=>a) : // static pre-eval
-        ctx => fn(a(ctx),b(ctx),a.id,b.id) // 3 args is extended case when user controls eval
-      ) :
-    arity ? a => a && (idx+=l, ctx => fn(a(ctx),a.id)) : // unary postfix
-    a => !a && ( idx+=l, a = expr(end?0:prec-1,end), ctx => fn(a(ctx),a.id)), // unary prefix (0 args)
-
-  // FIXME: check idx+l here /*(a || !argc && !a) && (idx+=l, map(a))*/
-  lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec)),
-  c
-)
+        idx+=l, b=expr(prec),
+        !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
+        ctx => fn(a(ctx),b(ctx))
+      )
+    :
+    // unary postfix
+    arity ? a => a && ( idx+=l, ctx => fn(a(ctx))) :
+    // unary prefix (0 args)
+    a => !a && ( idx+=l, a=expr(prec-1)) && (ctx => fn(a(ctx)))
+) =>
+lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec))
 
 // accound for template literals
 export default parse

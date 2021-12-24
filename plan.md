@@ -366,6 +366,17 @@
   * [ ] readme ideas
   * [ ] [double.js](https://github.com/munrocket/double.js) scripting
 * [ ] Demo
+* [ ] Sequences in expr vs `,` as reducer
+  - modifying engine is verbose and slow, compared to direct lookups...
+  + fake operators isn't good also
+  - seq creates an args array - we have to reduce it for eval anyways, which is natural via operator
+  - operator doesn't need modified code() call
+* [ ] Declarable multiarg operator like (a,...b)=>x vs separator ['(',',',')'] vs manual sequences handling
+  - separator doesn't account for `a,b,c in d`
+  - (...a,b)=>x is neither possible
+  - `[',','in']` is impossible - end operator is 1-char now
+* [ ] extend end operator to multiple characters?
+* [ ] make ternaries support as `['?',':'],(a,b,c)=>{}`
 * [ ] Radical nanoscript?
   . remove descent;
   . binaries-only defs;
