@@ -321,13 +321,13 @@ test('ext: object', t => {
   // evalTest('{x}',{x:1})
 })
 
-test('ext: justin', async t => {
-  const {parse} = await import('../justin.js')
-  is(parse(`"abcd" + 'efgh'`), ['+','@abcd','@efgh'])
-  is(parse('a;b'), [';','a','b'])
-  is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','@x',['~',1]], [':','@y',['**',2,2]]], '@x'])
-  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
-  is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
+test.only('ext: justin', async t => {
+  const {default: script} = await import('../justin.js')
+  is(script(`"abcd" + 'efgh'`), ['+','@abcd','@efgh'])
+  is(script('a;b'), [';','a','b'])
+  is(script('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','@x',['~',1]], [':','@y',['**',2,2]]], '@x'])
+  is(script('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
+  is(evaluate(script('{x:~1, "y":2**2}["x"]')), -2)
 })
 
 test('ext: comments', t => {

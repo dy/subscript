@@ -17,9 +17,6 @@ err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx)
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
   else while (is(code())) idx++
-  // NOTE: nice clause, but not fast enough
-  // else if (cur.startsWith(is, idx)) idx += is.length
-
   return cur.slice(from, idx)
 },
 code = (i=0) => cur.charCodeAt(idx+i),
@@ -34,9 +31,6 @@ expr = (prec=0, cc, token, newNode, fn) => {
       (!token && id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )
   ) token = newNode;
-
-  // skip end character, if expected
-  // if (end) cc != end ? err('Unclosed paren') : idx++
 
   return token
 },
@@ -72,10 +66,8 @@ set = parse.set = (
     // unary prefix (0 args)
     a => !a && ( a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>
-// FIXME: try skiping operator here: it is literally first thing everythere
+
 lookup[c] = (a, curPrec, from=idx) => (curPrec<prec||!prec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) &&
   (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))
 
-// accound for template literals
-export default parse
 
