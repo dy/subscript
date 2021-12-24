@@ -1,4 +1,4 @@
-import subscript, {parse, operator, lookup, skip, cur, idx, err, code, expr, isId, space} from './index.js'
+import subscript, {parse, set, lookup, skip, cur, idx, err, code, expr, isId, space} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -26,9 +26,8 @@ for (list=[
 
   // a[b]
   '[',, (a, b) => a && (skip(), b=expr(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),
-  // [a,b,c]
-  // ['[',',',']'], PREC_ARRAY, a => a,
 
+  // a(b), (a,b)
   '(',, (a, b, args) => (
     skip(), b=expr(), code()==CPAREN?skip():err(),
     // a(), a(b), a(b,c,d)
@@ -38,7 +37,6 @@ for (list=[
   ),
 
   // operators
-  // FIXME: we have to account for nil-id cases like `,a,,b`
   ',', PREC_SEQ, (a,b) => (a=a?._args||((a=[a])._args=a)).push(b)&&a,
 
   '|', PREC_OR, (a,b)=>a|b,
@@ -80,6 +78,6 @@ for (list=[
   '*', PREC_MULT, (a,b)=>a*b,
   '/', PREC_MULT, (a,b)=>a/b,
   '%', PREC_MULT, (a,b)=>a%b
-]; [op,prec,fn,...list]=list, op;) operator(op,prec,fn)
+]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 
 export default subscript

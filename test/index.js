@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, expr, operator, err } from '../index.js'
+import { skip, code, expr, set, err, cur, idx } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -61,7 +61,7 @@ test('basic', t => {
   evalTest('a(b)(c)', {a:x=>y=>x+y, b:2, c:3})
 
   // **
-  operator('**', 14, (a,b)=>a**b)
+  set('**', 14, (a,b)=>a**b)
 
   evalTest('1 + 2 * 3 ** 4 + 5', {})
   evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
@@ -104,10 +104,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  operator('null', 0, a => !a && (skip(4), ()=>null))
-  operator('true', 0, a => !a && (skip(4), ()=>true))
-  operator('false', 0, a => !a && (skip(5), ()=>false))
-  operator('undefined', 0, a => !a && (skip(9), ()=>undefined))
+  set('null', 0, a => !a && (skip(4), ()=>null))
+  set('true', 0, a => !a && (skip(4), ()=>true))
+  set('false', 0, a => !a && (skip(5), ()=>false))
+  set('undefined', 0, a => !a && (skip(9), ()=>undefined))
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
@@ -256,7 +256,7 @@ test('chains', t => {
 })
 
 test('ext: in operator', t => {
-  operator('in', 10, (a,b) => a in b)
+  set('in', 10, (a,b) => a in b)
 
   evalTest('inc in bin', {bin:{inc:1}, inc:'inc'})
   evalTest('bin in inc', {inc:{bin:1}, bin:'bin'})
@@ -265,8 +265,8 @@ test('ext: in operator', t => {
 })
 
 test('ext: ternary', t => {
-  operator(':', 3.1, (a,b) => [a,b])
-  operator('?', 3, (a,b) => a ? b[0] : b[1])
+  set(':', 3.1, (a,b) => [a,b])
+  set('?', 3, (a,b) => a ? b[0] : b[1])
 
   evalTest('a?b:c', {a:true,b:1,c:2})
   evalTest('a?b:c', {a:false,b:1,c:2})
@@ -275,9 +275,11 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  operator(['[',']'], 20, (a=undefined) => a&&a._args?a.slice():[a])
-  // operator(['[',']'], 20, () => [])
-  // literal.push()
+  set('[', 0, (a, args) => !a && (
+      skip(), a=expr(), code()==93?skip():err(),
+      !a ? ctx => [] : ctx => (args=a(ctx), args?._args?[...args]:[args])
+    )
+  )
 
   is(script('[1,2,3]')(),[1,2,3])
   is(script('[1]')(),[1])
@@ -285,10 +287,13 @@ test('ext: list', t => {
 
   is(script('[]')(), [])
   is(script('[ ]')(), [])
-  is(script('[,]')({b:3}),[undefined])
-  is(script('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
-  is(script('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
-  is(script('[1,,2,b]')({b:3}),[1,undefined,2,3])
+
+  // TODO: prefix/postfix maybe?
+  // is(script('[1,]')({}),[1])
+  // is(script('[,]')({}),[undefined])
+  // is(script('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
+  // is(script('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
+  // is(script('[1,,2,b]')({b:3}),[1,undefined,2,3])
 
   evalTest('[1]')
   evalTest('[1,2,3]')
@@ -301,17 +306,19 @@ test('ext: list', t => {
 })
 
 test('ext: object', t => {
-  // FIXME: seems we still have to be able to support advanced unary eval: {x} requires to have both id and its value.
-  operator(['{','}'], 20, (a=undefined,aid) => aid===''?{}:Object.fromEntries(seq(aid?[aid,a]:a)))
-  // FIXME: mb having parent operator for custom eval cases would be useful
-  operator(':', 3.1, (a,b,aid) => [aid||a,b])
+  set('{', 0, (a, args) => !a && (
+      skip(), a=expr(), code()==125?skip():err(),
+      !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
+    )
+  )
+  set(':', 0, (a, prec, b) => (skip(), b=expr(3)||err(), ctx => [a(), b(ctx)]) )
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})
   evalTest('{x: 1, "y":2}',{})
   evalTest('{x: 1+2, y:a(3)}',{a:v=>v+1})
   evalTest('{x: 1+2, y:a(3)}',{a:x=>x*2})
-  evalTest('{x}',{x:1})
+  // evalTest('{x}',{x:1})
 })
 
 test('ext: justin', async t => {
@@ -324,19 +331,20 @@ test('ext: justin', async t => {
 })
 
 test('ext: comments', t => {
-  script.space = cc => {
-    // FIXME: condition can be moved bottom
-    while (cc = code(), cc <= 32 || cc === 47) {
-      if (cc <= 32) skip()
-      else if (cc === 47)
-        // /**/
-        if (code(1) === 42) skip(2), skip(c => c !== 42 && code(1) !== 47), skip(2)
-        // //
-        else if (code(1) === 47) skip(2), skip(c => c >= 32)
-        else break
-    }
-    return cc
-  }
+  // script.space = cc => {
+  //   // FIXME: condition can be moved bottom
+  //   while (cc = code(), cc <= 32 || cc === 47) {
+  //     if (cc <= 32) skip()
+  //     else if (cc === 47)
+  //       // /**/
+  //       if (code(1) === 42) skip(2), skip(c => c !== 42 && code(1) !== 47), skip(2)
+  //       // //
+  //       else if (code(1) === 47) skip(2), skip(c => c >= 32)
+  //       else break
+  //   }
+  //   return cc
+  // }
+  // set('/*', 0, (a, prec) => ())
   is(script('/* x */1/* y */+/* z */2')({}), 3)
   is(script(`a /
     // abc
@@ -378,7 +386,7 @@ test('err: unclosed parens', t => {
 })
 
 test('low-precedence unary', t => {
-  operator('&',13,(a=true)=>~a)
+  set('&',13,(a=true)=>~a)
   is(script('&a+b*c')({a:1,b:2,c:3}), 4)
   is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })

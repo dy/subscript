@@ -45,13 +45,13 @@ expr = (prec=0, cc, token, newNode, fn) => {
 space = cc => { while ((cc = code()) <= SPACE) idx++; return cc },
 
 // variable identifier
-id = (name=skip(isId)) => name ? ctx => ctx[name] : 0,
+id = (name=skip(isId)) => name ? ctx => ctx?ctx[name]:name : 0,
 
 // operator/token lookup table
 lookup = [],
 
 // create operator checker/mapper (see examples)
-operator = parse.operator = (
+set = parse.set = (
   op, prec, fn=0,
   c=op.charCodeAt(0),
   l=op.length,
@@ -72,6 +72,7 @@ operator = parse.operator = (
     // unary prefix (0 args)
     a => !a && ( idx+=l, a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>
+// FIXME: try skiping operator here: it is literally first thing everythere
 lookup[c] = (a, curPrec) => (curPrec<prec||!prec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) && map(a) || (prev&&prev(a, curPrec))
 
 // accound for template literals
