@@ -1,4 +1,4 @@
-import subscript, {parse, operator, lookup, skip, char, code, err, expr, isId, space} from './index.js'
+import subscript, {parse, operator, lookup, skip, code, idx, err, expr, isId, space} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,

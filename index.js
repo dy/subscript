@@ -20,16 +20,13 @@ skip = (is=1, from=idx, l) => {
 
   return cur.slice(from, idx)
 },
-
-// FIXME: instead of code try storing last global code
 code = (i=0) => cur.charCodeAt(idx+i),
-char = (n=1) => cur.substr(idx, n),
 
 // a + b - c
 expr = (prec=0, cc, token, newNode, fn) => {
   // chunk/token parser
   while (
-    (cc=parse.space()) && // till not end
+    (cc=space()) && // till not end
     ( newNode =
       (fn=lookup[cc]) ? fn(token, prec) : // if operator with higher precedence isn't found
       !token && id() // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
@@ -42,9 +39,8 @@ expr = (prec=0, cc, token, newNode, fn) => {
   return token
 },
 
-// can be extended with comments, so we expose
-// FIXME: ideally make via lookup as well or... maybe expose comment entries still and make not exportable
-space = parse.space = cc => { while ((cc = code()) <= SPACE) idx++; return cc },
+// we don't export space, since comments can be organized via custom parsers
+space = cc => { while ((cc = code()) <= SPACE) idx++; return cc },
 
 // variable identifier
 id = (name=skip(isId)) => name ? ctx => ctx[name] : 0,
@@ -74,7 +70,7 @@ operator = parse.operator = (
     // unary prefix (0 args)
     a => !a && ( idx+=l, a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>
-lookup[c] = (a, curPrec) => curPrec < prec && (l<2||char(l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec))
+lookup[c] = (a, curPrec) => curPrec < prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec))
 
 // accound for template literals
 export default parse

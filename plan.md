@@ -353,12 +353,43 @@
         + allows redefining calc which is -1 stack call
         + allows flexible parser
         - although it adds 20 commas and redundant parsing - we usually deal with operators on nexpressions - mb just a case of evaluator?
-* [ ] inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining
+* [x] ~~inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining~~
   ? by precedence we can detect what type of function is passed: unary, binary or postfix
-* [ ] test `a ++` postfix spacing
-* [ ] merge char/code into skip - conditional skip checks if next chars equal cond string
-* [ ] try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently
-* [ ] flat into single subscript.js file, unminified: saving redundant exports and conventions
+  - no: idx+=l 3 times is less than condition to detect it from outside
+* [x] test `a ++` postfix spacing
+* [x] ~~try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently~~
+  - no: we better implement custom parsers instead
+* [x] ~~flat into single subscript.js file, unminified: saving redundant exports and conventions~~
+  - no: that's the opposite, makes redundant exports for internal values - how would we extend justin otherwise?
+* [x] Sequences in expr vs `,` as reducer
+  - modifying engine is verbose and slow, compared to direct lookups...
+  + fake operators isn't good also
+  - seq creates an args array - we have to reduce it for eval anyways, which is natural via operator
+  - operator doesn't need modified code() call
+  → utilize custom parsers, where args are needed.
+* [x] ~~Declarable multiarg operator like (a,...b)=>x vs separator ['(',',',')'] vs manual sequences handling~~
+  - separator doesn't account for `a,b,c in d`
+  - (...a,b)=>x is neither possible
+  - `[',','in']` is impossible - end operator is 1-char now
+  → no: just use custom parsers, they occupy less space in total than unnecessary generalizations
+* [x] ~~extend end operator to multiple characters?~~
+  → no: end operator is a custom parser case, not generalized
+* [x] make ternaries support as `['?',':'],(a,b,c)=>{}`
+  → no: make custom parser
+* [x] Radical nanoscript?
+  - [x] ~~remove descent;~~ no: descent is useful for standard operators and overloading
+  - [x] binaries-only defs;
+  - [x] eval binaries only;
+  - [x] no char, ~~no code, no err~~; → err and code are heavily needed, char is rare in code, can be substr instead
+  - [x] ~~space via skip;~~ no: too slow
+  - [x] ~~no word operators;~~ no: too easy to do and useful to have
+* [x] ~~Make mapper configurable:~~
+  * [x] binaries-only vs flat nodes must be a feature of configurator, not built-in.
+    - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide a special reducer in `(` parser - that doesn't save that much space
+  * [x] As well as word operators. → trivially solved as custom mapper with next-char check
+  * [x] As well as reducer in evaluator.
+  → not needed anymore as direct evals supercede v5 scheme
+* [ ] justin, all tests, publish v6
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -366,27 +397,3 @@
   * [ ] readme ideas
   * [ ] [double.js](https://github.com/munrocket/double.js) scripting
 * [ ] Demo
-* [ ] Sequences in expr vs `,` as reducer
-  - modifying engine is verbose and slow, compared to direct lookups...
-  + fake operators isn't good also
-  - seq creates an args array - we have to reduce it for eval anyways, which is natural via operator
-  - operator doesn't need modified code() call
-* [ ] Declarable multiarg operator like (a,...b)=>x vs separator ['(',',',')'] vs manual sequences handling
-  - separator doesn't account for `a,b,c in d`
-  - (...a,b)=>x is neither possible
-  - `[',','in']` is impossible - end operator is 1-char now
-* [ ] extend end operator to multiple characters?
-* [ ] make ternaries support as `['?',':'],(a,b,c)=>{}`
-* [ ] Radical nanoscript?
-  . remove descent;
-  . binaries-only defs;
-  . eval binaries only;
-  . no char, no code, no err;
-  . space via skip;
-  . no word operators;
-* [x] ~~Make mapper configurable:~~
-  * [x] binaries-only vs flat nodes must be a feature of configurator, not built-in.
-    - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide a special reducer in `(` parser - that doesn't save that much space
-  * [x] As well as word operators. → trivially solved as custom mapper with next-char check
-  * [x] As well as reducer in evaluator.
-  → not needed anymore as direct evals supercede v5 scheme

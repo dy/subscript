@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, char, expr, operator, err } from '../index.js'
+import { skip, code, expr, operator, err } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -178,6 +178,8 @@ test('unaries', t => {
 test('postfix unaries', t => {
   evalTest('a--',{a:2})
   evalTest('a++',{a:2})
+  evalTest('a ++',{a:2})
+  evalTest('a  --',{a:2})
   // evalTest('a++(b)',{})
 })
 

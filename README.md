@@ -30,7 +30,7 @@ _Subscript_ is designed to be useful for:
 * custom DSL
 
 [_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
-_Subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with _jsep_ test coverage and better performance.
+_Subscript_ has [1.8kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with _jsep_ test coverage and better performance.
 
 
 ## Design
@@ -52,7 +52,8 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Operators can be extended via `operator(char|chars, precedence, fn)` for any unary/binary/postfix operators, calls, prop chains, groups etc.
+Operators can be extended via `operator(char, precedence, reducer)` for unary/binary/postfix operators (detected by number of arguments in reducer).
+
 
 ```js
 import script from 'subscript.js'
@@ -74,9 +75,9 @@ evaluate(tree, { Math, map, take, interval, gaussian })
 Default literals include:
 
 * `"abc"` strings
-* `1.2e+3` floats
+* `1.2e+3` numbers
 
-Literals are extensible via `literal` list, can be added support of _booleans_, _regexes_, _strings_, _numbers_ and others.
+Literals are extensible by providing custom parser to `lookup`, can be added support of _booleans_, function calls, prop chains, groups, _regexes_, _strings_, _numbers_ and any other constructs.
 
 ```js
 import script from 'subscript.js'
@@ -88,7 +89,6 @@ script`this.x`() // 1
 ### Identifiers
 
 Identifiers include
-
 
 ### Spaces/comments
 
@@ -271,8 +271,8 @@ Subscript shows relatively good performance within other evaluators:
 Parse 30k times:
 
 ```
-subscript: ~190 ms
-jsep: ~250 ms
+subscript: ~170 ms
+jsep: ~260 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms
 new Function: ~1400 ms
@@ -280,8 +280,8 @@ new Function: ~1400 ms
 
 Eval 30k times:
 ```
-subscript: ~20 ms
-jsep: ~36 ms
+subscript: ~17 ms
+jsep: ~33 ms
 expr-eval: ~72 ms
 jexl: ~100 ms
 new Function: ~7 ms
