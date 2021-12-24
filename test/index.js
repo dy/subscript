@@ -130,7 +130,7 @@ test.only('ext: literals', t=> {
   // is(script('++false'), ['++',false])
 })
 
-test('bad number', t => {
+test.only('bad number', t => {
   is(script('-1.23e-2')(), -1.23e-2)
   throws(x=>script('.e-1')())
 })

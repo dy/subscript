@@ -17,6 +17,8 @@ err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx)
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
   else while (is(code())) idx++
+  // NOTE: nice clause, but not fast enough
+  // else if (cur.startsWith(is, idx)) idx += is.length
 
   return cur.slice(from, idx)
 },
@@ -50,13 +52,13 @@ lookup = [],
 
 // create operator checker/mapper (see examples)
 operator = parse.operator = (
-  op, prec=0, fn=0,
+  op, prec, fn=0,
   c=op.charCodeAt(0),
   l=op.length,
   prev=lookup[c],
-  arity=fn.length,
+  arity=fn&&fn.length,
   word=op.toUpperCase()!==op, // make sure word break comes after word operator
-  map=
+  map=!prec ? fn : // custom parser
     // binary
     arity > 1 ? (a,b) => a &&
       (
@@ -70,7 +72,7 @@ operator = parse.operator = (
     // unary prefix (0 args)
     a => !a && ( idx+=l, a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>
-lookup[c] = (a, curPrec) => curPrec < prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) && map(a) || (prev && prev(a, curPrec))
+lookup[c] = (a, curPrec) => (curPrec<prec||!prec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) && map(a) || (prev&&prev(a, curPrec))
 
 // accound for template literals
 export default parse
