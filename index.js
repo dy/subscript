@@ -30,8 +30,8 @@ expr = (prec=0, cc, token, newNode, fn) => {
   while (
     (cc=space()) && // till not end
     ( newNode =
-      (fn=lookup[cc]) ? fn(token, prec) : // if operator with higher precedence isn't found
-      !token && id() // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
+      (fn=lookup[cc]) && fn(token, prec) || // if operator with higher precedence isn't found
+      (!token && id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )
   ) token = newNode;
 

@@ -8,7 +8,7 @@ const evalTest = (str, ctx={}) => {
   return is(ss(ctx), fn(...Object.values(ctx)))
 }
 
-test.only('basic', t => {
+test('basic', t => {
   is(script`1 + 2`(), 3)
   is(script`1 + 2 + 3`(), 6)
   is(script('1 + 2 * 3')(), 7)
@@ -103,14 +103,11 @@ test('strings', t => {
   // parse.quote['<--']='-->'
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
-test.only('ext: literals', t=> {
-  literal.push(c =>
-    skip('true') ? true :
-    skip('false') ? false :
-    skip('null') ? null :
-    skip('undefined') ? undefined :
-    null
-  )
+test('ext: literals', t=> {
+  operator('null', 0, a => !a && (skip(4), ()=>null))
+  operator('true', 0, a => !a && (skip(4), ()=>true))
+  operator('false', 0, a => !a && (skip(5), ()=>false))
+  operator('undefined', 0, a => !a && (skip(9), ()=>undefined))
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
@@ -125,12 +122,16 @@ test.only('ext: literals', t=> {
   is(script('a0')({a0:1}), 1)
   is(script('x(0)')({x:v=>!!v}), false)
   is(script('x(true)')({x:v=>!!v}), true)
+
+  is(script('f')({f:1}), 1)
+  is(script('f(false)')({f:v=>!!v}), false)
+
   // is(script('null++')(), ['++',null])
   // is(script('false++'), ['++',false])
   // is(script('++false'), ['++',false])
 })
 
-test.only('bad number', t => {
+test('bad number', t => {
   is(script('-1.23e-2')(), -1.23e-2)
   throws(x=>script('.e-1')())
 })
@@ -272,7 +273,7 @@ test('ext: ternary', t => {
   evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
 })
 
-test.only('ext: list', t => {
+test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   operator(['[',']'], 20, (a=undefined) => a&&a._args?a.slice():[a])
   // operator(['[',']'], 20, () => [])

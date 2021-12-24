@@ -5,7 +5,7 @@ PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 let u, list, op, prec, fn,
-    isNum = c => c>=_0&&c<=_9,
+    isNum = c => c>=_0 && c<=_9,
     // 1.2e+3, .5
     num = n => (
       n = skip(c=>c==PERIOD || isNum(c)),
@@ -20,7 +20,7 @@ for (op=_0;op<=_9;) lookup[op++] = num
 for (list=[
   // direct tokens
   // a.b, .2, 1.2 parser in one
-  '.',, (a, id) => a&&a.length ? (skip(), space(), id=skip(isId)||err(), ctx => a(ctx)[id]) : num(),
+  '.',, (a, id) => a?.length ? (skip(), space(), id=skip(isId)||err(), ctx => a(ctx)[id]) : num(),
   // "a"
   '"',, v => (skip(), v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
 
@@ -32,14 +32,14 @@ for (list=[
   '(',, (a, b, args) => (
     skip(), b=expr(), code()==CPAREN?skip():err(),
     // a(), a(b), a(b,c,d)
-    a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args._args||[args])) :
+    a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args?._args||[args])) :
     // (a+b)
-    ctx => (args=b(ctx), args._args?args.pop():args)
+    ctx => (args=b(ctx), args?._args?args.pop():args)
   ),
 
   // operators
   // FIXME: we have to account for nil-id cases like `,a,,b`
-  ',', PREC_SEQ, (a,b) => (a=a&&a._args||((a=[a])._args=a)).push(b)&&a,
+  ',', PREC_SEQ, (a,b) => (a=a?._args||((a=[a])._args=a)).push(b)&&a,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
