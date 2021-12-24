@@ -62,18 +62,19 @@ set = parse.set = (
     // binary
     arity > 1 ? (a,b) => a &&
       (
-        idx+=l, b=expr(prec),
+        b=expr(prec),
         !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
         ctx => fn(a(ctx),b(ctx))
       )
     :
     // unary postfix
-    arity ? a => a && ( idx+=l, ctx => fn(a(ctx))) :
+    arity ? a => a && ( ctx => fn(a(ctx))) :
     // unary prefix (0 args)
-    a => !a && ( idx+=l, a=expr(prec-1)) && (ctx => fn(a(ctx)))
+    a => !a && ( a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>
 // FIXME: try skiping operator here: it is literally first thing everythere
-lookup[c] = (a, curPrec) => (curPrec<prec||!prec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) && map(a) || (prev&&prev(a, curPrec))
+lookup[c] = (a, curPrec, from=idx) => (curPrec<prec||!prec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) &&
+  (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))
 
 // accound for template literals
 export default parse

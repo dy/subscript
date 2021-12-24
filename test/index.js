@@ -104,10 +104,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  set('null', 0, a => !a && (skip(4), ()=>null))
-  set('true', 0, a => !a && (skip(4), ()=>true))
-  set('false', 0, a => !a && (skip(5), ()=>false))
-  set('undefined', 0, a => !a && (skip(9), ()=>undefined))
+  set('null', 0, a => a ? a : ()=>null)
+  set('true', 0, a => a ? a : ()=>true)
+  set('false', 0, a => a ? a : ()=>false)
+  set('undefined', 0, a => a ? a : ()=>undefined)
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
@@ -276,7 +276,7 @@ test('ext: ternary', t => {
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   set('[', 0, (a, args) => !a && (
-      skip(), a=expr(), code()==93?skip():err(),
+      a=expr(), code()==93?skip():err(),
       !a ? ctx => [] : ctx => (args=a(ctx), args?._args?[...args]:[args])
     )
   )
@@ -307,11 +307,11 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   set('{', 0, (a, args) => !a && (
-      skip(), a=expr(), code()==125?skip():err(),
+      a=expr(), code()==125?skip():err(),
       !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
     )
   )
-  set(':', 0, (a, prec, b) => (skip(), b=expr(3)||err(), ctx => [a(), b(ctx)]) )
+  set(':', 0, (a, prec, b) => (b=expr(3)||err(), ctx => [a(), b(ctx)]) )
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})

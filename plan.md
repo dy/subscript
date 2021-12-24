@@ -353,9 +353,10 @@
         + allows redefining calc which is -1 stack call
         + allows flexible parser
         - although it adds 20 commas and redundant parsing - we usually deal with operators on nexpressions - mb just a case of evaluator?
-* [x] ~~inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining~~
+* [x] inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining
   ? by precedence we can detect what type of function is passed: unary, binary or postfix
   - no: idx+=l 3 times is less than condition to detect it from outside
+  + yes: we do from=idx, idx=from, and also it outpays on extensions
 * [x] test `a ++` postfix spacing
 * [x] ~~try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently~~
   - no: we better implement custom parsers instead

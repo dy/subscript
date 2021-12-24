@@ -20,16 +20,17 @@ for (op=_0;op<=_9;) lookup[op++] = num
 for (list=[
   // direct tokens
   // a.b, .2, 1.2 parser in one
-  '.',, (a, id) => a?.length ? (skip(), space(), id=skip(isId)||err(), ctx => a(ctx)[id]) : num(),
+  '.',, (a, id) => a?.length ? (space(), id=skip(isId)||err(), ctx => a(ctx)[id]) :
+    num(skip(-1)), // FIXM: .123 is not operator, so we skip back, but mb reorganizing num would be better
   // "a"
-  '"',, v => (skip(), v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
+  '"',, v => (v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
 
   // a[b]
-  '[',, (a, b) => a && (skip(), b=expr(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),
+  '[',, (a, b) => a && (b=expr(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),
 
   // a(b), (a,b)
   '(',, (a, b, args) => (
-    skip(), b=expr(), code()==CPAREN?skip():err(),
+    b=expr(), code()==CPAREN?skip():err(),
     // a(), a(b), a(b,c,d)
     a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args?._args||[args])) :
     // (a+b)
