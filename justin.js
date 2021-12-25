@@ -45,7 +45,7 @@ for (list=[
   '?', PREC_COND, (a,b) => a ? b[2] : b[1],
 
   // a?.[, a?.( - postfix operator
-  '?.', PREC_CALL+1, (a) => a||(()=>{}),
+  '?.',, a => a && (ctx => a(ctx)||(()=>{})),//(a) => a||(()=>{}),
   // a?.b - optional chain operator
   '?.',, (a,id) => (space(), id=skip(isId)) && (ctx => a(ctx)?.[id]),
 
