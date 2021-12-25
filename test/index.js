@@ -179,10 +179,13 @@ test('unaries', t => {
   evalTest('1 * -1')
 })
 test('postfix unaries', t => {
-  evalTest('a--',{a:2})
-  evalTest('a++',{a:2})
-  evalTest('a ++',{a:2})
-  evalTest('a  --',{a:2})
+  let ctx = {a:2}
+  is(script('a--')(ctx),2)
+  is(ctx.a,1)
+  is(script('a++')(ctx),1)
+  is(ctx.a,2)
+  is(script('a ++')(ctx), 2)
+  is(script('a  --')(ctx), 3)
   // evalTest('a++(b)',{})
 })
 
@@ -202,7 +205,7 @@ test('parens', t => {
   evalTest('+b', {b:1})
   evalTest('+(b)', {b:1})
   evalTest('+((b))', {b:1})
-  evalTest('++(b)', {b:1})
+  is(script('++(b)')({b:1}), 2)
   is(script('++a(b)')({b:1, a:v=>v+1}),3)
   evalTest('+(b)', {b:1})
   evalTest('1+(b)', {b:1})

@@ -20,8 +20,9 @@ for (op=_0;op<=_9;) lookup[op++] = num
 for (list=[
   // direct tokens
   // a.b, .2, 1.2 parser in one
-  '.',, (a, id) => a?.length ? (space(), id=skip(isId)||err(), ctx => a(ctx)[id]) :
-    num(skip(-1)), // FIXM: .123 is not operator, so we skip back, but mb reorganizing num would be better
+  '.',, (a, id) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
+    (space(), id=skip(isId)||err(), ctx => a(ctx)[id]),
+
   // "a"
   '"',, v => (v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
 
@@ -32,7 +33,7 @@ for (list=[
   '(',, (a, b, args) => (
     b=expr(0,CPAREN),
     // a(), a(b), a(b,c,d)
-    a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args?._args||[args])) :
+    a ? ctx => (args=b?b(ctx):[], a(ctx)(...(args?._args||[args]))) :
     // (a+b)
     b ? ctx => (args=b(ctx), args?._args?args.pop():args) : err()
   ),
@@ -63,17 +64,15 @@ for (list=[
 
   // + ++ - --
   '+', PREC_SUM, (a,b)=>a+b,
-  '+', PREC_UNARY, (a=u)=>+a,
-  '++', PREC_UNARY, (a=u)=>++a,
-  '++', PREC_POSTFIX, (a)=>a++,
+  '+', PREC_UNARY, (a)=>+a,
+  '++',, a => a ? (ctx => ctx[a()]++) : (a=expr(PREC_UNARY-1), ctx => ++ctx[a()]),
 
   '-', PREC_SUM, (a,b)=>a-b,
-  '-', PREC_UNARY, (a=u)=>-a,
-  '--', PREC_UNARY, (a=u)=>--a,
-  '--', PREC_POSTFIX, (a)=>a--,
+  '-', PREC_UNARY, (a)=>-a,
+  '--',, a => a ? (ctx => ctx[a()]--) : (a=expr(PREC_UNARY-1), ctx => --ctx[a()]),
 
   // ! ~
-  '!', PREC_UNARY, (a=u)=>!a,
+  '!', PREC_UNARY, (a)=>!a,
 
   // * / %
   '*', PREC_MULT, (a,b)=>a*b,

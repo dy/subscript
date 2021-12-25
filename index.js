@@ -42,7 +42,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
 space = cc => { while ((cc = code()) <= SPACE) idx++; return cc },
 
 // variable identifier
-id = (name=skip(isId)) => name ? ctx => ctx?ctx[name]:name : 0,
+id = (name=skip(isId)) => name ? ctx => (ctx ? ctx[name] : name) : 0,
 
 // operator/token lookup table
 lookup = [],
@@ -57,16 +57,13 @@ set = parse.set = (
   word=op.toUpperCase()!==op, // make sure word break comes after word operator
   map=!prec ? fn : // custom parser
     // binary
-    arity > 1 ? (a,b) => a && (b=expr(prec)) &&
-      (
-        !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
-        ctx => fn(a(ctx),b(ctx))
-      )
-    :
-    // unary postfix
-    arity ? a => a && (ctx => fn(a(ctx))) :
+    arity>1 ? (a,b) => a && (b=expr(prec)) && (
+      !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
+      ctx => fn(a(ctx),b(ctx))
+    ) :
+    // NOTE: due to rarity and simplicity of postfix ops we consider them custom op and ignore generic init
     // unary prefix (0 args)
-    a => !a && ( a=expr(prec-1)) && (ctx => fn(a(ctx)))
+    a => !a && (a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>
 
 lookup[c] = (a, curPrec, from=idx) => (curPrec<prec||!prec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(code(l))) &&

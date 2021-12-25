@@ -54,7 +54,8 @@ test('jsep', async t => {
 
   let ast = jsep.parse(src(0))
   // console.log(ast);
-  is(jsep.eval(ast, args), result);
+  is(jsep.eval(ast, args), result)
+  // is(jsep.eval(jsep.parse('"abc".toString()')), 'abc');
 
   console.time('jsep')
   for (let i = 0; i < RUNS; i++){
