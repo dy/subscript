@@ -178,10 +178,10 @@ test.skip('subscript x3', async t => {
 })
 
 test('justin', async t => {
-  const {parse, evaluate} = await import('../justin.js');
+  const {default:parse} = await import('../justin.js');
 
-  let ast = parse(src(0))
-  is(evaluate(ast, args), result);
+  let evaluate = parse(src(0))
+  is(evaluate(args), result);
 
   console.time('justin')
   for (let i = 0; i < RUNS; i++){
@@ -191,7 +191,7 @@ test('justin', async t => {
   console.timeEnd('justin')
   console.time('justin eval')
   for (let i = 0; i < RUNS; i++){
-    evaluate(ast, args)
+    evaluate(args)
   }
   console.timeEnd('justin eval')
 })
