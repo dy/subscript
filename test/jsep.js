@@ -1,33 +1,43 @@
 import test, {is, any, throws} from '../lib/test.js'
-import subscript, {parse, evaluate} from '../justin.js'
-import { skip, code, expr, char, operator } from '../parse.js'
+import script from '../justin.js'
+// import { skip, code, expr, char, operator } from '../justin.js'
 
 test('Expression: Constants', ()=> {
-  is(parse('\'abc\''),  "@abc" );
-  is(parse('"abc"'),  '@abc' );
-  is(parse('123'),  123 );
-  is(parse('12.3'),  12.3 );
+  is(script('\'abc\'')(),  "abc" );
+  is(script('"abc"')(),  'abc' );
+  is(script('123')(),  123 );
+  is(script('12.3')(),  12.3 );
 });
 
 test('String escapes', () => {
-  is(parse("'a \\w b'"), "@a w b")
-  is(parse("'a \\' b'"), "@a ' b")
-  is(parse("'a \\n b'"), "@a \n b")
-  is(parse("'a \\r b'"), "@a \r b")
-  is(parse("'a \\t b'"), "@a \t b")
-  is(parse("'a \\b b'"), "@a \b b")
-  is(parse("'a \\f b'"), "@a \f b")
-  is(parse("'a \\v b'"), "@a \v b")
-  is(parse("'a \\\ b'"), "@a \ b")
+  is(script("'a \\w b'")(), "a w b")
+  is(script("'a \\' b'")(), "a ' b")
+  is(script("'a \\n b'")(), "a \n b")
+  is(script("'a \\r b'")(), "a \r b")
+  is(script("'a \\t b'")(), "a \t b")
+  is(script("'a \\b b'")(), "a \b b")
+  is(script("'a \\f b'")(), "a \f b")
+  is(script("'a \\v b'")(), "a \v b")
+  is(script("'a \\\ b'")(), "a \ b")
 });
 
 test('Variables', ()=> {
-  is(parse('abc'), 'abc');
-  is(parse('a.b[c[0]]'), ['.',['.', 'a' ,'@b'], ['.', 'c', 0]]);
-  is(parse('Δέλτα'), 'Δέλτα');
+  is(script('abc')({abc:123}), 123);
+  is(script('a.b[c[0]]')({a:{b:[1]}, c:[0]}), 1);
+  is(script('Δέλτα')({Δέλτα:123}), 123);
 });
-test.todo('Question operator', () => {
-  is(parse('a?.b?.(arg)?.[c] ?. d'), []);
+test('Question operator', () => {
+  is(script('a?.b')({a:{b:1}}), 1);
+  is(script('a?.b')({a:2}), undefined);
+  is(script('a?.[1]')({a:[,1]}), 1);
+  is(script('a?. [1]')({a:[,1]}), 1);
+  is(script('a?.[1]')({}), undefined);
+  is(script('a?.(1)')({a:v=>v}), 1);
+  is(script('a?. (1)')({a:v=>v}), 1);
+  is(script('a?.(1,2)')({a:(v,w)=>v+w}), 3);
+  is(script('a?.()')({a:v=>1}), 1);
+  is(script('a?.(1)')({}), undefined);
+  is(script('a?.b?.(arg)?.[c] ?. d')({a:{b:d=>[,,{d}]}, arg:1, c:2}), 1);
 })
 
 test('Function Calls', ()=> {

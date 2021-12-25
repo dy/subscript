@@ -101,18 +101,17 @@ _Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66
 It adds support of:
 
 + `===`, `!==` operators
-+ `**` binary operator
-+ `~` unary operator
++ `**` binary exponentiation
++ `~` unary inversion
 + `'` strings
-+ `?:` ternary operator
++ `?:` ternary
++ `?.` optional chain
 + `[...]` Array literal
 + `{...}` Object literal
-+ `in` binary operator
++ `in` binary
 + `;` expression separator
-+ unary word operators
 + `//`, `/* */` comments
 + `true`, `false`, `null`, `undefined` literals
-<!-- + `?` chaining operator -->
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 

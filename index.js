@@ -25,7 +25,7 @@ code = (i=0) => cur.charCodeAt(idx+i),
 expr = (prec=0, end, cc, token, newNode, fn) => {
   // chunk/token parser
   while (
-    (cc=space()) && // till not end
+    ( cc=space() ) && // till not end
     ( newNode =
       (fn=lookup[cc]) && fn(token, prec) || // if operator with higher precedence isn't found
       (!token && id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
@@ -57,14 +57,14 @@ set = parse.set = (
   word=op.toUpperCase()!==op, // make sure word break comes after word operator
   map=!prec ? fn : // custom parser
     // binary
-    arity > 1 ? (a,b=expr(prec)) => a && b &&
+    arity > 1 ? (a,b) => a && (b=expr(prec)) &&
       (
         !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
         ctx => fn(a(ctx),b(ctx))
       )
     :
     // unary postfix
-    arity ? a => a && ( ctx => fn(a(ctx))) :
+    arity ? a => a && (ctx => fn(a(ctx))) :
     // unary prefix (0 args)
     a => !a && ( a=expr(prec-1)) && (ctx => fn(a(ctx)))
 ) =>

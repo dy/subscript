@@ -3,7 +3,7 @@ import {parse, set, lookup, skip, cur, idx, err, code, expr, isId, space} from '
 import './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,
-PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
+PREC_SEQ=1, PREC_COND=3, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_EXP=14, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 
@@ -41,23 +41,28 @@ for (list=[
   '~', PREC_UNARY, (a=0) => ~a,
 
   // ?:
-  ':', 3.1, (a,b) => [a,b],
-  '?', 3, (a,b) => a ? b[0] : b[1],
+  // ':', 3.1, (a,b) => [a,b],
+  '?', PREC_COND, (a,b) => a ? b[2] : b[1],
+
+  // a?.[, a?.( - postfix operator
+  '?.', PREC_CALL+1, (a) => a||(()=>{}),
+  // a?.b - optional chain operator
+  '?.',, (a,id) => (space(), id=skip(isId)) && (ctx => a(ctx)?.[id]),
 
   'in', PREC_COMP, (a,b) => a in b,
 
   // [a,b,c]
   '[',, (a, args) => !a && (
-    a=expr(), code()==93?skip():err(),
+    a=expr(0,93),
     !a ? ctx => [] : ctx => (args=a(ctx), args?._args?[...args]:[args])
   ),
 
-  // {a, b, c}
+  // {a:1, b:2, c:3}
   '{',, (a, args) => !a && (
-    a=expr(), code()==125?skip():err(),
+    a=expr(0,125),
     !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
   ),
-  ':',, (a, prec, b) => (b=expr(3)||err(), ctx => [a(), b(ctx)])
+  ':',, (a, prec, b) => (b=expr(3.1)||err(), ctx => [a(), b(ctx), a(ctx)])
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 
