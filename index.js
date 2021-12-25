@@ -22,7 +22,7 @@ skip = (is=1, from=idx, l) => {
 code = (i=0) => cur.charCodeAt(idx+i),
 
 // a + b - c
-expr = (prec=0, cc, token, newNode, fn) => {
+expr = (prec=0, end, cc, token, newNode, fn) => {
   // chunk/token parser
   while (
     (cc=space()) && // till not end
@@ -31,6 +31,9 @@ expr = (prec=0, cc, token, newNode, fn) => {
       (!token && id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )
   ) token = newNode;
+
+  // check end character
+  if (end) cc==end?idx++:err('Unclosed')
 
   return token
 },
@@ -54,9 +57,8 @@ set = parse.set = (
   word=op.toUpperCase()!==op, // make sure word break comes after word operator
   map=!prec ? fn : // custom parser
     // binary
-    arity > 1 ? (a,b) => a &&
+    arity > 1 ? (a,b=expr(prec)) => a && b &&
       (
-        b=expr(prec)||err(),
         !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
         ctx => fn(a(ctx),b(ctx))
       )

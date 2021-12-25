@@ -26,11 +26,11 @@ for (list=[
   '"',, v => (v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
 
   // a[b]
-  '[',, (a, b) => a && (b=expr()||err(), code()==CBRACK?skip():err(), ctx => a(ctx)[b(ctx)]),
+  '[',, (a, b) => a && (b=expr(0,CBRACK)||err(), ctx => a(ctx)[b(ctx)]),
 
   // a(b), (a,b)
   '(',, (a, b, args) => (
-    b=expr(), code()==CPAREN?skip():err(),
+    b=expr(0,CPAREN),
     // a(), a(b), a(b,c,d)
     a ? ctx => (args=b?b(ctx):[], a(ctx).apply(ctx,args?._args||[args])) :
     // (a+b)
