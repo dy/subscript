@@ -321,13 +321,14 @@ test('ext: object', t => {
   // evalTest('{x}',{x:1})
 })
 
-test.only('ext: justin', async t => {
+test('ext: justin', async t => {
   const {default: script} = await import('../justin.js')
-  is(script(`"abcd" + 'efgh'`), ['+','@abcd','@efgh'])
-  is(script('a;b'), [';','a','b'])
-  is(script('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','@x',['~',1]], [':','@y',['**',2,2]]], '@x'])
-  is(script('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
-  is(evaluate(script('{x:~1, "y":2**2}["x"]')), -2)
+  evalTest(`"abcd" + 'efgh'`)
+  // evalTest('a;b', {a:1,b:2})
+  evalTest('{x:~1, "y":2**2}["x"]', {})
+  evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(v,w)=>v+w, e:1, f:2, g:3})
+  evalTest('{x:~1, "y":2**2}["x"]', {})
+  evalTest('{x:~1, "y":2**2}["y"]', {})
 })
 
 test('ext: comments', t => {
@@ -353,7 +354,7 @@ test('err: unknown operators', t => {
   throws(() => script('a ->'))
   throws(() => script('-> a'))
   throws(() => script('#a'))
-  throws(() => script('~a'))
+  // throws(() => script('~a'))
   throws(() => script('a !'))
   throws(() => script('a#b'))
   throws(() => script('b @'))
