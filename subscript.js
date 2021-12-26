@@ -8,6 +8,7 @@ let u, list, op, prec, fn,
     isNum = c => c>=_0 && c<=_9,
     // 1.2e+3, .5
     num = n => (
+      n&&err(),
       n = skip(c=>c==PERIOD || isNum(c)),
       (code() == 69 || code() == 101) && (n += skip(2) + skip(isNum)),
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static

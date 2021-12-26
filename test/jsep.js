@@ -45,7 +45,7 @@ test('Function Calls', ()=> {
   throws(t => script('a b + c'))
   is(script("'a'.toString()")(), 'a')
   is(script('[1].length')(), 1)
-  is(script(';')(), {})
+  is(script(';')(),null)
   // // allow all spaces or all commas to separate arguments
   // is(script('check(a, b, c, d)'), {})
   throws(t => script('check(a b c d)'))
@@ -75,26 +75,26 @@ test('Ops', function (qunit) {
 });
 
 test('Custom operators', ()=> {
-  is(script('a^b'), ['^','a','b']);
+  is(script('a^b')({a: 0xaaa, b:0xbbb}), 0xaaa^0xbbb);
 
-  operator('×', 9)
-  is(script('a×b'), ['×','a','b']);
+  script.set('×', 9, (a,b)=>a*b)
+  is(script('a×b')({a:2,b:3}), 6);
 
-  operator('or',1)
-  is(script('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
+  script.set('or',1, (a,b)=>a||b)
+  is(script('oneWord or anotherWord')({oneWord:1,anotherWord:0}), 1);
   throws(() => script('oneWord ordering anotherWord'));
 
-  operator('#', 11, -1)
-  is(script('#a'), ['#','a']);
+  script.set('#', 11, a=>[a])
+  is(script('#a')({a:1}), [1]);
 
-  operator('not', 13, (node) => char(3) === 'not' && [skip(3), expr(12)])
-  is(script('not a'), ['not', 'a']);
+  script.set('not', 13, a=>!a)
+  is(script('not a')({a:false}), true);
 
   throws(t => script('notes 1'));
 
-  operator('and', 2, node => code(3) <= 32 && [skip(3), node, expr(2)])
-  is(script('a and b'),['and','a','b']);
-  is(script('bands'), 'bands');
+  script.set('and', 2, (a,b)=>a&&b)
+  is(script('a and b')({a:1,b:2}),2);
+  is(script('bands')({a:1,b:2}), undefined);
 
   throws(t => script('b ands'));
 });
@@ -137,7 +137,7 @@ test(`should throw on invalid expr`, () => {
   throws(() => console.log(script('() + 1')))
 });
 
-test('Esprima Comparison', ()=> {
+test.only('Esprima Comparison', ()=> {
   // is(script('[1,,3]'), [1,null,3])
   // is(script('[1,,]'), [])
 
@@ -150,9 +150,9 @@ test('Esprima Comparison', ()=> {
   any(script('a.b. c')({a:{b:{c:1}}}), 1)
   is(script('a [b]')({a:{b:1}, b:'b'}), 1)
   any(script('a.b  [ c ] ')({a:{b:[,1]}, c:1}), 1)
-  any(script('$foo[ bar][ baz].other12 [\'lawl\'][12]')())
-  any(script('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ')())
-  any(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')())
+  any(script('$foo[ bar][ baz].other12 [\'lawl\'][12]')({$foo:[[,{other12:{lawl:{12:'abc'}}}]],bar:0,baz:1}), 'abc')
+  any(script('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ')({$foo:{12:[,{other12:2}]}, baz:[,1],z:1}), 9)
+  any(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')({}), )
   is(script('(a(b(c[!d]).e).f+\'hi\'==2) === true')())
   is(script('(1,2)')())
   is(script('(a, a + b > 2)')())
@@ -164,8 +164,8 @@ test('Esprima Comparison', ()=> {
   is(script('"a"[0]')())
   is(script('[1](2)')())
   is(script('"a".length')())
-  is(script('a.this')())
-  is(script('a.true')())
+  is(script('a.this')({a:{this:2}}), 2)
+  is(script('a.true')({a:{true:1}}), 1)
 });
 
 // Should support ternary by default (index.js):
