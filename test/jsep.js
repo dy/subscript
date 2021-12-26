@@ -41,159 +41,142 @@ test('Question operator', () => {
 })
 
 test('Function Calls', ()=> {
-  is(parse("a(b, c(d,e), f)"), ['a', 'b', ['c','d','e'], 'f'])
-  throws(t => parse('a b + c'))
-  is(parse("'a'.toString()"), [['.', '@a', '@toString']])
-  is(parse('[1].length'), ['.',['[',1],'@length'])
-  // is(parse(';'), {})
+  is(script("a(b, c(d,e), f)")({a: (b,c,f) => b+c+f, b:1, c:(d,e)=>d+e, f:2, d:3, e:4}), 10)
+  throws(t => script('a b + c'))
+  is(script("'a'.toString()")(), 'a')
+  is(script('[1].length')(), 1)
+  is(script(';')(), {})
   // // allow all spaces or all commas to separate arguments
-  // is(parse('check(a, b, c, d)'), {})
-  throws(t => parse('check(a b c d)'))
+  // is(script('check(a, b, c, d)'), {})
+  throws(t => script('check(a b c d)'))
 });
 
 test('Arrays', ()=> {
-  is(parse('[]'), ['[']);
-  is(parse('[a]'), ['[','a']);
+  is(script('[]')(), []);
+  is(script('[a]')({a:1}), [1]);
 });
 
 test('Ops', function (qunit) {
-  // parse.binary['**'] = 16; // ES2016, right-associative
+  // script.binary['**'] = 16; // ES2016, right-associative
 
-  is(parse('1'), 1)
-  is(parse('1+2'), ['+',1,2])
-  is(parse('1*2'), ['*',1,2])
-  is(parse('1*(2+3)'), ['*',1,['+',2,3]])
-  is(parse('(1+2)*3'), ['*',['+',1,2],3])
-  is(parse('(1+2)*3+4-2-5+2/2*3'), ['+',['-',['+',['*',['+',1,2],3],4],2,5],['*',['/',2,2],3]])
-  is(parse('1 + 2-   3*  4 /8'), ['-',['+',1, 2], ['/',['*',3,4],8]])
-  is(parse('\n1\r\n+\n2\n'), ['+',1,2])
-  is(parse('1 + -2'), ['+',1,['-',2]])
-  is(parse('-1 + -2 * -3 * 2'), ['+',['-',1],['*',['-',2],['-',3],2]])
-  is(parse('2 ** 3 ** 4'), ['**',2,3,4])
-  is(parse('2 ** 3 ** 4 * 5 ** 6 ** 7 * (8 + 9)'), ['*',['**',2,3,4],['**',5,6,7],['+',8,9]])
-  is(parse('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)'), ['*',['**',['**',2,3],4],['**',5,6,7],['+',8,9]])
+  is(script('1')(), 1)
+  is(script('1+2')(), 3)
+  is(script('1*2')(), 2)
+  is(script('1*(2+3)')(), 5)
+  is(script('(1+2)*3')(), 9)
+  is(script('(1+2)*3+4-2-5+2/2*3')(), 9)
+  is(script('1 + 2-   3*  4 /8')(), 1.5)
+  is(script('\n1\r\n+\n2\n')(), 3)
+  is(script('1 + -2')(), -1)
+  is(script('-1 + -2 * -3 * 2')(), 11)
+  is(script('2 ** 3 ** 2')(), 512)
+  is(script('2 ** 3 ** 4 * 5 ** 6 ** 7 * (8 + 9)')(), 2 ** 3 ** 4 * 5 ** 6 ** 7 * (8 + 9))
+  is(script('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)')(), (2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9))
 });
 
 test('Custom operators', ()=> {
-  is(parse('a^b'), ['^','a','b']);
+  is(script('a^b'), ['^','a','b']);
 
   operator('×', 9)
-  is(parse('a×b'), ['×','a','b']);
+  is(script('a×b'), ['×','a','b']);
 
   operator('or',1)
-  is(parse('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
-  throws(() => parse('oneWord ordering anotherWord'));
+  is(script('oneWord or anotherWord'), ['or', 'oneWord', 'anotherWord']);
+  throws(() => script('oneWord ordering anotherWord'));
 
   operator('#', 11, -1)
-  is(parse('#a'), ['#','a']);
+  is(script('#a'), ['#','a']);
 
   operator('not', 13, (node) => char(3) === 'not' && [skip(3), expr(12)])
-  is(parse('not a'), ['not', 'a']);
+  is(script('not a'), ['not', 'a']);
 
-  throws(t => parse('notes 1'));
+  throws(t => script('notes 1'));
 
   operator('and', 2, node => code(3) <= 32 && [skip(3), node, expr(2)])
-  is(parse('a and b'),['and','a','b']);
-  is(parse('bands'), 'bands');
+  is(script('a and b'),['and','a','b']);
+  is(script('bands'), 'bands');
 
-  throws(t => parse('b ands'));
+  throws(t => script('b ands'));
 });
 
-test.skip('Bad Numbers', ()=> {
+test('Bad Numbers', ()=> {
   // NOTE: for custom numbers implement custom number parser
-  testParser('1.', { type: 'Literal', value: 1, raw: '1.' });
-  throws(function () {
-    parse('1.2.3');
-  });
+  is(script('1.')(), 1);
+  throws(() => script('1.2.3')())
 });
 
 test('Missing arguments', ()=> {
   // NOTE: these cases don't matter as much, can be either for or against
-  throws(() => is(parse('check(,)'), ['check', null, null]));
-  throws(() => is(parse('check(,1,2)'), ['check', null, 1,2]));
-  throws(() => is(parse('check(1,,2)'), ['check', 1,null,2]));
-  throws(() => is(parse('check(1,2,)'), ['check', 1,2, null]));
-  throws(() => parse('check(a, b c d) '), 'spaced arg after 1 comma');
-  throws(() => parse('check(a, b, c d)'), 'spaced arg at end');
-  throws(() => parse('check(a b, c, d)'), 'spaced arg first');
-  throws(() => parse('check(a b c, d)'), 'spaced args first');
+  throws(() => is(script('check(,)'), ['check', null, null]));
+  throws(() => is(script('check(,1,2)'), ['check', null, 1,2]));
+  throws(() => is(script('check(1,,2)'), ['check', 1,null,2]));
+  throws(() => is(script('check(1,2,)'), ['check', 1,2, null]));
+  throws(() => script('check(a, b c d) '), 'spaced arg after 1 comma');
+  throws(() => script('check(a, b, c d)'), 'spaced arg at end');
+  throws(() => script('check(a b, c, d)'), 'spaced arg first');
+  throws(() => script('check(a b c, d)'), 'spaced args first');
 });
 
 test('Uncompleted expression-call/array', ()=> {
-  throws(() => console.log(parse('(a,b')))
-  throws(function () {
-    console.log(parse('myFunction(a,b'));
-  }, 'detects unfinished expression call');
+  throws(() => console.log(script('(a,b')))
+  throws(() => console.log(script('myFunction(a,b')), 'detects unfinished expression call');
 
-  throws(function () {
-    parse('[1,2');
-  }, 'detects unfinished array');
+  throws(() => script('[1,2'), 'detects unfinished array');
 
-  throws(function () {
-    parse('-1+2-');
-  }, 'detects trailing operator');
+  throws(() => script('-1+2-'), 'detects trailing operator');
 });
 
 test(`should throw on invalid expr`, () => {
-  throws(() => console.log(parse('!')))
-  throws(() => parse('*x'))
-  throws(() => parse('||x'))
-  throws(() => parse('?a:b'))
-  throws(() => parse('.'))
-  throws(() => console.log(parse('()()')))
+  throws(() => console.log(script('!')))
+  throws(() => console.log(script('*x')))
+  throws(() => console.log(script('||x')))
+  throws(() => console.log(script('?a:b')))
+  throws(() => console.log(script('.')))
+  throws(() => console.log(script('()()')))
     // '()', should throw 'unexpected )'...
-  throws(() => console.log(parse('() + 1')))
+  throws(() => console.log(script('() + 1')))
 });
 
 test('Esprima Comparison', ()=> {
-  // is(parse('[1,,3]'), [1,null,3])
-  // is(parse('[1,,]'), [])
+  // is(script('[1,,3]'), [1,null,3])
+  // is(script('[1,,]'), [])
 
-  is(parse(' true'), true)
-  is(parse('false '), false)
-  is(parse(' 1.2 '), 1.2)
-  is(parse(' .2 '), .2)
-  is(parse('a'), 'a')
-  is(parse('a .b'), ['.','a','@b'])
-  any(parse('a.b. c'), ['.','a','@b','@c'], ['.',['.','a','@b'],'@c'])
-  is(parse('a [b]'), ['.','a','b'])
-  any(parse('a.b  [ c ] '), ['.',['.','a','@b'],'c'])
-  any(parse('$foo[ bar][ baz].other12 [\'lawl\'][12]'),
-    ['.','$foo','bar','baz','@other12','@lawl',12],
-    ['.',['.',['.',['.',['.','$foo','bar'],'baz'],'@other12'],'@lawl'],12]
-  )
-  any(parse('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 '),
-    ['+',['*',['.',['.',['.','$foo',12], ['.','baz','z']],'@other12'],4],1]
-  )
-  any(parse('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]'),
-    ['.',['.',['.',[['.',['.','$foo','bar'],'baz'], 'a', 'bb', 'c'], '@other12'],'@lawl'],12]
-  )
-  is(parse('(a(b(c[!d]).e).f+\'hi\'==2) === true'),
-    ['===',['==',['+',['.',['a',['.',['b',['.','c',['!','d']]],'@e']],'@f'],'@hi'],2],true]
-  )
-  is(parse('(1,2)'), [',',1,2])
-  is(parse('(a, a + b > 2)'), [',','a',['>',['+','a','b'],2]])
-  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
-  is(parse('(((1)))'), 1)
-  is(parse('(Object.variable.toLowerCase()).length == 3'), ['==',['.',[['.',['.','Object','@variable'],'@toLowerCase']],'@length'],3])
-  is(parse('(Object.variable.toLowerCase())  .  length == 3'), ['==',['.',[['.',['.','Object','@variable'],'@toLowerCase']],'@length'],3])
-  is(parse('[1] + [2]'), ['+',['[',1],['[',2]])
-  is(parse('"a"[0]'), ['.','@a',0])
-  is(parse('[1](2)'), [['[',1],2])
-  is(parse('"a".length'), ['.','@a','@length'])
-  is(parse('a.this'), ['.','a','@this'])
-  is(parse('a.true'), ['.','a','@true'])
+  is(script(' true')(), true)
+  is(script('false ')(), false)
+  is(script(' 1.2 ')(), 1.2)
+  is(script(' .2 ')(), .2)
+  is(script('a')({a:'a'}), 'a')
+  is(script('a .b')({a:{b:1}}), 1)
+  any(script('a.b. c')({a:{b:{c:1}}}), 1)
+  is(script('a [b]')({a:{b:1}, b:'b'}), 1)
+  any(script('a.b  [ c ] ')({a:{b:[,1]}, c:1}), 1)
+  any(script('$foo[ bar][ baz].other12 [\'lawl\'][12]')())
+  any(script('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ')())
+  any(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')())
+  is(script('(a(b(c[!d]).e).f+\'hi\'==2) === true')())
+  is(script('(1,2)')())
+  is(script('(a, a + b > 2)')())
+  is(script('a((1 + 2), (e > 0 ? f : g))')())
+  is(script('(((1)))')())
+  is(script('(Object.variable.toLowerCase()).length == 3')())
+  is(script('(Object.variable.toLowerCase())  .  length == 3')())
+  is(script('[1] + [2]')())
+  is(script('"a"[0]')())
+  is(script('[1](2)')())
+  is(script('"a".length')())
+  is(script('a.this')())
+  is(script('a.true')())
 });
 
 // Should support ternary by default (index.js):
 test('Ternary', ()=> {
-  is(parse('a ? b : c'), ['?:', 'a', 'b' ,'c']);
-  is(parse('a||b ? c : d'), ['?:', ['||','a','b'], 'c' ,'d']);
+  is(script('a ? b : c')({a:1, b:2, c: 3}), 2);
+  is(script('a||b ? c : d')({a:0, b:0, c: 2, d: 3}), 3);
 });
 
 
 test('should allow manipulating what is considered whitespace', (assert) => {
   const expr = 'a // skip all this';
-  is(parse(expr), 'a');
+  is(script(expr)({a:'a'}), 'a');
 });
 
