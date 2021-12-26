@@ -11,35 +11,47 @@ let u, list, op, prec, fn,
       n = skip(c=>c==PERIOD || isNum(c)),
       (code() == 69 || code() == 101) && (n += skip(2) + skip(isNum)),
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
-    )
+    ),
+
+    uset = (a,fn) => a.id ? ctx => fn(ctx,a.id()) : a.prop ? (ctx,p=a.prop(ctx)) => fn(p[1],[p[2]]) : err()
 
 // numbers
 for (op=_0;op<=_9;) lookup[op++] = num
 
 // operators
 for (list=[
-  // direct tokens
   // a.b, .2, 1.2 parser in one
-  '.',, (a, id) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
-    (space(), id=skip(isId)||err(), ctx => a(ctx)[id]),
+  '.',, (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
+    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.prop=(ctx,p=a(ctx))=>[p[id],p,id], fn),
 
   // "a"
-  '"',, v => (v=skip(c => c-DQUOTE), skip() || err('Bad string'), ()=>v),
+  '"',, a => (a=skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),
 
   // a[b]
-  '[',, (a, b) => a && (b=expr(0,CBRACK)||err(), ctx => a(ctx)[b(ctx)]),
+  '[',, (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.prop=(ctx,p=a(ctx),id=b(ctx))=>[p[id],p,id], fn),
 
-  // a(b), (a,b)
-  '(',, (a, b, args) => (
+  // a(), a(b), (a,b), (a+b)
+  '(',, (a,b,args,prop) => (
     b=expr(0,CPAREN),
-    // a(), a(b), a(b,c,d)
-    a ? ctx => (args=b?b(ctx):[], a(ctx)(...(args?._args||[args]))) :
+    // a(b), a(b,c,d)
+    a ? (
+      args= b ? b.seq ? b.seq : ctx=>[b(ctx)] : ()=>[],
+      prop=a.prop||(ctx=>[a(ctx)]),
+      (ctx,thisArg,p) => ([p,thisArg]=prop(ctx), p.apply(thisArg, args(ctx)))
+    ) :
     // (a+b)
-    b ? ctx => (args=b(ctx), args?._args?args.pop():args) : err()
+    // FIXME: this can be worked around by not writing props to fn...
+    b ? (b.seq=null,b) : err()
   ),
 
-  // operators
-  ',', PREC_SEQ, (a,b,_) => (a=a?._args||((a=[a])._args=a)).push(b)&&a,
+  // [a,b,c] or (a,b,c)
+  ',',, (a,b,fn) => (
+    b=expr(),
+    fn = ctx => b(ctx),
+    // FIXME: streamline, also fn === b
+    fn.seq = b.seq ? (ctx,arr) => (arr=b.seq(ctx), arr.unshift(a(ctx)), arr) : ctx => [a(ctx), b(ctx)],
+    fn
+  ),
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -65,11 +77,11 @@ for (list=[
   // + ++ - --
   '+', PREC_SUM, (a,b)=>a+b,
   '+', PREC_UNARY, (a)=>+a,
-  '++',, a => (a ? (ctx => ctx[a()]++) : (a=expr(PREC_UNARY-1), ctx => ++ctx[a()])),
+  '++',, a => uset(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]),
 
   '-', PREC_SUM, (a,b)=>a-b,
   '-', PREC_UNARY, (a)=>-a,
-  '--',, a => (a ? (ctx => ctx[a()]--) : (a=expr(PREC_UNARY-1), ctx => --ctx[a()])),
+  '--',, a => uset(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]),
 
   // ! ~
   '!', PREC_UNARY, (a)=>!a,

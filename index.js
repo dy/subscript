@@ -3,7 +3,7 @@ const SPACE=32
 // current string & index
 export let idx, cur,
 
-parse = (s, ...fields) => (cur=s.raw ? String.raw(s,...fields) : s, idx=0, !(s=expr())||cur[idx] ? err() : ctx=>s(ctx||{})),
+parse = (s, ...fields) => !(cur=s.raw ? String.raw(s,...fields) : s, idx=0, s=expr()) || cur[idx] ? err() : ctx=>s(ctx||{}),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -12,7 +12,8 @@ isId = c =>
   c == 36 || c == 95 || // $, _,
   (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
-err = (msg='Bad syntax') => { throw Error(msg + ' `' + cur[idx] + '` at ' + idx) },
+err = (msg='Bad syntax',c=cur[idx]) => { throw Error(msg + ' `' + c + '` at ' + idx) },
+len = a=>a.length,
 
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
@@ -42,23 +43,23 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
 space = cc => { while ((cc = code()) <= SPACE) idx++; return cc },
 
 // variable identifier
-id = (name=skip(isId)) => name ? ctx => (ctx ? ctx[name] : name) : 0,
+id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], fn.id=()=>name, fn) : 0,
 
 // operator/token lookup table
 lookup = [],
 
 // create operator checker/mapper (see examples)
 set = parse.set = (
-  op, prec, fn=0,
+  op, prec, fn,
   c=op.charCodeAt(0),
-  l=op.length,
+  l=len(op),
   prev=lookup[c],
-  arity=fn&&fn.length,
+  arity=fn&&len(fn),
   word=op.toUpperCase()!==op, // make sure word break comes after word operator
   map=!prec ? fn : // custom parser
     // binary
     arity>1 ? (a,b) => a && (b=expr(prec)) && (
-      !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
+      !len(a) && !len(b) ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
       ctx => fn(a(ctx),b(ctx))
     ) :
     // NOTE: due to rarity and simplicity of postfix ops we consider them custom op and ignore generic init

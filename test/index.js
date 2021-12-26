@@ -74,7 +74,7 @@ test('basic', t => {
   evalTest('a[b]', {a:{x:1}, b:'x'})
   evalTest('(a(b) + 3.5)', {a:v=>v*2, b:3})
   evalTest('1 + x(a[b] + 3.5)', {x:v=>v+1, a:{y:1}, b:'y'})
-  is(script('x.y.z,123')({x:{y:{z:345}}}), [345,123])
+  is(script('x.y.z,123')({x:{y:{z:345}}}), 123)
   evalTest('x.y.z(123)', {x:{y:{z:x=>x}}})
   evalTest('x.y.z(123 + c[456]) + n', {x:{y:{z:v=>v+1}}, c:{456:789}, n:1})
   evalTest('1 || 1')
@@ -169,7 +169,7 @@ test('signs', t => {
   evalTest('+1 -2', {a:123})
   evalTest('-1 +2', {a:123})
 })
-test('unaries', t => {
+test('unaries: seqs', t => {
   evalTest('-2')
   evalTest('+-2')
   evalTest('-+-2')
@@ -178,7 +178,20 @@ test('unaries', t => {
   evalTest('1-+!2')
   evalTest('1 * -1')
 })
-test('postfix unaries', t => {
+test('unaries: inc/dec', t => {
+  let ctx = {a:2,b:{c:1}}
+  is(script('--a')(ctx),1)
+  is(ctx.a,1)
+  is(script('++ a')(ctx),2)
+  is(ctx.a,2)
+
+  is(script('++ b.c')(ctx),2)
+  is(ctx.b.c,2)
+
+  is(script('++ b["c"]')(ctx),3)
+  is(ctx.b.c,3)
+})
+test('unaries: postfix', t => {
   let ctx = {a:2}
   is(script('a--')(ctx),2)
   is(ctx.a,1)
@@ -284,10 +297,13 @@ test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   set('[', 0, (a, args) => !a && (
       a=expr(), code()==93?skip():err(),
-      !a ? ctx => [] : ctx => (args=a(ctx), args?._args?[...args]:[args])
+      !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
     )
   )
 
+  is(script('[1,2,3,4,5,6]')(),[1,2,3,4,5,6])
+  is(script('[1,2,3,4,5]')(),[1,2,3,4,5])
+  is(script('[1,2,3,4]')(),[1,2,3,4])
   is(script('[1,2,3]')(),[1,2,3])
   is(script('[1]')(),[1])
   // is(script('[1]+[2]')(),[1,2])
@@ -314,11 +330,11 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   set('{', 0, (a, args) => !a && (
-      a=expr(), code()==125?skip():err(),
-      !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
+      a=expr(0,125),
+      !a ? ctx => ({}) : ctx => (args=(a.seq||a)(ctx), Object.fromEntries(a.seq?args:[args]))
     )
   )
-  set(':', 0, (a, prec, b) => (b=expr(3)||err(), ctx => [a(), b(ctx)]) )
+  set(':', 0, (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]) )
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})
