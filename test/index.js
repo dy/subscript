@@ -206,7 +206,9 @@ test('parens', t => {
   evalTest('+(b)', {b:1})
   evalTest('+((b))', {b:1})
   is(script('++(b)')({b:1}), 2)
-  is(script('++a(b)')({b:1, a:v=>v+1}),3)
+  // NOTE: invalid in JS
+  // is(script('++a(b)')({b:1, a:v=>v+1}),3)
+  is(script('!a(b)')({a:v=>v,b:false}),true)
   evalTest('+(b)', {b:1})
   evalTest('1+(b)', {b:1})
   evalTest('1+((b))', {b:1})

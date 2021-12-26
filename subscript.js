@@ -39,7 +39,7 @@ for (list=[
   ),
 
   // operators
-  ',', PREC_SEQ, (a,b) => (a=a?._args||((a=[a])._args=a)).push(b)&&a,
+  ',', PREC_SEQ, (a,b,_) => (a=a?._args||((a=[a])._args=a)).push(b)&&a,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -65,11 +65,11 @@ for (list=[
   // + ++ - --
   '+', PREC_SUM, (a,b)=>a+b,
   '+', PREC_UNARY, (a)=>+a,
-  '++',, a => a ? (ctx => ctx[a()]++) : (a=expr(PREC_UNARY-1), ctx => ++ctx[a()]),
+  '++',, a => (a ? (ctx => ctx[a()]++) : (a=expr(PREC_UNARY-1), ctx => ++ctx[a()])),
 
   '-', PREC_SUM, (a,b)=>a-b,
   '-', PREC_UNARY, (a)=>-a,
-  '--',, a => a ? (ctx => ctx[a()]--) : (a=expr(PREC_UNARY-1), ctx => --ctx[a()]),
+  '--',, a => (a ? (ctx => ctx[a()]--) : (a=expr(PREC_UNARY-1), ctx => --ctx[a()])),
 
   // ! ~
   '!', PREC_UNARY, (a)=>!a,
