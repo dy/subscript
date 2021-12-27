@@ -298,7 +298,7 @@ test('ext: ternary', t => {
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   set('[', (a, args) => !a && (
-    a=expr(), cur.charCodeAt(idx)==93?skip():err(),
+    a=expr(0,93),
     !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
   ))
 

@@ -56,7 +56,7 @@ for (list=[
 
   // [a,b,c]
   '[', (a, args) => !a && (
-    a=expr(), cur.charCodeAt(idx)==93?skip():err(),
+    a=expr(0,CBRACK),
     !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
   ),,
 
