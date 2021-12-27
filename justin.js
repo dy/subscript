@@ -41,11 +41,11 @@ for (list=[
   '~', PREC_UNARY, (a) => ~a,
 
   // right order
-  '**', PREC_EXP, (a,b) => a**b,
+  '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
 
   // ?:
   ':', 3.1, (a,b) => [a,b],
-  '?', 3, (a,b) => a ? b[0] : b[1],
+  '?', 3, (a,b) => a ? b[2] : b[1],
 
   // a?.[, a?.( - postfix operator
   '?.', a => a && (ctx => a(ctx)||(()=>{})),,//(a) => a||(()=>{}),
@@ -65,7 +65,7 @@ for (list=[
       a=expr(0,125),
       !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
     ),,
-  ':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 3.1
+  ':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx), a(ctx)]), 3.1
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 
