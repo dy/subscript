@@ -29,12 +29,12 @@ _Subscript_ is designed to be useful for:
 * sandboxes, playgrounds, safe eval
 * custom DSL
 
-Compared to [_Jsep_](https://github.com/EricSmekens/jsep), _subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
+_Subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
 
 
 ## Design
 
-Default operators include common operators for the listed languages in the following precedence:
+Default operators (precedence order):
 
 * `++ --` unary postfix
 * `! + - ++ --` unary prefix
@@ -49,12 +49,12 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Default literals include:
+Default literals:
 
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via `set(operator, precedence, fn)` for unary or binary operators (detected by number of arguments in `fn`), or via `set(operator, parser, precedence)` for advanced operators, literals, comments or tokens.
+Everything else can be extended via `parse.set(operator, precedence, fn)` for unary or binary operators (detected by number of arguments in `fn`), or via `parse.set(operator, parser, precedence)` for custom tokens.
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
@@ -270,26 +270,29 @@ Parse 30k times:
 
 ```
 subscript: ~170 ms
-justin: ~183ms
+justin: ~183 ms
 jsep: ~250 ms
 expr-eval: ~480 ms
-jexl: ~1200 ms
-new Function: ~1400 ms
+math-parser: ~570 ms
+jexl: ~1056 ms
+mathjs: ~1200 ms
+new Function: ~1154 ms
 ```
 
 Eval 30k times:
 ```
 subscript: ~15 ms
-justin: ~15ms
-jsep: ~30 ms
+justin: ~15 ms
+jsep (expression-eval): ~30 ms
 expr-eval: ~72 ms
-jexl: ~100 ms
+math-parser: -
+jexl: ~110 ms
+mathjs: ~119 ms
 new Function: ~5 ms
 ```
 
-## Competitors
+## Alternatives
 
-* [Jessie](https://github.com/endojs/Jessie) − Minimal JS subset.
 * [jexl](https://github.com/TomFrost/Jexl)
 * [mozjexl](https://github.com/mozilla/mozjexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)
@@ -300,5 +303,6 @@ new Function: ~5 ms
 * [math-codegen](https://github.com/mauriciopoppe/math-codegen)
 * [math-parser](https://www.npmjs.com/package/math-parser)
 * [math.js](https://mathjs.org/docs/expressions/parsing.html)
+* [Jessie](https://github.com/endojs/Jessie)
 
 <p align=center>🕉</p>

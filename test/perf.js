@@ -220,6 +220,29 @@ test('jexl', async t => {
   console.timeEnd('jexl eval')
 })
 
+test.skip('mozjexl', async t => {
+  const mozjexl = await import('https://cdn.skypack.dev/mozjexl');
+  console.log(mozjexl)
+
+  let jexl = new Jexl, expr, jexlArgs = Object.assign({}, args, {i:[1]}),
+    src = x => `1 + (a * b / c % d) - 2.0 + -0.003 * 44000 / f.g[0] - i[0]`
+
+  is(jexl.evalSync(src(0),jexlArgs), result);
+
+  console.time('jexl')
+  for (let i = 0; i < RUNS; i++){
+    jexl.compile(src(i))
+  }
+  console.timeEnd('jexl')
+
+  console.time('jexl eval')
+  let src0 = src(0)
+  for (let i = 0; i < RUNS; i++){
+    jexl.evalSync(src0, args)
+  }
+  console.timeEnd('jexl eval')
+})
+
 test.skip('string-math', async t => {
   const {default:sm} = await import('../lib/parser/string-math.js');
   console.time('string-math')
@@ -232,6 +255,50 @@ test.skip('string-math', async t => {
     sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
   }
   console.timeEnd('string-math eval')
+})
+
+test('mathjs', async t => {
+  const {compile} = await import('https://cdn.skypack.dev/mathjs');
+
+  let src = `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[1] - i.j(+k == 1)`,
+      args = {a:123, b:234, c:345, d:456, f:{g:[567,567]}, i:{j: yes => yes && (+0 ? 0 : 1) }, k:1}
+
+  let {evaluate} = compile(src)
+  is(evaluate(args), result);
+
+  console.time('mathjs')
+  for (let i = 0; i < RUNS; i++){
+    compile(src)
+  }
+  console.timeEnd('mathjs')
+  console.time('mathjs eval')
+  for (let i = 0; i < RUNS; i++){
+    evaluate(args)
+  }
+  console.timeEnd('mathjs eval')
+})
+
+
+test('math-parser', async t => {
+  const {parse} = await import('https://cdn.skypack.dev/math-parser');
+
+  let src = `1 + (a * b / c / d) - 2.0 + -3e-3 * +4.4e4 / f - i(+k+1)`,
+      args = {a:123, b:234, c:345, d:456, f:{g:[567,567]}, i:{j: yes => yes && (+0 ? 0 : 1) }, k:1}
+
+  // console.log(parse(src))
+  // let {evaluate} = parse(src)
+  // is(evaluate(args), result);
+
+  console.time('math-parser')
+  for (let i = 0; i < RUNS; i++){
+    parse(src)
+  }
+  console.timeEnd('math-parser')
+  // console.time('math-parser eval')
+  // for (let i = 0; i < RUNS; i++){
+  //   evaluate(args)
+  // }
+  // console.timeEnd('math-parser eval')
 })
 
 test.skip('subscript-refs', async t => {
