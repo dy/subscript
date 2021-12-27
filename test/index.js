@@ -108,10 +108,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  set('null', 0, a => a ? err() : ()=>null)
-  set('true', 0, a => a ? err() : ()=>true)
-  set('false', 0, a => a ? err() : ()=>false)
-  set('undefined', 0, a => a ? err() : ()=>undefined)
+  set('null', a => a ? err() : ()=>null)
+  set('true', a => a ? err() : ()=>true)
+  set('false', a => a ? err() : ()=>false)
+  set('undefined', a => a ? err() : ()=>undefined)
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
@@ -297,11 +297,10 @@ test('ext: ternary', t => {
 
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  set('[', 0, (a, args) => !a && (
-      a=expr(), cur.charCodeAt(idx)==93?skip():err(),
-      !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
-    )
-  )
+  set('[', (a, args) => !a && (
+    a=expr(), cur.charCodeAt(idx)==93?skip():err(),
+    !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
+  ))
 
   is(script('[1,2,3,4,5,6]')(),[1,2,3,4,5,6])
   is(script('[1,2,3,4,5]')(),[1,2,3,4,5])
@@ -331,14 +330,14 @@ test('ext: list', t => {
 })
 
 test('ext: object', t => {
-  set('{', 0, (a, args) => !a && (
+  set('{', (a, args) => !a && (
     console.log(cur.slice(idx)),
       a=expr(0,125),
       console.log(a),
       !a ? ctx => ({}) : ctx => (args=(a.seq||a)(ctx), Object.fromEntries(a.seq?args:[args]))
     )
   )
-  set(':', 0, (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]) )
+  set(':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 3.1 )
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})
@@ -359,8 +358,8 @@ test('ext: justin', async t => {
 })
 
 test('ext: comments', t => {
-  set('/*', 0, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)) )
-  set('//', 0, (a, prec) => (skip(c => c >= 32), a||expr(prec)) )
+  set('/*', (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)) )
+  set('//', (a, prec) => (skip(c => c >= 32), a||expr(prec)) )
   is(script('/* x */1/* y */+/* z */2')({}), 3)
   is(script(`a /
     // abc
@@ -414,7 +413,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  set('&',13,(a=true)=>~a)
+  set('&',13,a=>~a)
   is(script('&a+b*c')({a:1,b:2,c:3}), 4)
   is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })

@@ -48,24 +48,24 @@ id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], fn.id=()=>name, fn) :
 // operator/token lookup table
 lookup = [],
 
+
 // create operator checker/mapper (see examples)
 set = parse.set = (
-  op, opPrec, fn,
+  op,
+  opPrec, fn=SPACE, // if opPrec & fn come in reverse order - consider them raw parse fn case, still precedence possible
   c=op.charCodeAt(0),
   l=op.length,
   prev=lookup[c],
-  arity=fn?.length,
+  arity=fn.length || ([fn,opPrec]=[opPrec,fn], 0),
   word=op.toUpperCase()!==op, // make sure word break comes after word operator
-  map=!opPrec ? fn : // custom parser
+  map=
     // binary
     arity>1 ? (a,b) => a && (b=expr(opPrec)) && (
       !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
       ctx => fn(a(ctx),b(ctx))
     ) :
-    // NOTE: due to rarity and simplicity of postfix ops we consider them custom op and ignore generic init
     // unary prefix (0 args)
-    a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx)))
+    arity ? a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx))) :
+    fn // custom parser
 ) =>
-lookup[c] = (a, curPrec, from=idx) => (curPrec<opPrec||!opPrec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))
-
-
+lookup[c] = (a, curPrec, from=idx) => curPrec<opPrec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))

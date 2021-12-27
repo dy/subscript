@@ -14,42 +14,41 @@ let u, list, op, prec, fn,
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
     ),
 
-    // inc = (a,fn) => a.id ? ctx => fn(ctx,a.id()) : a.prop ? ctx => fn(...a.prop(ctx)) : err()
-    inc = (a,fn,c=a.root) => ctx => fn(c?c(ctx):ctx, a.id(ctx))
+    inc = (a,fn,c=a.of) => ctx => fn(c?c(ctx):ctx, a.id())
 
 // numbers
 for (op=_0;op<=_9;) lookup[op++] = num
 
 // operators
 for (list=[
-  // a.b, .2, 1.2 parser in one
-  '.',, (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
-    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.root=a, fn),
-
   // "a"
-  '"',, a => (a&&err(), a=skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),
+  '"', a => (a=a?err():skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
+
+  // a.b, .2, 1.2 parser in one
+  '.', (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
+    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
 
   // a[b]
-  '[',, (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.root=a, fn),
+  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
 
   // a(), a(b), (a,b), (a+b)
-  '(',, (a,b,fn) => (
+  '(', (a,b,fn) => (
     b=expr(0,CPAREN),
     // a(b), a(b,c,d)
-    a ? (ctx,obj,path) => (a(ctx).apply(a.root?.(ctx), b ? b.seq ? b.seq(ctx) : [b(ctx)] : [])) :
+    a ? (ctx,obj,path) => (a(ctx).apply(a.of?.(ctx), b ? b.seq ? b.seq(ctx) : [b(ctx)] : [])) :
     // (a+b)
-    // FIXME: this can be worked around by not writing props to fn...
-    b ? (fn=ctx=>b(ctx), fn.root=b.root, fn.id=b.id, fn) : err()
-  ),
+    // FIXME: this can be worked around by not writing props to fn?
+    b ? (fn=ctx=>b(ctx), fn.of=b.of, fn.id=b.id, fn) : err()
+  ), PREC_CALL,
 
   // [a,b,c] or (a,b,c)
-  ',',, (a,b,fn) => (
-    b=expr(),
+  ',', (a,b,fn) => (
+    b=expr(PREC_SEQ),
     fn = ctx => b(ctx),
-    // FIXME: streamline, also fn === b
-    fn.seq = b.seq ? (ctx,arr) => (arr=b.seq(ctx), arr.unshift(a(ctx)), arr) : ctx => [a(ctx), b(ctx)],
+    fn.seq = a.seq ? (ctx,arr) => (arr=a.seq(ctx), arr.push(b(ctx)), arr) : ctx => [a(ctx),b(ctx)],
+    // FIXME: also fn === b
     fn
-  ),
+  ), PREC_SEQ,
 
   '|', PREC_OR, (a,b)=>a|b,
   '||', PREC_SOME, (a,b)=>a||b,
@@ -75,12 +74,11 @@ for (list=[
   // + ++ - --
   '+', PREC_SUM, (a,b)=>a+b,
   '+', PREC_UNARY, (a)=>+a,
-  // '++',, (a, fn=a ? (a,b)=>a[b]++ : (a,b)=>++a[b], c=(a||expr(PREC_UNARY-1)).ctx||ctx) => ctx => fn(c, a.id),
-  '++',, a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]),
+  '++', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]), PREC_UNARY,
 
   '-', PREC_SUM, (a,b)=>a-b,
   '-', PREC_UNARY, (a)=>-a,
-  '--',, a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]),
+  '--', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
 
   // ! ~
   '!', PREC_UNARY, (a)=>!a,
