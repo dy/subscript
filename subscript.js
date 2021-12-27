@@ -34,20 +34,16 @@ for (list=[
   // a(), a(b), (a,b), (a+b)
   '(', (a,b,fn) => (
     b=expr(0,CPAREN),
-    // a(b), a(b,c,d)
-    a ? (ctx,obj,path) => (a(ctx).apply(a.of?.(ctx), b ? b.seq ? b.seq(ctx) : [b(ctx)] : [])) :
+    // a(), a(b), a(b,c,d)
+    a ? ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : []) :
     // (a+b)
-    // FIXME: this can be worked around by not writing props to fn?
-    b ? (fn=ctx=>b(ctx), fn.of=b.of, fn.id=b.id, fn) : err()
+    b || err()
   ), PREC_CALL,
 
   // [a,b,c] or (a,b,c)
-  ',', (a,b,fn) => (
-    b=expr(PREC_SEQ),
-    fn = ctx => b(ctx),
-    fn.seq = a.seq ? (ctx,arr) => (arr=a.seq(ctx), arr.push(b(ctx)), arr) : ctx => [a(ctx),b(ctx)],
-    // FIXME: also fn === b
-    fn
+  ',', (a,b=expr(PREC_SEQ)) => (
+    b.all = a.all ? (ctx,arr=a.all(ctx)) => arr.push(b(ctx)) && arr : ctx => [a(ctx),b(ctx)],
+    b
   ), PREC_SEQ,
 
   '|', PREC_OR, (a,b)=>a|b,
