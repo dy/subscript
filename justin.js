@@ -21,49 +21,51 @@ let u, list, op, prec, fn,
 // operators
 for (list=[
   // "' with /
-  '"',, string(DQUOTE),
-  "'",, string(QUOTE),
+  '"', string(DQUOTE),,
+  "'", string(QUOTE),,
 
   // /**/, //
-  '/*',, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)),
-  '//',, (a, prec) => (skip(c => c >= 32), a||expr(prec)),
+  '/*', (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)),,
+  '//', (a, prec) => (skip(c => c >= 32), a||expr(prec)),,
 
   // literals
-  'null',, a => a ? err() : ()=>null,
-  'true',, a => a ? err() : ()=>true,
-  'false',, a => a ? err() : ()=>false,
-  'undefined',, a => a ? err() : ()=>undefined,
+  'null', a => a ? err() : ()=>null,,
+  'true', a => a ? err() : ()=>true,,
+  'false', a => a ? err() : ()=>false,,
+  'undefined', a => a ? err() : ()=>undefined,,
 
   // operators
-  ';',, a => ctx=>{},
+  ';', a => expr()||(()=>{}),,
   '===', PREC_EQ, (a,b) => a===b,
   '!==', PREC_EQ, (a,b) => a!==b,
+  '~', PREC_UNARY, (a) => ~a,
+
+  // right order
   '**', PREC_EXP, (a,b) => a**b,
-  '~', PREC_UNARY, (a=0) => ~a,
 
   // ?:
-  // ':', 3.1, (a,b) => [a,b],
-  '?', PREC_COND, (a,b) => a ? b[2] : b[1],
+  ':', 3.1, (a,b) => [a,b],
+  '?', 3, (a,b) => a ? b[0] : b[1],
 
   // a?.[, a?.( - postfix operator
-  '?.',, a => a && (ctx => a(ctx)||(()=>{})),//(a) => a||(()=>{}),
+  '?.', a => a && (ctx => a(ctx)||(()=>{})),,//(a) => a||(()=>{}),
   // a?.b - optional chain operator
-  '?.',, (a,id) => (space(), id=skip(isId)) && (ctx => a(ctx)?.[id]),
+  '?.', (a,id) => (space(), id=skip(isId)) && (ctx => a(ctx)?.[id]),,
 
   'in', PREC_COMP, (a,b) => a in b,
 
   // [a,b,c]
-  '[',, (a, args) => !a && (
-    a=expr(0,93),
-    !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
-  ),
+  '[', (a, args) => !a && (
+    a=expr(), cur.charCodeAt(idx)==93?skip():err(),
+    !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
+  ),,
 
   // {a:1, b:2, c:3}
-  '{',, (a, args) => !a && (
-    a=expr(0,125),
-    !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
-  ),
-  ':',, (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx), a(ctx)])
+  '{', (a, args) => !a && (
+      a=expr(0,125),
+      !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
+    ),,
+  ':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 3.1
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 

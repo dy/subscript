@@ -299,7 +299,7 @@ test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   set('[', (a, args) => !a && (
     a=expr(), cur.charCodeAt(idx)==93?skip():err(),
-    !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
+    !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
   ))
 
   is(script('[1,2,3,4,5,6]')(),[1,2,3,4,5,6])
@@ -331,10 +331,8 @@ test('ext: list', t => {
 
 test('ext: object', t => {
   set('{', (a, args) => !a && (
-    console.log(cur.slice(idx)),
       a=expr(0,125),
-      console.log(a),
-      !a ? ctx => ({}) : ctx => (args=(a.seq||a)(ctx), Object.fromEntries(a.seq?args:[args]))
+      !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
     )
   )
   set(':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 3.1 )
@@ -350,11 +348,12 @@ test('ext: object', t => {
 test('ext: justin', async t => {
   const {default: script} = await import('../justin.js')
   evalTest(`"abcd" + 'efgh'`)
-  // evalTest('a;b', {a:1,b:2})
+  is(script('a;b')({a:1,b:2}), 2)
   evalTest('{x:~1, "y":2**2}["x"]', {})
-  evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(v,w)=>v+w, e:1, f:2, g:3})
   evalTest('{x:~1, "y":2**2}["x"]', {})
   evalTest('{x:~1, "y":2**2}["y"]', {})
+  evalTest('e > 0 ? f : g', {e:1, f:2, g:3}, 2)
+  evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(v,w)=>v+w, e:1, f:2, g:3})
 })
 
 test('ext: comments', t => {
@@ -413,7 +412,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  set('&',13,a=>~a)
+  set('&',13,(a)=>~a)
   is(script('&a+b*c')({a:1,b:2,c:3}), 4)
   is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })

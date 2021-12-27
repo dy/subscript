@@ -48,7 +48,6 @@ id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], fn.id=()=>name, fn) :
 // operator/token lookup table
 lookup = [],
 
-
 // create operator checker/mapper (see examples)
 set = parse.set = (
   op,
@@ -57,7 +56,7 @@ set = parse.set = (
   l=op.length,
   prev=lookup[c],
   arity=fn.length || ([fn,opPrec]=[opPrec,fn], 0),
-  word=op.toUpperCase()!==op, // make sure word break comes after word operator
+  word=op.toUpperCase()!==op, // make sure word boundary comes after word operator
   map=
     // binary
     arity>1 ? (a,b) => a && (b=expr(opPrec)) && (
@@ -68,4 +67,5 @@ set = parse.set = (
     arity ? a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx))) :
     fn // custom parser
 ) =>
-lookup[c] = (a, curPrec, from=idx) => curPrec<opPrec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))
+// FIXME: find out if that's possible to globalize precision and instead of passing it to map, just provide global
+lookup[c] = (a, curPrec, from=idx) => curPrec<opPrec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) || (idx=from, prev&&prev(a, curPrec))
