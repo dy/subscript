@@ -272,6 +272,7 @@ Parse 30k times:
 subscript: ~170 ms
 justin: ~183 ms
 jsep: ~250 ms
+mr-parser: ~420 ms
 expr-eval: ~480 ms
 math-parser: ~570 ms
 jexl: ~1056 ms
@@ -284,6 +285,7 @@ Eval 30k times:
 subscript: ~15 ms
 justin: ~15 ms
 jsep (expression-eval): ~30 ms
+mr-parser: -
 expr-eval: ~72 ms
 math-parser: -
 jexl: ~110 ms

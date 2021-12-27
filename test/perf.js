@@ -301,6 +301,29 @@ test('math-parser', async t => {
   // console.timeEnd('math-parser eval')
 })
 
+
+test('mr-parser', async t => {
+  const {Parser} = await import('https://cdn.skypack.dev/mr-parser');
+
+  let src = `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f - i(+k == 1)`,
+      args = {a:123, b:234, c:345, d:456, f:{g:[567,567]}, i:{j: yes => yes && (+0 ? 0 : 1) }, k:1}
+
+  let parser = new Parser
+  // console.log(parser.parse(src))
+
+  console.time('mr-parser')
+  for (let i = 0; i < RUNS; i++){
+    parser.parse(src)
+  }
+  console.timeEnd('mr-parser')
+  // console.time('math-parser eval')
+  // for (let i = 0; i < RUNS; i++){
+  //   evaluate(args)
+  // }
+  // console.timeEnd('math-parser eval')
+})
+
+
 test.skip('subscript-refs', async t => {
   const {default:dislex,parse:dparse,evaluate} = await import('../lib/parser/subscript-refs.js');
   console.time('dislex')
