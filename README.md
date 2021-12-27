@@ -34,20 +34,22 @@ _Subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js
 
 ## Design
 
-Default operators (precedence order):
+Default operators (same as JS precedence order):
 
-* `++ --` unary postfix
-* `! + - ++ --` unary prefix
-* `* / %`
-* `+ -`
-* `<< >> >>>`
-* `< <= > >=`
-* `== !=`
-* `&`
-* `^`
-* `|`
-* `&&`
-* `||`
+* `( a, b, c )`
+* `a . b`, `a [ b ]`, `a ( b, c )`
+* `a++`, `a--` unary postfix
+* `!a`, `+a`, `-a`, `++a`, `--a` unary prefix
+* `a * b`, `a / b`, `a % b`
+* `a + b`, `a - b`
+* `a << b`, `a  >>b`, `a  >>>b`
+* `a < b`, `a <= b`, `a  >b`, `a  >=b`
+* `a == b`, `a != b`
+* `a & b`
+* `a ^ b`
+* `a | b`
+* `a && b`
+* `a || b`
 
 Default literals:
 
