@@ -1,4 +1,4 @@
-import {parse, set, lookup, skip, cur, idx, err, code, expr, isId, space} from './index.js'
+import {parse, set, lookup, skip, cur, idx, err, expr, isId, space} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -10,7 +10,7 @@ let u, list, op, prec, fn,
     num = n => (
       n&&err(),
       n = skip(c=>c==PERIOD || isNum(c)),
-      (code() == 69 || code() == 101) && (n += skip(2) + skip(isNum)),
+      (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
     ),
 
@@ -26,13 +26,13 @@ for (list=[
     (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.prop=(ctx,p=a(ctx))=>[p[id],p,id], fn),
 
   // "a"
-  '"',, a => (a=skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),
+  '"',, a => (a&&err(), a=skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),
 
   // a[b]
   '[',, (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.prop=(ctx,p=a(ctx),id=b(ctx))=>[p[id],p,id], fn),
 
   // a(), a(b), (a,b), (a+b)
-  '(',, (a,b,args,prop) => (
+  '(',, (a,b,args,prop,fn) => (
     b=expr(0,CPAREN),
     // a(b), a(b,c,d)
     a ? (
@@ -42,7 +42,7 @@ for (list=[
     ) :
     // (a+b)
     // FIXME: this can be worked around by not writing props to fn...
-    b ? (b.seq=null,b) : err()
+    b ? (fn=ctx=>b(ctx), fn.prop=b.prop, fn.id=b.id, fn) : err()
   ),
 
   // [a,b,c] or (a,b,c)

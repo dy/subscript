@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
 import script from '../subscript.js'
-import { skip, code, expr, set, err, cur, idx } from '../index.js'
+import { skip, expr, set, err, cur, idx } from '../index.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -106,10 +106,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  set('null', 0, a => a ? a : ()=>null)
-  set('true', 0, a => a ? a : ()=>true)
-  set('false', 0, a => a ? a : ()=>false)
-  set('undefined', 0, a => a ? a : ()=>undefined)
+  set('null', 0, a => a ? err() : ()=>null)
+  set('true', 0, a => a ? err() : ()=>true)
+  set('false', 0, a => a ? err() : ()=>false)
+  set('undefined', 0, a => a ? err() : ()=>undefined)
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
@@ -296,7 +296,7 @@ test('ext: ternary', t => {
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   set('[', 0, (a, args) => !a && (
-      a=expr(), code()==93?skip():err(),
+      a=expr(), cur.charCodeAt(idx)==93?skip():err(),
       !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
     )
   )
@@ -328,9 +328,11 @@ test('ext: list', t => {
   evalTest('[undefined]',{})
 })
 
-test('ext: object', t => {
+test.todo('ext: object', t => {
   set('{', 0, (a, args) => !a && (
+    console.log(cur.slice(idx)),
       a=expr(0,125),
+      console.log(a),
       !a ? ctx => ({}) : ctx => (args=(a.seq||a)(ctx), Object.fromEntries(a.seq?args:[args]))
     )
   )
@@ -355,7 +357,7 @@ test('ext: justin', async t => {
 })
 
 test('ext: comments', t => {
-  set('/*', 0, (a, prec) => (skip(c => c !== 42 && code(1) !== 47), skip(2), a||expr(prec)) )
+  set('/*', 0, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)) )
   set('//', 0, (a, prec) => (skip(c => c >= 32), a||expr(prec)) )
   is(script('/* x */1/* y */+/* z */2')({}), 3)
   is(script(`a /
@@ -397,13 +399,25 @@ test('err: unclosed parens', t => {
   throws(() => script('(a / '))
 })
 
+test('err: wrong sequences', t => {
+  throws(() => script('a b'))
+  throws(() => script('a 1'))
+  throws(() => script('a "a"'))
+  throws(() => script('"a" a'))
+  throws(() => script('"a" "b"'))
+  throws(() => script('"a" 1'))
+  throws(() => script('1 "a"'))
+  throws(() => script('true false'))
+  throws(() => script('null null'))
+})
+
 test('low-precedence unary', t => {
   set('&',13,(a=true)=>~a)
   is(script('&a+b*c')({a:1,b:2,c:3}), 4)
   is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })
 
-test('eval: edge cases', t => {
+test('stdlib cases', t => {
   is(script('pow(a, 3)')({pow:Math.pow, a:1}), 1)
   is(script('Math.pow(a, 3)')({Math, a:1}), 1)
   is(script('Math.pow(a, 3) / 2 + b * 2 - 1')({Math, a:1, b:1}), 1.5)

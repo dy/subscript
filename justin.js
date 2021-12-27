@@ -1,5 +1,5 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import {parse, set, lookup, skip, cur, idx, err, code, expr, isId, space} from './index.js'
+import {parse, set, lookup, skip, cur, idx, err, expr, isId, space} from './index.js'
 import './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,
@@ -10,7 +10,8 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_EXP=14, 
 let u, list, op, prec, fn,
     escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'},
     string = q => (qc, c, str='') => {
-      while (c=code(), c-q) {
+      qc&&err() // must not follow another token
+      while (c=cur.charCodeAt(idx), c-q) {
         if (c === BSLASH) skip(), c=skip(), str += escape[c] || c
         else str += skip()
       }
@@ -24,17 +25,17 @@ for (list=[
   "'",, string(QUOTE),
 
   // /**/, //
-  '/*',, (a, prec) => (skip(c => c !== 42 && code(1) !== 47), skip(2), a||expr(prec)),
+  '/*',, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)),
   '//',, (a, prec) => (skip(c => c >= 32), a||expr(prec)),
 
   // literals
-  'null',, a => a ? a : ()=>null,
-  'true',, a => a ? a : ()=>true,
-  'false',, a => a ? a : ()=>false,
-  'undefined',, a => a ? a : ()=>undefined,
+  'null',, a => a ? err() : ()=>null,
+  'true',, a => a ? err() : ()=>true,
+  'false',, a => a ? err() : ()=>false,
+  'undefined',, a => a ? err() : ()=>undefined,
 
   // operators
-  ';', PREC_SEQ, (a,b) => b,
+  ';',, a => ctx=>{},
   '===', PREC_EQ, (a,b) => a===b,
   '!==', PREC_EQ, (a,b) => a!==b,
   '**', PREC_EXP, (a,b) => a**b,
@@ -54,7 +55,7 @@ for (list=[
   // [a,b,c]
   '[',, (a, args) => !a && (
     a=expr(0,93),
-    !a ? ctx => [] : ctx => (args=a(ctx), args?._args?[...args]:[args])
+    !a ? ctx => [] : a.seq ? ctx => a.seq(ctx) : ctx => [a(ctx)]
   ),
 
   // {a:1, b:2, c:3}
@@ -62,7 +63,7 @@ for (list=[
     a=expr(0,125),
     !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
   ),
-  ':',, (a, prec, b) => (b=expr(3.1)||err(), ctx => [a(), b(ctx), a(ctx)])
+  ':',, (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a()), b(ctx), a(ctx)])
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 

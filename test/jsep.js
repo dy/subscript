@@ -137,7 +137,7 @@ test(`should throw on invalid expr`, () => {
   throws(() => console.log(script('() + 1')))
 });
 
-test.only('Esprima Comparison', ()=> {
+test('Esprima Comparison', ()=> {
   // is(script('[1,,3]'), [1,null,3])
   // is(script('[1,,]'), [])
 
@@ -152,20 +152,20 @@ test.only('Esprima Comparison', ()=> {
   any(script('a.b  [ c ] ')({a:{b:[,1]}, c:1}), 1)
   any(script('$foo[ bar][ baz].other12 [\'lawl\'][12]')({$foo:[[,{other12:{lawl:{12:'abc'}}}]],bar:0,baz:1}), 'abc')
   any(script('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ')({$foo:{12:[,{other12:2}]}, baz:[,1],z:1}), 9)
-  any(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')({}), )
-  is(script('(a(b(c[!d]).e).f+\'hi\'==2) === true')())
-  is(script('(1,2)')())
-  is(script('(a, a + b > 2)')())
-  is(script('a((1 + 2), (e > 0 ? f : g))')())
-  is(script('(((1)))')())
-  is(script('(Object.variable.toLowerCase()).length == 3')())
-  is(script('(Object.variable.toLowerCase())  .  length == 3')())
-  is(script('[1] + [2]')())
-  is(script('"a"[0]')())
-  is(script('[1](2)')())
-  is(script('"a".length')())
+  any(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')({$foo:[[,(a,b,c)=>({other12:{lawl:{12:a+b+c}}})]], a:1,bb:2,c:3, bar:0, baz:1}), 6)
+  is(script('(a(b(c[!d]).e).f+\'hi\'==2) === true')({a:_=>({f:2}), b:_=>({e:1}), c:{false:0}, d:1}), false)
+  is(script('(1,2)')(), 2)
+  is(script('(a, a + b > 2)')({a:1, b:2}), true)
+  is(script('a((1 + 2), (e > 0 ? f : g))')({a:(v,w)=>v+w, e:1,f:2,g:3}), 5)
+  is(script('(((1)))')(), 1)
+  is(script('(Object.variable.toLowerCase()).length == 3')({Object:{variable:{toLowerCase:()=>({length:3})}}}), true)
+  is(script('(Object.variable.toLowerCase())  .  length == 3')({Object:{variable:{toLowerCase:()=>({length:3})}}}), true)
+  is(script('"a"[0]')(), 'a')
+  is(script('"a".length')(), 1)
   is(script('a.this')({a:{this:2}}), 2)
   is(script('a.true')({a:{true:1}}), 1)
+  is(script('[1] + [2]')(), '12')
+  is(script('a[1](2)')({a:[,x=>x]}),2)
 });
 
 // Should support ternary by default (index.js):
