@@ -117,10 +117,10 @@ It extends _subscript_ with:
 <!-- + strings interpolation -->
 
 ```js
-import { parse, evaluate } from 'subscript/justin.js'
+import jstin from 'subscript/justin.js'
 
-let xy = parse('{ x: 1, "y": 2+2 }["x"]') // ['[', {x:1, y: ['+', 2, 2]}, '@x']
-evaluate(xy)  // 1
+let xy = jstin('{ x: 1, "y": 2+2 }["x"]')
+xy()  // 1
 ```
 
 <!--
