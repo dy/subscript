@@ -3,14 +3,14 @@
 <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript?color=indianred"/></a>
 <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-_Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust, Swift, Objective C, Kotlin etc.<br/>
+_Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python, Go, Rust etc.<br/>
 
-* Well-known syntax
-* Any _subscript_ fragment can be copy-pasted to any target language
-* It's tiny <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
-* It's :rocket: fast ([see performance](#performance))
+* Standard conventional syntax
+* Any fragment can be copy-pasted to any target language
+* Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
+* :rocket: fast ([performance](#performance))
 * Configurable & extensible
-* Trivial to use...
+* Trivial to use
 
 ```js
 import script from 'subscript.js'
@@ -29,13 +29,10 @@ _Subscript_ is designed to be useful for:
 * sandboxes, playgrounds, safe eval
 * custom DSL
 
-[_Jsep_](https://github.com/EricSmekens/jsep) is generally fine for the listed tasks, unless you need dependencies as small as possible.
-_Subscript_ has [1.8kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with _jsep_ test coverage and better performance.
+Compared to [_Jsep_](https://github.com/EricSmekens/jsep), _subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint vs [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
 
 
 ## Design
-
-### Operators
 
 Default operators include common operators for the listed languages in the following precedence:
 
@@ -52,30 +49,31 @@ Default operators include common operators for the listed languages in the follo
 * `&&`
 * `||`
 
-Operators can be extended via `operator(char, precedence, reducer)` for unary/binary/postfix operators (detected by number of arguments in reducer).
-
-
-```js
-import script from 'subscript.js'
-
-script.operator('=>', 10, ( args, body ) => evaluate(body, args))
-script.operator('|', 10, ( a, b ) => a.pipe(b))
-
-let tree = parse(`
-  interval(350)
-  | take(25)
-  | map(gaussian)
-  | map(num => "•".repeat(Math.floor(num * 65)))
-`)
-evaluate(tree, { Math, map, take, interval, gaussian })
-```
-
-### Literals
-
 Default literals include:
 
 * `"abc"` strings
 * `1.2e+3` numbers
+
+Everything else can be extended via `set(operator, precedence, fn)` for unary or binary operators (detected by number of arguments in `fn`), or via `set(operator, parser, precedence)` for advanced operators, literals, comments or tokens.
+
+See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
+
+<!--
+Operators can be extended via .
+
+```js
+import script from 'subscript.js'
+
+script.set('|', 10, ( a, b ) => a.pipe(b))
+
+let evaluate = script(`
+  interval(350)
+  | take(25)
+  | map(gaussian)
+  | "•".repeat(Math.floor(it * 65)))
+`)
+evaluate({ Math, map, take, interval, gaussian })
+```
 
 Literals are extensible by providing custom parser to `lookup`, can be added support of _booleans_, function calls, prop chains, groups, _regexes_, _strings_, _numbers_ and any other constructs.
 
@@ -92,20 +90,21 @@ Identifiers include
 
 ### Spaces/comments
 
-Comments can be added via extending `parse.space`. See [justin.js](./justin.js) for more examples.
-
+Comments can be added via extending `parse.space`.
+-->
 
 ## Justin
 
-_Justin_ extension (original [thread](https://github.com/endojs/Jessie/issues/66)) is minimal JS subset − JSON with JS expressions.<br/>
-It adds support of:
+_Justin_ is minimal JS subset − JSON with JS expressions (see original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
+
+It extends _subscript_ with:
 
 + `===`, `!==` operators
-+ `**` binary exponentiation
-+ `~` unary inversion
++ `**` exponentiation operator (right-assoc)
++ `~` bit inversion operator
 + `'` strings
-+ `?:` ternary
-+ `?.` optional chain
++ `?:` ternary operator
++ `?.` optional chain operator
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary
@@ -271,7 +270,8 @@ Parse 30k times:
 
 ```
 subscript: ~170 ms
-jsep: ~260 ms
+justin: ~183ms
+jsep: ~250 ms
 expr-eval: ~480 ms
 jexl: ~1200 ms
 new Function: ~1400 ms
@@ -279,11 +279,12 @@ new Function: ~1400 ms
 
 Eval 30k times:
 ```
-subscript: ~17 ms
-jsep: ~33 ms
+subscript: ~15 ms
+justin: ~15ms
+jsep: ~30 ms
 expr-eval: ~72 ms
 jexl: ~100 ms
-new Function: ~7 ms
+new Function: ~5 ms
 ```
 
 ## Competitors

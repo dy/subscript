@@ -34,8 +34,9 @@ for (list=[
   'false', a => a ? err() : ()=>false,,
   'undefined', a => a ? err() : ()=>undefined,,
 
-  // operators
   ';', a => expr()||(()=>{}),,
+
+  // operators
   '===', PREC_EQ, (a,b) => a===b,
   '!==', PREC_EQ, (a,b) => a!==b,
   '~', PREC_UNARY, (a) => ~a,

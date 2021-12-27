@@ -88,6 +88,22 @@ test('basic', t => {
 test('readme', t => {
   evalTest(`a.b + c(d-1)`, {a:{b:1}, c:x=>x*2, d:3})
   evalTest(`min * 60 + "sec"`, {min: 5})
+
+  script.set('|', 6, (( a, b ) => a?.pipe?.(b) || (a|b) )) // overload pipe operator
+
+  let evaluate = script(`
+    interval(350)
+    | take(25)`
+    // | map(gaussian)
+    // | map(num => "•".repeat(Math.floor(num * 65)))
+  )
+  evaluate({
+    Math,
+    // map,
+    // gaussian
+    take: arg => ({pipe:b=>console.log('take', b)}),
+    interval: arg => ({pipe:b=>console.log('interval to', b)}),
+  })
 })
 
 
