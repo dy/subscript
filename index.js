@@ -25,6 +25,8 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
   // chunk/token parser
   while (
     ( cc=space() ) && // till not end
+    // FIXME: extra work is happening here, when lookup bails out due to lower precedence -
+    // it makes extra `space` call for parent exprs on the same character to check precedence again
     ( newNode =
       (fn=lookup[cc]) && fn(token, prec) || // if operator with higher precedence isn't found
       (!token && id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
@@ -37,7 +39,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
   return token
 },
 
-// we don't export space, since comments can be organized via custom parsers
+// skip space chars, return first non-space character
 space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
 
 // variable identifier
@@ -64,8 +66,6 @@ set = parse.set = (
     // unary prefix (0 args)
     a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx)))
 ) =>
-
-lookup[c] = (a, curPrec, from=idx) => (curPrec<opPrec||!opPrec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) &&
-  (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))
+lookup[c] = (a, curPrec, from=idx) => (curPrec<opPrec||!opPrec) && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a)) || (idx=from, prev&&prev(a, curPrec))
 
 

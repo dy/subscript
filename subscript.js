@@ -14,7 +14,7 @@ let u, list, op, prec, fn,
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
     ),
 
-    uset = (a,fn) => a.id ? ctx => fn(ctx,a.id()) : a.prop ? (ctx,p=a.prop(ctx)) => fn(p[1],[p[2]]) : err()
+    uset = (a,fn) => a.id ? ctx => fn(ctx,a.id()) : a.prop ? ctx => fn(...a.prop(ctx)) : err()
 
 // numbers
 for (op=_0;op<=_9;) lookup[op++] = num
@@ -23,22 +23,22 @@ for (op=_0;op<=_9;) lookup[op++] = num
 for (list=[
   // a.b, .2, 1.2 parser in one
   '.',, (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
-    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.prop=(ctx,p=a(ctx))=>[p[id],p,id], fn),
+    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.prop=ctx=>[a(ctx),id], fn),
 
   // "a"
   '"',, a => (a&&err(), a=skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),
 
   // a[b]
-  '[',, (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.prop=(ctx,p=a(ctx),id=b(ctx))=>[p[id],p,id], fn),
+  '[',, (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.prop=ctx=>[a(ctx),b(ctx)], fn),
 
   // a(), a(b), (a,b), (a+b)
   '(',, (a,b,args,prop,fn) => (
     b=expr(0,CPAREN),
     // a(b), a(b,c,d)
     a ? (
-      args= b ? b.seq ? b.seq : ctx=>[b(ctx)] : ()=>[],
-      prop=a.prop||(ctx=>[a(ctx)]),
-      (ctx,thisArg,p) => ([p,thisArg]=prop(ctx), p.apply(thisArg, args(ctx)))
+      args= b ? b.seq || (ctx=>[b(ctx)]) : ()=>[],
+      prop=a.prop||(ctx=>[[a(ctx)],0]),
+      (ctx,obj,path) => ([obj,path]=prop(ctx), obj[path].apply(obj, args(ctx)))
     ) :
     // (a+b)
     // FIXME: this can be worked around by not writing props to fn...

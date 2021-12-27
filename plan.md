@@ -390,6 +390,7 @@
   * [x] As well as word operators. → trivially solved as custom mapper with next-char check
   * [x] As well as reducer in evaluator.
   → not needed anymore as direct evals supercede v5 scheme
+* [ ] reorganize as conditional eval getting, instead of props in fn
 * [ ] justin, all tests, publish v6
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]

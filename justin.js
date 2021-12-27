@@ -63,7 +63,7 @@ for (list=[
     a=expr(0,125),
     !a ? ctx => ({}) : ctx => (args=a(ctx), Object.fromEntries(args?._args?[...args]:[args]))
   ),
-  ':',, (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a()), b(ctx), a(ctx)])
+  ':',, (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx), a(ctx)])
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 

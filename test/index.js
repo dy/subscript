@@ -12,6 +12,8 @@ test('basic', t => {
   is(script`1 + 2`(), 3)
   is(script`1 + 2 + 3`(), 6)
   is(script('1 + 2 * 3')(), 7)
+  is(script('2 * 3 % 4')(), 2)
+  is(script('2 % 3 * 4')(), 8)
   is(script('1 + 2 + 3 + 4')(), 10)
   is(script('1 * 2 + 3')(), 5)
   is(script('1 + 2 * 3 + 4')(), 11)
@@ -306,7 +308,7 @@ test('ext: list', t => {
   is(script('[1,2,3,4]')(),[1,2,3,4])
   is(script('[1,2,3]')(),[1,2,3])
   is(script('[1]')(),[1])
-  // is(script('[1]+[2]')(),[1,2])
+  is(script('[1]+[2]')(),'12')
 
   is(script('[]')(), [])
   is(script('[ ]')(), [])
@@ -328,7 +330,7 @@ test('ext: list', t => {
   evalTest('[undefined]',{})
 })
 
-test.todo('ext: object', t => {
+test('ext: object', t => {
   set('{', 0, (a, args) => !a && (
     console.log(cur.slice(idx)),
       a=expr(0,125),
