@@ -28,11 +28,11 @@ test('expr-eval', async t => {
 })
 
 test('subscript', async t => {
-  const {parse, evaluate} = await import('../subscript.js');
+  const {default:parse} = await import('../subscript.js');
 
   let ast = parse(src(0))
   // console.log(ast);
-  is(evaluate(ast, args), result);
+  is(ast(args), result);
 
   console.time('subscript')
   for (let i = 0; i < RUNS; i++){
@@ -43,7 +43,7 @@ test('subscript', async t => {
 
   console.time('subscript eval')
   for (let i = 0; i < RUNS; i++){
-    evaluate(ast, args)
+    ast(args)
   }
   console.timeEnd('subscript eval')
 })
@@ -54,7 +54,8 @@ test('jsep', async t => {
 
   let ast = jsep.parse(src(0))
   // console.log(ast);
-  is(jsep.eval(ast, args), result);
+  is(jsep.eval(ast, args), result)
+  // is(jsep.eval(jsep.parse('"abc".toString()')), 'abc');
 
   console.time('jsep')
   for (let i = 0; i < RUNS; i++){
@@ -73,11 +74,11 @@ test('jsep', async t => {
 
 
 test('subscript x2', async t => {
-  const {parse, evaluate} = await import('../subscript.js');
+  const {default:parse} = await import('../subscript.js');
 
   let ast = parse(src(0))
   // console.log(ast);
-  is(evaluate(ast, args), result);
+  is(ast(args), result);
 
   console.time('subscript')
   for (let i = 0; i < RUNS; i++){
@@ -85,9 +86,10 @@ test('subscript x2', async t => {
     // evaluate(ast, args)
   }
   console.timeEnd('subscript')
+
   console.time('subscript eval')
-  for (let i = 0; i < RUNS; i++) {
-    evaluate(ast, args)
+  for (let i = 0; i < RUNS; i++){
+    ast(args)
   }
   console.timeEnd('subscript eval')
 })
@@ -156,11 +158,11 @@ test.skip('jsep x3', async t => {
 })
 
 test.skip('subscript x3', async t => {
-  const {parse, evaluate} = await import('../subscript.js');
+  const {default:parse} = await import('../subscript.js');
 
   let ast = parse(src(0))
   // console.log(ast);
-  is(evaluate(ast, args), result);
+  is(ast(args), result);
 
   console.time('subscript')
   for (let i = 0; i < RUNS; i++){
@@ -168,19 +170,19 @@ test.skip('subscript x3', async t => {
     // evaluate(ast, args)
   }
   console.timeEnd('subscript')
+
   console.time('subscript eval')
   for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
-    evaluate(ast, args)
+    ast(args)
   }
   console.timeEnd('subscript eval')
 })
 
 test('justin', async t => {
-  const {parse, evaluate} = await import('../justin.js');
+  const {default:parse} = await import('../justin.js');
 
-  let ast = parse(src(0))
-  is(evaluate(ast, args), result);
+  let evaluate = parse(src(0))
+  is(evaluate(args), result);
 
   console.time('justin')
   for (let i = 0; i < RUNS; i++){
@@ -190,7 +192,7 @@ test('justin', async t => {
   console.timeEnd('justin')
   console.time('justin eval')
   for (let i = 0; i < RUNS; i++){
-    evaluate(ast, args)
+    evaluate(args)
   }
   console.timeEnd('justin eval')
 })
@@ -262,6 +264,27 @@ test.skip('subscript-v1', async t => {
   //   evaluate(tree,args)
   // }
   // console.timeEnd('subscript1 eval')
+})
+
+
+test('subscript v5', async t => {
+  const {parse, evaluate} = await import('../lib/parser/subscript-v5.js');
+
+  let ast = parse(src(0))
+  // console.log(ast);
+  is(evaluate(ast, args), result);
+
+  console.time('subscript')
+  for (let i = 0; i < RUNS; i++){
+    let ast = parse(src(i));
+    // evaluate(ast, args)
+  }
+  console.timeEnd('subscript')
+  console.time('subscript eval')
+  for (let i = 0; i < RUNS; i++) {
+    evaluate(ast, args)
+  }
+  console.timeEnd('subscript eval')
 })
 
 

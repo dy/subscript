@@ -281,17 +281,18 @@
 * [x] expr can skip end, if passed: low-hanging fruit
 * [x] Make eval-only tests
 * [x] Remove spaced check: word operators are exceptional and better be conditioned manually
-* [x] Eval optimizations:
-  * [x] ~~calltree nodes can stash static values (as in HTM)~~
-    - doesn't give much perf, but increases size - that's 1 fn call + 1 check
-  * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
 * [x] ? externalize operator lookup descent?
   + fast op lookups are single functions, not stack of meanings: it can boost perf and shorten size
   + descent can be implemented manually
   - makes no point to host pre/postfix index then
   - it's nice to have it a separate feature
   - blocks >>> vs >> vs > vs >= detection
-* [ ] Strings:
+* [x] Eval optimizations:
+  * [x] ~~calltree nodes can stash static values (as in HTM)~~
+    - doesn't give much perf, but increases size - that's 1 fn call + 1 check
+  * [x] node can pre-figure out what function must be used on it (done as detecting reducer)
+* [x] Eval: cache static parts
+* [x] string token:
   1. new String(abc)
     + shorter eval code
     + correlates with val for literals (any literal can be a wrapper)
@@ -307,7 +308,7 @@
   4. 'str:abc', 'data:abc'
     + URL schema-compatible
     + 'int:1.12', 'float:2.25', 'bool:true', 'literal:this'
-  5. ? merging with literals somehow
+  5. ? merging with literals somehow - like [value]?
     + would save space from val function
     + would allow static pre-eval
     + would let evaluators decide how to handle literals (no need for explicit unwrapping strings for `.` operator)
@@ -317,20 +318,84 @@
         + we can facilitate that by making sure value is not a string
       - strings as ['abc'] would be confusable with fn call
     . note that a(b,c) is ( operator with b, c, ... args (comma acts as flattener)
+  6. Functional types/evaluators, like id={valueOf(){ return ctx[id] }}, lit={valueOf(){ return literal[lit] }}
+    + allows to get rid of evaluator ad-hocs
+    + all 5.s
+    . in fact .evaluate can be a node's method, so evaluator would be trivial
+    + that can be meld with 1.
+    ? simply string can be meant ref to context, other tokens are all valueOfs
+  7. Relegate types to cast operators, eg. `int 123` → `['int', '123']`, `['bool', 'true']`, `['', null]`
+    + same as functional wrapper, but via built-in method
+    + lispy logic, consistent
+    ? how to differentiate statics? Anything that's not node?
+    - if operator evaluators were built-in into nodes, we wouldn't have to keep cast type evaluators at all.
+  8. ✔ Direct evaluators instead of nodes
+    + merges config into single definition
+    . types of evaluators: binary op, prop access, fn call, group, array, object, literal, context variable
+      → there are common types of evaluators, like, binary, unary, multi, but can be custom
+    . We keep ctx access as direct strings, allowing defining prop getter evaluator
+    + We save space on node operator definitions
+    ! fn can have with valueOf, calling itself.
+    ? How do we detect static parts? Mark parsed tokens?
+      + via parse.literals returning evaluator with 0 args!
+    ? How do we define function call and id?
+      . As a couple of parsers, instead of evaluators?
+      . direct fn reducer is extra call, can slow down evaluation. Defining token-based calls would add some code, but make evals faster
+      . a(b,c) operator is the main blocker against non-reducer binaries. If we somehow managed to handle `,` via binaries, we'd reduce flat-reducers code, even static optimizers would flatten (+faster +shorter)
+      . `.` and `in` operators treat args as literals, not ids. Is there a way to parse them as literals?
+      . it should not be a hack, it should be conceptually right
+      . seems that operator decides not only how to evaluate operands, but also what semantic they have. Ie. they're responsible for what meaning token parts have.
+      . or either - `a.b` is not an operator but a kind of identifier access.
+        - still `a,b in c` is special construct. Same as `let a,b` or `a of b`
+        → can be solved via checking in id if ctx is passed and returning self otherwise
+      . v6 is less flexible, in sense that there's no easy way to redefine parsing
+      → ok, passing map is the most flexible and generic:
+        + allows redefining calc which is -1 stack call
+        + allows flexible parser
+        - although it adds 20 commas and redundant parsing - we usually deal with operators on nexpressions - mb just a case of evaluator?
+* [x] inside-expression skip can be combined into operator, if we're able to indicate what operator we're defining
+  ? by precedence we can detect what type of function is passed: unary, binary or postfix
+  - no: idx+=l 3 times is less than condition to detect it from outside
+  + yes: we do from=idx, idx=from, and also it outpays on extensions
+* [x] test `a ++` postfix spacing
+* [x] ~~try to get rid of skip, code, char from configurators: parse literals, tokens somehow differently~~
+  - no: we better implement custom parsers instead
+* [x] ~~flat into single subscript.js file, unminified: saving redundant exports and conventions~~
+  - no: that's the opposite, makes redundant exports for internal values - how would we extend justin otherwise?
+* [x] Sequences in expr vs `,` as reducer
+  - modifying engine is verbose and slow, compared to direct lookups...
+  + fake operators isn't good also
+  - seq creates an args array - we have to reduce it for eval anyways, which is natural via operator
+  - operator doesn't need modified code() call
+  → utilize custom parsers, where args are needed.
+* [x] ~~Declarable multiarg operator like (a,...b)=>x vs separator ['(',',',')'] vs manual sequences handling~~
+  - separator doesn't account for `a,b,c in d`
+  - (...a,b)=>x is neither possible
+  - `[',','in']` is impossible - end operator is 1-char now
+  → no: just use custom parsers, they occupy less space in total than unnecessary generalizations
+* [x] ~~extend end operator to multiple characters?~~
+  → no: end operator is a custom parser case, not generalized
+* [x] make ternaries support as `['?',':'],(a,b,c)=>{}`
+  → no: make custom parser
+* [x] Radical nanoscript?
+  - [x] ~~remove descent;~~ no: descent is useful for standard operators and overloading
+  - [x] binaries-only defs;
+  - [x] eval binaries only;
+  - [x] no char, ~~no code, no err~~; → err and code are heavily needed, char is rare in code, can be substr instead
+  - [x] ~~space via skip;~~ no: too slow
+  - [x] ~~no word operators;~~ no: too easy to do and useful to have
+* [x] ~~Make mapper configurable:~~
+  * [x] binaries-only vs flat nodes must be a feature of configurator, not built-in.
+    - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide a special reducer in `(` parser - that doesn't save that much space
+  * [x] As well as word operators. → trivially solved as custom mapper with next-char check
+  * [x] As well as reducer in evaluator.
+  → not needed anymore as direct evals supercede v5 scheme
+* [x] ~~reorganize as conditional eval getting, instead of props in fn~~ can be partially done by passing custom precedence, but not sustainable
+* [x] justin, all tests, publish v6
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
   * [ ] string interpolation ` ${} 1 ${} `
+  * [ ] readme ideas
+  * [ ] [double.js](https://github.com/munrocket/double.js) scripting
 * [ ] Demo
-* [ ] Radical nanoscript?
-  . remove descent;
-  . binaries-only defs;
-  . eval binaries only;
-  . no char, no code, no err;
-  . space via skip;
-  . no word operators;
-* [ ] Make mapper configurable:
-  * [ ] binaries-only vs flat nodes must be a feature of configurator, not built-in.
-    - for fn arguments / arrays we have to parse `,` as flat sequence, unless we provide a special reducer in `(` parser - that doesn't save that much space
-  * [x] As well as word operators. → trivially solved as custom mapper with next-char check
-  * [ ] As well as reducer in evaluator.

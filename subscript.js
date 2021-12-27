@@ -1,130 +1,88 @@
-import parse, {skip, expr, code, tokens, val, operator as parseOp, err} from './parse.js'
-import evaluate, {operator as evalOp} from './evaluate.js'
+import {parse, set, lookup, skip, cur, idx, err, expr, isId, space} from './index.js'
 
-const PERIOD=46, OPAREN=40, CPAREN=41, CBRACK=93, SPACE=32,
-
+const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
-tokens.push(
-  // 1.2e+3, .5 - fast & small version, but consumes corrupted nums as well
-  (number) => (
-    (number = skip(c => (c > 47 && c < 58) || c == PERIOD)) && (
-      (code() == 69 || code() == 101) && (number += skip(2) + skip(c => c >= 48 && c <= 57)),
-      isNaN(number = new Number(number)) ? err('Bad number') : number
-    )
-  ),
+let u, list, op, prec, fn,
+    isNum = c => c>=_0 && c<=_9,
+    // 1.2e+3, .5
+    num = n => (
+      n&&err(),
+      n = skip(c=>c==PERIOD || isNum(c)),
+      (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
+      n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
+    ),
+
+    inc = (a,fn,c=a.of) => ctx => fn(c?c(ctx):ctx, a.id())
+
+// numbers
+for (op=_0;op<=_9;) lookup[op++] = num
+
+// operators
+for (list=[
   // "a"
-  (q, qc, v) => q == 34 && (skip(), v=skip(c => c-q), skip(), '@'+v),
-  // id
-  c => skip(c =>
-    (c >= 48 && c <= 57) || // 0..9
-    (c >= 65 && c <= 90) || // A...Z
-    (c >= 97 && c <= 122) || // a...z
-    c == 36 || c == 95 || // $, _,
-    c >= 192 // any non-ASCII
-  )
-)
+  '"', a => (a=a?err():skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
 
-const addOps = (add, stride=2, list) => {
-  for (let i = 0; i < list.length; i+=stride) add(list[i], list[i+1], list[i+2])
-}
-
-addOps(parseOp, 3, [
-  ',', PREC_SEQ,,
-
-  '|', PREC_OR,,
-  '||', PREC_SOME,,
-
-  '&', PREC_AND,,
-  '&&', PREC_EVERY,,
-
-  '^', PREC_XOR,,
-
-  // ==, !=
-  '==', PREC_EQ,,
-  '!=', PREC_EQ,,
-
-  // > >= >> >>>, < <= <<
-  '>', PREC_COMP,,
-  '>=', PREC_COMP,,
-  '>>', PREC_SHIFT,,
-  '>>>', PREC_SHIFT,,
-  '<', PREC_COMP,,
-  '<=', PREC_COMP,,
-  '<<', PREC_SHIFT,,
-
-  // + ++ - --
-  '+', PREC_SUM,,
-  '+', PREC_UNARY, -1,
-  '++', PREC_UNARY, -1,
-  '++', PREC_POSTFIX, +1,
-  '-', PREC_SUM,,
-  '-', PREC_UNARY, -1,
-  '--', PREC_UNARY, -1,
-  '--', PREC_POSTFIX, +1,
-
-  // ! ~
-  '!', PREC_UNARY, -1,
-
-  // * / %
-  '*', PREC_MULT,,
-  '/', PREC_MULT,,
-  '%', PREC_MULT,,
-
-  // a.b
-  '.', PREC_CALL, (node,b) => node && [skip(), node, '@' + expr(PREC_CALL)],
+  // a.b, .2, 1.2 parser in one
+  '.', (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
+    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
 
   // a[b]
-  '[', PREC_CALL, (node) => (skip(), node = ['.', node, val(expr(0,CBRACK))], node),
-  ']',,,
+  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
 
-  // a(b)
-  '(', PREC_CALL, (node,b) => (skip(), b=expr(0,CPAREN),
-    Array.isArray(b) && b[0]===',' ? (b[0]=node, b) : b ? [node, val(b)] : [node]
-  ),
-  // (a+b)
-  '(', PREC_GROUP, (node,b) => !node && (skip(), b=expr(0,CPAREN) || err(), b),
-  ')',,,
-])
+  // a(), a(b), (a,b), (a+b)
+  '(', (a,b,fn) => (
+    b=expr(0,CPAREN),
+    // a(), a(b), a(b,c,d)
+    a ? ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : []) :
+    // (a+b)
+    b || err()
+  ), PREC_CALL,
 
+  // [a,b,c] or (a,b,c)
+  ',', (a,prec,b=expr(PREC_SEQ)) => (
+    b.all = a.all ? (ctx,prec,arr=a.all(ctx)) => arr.push(b(ctx)) && arr : ctx => [a(ctx),b(ctx)],
+    b
+  ), PREC_SEQ,
 
-// evaluators
-addOps(evalOp, 2, [
-  '!', a=>!a,
-  '++', a=>++a,
-  '--', a=>--a,
+  '|', PREC_OR, (a,b)=>a|b,
+  '||', PREC_SOME, (a,b)=>a||b,
 
-  '.', (a,b)=>a?a[b]:a,
+  '&', PREC_AND, (a,b)=>a&b,
+  '&&', PREC_EVERY, (a,b)=>a&&b,
 
-  '%', (a,b)=>a%b,
-  '/', (a,b)=>a/b,
-  '*', (a,b)=>a*b,
+  '^', PREC_XOR, (a,b)=>a^b,
 
-  '+', (a,b)=>a+(b||0),
-  '-', (a,b)=>b==null ? -a : a-b,
+  // ==, !=
+  '==', PREC_EQ, (a,b)=>a==b,
+  '!=', PREC_EQ, (a,b)=>a!=b,
 
-  '>>>', (a,b)=>a>>>b,
-  '>>', (a,b)=>a>>b,
-  '<<', (a,b)=>a<<b,
+  // > >= >> >>>, < <= <<
+  '>', PREC_COMP, (a,b)=>a>b,
+  '>=', PREC_COMP, (a,b)=>a>=b,
+  '>>', PREC_SHIFT, (a,b)=>a>>b,
+  '>>>', PREC_SHIFT, (a,b)=>a>>>b,
+  '<', PREC_COMP, (a,b)=>a<b,
+  '<=', PREC_COMP, (a,b)=>a<=b,
+  '<<', PREC_SHIFT, (a,b)=>a<<b,
 
-  '>=', (a,b)=>a>=b,
-  '>', (a,b)=>a>b,
-  '<=', (a,b)=>a<=b,
-  '<', (a,b)=>a<b,
+  // + ++ - --
+  '+', PREC_SUM, (a,b)=>a+b,
+  '+', PREC_UNARY, (a)=>+a,
+  '++', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]), PREC_UNARY,
 
-  '!=', (a,b)=>a!=b,
-  '==', (a,b)=>a==b,
+  '-', PREC_SUM, (a,b)=>a-b,
+  '-', PREC_UNARY, (a)=>-a,
+  '--', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
 
-  '&', (a,b)=>a&b,
-  '^', (a,b)=>a^b,
-  '|', (a,b)=>a|b,
-  '&&', (a,b)=>a&&b,
-  '||', (a,b)=>a||b,
-  ',', (a,b)=>(a,b)
-])
+  // ! ~
+  '!', PREC_UNARY, (a)=>!a,
 
-export { parse, evaluate }
+  // * / %
+  '*', PREC_MULT, (a,b)=>a*b,
+  '/', PREC_MULT, (a,b)=>a/b,
+  '%', PREC_MULT, (a,b)=>a%b
+]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
 
-// code → evaluator
-export default s => (s = typeof s == 'string' ? parse(s) : s,  ctx => evaluate(s, ctx))
+export default parse
