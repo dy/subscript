@@ -8,7 +8,7 @@ _Subscript_ is micro-language with common syntax subset of C++, JS, Java, Python
 * Standard conventional syntax
 * Any fragment can be copy-pasted to any target language
 * Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
-* :rocket: fast ([performance](#performance))
+* :rocket: Fast [performance](#performance)
 * Configurable & extensible
 * Trivial to use
 
