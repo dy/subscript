@@ -89,7 +89,8 @@ test('readme', t => {
   evalTest(`a.b + c(d-1)`, {a:{b:1}, c:x=>x*2, d:3})
   evalTest(`min * 60 + "sec"`, {min: 5})
 
-  script.set('|', 6, (( a, b ) => a?.pipe?.(b) || (a|b) )) // overload pipe operator
+  script.set('|', 6, ( a, b ) => a?.pipe?.(b) || (a|b) ) // overload pipe operator
+  script.set('=>', ( args, body ) => (body = expr(), ctx => (...args) => body() ) ) // single-arg arrow function parser
 
   let evaluate = script(`
     interval(350)
@@ -104,6 +105,19 @@ test('readme', t => {
     take: arg => ({pipe:b=>console.log('take', b)}),
     interval: arg => ({pipe:b=>console.log('interval to', b)}),
   })
+
+
+  // add ~ unary operator with precedence 15
+  script.set('~', 15, a => ~a)
+
+  // add === binary operator
+  script.set('===', 9, (a, b) => a===b)
+
+  // add literals
+  script.set('true', a => ()=>true)
+  script.set('false', a => ()=>false)
+
+  is(script`true === false`(), false) // false
 })
 
 
@@ -413,6 +427,10 @@ test('err: unclosed parens', t => {
   throws(() => script('a[  '))
   throws(() => script('(  +1'))
   throws(() => script('(a / '))
+  throws(() => script('( '))
+  throws(() => script('a )'))
+  throws(() => script(')'))
+  throws(() => script('+)'))
 })
 
 test('err: wrong sequences', t => {
