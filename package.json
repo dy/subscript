@@ -5,8 +5,7 @@
   "main": "subscript.js",
   "type": "module",
   "files": [
-    "parse.js",
-    "evaluate.js",
+    "index.js",
     "subscript.js",
     "subscript.min.js",
     "justin.js",
