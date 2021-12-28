@@ -34,7 +34,7 @@ _Subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js
 
 ## Design
 
-Default operators (same as JS precedence order):
+Default operators are (same as JS precedence order):
 
 * `( a, b, c )`
 * `a . b`, `a [ b ]`, `a ( b, c )`
@@ -56,7 +56,23 @@ Default literals:
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via `parse.set(operator, precedence, fn)` for unary or binary operators (detected by number of arguments in `fn`), or via `parse.set(operator, parser, precedence)` for custom tokens.
+Everything else can be extended via `parse.set(token, precedence, operator)` for unary or binary operators (detected by number of arguments in `operator`), or via `parse.set(token, parse, precedence)` for custom tokens.
+
+```
+import script from 'subscript.js'
+
+// add ~ unary operator with precedence 15
+script.set('~', 15, a => ~a)
+
+// add === binary operator
+script.set('===', 9, (a, b) => a===b)
+
+// add literals
+script.set('true', a => ()=>true)
+script.set('false', a => ()=>false)
+
+script`true === false`() // false
+```
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
@@ -273,7 +289,7 @@ Parse 30k times:
 ```
 subscript: ~170 ms
 justin: ~183 ms
-jsep: ~250 ms
+jsep: ~270 ms
 mr-parser: ~420 ms
 expr-eval: ~480 ms
 math-parser: ~570 ms
@@ -284,15 +300,15 @@ new Function: ~1154 ms
 
 Eval 30k times:
 ```
-subscript: ~15 ms
-justin: ~15 ms
+subscript: ~17 ms
+justin: ~17 ms
 jsep (expression-eval): ~30 ms
 mr-parser: -
 expr-eval: ~72 ms
 math-parser: -
 jexl: ~110 ms
 mathjs: ~119 ms
-new Function: ~5 ms
+new Function: ~7 ms
 ```
 
 ## Alternatives
