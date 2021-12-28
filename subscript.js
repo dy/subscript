@@ -29,7 +29,7 @@ for (list=[
     (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
 
   // a[b]
-  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err('Empty group'), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
+  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
 
   // a(), a(b), (a,b), (a+b)
   '(', (a,b,fn) => (
@@ -37,12 +37,12 @@ for (list=[
     // a(), a(b), a(b,c,d)
     a ? ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : []) :
     // (a+b)
-    b || err('Empty group')
+    b || err()
   ), PREC_CALL,
 
   // [a,b,c] or (a,b,c)
   ',', (a,prec,b=expr(PREC_SEQ)) => (
-    b.all = a.all ? (ctx,prec,arr=a.all(ctx)) => arr.push(b(ctx)) && arr : ctx => [a(ctx),b(ctx)],
+    b.all = a.all ? ctx => [...a.all(ctx), b(ctx)] : ctx => [a(ctx),b(ctx)],
     b
   ), PREC_SEQ,
 
