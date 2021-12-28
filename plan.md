@@ -392,6 +392,7 @@
   → not needed anymore as direct evals supercede v5 scheme
 * [x] ~~reorganize as conditional eval getting, instead of props in fn~~ can be partially done by passing custom precedence, but not sustainable
 * [x] justin, all tests, publish v6
+* [x] Make better error explanations
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks

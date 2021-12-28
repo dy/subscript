@@ -8,7 +8,7 @@ let u, list, op, prec, fn,
     isNum = c => c>=_0 && c<=_9,
     // 1.2e+3, .5
     num = n => (
-      n&&err(),
+      n&&err('Unexpected number'),
       n = skip(c=>c==PERIOD || isNum(c)),
       (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
@@ -22,14 +22,14 @@ for (op=_0;op<=_9;) lookup[op++] = num
 // operators
 for (list=[
   // "a"
-  '"', a => (a=a?err():skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
+  '"', a => (a=a?err('Unexpected string'):skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
 
   // a.b, .2, 1.2 parser in one
   '.', (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
     (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
 
   // a[b]
-  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
+  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err('Empty group'), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
 
   // a(), a(b), (a,b), (a+b)
   '(', (a,b,fn) => (
@@ -37,7 +37,7 @@ for (list=[
     // a(), a(b), a(b,c,d)
     a ? ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : []) :
     // (a+b)
-    b || err()
+    b || err('Empty group')
   ), PREC_CALL,
 
   // [a,b,c] or (a,b,c)

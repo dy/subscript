@@ -3,7 +3,7 @@ const SPACE=32
 // current string & index
 export let idx, cur,
 
-parse = (s, ...fields) => !(cur=s.raw ? String.raw(s,...fields) : s, idx=0, s=expr()) || cur[idx] ? err() : ctx=>s(ctx||{}),
+parse = (s, ...fields) => !(cur=s.raw ? String.raw(s,...fields) : s, idx=0, s=expr()) || cur[idx] ? err('Unexpected end') : ctx=>s(ctx||{}),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -12,7 +12,7 @@ isId = c =>
   c == 36 || c == 95 || // $, _,
   (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
-err = (msg='Bad syntax',c=cur[idx]) => { throw Error(msg + ' `' + c + '` at ' + idx) },
+err = (msg='Unexpected token',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
@@ -34,7 +34,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
   ) token = newNode;
 
   // check end character
-  if (end) cc==end?idx++:err('Unclosed')
+  if (end) cc==end?idx++:err('Missing', String.fromCharCode(end))
 
   return token
 },

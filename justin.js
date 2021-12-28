@@ -10,7 +10,7 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_EXP=14, 
 let u, list, op, prec, fn,
     escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'},
     string = q => (qc, c, str='') => {
-      qc&&err() // must not follow another token
+      qc&&err('Unexpected string') // must not follow another token
       while (c=cur.charCodeAt(idx), c-q) {
         if (c === BSLASH) skip(), c=skip(), str += escape[c] || c
         else str += skip()
@@ -29,10 +29,10 @@ for (list=[
   '//', (a, prec) => (skip(c => c >= 32), a||expr(prec)),,
 
   // literals
-  'null', a => a ? err() : ()=>null,,
-  'true', a => a ? err() : ()=>true,,
-  'false', a => a ? err() : ()=>false,,
-  'undefined', a => a ? err() : ()=>undefined,,
+  'null', a => a ? err('Unexpected literal') : ()=>null,,
+  'true', a => a ? err('Unexpected literal') : ()=>true,,
+  'false', a => a ? err('Unexpected literal') : ()=>false,,
+  'undefined', a => a ? err('Unexpected literal') : ()=>undefined,,
 
   ';', a => expr()||(()=>{}),,
 
