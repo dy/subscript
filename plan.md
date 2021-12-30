@@ -399,4 +399,6 @@
   * [ ] string interpolation ` ${} 1 ${} `
   * [ ] readme ideas
   * [ ] [double.js](https://github.com/munrocket/double.js) scripting
+  * [ ] js-based glsl evaluator
+  * [ ] language simulators
 * [ ] Demo
