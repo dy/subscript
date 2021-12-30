@@ -324,6 +324,31 @@ test('mr-parser', async t => {
 })
 
 
+test('math-expression-evaluator', async t => {
+  const {default:mexp} = await import('https://cdn.skypack.dev/math-expression-evaluator');
+
+  let src = `1 + (pi * e / pi ^ e) - 2.0 + -3e-3 * +4.4e4 / e - sin(-e + 1)`
+  let lexed = mexp.lex(src)
+  let postfix = lexed.toPostfix()
+  // console.log(ast);
+  // is(postfix.postfixEval(), result);
+
+  console.time('math-expression-evaluator')
+  for (let i = 0; i < RUNS; i++){
+    let l = mexp.lex(src);
+    l.toPostfix()
+    // evaluate(ast, args)
+  }
+  console.timeEnd('math-expression-evaluator')
+
+  console.time('math-expression-evaluator eval')
+  for (let i = 0; i < RUNS; i++){
+    postfix.postfixEval()
+  }
+  console.timeEnd('math-expression-evaluator eval')
+})
+
+
 test.skip('subscript-refs', async t => {
   const {default:dislex,parse:dparse,evaluate} = await import('../lib/parser/subscript-refs.js');
   console.time('dislex')
