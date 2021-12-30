@@ -55,7 +55,7 @@
     "math-parser",
     "formula",
     "operator",
-    "overload",
+    "overload"
   ],
   "author": "Dmitry Iv.",
   "license": "ISC",
