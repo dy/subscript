@@ -284,9 +284,9 @@ Subscript shows relatively good performance within other evaluators:
 Parse 30k times:
 
 ```
-subscript: ~170 ms
-justin: ~183 ms
-jsep: ~270 ms
+subscript: ~170 ms 🥇
+justin: ~183 ms 🥈
+jsep: ~270 ms 🥉
 mr-parser: ~420 ms
 expr-eval: ~480 ms
 math-parser: ~570 ms
@@ -297,15 +297,15 @@ new Function: ~1154 ms
 
 Eval 30k times:
 ```
-subscript: ~17 ms
-justin: ~17 ms
-jsep (expression-eval): ~30 ms
-mr-parser: -
+new Function: ~7 ms 🥇
+subscript: ~17 ms 🥈
+justin: ~17 ms 🥈
+jsep (expression-eval): ~30 ms 🥉
 expr-eval: ~72 ms
-math-parser: -
 jexl: ~110 ms
 mathjs: ~119 ms
-new Function: ~7 ms
+mr-parser: -
+math-parser: -
 ```
 
 ## Alternatives
