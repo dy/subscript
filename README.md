@@ -55,7 +55,7 @@ Default literals:
 
 Everything else can be extended via `parse.set(token, precedence, operator)` for unary or binary operators (detected by number of arguments in `operator`), or via `parse.set(token, parse, precedence)` for custom tokens.
 
-```
+```js
 import script from 'subscript.js'
 
 // add ~ unary operator with precedence 15
