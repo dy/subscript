@@ -48,7 +48,6 @@ test('subscript', async t => {
   console.timeEnd('subscript eval')
 })
 
-
 test('jsep', async t => {
   const jsep = await import('../lib/parser/expression-eval.module.js');
 
@@ -71,7 +70,6 @@ test('jsep', async t => {
   }
   console.timeEnd('jsep eval')
 })
-
 
 test('subscript x2', async t => {
   const {default:parse} = await import('../subscript.js');
@@ -115,7 +113,6 @@ test('jsep x2', async t => {
   console.timeEnd('jsep eval')
 })
 
-
 test.skip('jsep-strip', async t => {
   const {parse} = await import('../lib/parser/jsep-strip.js');
 
@@ -134,7 +131,6 @@ test.skip('jsep-strip', async t => {
   // }
   // console.timeEnd('jsep-strip eval')
 })
-
 
 test.skip('jsep x3', async t => {
   const jsep = await import('../lib/parser/expression-eval.module.js');
@@ -197,6 +193,33 @@ test('justin', async t => {
   console.timeEnd('justin eval')
 })
 
+test('jexpr', async t => {
+  const {default:parseSS} = await import('../subscript.js')
+
+  const src = `1 + (a * b / c % d) - 2.0 + -0.003 * +44000  / f.g[0] - i.j(+k == 1)(0)`
+  let sseval = parseSS(src)
+  // console.log(ast);
+  // is(sseval(args), result);
+
+  const {parse, EvalAstFactory} = await import('https://cdn.skypack.dev/jexpr');
+
+  const astFactory = new EvalAstFactory();
+  let expr = parse(src, astFactory)
+  // console.log(ast);
+  is(expr.evaluate(args), sseval(args))
+
+  console.time('jexpr')
+  for (let i = 0; i < RUNS; i++){
+    let ast = parse(src, astFactory);
+  }
+  console.timeEnd('jexpr')
+
+  console.time('jexpr eval')
+  for (let i = 0; i < RUNS; i++) {
+    expr.evaluate(args)
+  }
+  console.timeEnd('jexpr eval')
+})
 
 test('jexl', async t => {
   const {Jexl} = await import('../lib/parser/jexl.min.js');
