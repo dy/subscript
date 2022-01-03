@@ -287,7 +287,7 @@ Parse 30k times:
 subscript: ~170 ms 🥇
 justin: ~183 ms 🥈
 jsep: ~270 ms 🥉
-jexpr: ~297 ms 🥉
+jexpr: ~297 ms
 mr-parser: ~420 ms
 expr-eval: ~480 ms
 math-parser: ~570 ms
