@@ -203,13 +203,18 @@ test('jexpr', async t => {
 
   const {parse, EvalAstFactory} = await import('https://cdn.skypack.dev/jexpr');
 
-  const astFactory = new EvalAstFactory();
+  const astFactory = new EvalAstFactory()
   let expr = parse(src, astFactory)
   // console.log(ast);
   is(expr.evaluate(args), sseval(args))
 
+  // let exp1e2 = parse('1e2', astFactory)
+  // is(exp1e2.evaluate(), 1e2)
+  // let exp1e2 = parse('1e-2', astFactory)
+  // is(exp1e2.evaluate(), 1e-2)
+
   console.time('jexpr')
-  for (let i = 0; i < RUNS; i++){
+  for (let i = 0; i < RUNS; i++) {
     let ast = parse(src, astFactory);
   }
   console.timeEnd('jexpr')
