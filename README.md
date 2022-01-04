@@ -46,6 +46,7 @@ Default operators are (same as JS precedence order):
 * `a | b`
 * `a && b`
 * `a || b`
+* `a , b`
 
 Default literals:
 
@@ -119,6 +120,7 @@ It extends _subscript_ with:
 + `'` strings
 + `?:` ternary operator
 + `?.` optional chain operator
++ `??` nullish coalesce operator
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary

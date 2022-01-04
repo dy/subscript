@@ -1,9 +1,9 @@
 const SPACE=32
 
-// current string & index
-export let idx, cur,
+// current string, index and collected ids
+export let idx, cur, ids,
 
-parse = (s, ...fields) => !(cur=s.raw ? String.raw(s,...fields) : s, idx=0, s=expr()) || cur[idx] ? err('Unexpected end') : ctx=>s(ctx||{}),
+parse = (s, ...fields) => !(cur=s.raw ? String.raw(s,...fields) : s, idx=0, ids=[], s=expr()) || cur[idx] ? err('Unexpected end') : ctx=>s(ctx||{}),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -43,7 +43,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
 space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
 
 // variable identifier
-id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], fn.id=()=>name, fn) : 0,
+id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], ids.push(name), fn.id=()=>name, fn) : 0,
 
 // operator/token lookup table
 lookup = [],

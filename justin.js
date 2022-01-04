@@ -40,6 +40,7 @@ for (list=[
   '===', PREC_EQ, (a,b) => a===b,
   '!==', PREC_EQ, (a,b) => a!==b,
   '~', PREC_UNARY, (a) => ~a,
+  '??', PREC_OR, (a,b) => a??b,
 
   // right order
   '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
@@ -66,6 +67,7 @@ for (list=[
       a=expr(0,125),
       !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
     ),,
+  // FIXME: make id parsing for JSON case, without collecting to ids (different evaluator than ternary)
   ':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx), a(ctx)]), 3.1
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)

@@ -402,6 +402,6 @@
   * [ ] js-based glsl evaluator
   * [ ] language simulators
 * [ ] Demo
+* [ ] collect ids: needed for element-params
 * [ ] parse operator groups for faster eval, eg.: a*x + b*y + c
-* [ ] collect arg names: needed for element-params
 * [ ] wasmscript
