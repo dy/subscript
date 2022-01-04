@@ -1,4 +1,4 @@
-import {parse, set, lookup, skip, cur, idx, err, expr, isId, space} from './index.js'
+import {parse, set, lookup, skip, cur, idx, err, expr, isId, args, space} from './index.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -9,7 +9,7 @@ let u, list, op, prec, fn,
     // 1.2e+3, .5
     num = n => (
       n&&err('Unexpected number'),
-      n = skip(c=>c==PERIOD || isNum(c)),
+      n = skip(c=>c == PERIOD || isNum(c)),
       (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
     ),

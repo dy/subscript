@@ -1,9 +1,10 @@
-const SPACE=32
+const SPACE=32, CPAREN=41
 
 // current string, index and collected ids
-export let idx, cur, ids,
+export let idx, cur, args,
 
-parse = (s, ...fields) => !(cur=s.raw ? String.raw(s,...fields) : s, idx=0, ids=[], s=expr()) || cur[idx] ? err('Unexpected end') : ctx=>s(ctx||{}),
+// no handling tagged literals since easily done on user side with cache, if needed
+parse = (s, fn= !(cur=s, idx=0, args=[], s=expr()) || cur[idx] ? err() : ctx=>s(ctx||{})) => (fn.args = args, fn),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
@@ -12,7 +13,7 @@ isId = c =>
   c == 36 || c == 95 || // $, _,
   (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
-err = (msg='Unexpected token',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
+err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
@@ -34,7 +35,8 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
   ) token = newNode;
 
   // check end character
-  if (end) cc==end?idx++:err('Missing', String.fromCharCode(end))
+  // FIXME: can't show "Unclose paren", because can be unknown operator within group as well
+  if (end) cc==end?idx++:err()
 
   return token
 },
@@ -43,7 +45,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
 space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
 
 // variable identifier
-id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], ids.push(name), fn.id=()=>name, fn) : 0,
+id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], args.push(name), fn.id=()=>name, fn) : 0,
 
 // operator/token lookup table
 lookup = [],
@@ -67,5 +69,4 @@ set = parse.set = (
     arity ? a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx))) :
     fn // custom parser
 ) =>
-// FIXME: find out if that's possible to globalize precision and instead of passing it to map, just provide global
 lookup[c] = (a, curPrec, from=idx) => curPrec<opPrec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) || (idx=from, prev&&prev(a, curPrec))

@@ -9,8 +9,8 @@ const evalTest = (str, ctx={}) => {
 }
 
 test('basic', t => {
-  is(script`1 + 2`(), 3)
-  is(script`1 + 2 + 3`(), 6)
+  is(script('1 + 2')(), 3)
+  is(script('1 + 2 + 3')(), 6)
   is(script('1 + 2 * 3')(), 7)
   is(script('2 * 3 % 4')(), 2)
   is(script('2 % 3 * 4')(), 8)
@@ -117,12 +117,12 @@ test('readme', t => {
   script.set('true', a => ()=>true)
   script.set('false', a => ()=>false)
 
-  is(script`true === false`(), false) // false
+  is(script('true === false')(), false) // false
 })
 
 
 test('ext: interpolate string', t => {
-  is(script`a+1`({a:1}), 2)
+  is(script('a+1')({a:1}), 2)
 })
 
 test('strings', t => {
@@ -316,15 +316,6 @@ test('ext: in operator', t => {
   throws(() => script('b inc'))
 })
 
-test('ext: ternary', t => {
-  set(':', 3.1, (a,b) => [a,b])
-  set('?', 3, (a,b) => a ? b[0] : b[1])
-
-  evalTest('a?b:c', {a:true,b:1,c:2})
-  evalTest('a?b:c', {a:false,b:1,c:2})
-  evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
-})
-
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
   set('[', (a, args) => !a && (
@@ -359,20 +350,39 @@ test('ext: list', t => {
   evalTest('[undefined]',{})
 })
 
+
+test('ext: ternary', t => {
+  set(':', 3.1, (a,b) => [a,b])
+  set('?', 3, (a,b) => a ? b[0] : b[1])
+
+  evalTest('a?b:c', {a:true,b:1,c:2})
+  evalTest('a?b:c', {a:false,b:1,c:2})
+  evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
+
+})
+
 test('ext: object', t => {
   set('{', (a, args) => !a && (
       a=expr(0,125),
       !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
     )
   )
-  set(':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 3.1 )
+  set(':', (a, prec, b) => (b=expr(1.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1 )
+  set('=', 2, (a,b)=>b)
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})
   evalTest('{x: 1, "y":2}',{})
   evalTest('{x: 1+2, y:a(3)}',{a:v=>v+1})
   evalTest('{x: 1+2, y:a(3)}',{a:x=>x*2})
+  evalTest('{1: 2}')
   // evalTest('{x}',{x:1})
+
+  evalTest('{a:b?c:d}', {b:2,c:3,d:4})
+  evalTest('{a:b?c:d, e:!f?g:h}', {b:2,c:3,d:4,f:1,g:2,h:3})
+  evalTest('{a:b?c:d, e:f=g?h:k}', {b:2,c:3,d:4, f:null, g:0,h:1,k:2})
+
+  evalTest('b?{c:1}:{d:2}', {b:2})
 })
 
 test('ext: justin', async t => {
@@ -384,6 +394,11 @@ test('ext: justin', async t => {
   evalTest('{x:~1, "y":2**2}["y"]', {})
   evalTest('e > 0 ? f : g', {e:1, f:2, g:3}, 2)
   evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(v,w)=>v+w, e:1, f:2, g:3})
+
+
+  evalTest('{x: 1+2, y:a(3)}',{a:x=>x*2})
+  evalTest('{a:b?c:d, e:!f?g:h}', {b:2,c:3,d:4,f:1,g:2,h:3})
+  evalTest('b?{c:1}:{d:2}', {b:2})
 })
 
 test('ext: comments', t => {
@@ -455,4 +470,13 @@ test('stdlib cases', t => {
   is(script('pow(a, 3)')({pow:Math.pow, a:1}), 1)
   is(script('Math.pow(a, 3)')({Math, a:1}), 1)
   is(script('Math.pow(a, 3) / 2 + b * 2 - 1')({Math, a:1, b:1}), 1.5)
+})
+
+test('collect args', async t => {
+  const {default: script} = await import('../justin.js')
+  let fn = script('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
+  is(fn.args,
+    ['Math', 'a', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'w', 'i', 'j', 'k'],
+    // ['Math', 'a', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
+  )
 })

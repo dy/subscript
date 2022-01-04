@@ -393,6 +393,8 @@
 * [x] ~~reorganize as conditional eval getting, instead of props in fn~~ can be partially done by passing custom precedence, but not sustainable
 * [x] justin, all tests, publish v6
 * [x] Make better error explanations
+* [x] remove tagged literal, since it doesn't make much sense without caching by callsite. That can easily be implemented user-side.
+* [x] collect ids: needed for element-params
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -402,6 +404,5 @@
   * [ ] js-based glsl evaluator
   * [ ] language simulators
 * [ ] Demo
-* [ ] collect ids: needed for element-params
 * [ ] parse operator groups for faster eval, eg.: a*x + b*y + c
 * [ ] wasmscript

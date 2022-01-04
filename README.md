@@ -9,9 +9,10 @@ _Subscript_ is expression evaluator with standard syntax<br/>
 * Trivial to use
 
 ```js
-import script from 'subscript.js'
+import script from './subscript.js'
 let fn = script`a.b + c(d - 1)`
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
+fn.args // ['a', 'c', 'd']
 ```
 
 ## Motivation
@@ -56,7 +57,7 @@ Default literals:
 Everything else can be extended via `parse.set(token, precedence, operator)` for unary or binary operators (detected by number of arguments in `operator`), or via `parse.set(token, parse, precedence)` for custom tokens.
 
 ```js
-import script from 'subscript.js'
+import script from './subscript.js'
 
 // add ~ unary operator with precedence 15
 script.set('~', 15, a => ~a)

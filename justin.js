@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import {parse, set, lookup, skip, cur, idx, err, expr, isId, space} from './index.js'
-import './subscript.js'
+import {set, lookup, skip, cur, idx, err, expr, isId, space, args} from './index.js'
+export { default } from './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,
 PREC_SEQ=1, PREC_COND=3, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -40,14 +40,15 @@ for (list=[
   '===', PREC_EQ, (a,b) => a===b,
   '!==', PREC_EQ, (a,b) => a!==b,
   '~', PREC_UNARY, (a) => ~a,
-  '??', PREC_OR, (a,b) => a??b,
 
   // right order
   '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
 
   // ?:
   ':', 3.1, (a,b) => [a,b],
-  '?', 3, (a,b) => a ? b[2] : b[1],
+  '?', 3, (a,b) => a ? b[0] : b[1],
+
+  '??', PREC_OR, (a,b) => a??b,
 
   // a?.[, a?.( - postfix operator
   '?.', a => a && (ctx => a(ctx)||(()=>{})),,//(a) => a||(()=>{}),
@@ -57,19 +58,17 @@ for (list=[
   'in', PREC_COMP, (a,b) => a in b,
 
   // [a,b,c]
-  '[', (a, args) => !a && (
+  '[', (a) => !a && (
     a=expr(0,CBRACK),
     !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
   ),,
 
   // {a:1, b:2, c:3}
-  '{', (a, args) => !a && (
+  '{', (a, entries) => !a && (
       a=expr(0,125),
-      !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
+      !a ? ctx => ({}) : ctx => (entries=(a.all||a)(ctx), Object.fromEntries(a.all?entries:[entries]))
     ),,
-  // FIXME: make id parsing for JSON case, without collecting to ids (different evaluator than ternary)
-  ':', (a, prec, b) => (b=expr(3.1)||err(), ctx => [(a.id||a)(ctx), b(ctx), a(ctx)]), 3.1
+  // for JSON case we should not collect arg (different evaluator than ternary)
+  ':', (a, prec, b) => (b=expr(1.1)||err(), a.id&&args.pop(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
-
-export default parse

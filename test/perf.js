@@ -5,7 +5,7 @@ const args={a:123, b:234, c:345, d:456, f:{g:[567]}, i:{j: yes => yes && (x => +
 const result = 81.19328272371752
 const RUNS = 3e4
 
-test('expr-eval', async t => {
+test.skip('expr-eval', async t => {
   const {Parser} = await import('../lib/parser/expr-eval.min.js');
 
   let eeparser = new Parser({logical: true}), expr = eeparser.parse(src(0))
@@ -193,7 +193,7 @@ test('justin', async t => {
   console.timeEnd('justin eval')
 })
 
-test('jexpr', async t => {
+test.skip('jexpr', async t => {
   const {default:parseSS} = await import('../subscript.js')
 
   const src = `1 + (a * b / c % d) - 2.0 + -0.003 * +44000  / f.g[0] - i.j(+k == 1)(0)`
@@ -226,7 +226,7 @@ test('jexpr', async t => {
   console.timeEnd('jexpr eval')
 })
 
-test('jexl', async t => {
+test.skip('jexl', async t => {
   const {Jexl} = await import('../lib/parser/jexl.min.js');
 
   let jexl = new Jexl, expr, jexlArgs = Object.assign({}, args, {i:[1]}),
@@ -285,7 +285,7 @@ test.skip('string-math', async t => {
   console.timeEnd('string-math eval')
 })
 
-test('mathjs', async t => {
+test.skip('mathjs', async t => {
   const {compile} = await import('https://cdn.skypack.dev/mathjs');
 
   let src = `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[1] - i.j(+k == 1)`,
@@ -307,7 +307,7 @@ test('mathjs', async t => {
 })
 
 
-test('math-parser', async t => {
+test.skip('math-parser', async t => {
   const {parse} = await import('https://cdn.skypack.dev/math-parser');
 
   let src = `1 + (a * b / c / d) - 2.0 + -3e-3 * +4.4e4 / f - i(+k+1)`,
@@ -330,7 +330,7 @@ test('math-parser', async t => {
 })
 
 
-test('mr-parser', async t => {
+test.skip('mr-parser', async t => {
   const {Parser} = await import('https://cdn.skypack.dev/mr-parser');
 
   let src = `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f - i(+k == 1)`,
@@ -352,7 +352,7 @@ test('mr-parser', async t => {
 })
 
 
-test('math-expression-evaluator', async t => {
+test.skip('math-expression-evaluator', async t => {
   const {default:mexp} = await import('https://cdn.skypack.dev/math-expression-evaluator');
 
   let src = `1 + (pi * e / pi ^ e) - 2.0 + -3e-3 * +4.4e4 / e - sin(-e + 1)`
@@ -410,7 +410,7 @@ test.skip('subscript-v1', async t => {
 })
 
 
-test('subscript v5', async t => {
+test.skip('subscript v5', async t => {
   const {parse, evaluate} = await import('../lib/parser/subscript-v5.js');
 
   let ast = parse(src(0))
@@ -448,7 +448,7 @@ test('new Function', async t => {
   console.timeEnd('new Function eval')
 })
 
-test('direct fn', async t => {
+test.skip('direct fn', async t => {
   const createFn = (n) => (a,b, c, d, f, i, k) => 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(n)
 
   console.time('direct fn')
