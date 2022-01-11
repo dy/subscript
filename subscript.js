@@ -14,7 +14,7 @@ let u, list, op, prec, fn,
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
     ),
 
-    inc = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id())
+    inc = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx))
 
 // numbers
 for (op=_0;op<=_9;) lookup[op++] = num

@@ -211,7 +211,7 @@ test('unaries: seqs', t => {
   evalTest('1 * -1')
 })
 test('unaries: inc/dec', t => {
-  let ctx = {a:2,b:{c:1}}
+  let ctx = {a:2,b:{c:1},d:['c']}
   is(script('--a')(ctx),1)
   is(ctx.a,1)
   is(script('++ a')(ctx),2)
@@ -225,6 +225,9 @@ test('unaries: inc/dec', t => {
 
   is(script('b["c"]++')(ctx),3)
   is(ctx.b.c,4)
+
+  is(script('b[d[0]]++')(ctx),4)
+  is(ctx.b.c,5)
 })
 test('unaries: postfix', t => {
   let ctx = {a:2}
