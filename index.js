@@ -63,7 +63,7 @@ set = parse.set = (
     // binary
     arity>1 ? (a,b) => a && (b=expr(opPrec)) && (
       !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
-      ctx => fn(a(ctx),b(ctx))
+      ctx => fn(a(ctx),b(ctx),a.id?.(ctx),b.id?.(ctx))
     ) :
     // unary prefix (0 args)
     arity ? a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx))) :
