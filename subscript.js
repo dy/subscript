@@ -14,7 +14,7 @@ let u, list, op, prec, fn,
       n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
     ),
 
-    inc = (a,fn,c=a.of) => ctx => fn(c?c(ctx):ctx, a.id())
+    inc = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id())
 
 // numbers
 for (op=_0;op<=_9;) lookup[op++] = num
@@ -24,9 +24,12 @@ for (list=[
   // "a"
   '"', a => (a=a?err('Unexpected string'):skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
 
-  // a.b, .2, 1.2 parser in one
-  '.', (a,id,fn) => !a ? num(skip(-1)) : // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
-    (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
+  // a.b
+  '.', (a,id) => (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
+
+  // .2
+  // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
+  '.', a => !a && num(skip(-1)),,
 
   // a[b]
   '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
