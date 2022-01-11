@@ -3,6 +3,7 @@
   "version": "6.2.0",
   "description": "Fast and tiny expression evaluator with common syntax microlanguage.",
   "main": "subscript.js",
+  "module": "subscript.js",
   "type": "module",
   "files": [
     "index.js",
