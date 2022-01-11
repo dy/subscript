@@ -395,6 +395,7 @@
 * [x] Make better error explanations
 * [x] remove tagged literal, since it doesn't make much sense without caching by callsite. That can easily be implemented user-side.
 * [x] collect ids: needed for element-params
+* [ ] language building tool: create own language with a set of features
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
