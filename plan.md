@@ -398,6 +398,8 @@
 * [ ] simpler way to extend: ideally we should be able to extend subscript without internals for:
   . strings
   . a?.b
+  * [x] somewhat possible by passing ids as arguments
+  * [ ] don't collect arguments? now extending direct operator like a ?. b
 * [ ] language building tool: create own language with a set of features
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
