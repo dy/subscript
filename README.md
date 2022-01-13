@@ -19,7 +19,7 @@ fn.args // ['a', 'c', 'd']
 
 _Subscript_ is designed to be useful for:
 
-* templates (perfect match with [template parts](https://github.com/github/template-parts))
+* templates (perfect match with [template parts](https://github.com/github/template-parts), [templize](https://github.com/spectjs/templize))
 * expressions evaluators, calculators
 * configurable subsets of languages (eg. [justin](#justin)) <!-- see sonr, mineural -->
 * pluggable/mock language features (eg. pipe operator)
@@ -317,11 +317,11 @@ math-parser: -
 ## Alternatives
 
 * [jexpr](https://github.com/justinfagnani/jexpr)
+* [jsep](https://github.com/EricSmekens/jsep)
 * [jexl](https://github.com/TomFrost/Jexl)
 * [mozjexl](https://github.com/mozilla/mozjexl)
 * [expr-eval](https://github.com/silentmatt/expr-eval)
 * [expression-eval](https://github.com/donmccurdy/expression-eval)
-* [jsep](https://github.com/EricSmekens/jsep)
 * [string-math](https://github.com/devrafalko/string-math)
 * [nerdamer](https://github.com/jiggzson/nerdamer)
 * [math-codegen](https://github.com/mauriciopoppe/math-codegen)
