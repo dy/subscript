@@ -228,6 +228,10 @@ test('unaries: inc/dec', t => {
 
   is(script('b[d[0]]++')(ctx),4)
   is(ctx.b.c,5)
+
+  is(script('a++, b.c++')(ctx),5)
+  is(ctx.a,3)
+  is(ctx.b.c,6)
 })
 test('unaries: postfix', t => {
   let ctx = {a:2}

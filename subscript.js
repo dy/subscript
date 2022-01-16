@@ -44,9 +44,9 @@ for (list=[
   ), PREC_CALL,
 
   // [a,b,c] or (a,b,c)
-  ',', (a,prec,b=expr(PREC_SEQ)) => (
-    b.all = a.all ? ctx => [...a.all(ctx), b(ctx)] : ctx => [a(ctx),b(ctx)],
-    b
+  ',', (a,prec,b=expr(PREC_SEQ),fn=ctx => (a(ctx), b(ctx))) => (
+    fn.all = a.all ? ctx => [...a.all(ctx), b(ctx)] : ctx => [a(ctx),b(ctx)],
+    fn
   ), PREC_SEQ,
 
   '|', PREC_OR, (a,b)=>a|b,
