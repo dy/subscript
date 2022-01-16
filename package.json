@@ -2,11 +2,12 @@
   "name": "subscript",
   "version": "6.2.0",
   "description": "Fast and tiny expression evaluator with common syntax microlanguage.",
-  "main": "subscript.js",
-  "module": "subscript.js",
+  "main": "src/subscript.js",
+  "module": "src/subscript.js",
+  "browser": "subscript.js",
   "type": "module",
   "files": [
-    "index.js",
+    "src",
     "subscript.js",
     "subscript.min.js",
     "justin.js",
@@ -18,10 +19,10 @@
     "test": "test"
   },
   "scripts": {
-    "build": "rollup subscript.js --file subscript.min.js --format esm --name \"Subscript\"",
-    "minify": "terser subscript.min.js -o subscript.min.js --module -c passes=3 -m",
-    "build-justin": "rollup justin.js --file justin.min.js --format esm --name \"Justin\"",
-    "minify-justin": "terser justin.min.js -o justin.min.js --module -c passes=3 -m",
+    "build": "rollup src/subscript.js --file subscript.js --format esm --name \"Subscript\"",
+    "minify": "terser subscript.js -o subscript.min.js --module -c passes=3 -m",
+    "build-justin": "rollup src/justin.js --file justin.js --format esm --name \"Justin\"",
+    "minify-justin": "terser justin.js -o justin.min.js --module -c passes=3 -m",
     "test": "node test"
   },
   "repository": {
