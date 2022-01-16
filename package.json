@@ -19,8 +19,9 @@
     "test": "test"
   },
   "scripts": {
-    "build": "rollup src/subscript.js --file subscript.js --format esm --name \"Subscript\"",
-    "minify": "terser subscript.js -o subscript.min.js --module -c passes=3 -m",
+    "build": "npm run build-subscript && npm run minify-subscript && npm run build-justin && npm run minify-justin",
+    "build-subscript": "rollup src/subscript.js --file subscript.js --format esm --name \"Subscript\"",
+    "minify-subscript": "terser subscript.js -o subscript.min.js --module -c passes=3 -m",
     "build-justin": "rollup src/justin.js --file justin.js --format esm --name \"Justin\"",
     "minify-justin": "terser justin.js -o justin.min.js --module -c passes=3 -m",
     "test": "node test"
