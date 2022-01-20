@@ -68,6 +68,7 @@
   "homepage": "https://github.com/spectjs/subscript#readme",
   "devDependencies": {
     "rollup": "^2.60.2",
-    "terser": "^5.10.0"
+    "terser": "^5.10.0",
+    "tst": "^7.1.0"
   }
 }

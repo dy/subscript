@@ -85,6 +85,12 @@ test('basic', t => {
   evalTest('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', {a:{b:1}, x:{y:{z:v=>v}}, c:{456:789}, n:1})
 })
 
+test('syntactic', t => {
+  is(script('')(), undefined)
+  is(script(' ')(), undefined)
+  is(script('\n\r')(), undefined)
+})
+
 test('readme', t => {
   evalTest(`a.b + c(d-1)`, {a:{b:1}, c:x=>x*2, d:3})
   evalTest(`min * 60 + "sec"`, {min: 5})

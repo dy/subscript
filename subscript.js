@@ -4,7 +4,11 @@ const SPACE=32;
 let idx, cur, args,
 
 // no handling tagged literals since easily done on user side with cache, if needed
-parse = (s, fn= !(cur=s, idx=0, args=[], s=expr()) || cur[idx] ? err() : ctx=>s(ctx||{})) => (fn.args = args, fn),
+parse = (s, fn) => (
+  idx=0, args=[], cur=s.trim(),
+  !(s = cur ? expr() : ctx=>fn) || cur[idx] ? err() :
+  fn = ctx=>s(ctx||{}), fn.args = args, fn
+),
 
 isId = c =>
   (c >= 48 && c <= 57) || // 0..9
