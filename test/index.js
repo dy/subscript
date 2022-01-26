@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
-import script from '../src/subscript.js'
-import { skip, expr, set, err, cur, idx } from '../src/index.js'
+import script from '../subscript.js'
+import { skip, expr, set, err, cur, idx } from '../parser.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -402,7 +402,7 @@ test('ext: object', t => {
 })
 
 test('ext: justin', async t => {
-  const {default: script} = await import('../src/justin.js')
+  const {default: script} = await import('../justin.js')
   evalTest(`"abcd" + 'efgh'`)
   is(script('a;b')({a:1,b:2}), 2)
   evalTest('{x:~1, "y":2**2}["x"]', {})

@@ -2,12 +2,12 @@
   "name": "subscript",
   "version": "6.3.1",
   "description": "Fast and tiny expression evaluator with common syntax microlanguage.",
-  "main": "src/subscript.js",
-  "module": "src/subscript.js",
+  "main": "subscript.js",
+  "module": "subscript.js",
   "browser": "subscript.js",
   "type": "module",
   "files": [
-    "src",
+    "parser.js",
     "subscript.js",
     "subscript.min.js",
     "justin.js",
@@ -19,12 +19,13 @@
     "test": "test"
   },
   "scripts": {
-    "build": "npm run build-subscript && npm run minify-subscript && npm run build-justin && npm run minify-justin",
-    "build-subscript": "rollup src/subscript.js --file subscript.js --format esm --name \"Subscript\"",
-    "minify-subscript": "terser subscript.js -o subscript.min.js --module -c passes=3 -m",
-    "build-justin": "rollup src/justin.js --file justin.js --format esm --name \"Justin\"",
-    "minify-justin": "terser justin.js -o justin.min.js --module -c passes=3 -m",
-    "test": "node test"
+    "build": "npm run build-subscript && npm run build-justin",
+    "minify": "npm run minify-subscript && npm run minify-justin",
+    "build-subscript": "rollup subscript.js --file subscript.min.js --format esm --name \"Subscript\"",
+    "minify-subscript": "terser subscript.min.js -o subscript.min.js --module -c passes=3 -m",
+    "build-justin": "rollup justin.js --file justin.min.js --format esm --name \"Justin\"",
+    "minify-justin": "terser justin.min.js -o justin.min.js --module -c passes=3 -m",
+    "test": "node test && node test/jsep && node test/perf"
   },
   "repository": {
     "type": "git",

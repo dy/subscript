@@ -395,11 +395,12 @@
 * [x] Make better error explanations
 * [x] remove tagged literal, since it doesn't make much sense without caching by callsite. That can easily be implemented user-side.
 * [x] collect ids: needed for element-params
-* [ ] simpler way to extend: ideally we should be able to extend subscript without internals for:
+* [x] simpler way to extend: ideally we should be able to extend subscript without internals for:
   . strings
   . a?.b
   * [x] somewhat possible by passing ids as arguments
-  * [ ] don't collect arguments? now extending direct operator like a ?. b
+  * [x] ~~don't collect arguments? now extending direct operator like a ?. b~~ it's tiny and still useful
+  → Just expose direct parser. Requiring it from `/src` is unreliable, but extending is needed
 * [ ] language building tool: create own language with a set of features
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
