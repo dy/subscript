@@ -54,20 +54,20 @@ Default literals:
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via `parse.set(token, precedence, operator)` for unary or binary operators (detected by number of arguments in `operator`), or via `parse.set(token, parse, precedence)` for custom tokens.
+Everything else can be extended via `operator(str, fn, prec?)` for unary or binary operators (detected by number of arguments in `fn`), or via `token(str, fn, prec?)` for custom tokens.
 
 ```js
-import script from './subscript.js'
+import script, { operator, token } from './subscript.js'
 
 // add ~ unary operator with precedence 15
-script.set('~', a => ~a, 15)
+operator('~', a => ~a, 15)
 
 // add === binary operator with precedence 9
-script.set('===', (a, b) => a===b, 9)
+operator('===', (a, b) => a===b, 9)
 
 // add literals
-script.token('true', a => ()=>true)
-script.token('false', a => ()=>false)
+token('true', a => ()=>true)
+token('false', a => ()=>false)
 
 script(`true === false`)() // false
 ```
