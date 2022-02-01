@@ -400,6 +400,7 @@
   . a?.b
   * [x] somewhat possible by passing ids as arguments
   → Just expose direct parser. Requiring it from `/src` is unreliable, but extending is needed
+* [ ] make `operator`, `token` more external methods with plain API
 * [ ] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
   * maybe we just need better interop instead (see below)
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
