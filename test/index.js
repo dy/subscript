@@ -1,6 +1,6 @@
 import test, {is, any, throws} from '../lib/test.js'
-import script from '../subscript.js'
-import { skip, expr, set, err, cur, idx } from '../parser.js'
+import script, { operator } from '../subscript.js'
+import { skip, expr, token, err, cur, idx } from '../parser.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -65,7 +65,7 @@ test('basic', t => {
   evalTest('a(b)(c)', {a:x=>y=>x+y, b:2, c:3})
 
   // **
-  set('**', 14, (a,b)=>a**b)
+  operator('**', (a,b)=>a**b, 14)
 
   evalTest('1 + 2 * 3 ** 4 + 5', {})
   evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
@@ -95,8 +95,8 @@ test('readme', t => {
   evalTest(`a.b + c(d-1)`, {a:{b:1}, c:x=>x*2, d:3})
   evalTest(`min * 60 + "sec"`, {min: 5})
 
-  script.set('|', 6, ( a, b ) => a?.pipe?.(b) || (a|b) ) // overload pipe operator
-  script.set('=>', ( args, body ) => (body = expr(), ctx => (...args) => body() ) ) // single-arg arrow function parser
+  operator('|', ( a, b ) => a?.pipe?.(b) || (a|b), 6 ) // overload pipe operator
+  operator('=>', ( args, body ) => (body = expr(), ctx => (...args) => body() ) ) // single-arg arrow function parser
 
   let evaluate = script(`
     interval(350)
@@ -114,14 +114,14 @@ test('readme', t => {
 
 
   // add ~ unary operator with precedence 15
-  script.set('~', 15, a => ~a)
+  operator('~', a => ~a, 15)
 
   // add === binary operator
-  script.set('===', 9, (a, b) => a===b)
+  operator('===', (a, b) => a===b, 9)
 
   // add literals
-  script.set('true', a => ()=>true)
-  script.set('false', a => ()=>false)
+  token('true', a => ()=>true)
+  token('false', a => ()=>false)
 
   is(script('true === false')(), false) // false
 })
@@ -144,10 +144,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t=> {
-  set('null', a => a ? err() : ()=>null)
-  set('true', a => a ? err() : ()=>true)
-  set('false', a => a ? err() : ()=>false)
-  set('undefined', a => a ? err() : ()=>undefined)
+  token('null', a => a ? err() : ()=>null)
+  token('true', a => a ? err() : ()=>true)
+  token('false', a => a ? err() : ()=>false)
+  token('undefined', a => a ? err() : ()=>undefined)
 
   is(script('null')({}), null)
   is(script('(null)')({}), null)
@@ -324,7 +324,7 @@ test('chains', t => {
 })
 
 test('ext: in operator', t => {
-  set('in', 10, (a,b) => a in b)
+  operator('in', (a,b) => a in b, 10)
 
   evalTest('inc in bin', {bin:{inc:1}, inc:'inc'})
   evalTest('bin in inc', {inc:{bin:1}, bin:'bin'})
@@ -334,7 +334,7 @@ test('ext: in operator', t => {
 
 test('ext: list', t => {
   // as operator it's faster to lookup (no need to call extra rule check) and no conflict with word ops
-  set('[', (a, args) => !a && (
+  token('[', (a, args) => !a && (
     a=expr(0,93),
     !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
   ))
@@ -368,8 +368,8 @@ test('ext: list', t => {
 
 
 test('ext: ternary', t => {
-  set(':', 3.1, (a,b) => [a,b])
-  set('?', 3, (a,b) => a ? b[0] : b[1])
+  operator(':', (a,b) => [a,b], 3.1)
+  operator('?', (a,b) => a ? b[0] : b[1], 3)
 
   evalTest('a?b:c', {a:true,b:1,c:2})
   evalTest('a?b:c', {a:false,b:1,c:2})
@@ -378,13 +378,13 @@ test('ext: ternary', t => {
 })
 
 test('ext: object', t => {
-  set('{', (a, args) => !a && (
+  token('{', (a, args) => !a && (
       a=expr(0,125),
       !a ? ctx => ({}) : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
     )
   )
-  set(':', (a, prec, b) => (b=expr(1.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1 )
-  set('=', 2, (a,b)=>b)
+  token(':', (a, prec, b) => (b=expr(1.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1 )
+  operator('=', (a,b)=>b, 2)
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})
@@ -418,8 +418,8 @@ test('ext: justin', async t => {
 })
 
 test('ext: comments', t => {
-  set('/*', (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)) )
-  set('//', (a, prec) => (skip(c => c >= 32), a||expr(prec)) )
+  token('/*', (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)) )
+  token('//', (a, prec) => (skip(c => c >= 32), a||expr(prec)) )
   is(script('/* x */1/* y */+/* z */2')({}), 3)
   is(script(`a /
     // abc
@@ -477,7 +477,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  set('&',13,(a)=>~a)
+  operator('&',(a=0)=>~a, 13)
   is(script('&a+b*c')({a:1,b:2,c:3}), 4)
   is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })

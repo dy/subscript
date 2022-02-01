@@ -1,5 +1,5 @@
 import test, {is, any, throws} from '../lib/test.js'
-import script from '../justin.js'
+import script, {operator} from '../justin.js'
 // import { skip, code, expr, char, operator } from '../justin.js'
 
 test('Expression: Constants', ()=> {
@@ -77,22 +77,22 @@ test('Ops', function (qunit) {
 test('Custom operators', ()=> {
   is(script('a^b')({a: 0xaaa, b:0xbbb}), 0xaaa^0xbbb);
 
-  script.set('×', 9, (a,b)=>a*b)
+  operator('×', (a,b)=>a*b,  9)
   is(script('a×b')({a:2,b:3}), 6);
 
-  script.set('or',1, (a,b)=>a||b)
+  operator('or', (a,b)=>a||b, 1)
   is(script('oneWord or anotherWord')({oneWord:1,anotherWord:0}), 1);
   throws(() => script('oneWord ordering anotherWord'));
 
-  script.set('#', 11, a=>[a])
+  operator('#',  (a=0)=>[a], 11)
   is(script('#a')({a:1}), [1]);
 
-  script.set('not', 13, a=>!a)
+  operator('not', (a=0)=>!a,  13)
   is(script('not a')({a:false}), true);
 
   throws(t => script('notes 1'));
 
-  script.set('and', 2, (a,b)=>a&&b)
+  operator('and', (a,b)=>a&&b,  2)
   is(script('a and b')({a:1,b:2}),2);
   is(script('bands')({a:1,b:2}), undefined);
 

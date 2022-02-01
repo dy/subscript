@@ -55,22 +55,13 @@ id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], args.push(name), fn.i
 lookup = [],
 
 // create operator checker/mapper (see examples)
-set = parse.set = (
-  op,
-  opPrec, fn=SPACE, // if opPrec & fn come in reverse order - consider them raw parse fn case, still precedence possible
+token = (
+  op, map,
+  prec=SPACE,
   c=op.charCodeAt(0),
   l=op.length,
   prev=lookup[c],
-  arity=fn.length || ([fn,opPrec]=[opPrec,fn], 0),
-  word=op.toUpperCase()!==op, // make sure word boundary comes after word operator
-  map=
-    // binary
-    arity>1 ? (a,b) => a && (b=expr(opPrec)) && (
-      !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
-      ctx => fn(a(ctx),b(ctx),a.id?.(ctx),b.id?.(ctx))
-    ) :
-    // unary prefix (0 args)
-    arity ? a => !a && (a=expr(opPrec-1)) && (ctx => fn(a(ctx))) :
-    fn // custom parser
-) =>
-lookup[c] = (a, curPrec, from=idx) => curPrec<opPrec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) || (idx=from, prev&&prev(a, curPrec))
+  word=op.toUpperCase()!==op // make sure word boundary comes after word operator
+) => lookup[c] = (a, curPrec, from=idx) =>
+  curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) ||
+  (idx=from, prev&&prev(a, curPrec))

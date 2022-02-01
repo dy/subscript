@@ -60,16 +60,16 @@ Everything else can be extended via `parse.set(token, precedence, operator)` for
 import script from './subscript.js'
 
 // add ~ unary operator with precedence 15
-script.set('~', 15, a => ~a)
+script.set('~', a => ~a, 15)
 
-// add === binary operator
-script.set('===', 9, (a, b) => a===b)
+// add === binary operator with precedence 9
+script.set('===', (a, b) => a===b, 9)
 
 // add literals
-script.set('true', a => ()=>true)
-script.set('false', a => ()=>false)
+script.token('true', a => ()=>true)
+script.token('false', a => ()=>false)
 
-script`true === false`() // false
+script(`true === false`)() // false
 ```
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.

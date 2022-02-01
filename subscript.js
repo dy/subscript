@@ -1,26 +1,83 @@
-import {parse, set, lookup, skip, cur, idx, err, expr, isId, args, space} from './parser.js'
+import {parse, token, lookup, skip, cur, idx, err, expr, isId, args, space} from './parser.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 let u, list, op, prec, fn,
-    isNum = c => c>=_0 && c<=_9,
-    // 1.2e+3, .5
-    num = n => (
-      n&&err('Unexpected number'),
-      n = skip(c=>c == PERIOD || isNum(c)),
-      (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
-      n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
-    ),
+isNum = c => c>=_0 && c<=_9,
+// 1.2e+3, .5
+num = n => (
+  n&&err('Unexpected number'),
+  n = skip(c=>c == PERIOD || isNum(c)),
+  (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
+  n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
+),
 
-    inc = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx))
+// inc operator builder
+incr = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx)),
+
+// call fn for all items with stride 3
+each3 = (list, fn) => { while (list[0]) fn(...list.splice(0,3)) },
+
+// register operator
+operator = (op, fn, prec) => token(op,
+  // binary (2 args)
+  fn.length > 1 ? (a,b) => a && (b=expr(prec)) && (
+    !a.length && !b.length ? (a=fn(a(),b()), ()=>a) : // static pre-eval like `"a"+"b"`
+    ctx => fn(a(ctx),b(ctx))
+  ) :
+  // unary postfix (1 arg)
+  fn.length ? a => a && (ctx => fn(a(ctx))) :
+  // unary prefix (0 args)
+  a => !a && (a=expr(prec-1)) && (ctx => fn(a(ctx))),
+  prec
+)
 
 // numbers
 for (op=_0;op<=_9;) lookup[op++] = num
 
-// operators
-for (list=[
+// standard operators
+each3([
+  '|', (a,b)=>a|b, PREC_OR,
+  '||', (a,b)=>a||b, PREC_SOME,
+
+  '&', (a,b)=>a&b, PREC_AND,
+  '&&', (a,b)=>a&&b, PREC_EVERY,
+
+  '^', (a,b)=>a^b, PREC_XOR,
+
+  // ==, !=
+  '==', (a,b)=>a==b, PREC_EQ,
+  '!=', (a,b)=>a!=b, PREC_EQ,
+
+  // > >= >> >>>, < <= <<
+  '>', (a,b)=>a>b, PREC_COMP,
+  '>=', (a,b)=>a>=b, PREC_COMP,
+  '>>', (a,b)=>a>>b, PREC_SHIFT,
+  '>>>', (a,b)=>a>>>b, PREC_SHIFT,
+  '<', (a,b)=>a<b, PREC_COMP,
+  '<=', (a,b)=>a<=b, PREC_COMP,
+  '<<', (a,b)=>a<<b, PREC_SHIFT,
+
+  // + -
+  '+', (a,b)=>a+b, PREC_SUM,
+  '+', (a=0)=>+a, PREC_UNARY,
+
+  '-', (a,b)=>a-b, PREC_SUM,
+  '-', (a=0)=>-a, PREC_UNARY,
+
+  // ! ~
+  '!', (a=0)=>!a, PREC_UNARY,
+
+  // * / %
+  '*', (a,b)=>a*b, PREC_MULT,
+  '/', (a,b)=>a/b, PREC_MULT,
+  '%', (a,b)=>a%b, PREC_MULT
+], operator)
+
+// custom operators
+each3([
   // "a"
   '"', a => (a=a?err('Unexpected string'):skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
 
@@ -49,43 +106,10 @@ for (list=[
     fn
   ), PREC_SEQ,
 
-  '|', PREC_OR, (a,b)=>a|b,
-  '||', PREC_SOME, (a,b)=>a||b,
-
-  '&', PREC_AND, (a,b)=>a&b,
-  '&&', PREC_EVERY, (a,b)=>a&&b,
-
-  '^', PREC_XOR, (a,b)=>a^b,
-
-  // ==, !=
-  '==', PREC_EQ, (a,b)=>a==b,
-  '!=', PREC_EQ, (a,b)=>a!=b,
-
-  // > >= >> >>>, < <= <<
-  '>', PREC_COMP, (a,b)=>a>b,
-  '>=', PREC_COMP, (a,b)=>a>=b,
-  '>>', PREC_SHIFT, (a,b)=>a>>b,
-  '>>>', PREC_SHIFT, (a,b)=>a>>>b,
-  '<', PREC_COMP, (a,b)=>a<b,
-  '<=', PREC_COMP, (a,b)=>a<=b,
-  '<<', PREC_SHIFT, (a,b)=>a<<b,
-
-  // + ++ - --
-  '+', PREC_SUM, (a,b)=>a+b,
-  '+', PREC_UNARY, (a)=>+a,
-  '++', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]), PREC_UNARY,
-
-  '-', PREC_SUM, (a,b)=>a-b,
-  '-', PREC_UNARY, (a)=>-a,
-  '--', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
-
-  // ! ~
-  '!', PREC_UNARY, (a)=>!a,
-
-  // * / %
-  '*', PREC_MULT, (a,b)=>a*b,
-  '/', PREC_MULT, (a,b)=>a/b,
-  '%', PREC_MULT, (a,b)=>a%b
-]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
+  // a++, ++a
+  '++', a => incr(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]), PREC_UNARY,
+  '--', a => incr(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
+], token)
 
 export default parse
+export { operator, each3 }
