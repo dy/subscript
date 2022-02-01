@@ -5,6 +5,11 @@
   "main": "subscript.js",
   "module": "subscript.js",
   "browser": "subscript.js",
+  "exports": {
+    ".": "./subscript.js",
+    "./subscript": "./subscript.js",
+    "./justin": "./justin.js"
+  },
   "type": "module",
   "files": [
     "parser.js",
