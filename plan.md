@@ -399,8 +399,18 @@
   . strings
   . a?.b
   * [x] somewhat possible by passing ids as arguments
-  * [x] ~~don't collect arguments? now extending direct operator like a ?. b~~ it's tiny and still useful
   → Just expose direct parser. Requiring it from `/src` is unreliable, but extending is needed
+* [ ] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
+  * maybe we just need better interop instead (see below)
+* [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
+  * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
+  * [ ] collecting args via tree traversal
+  * [ ] soner transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
+  * [ ] more direct API: prefix operator, id - may not require low-level extension
+* [ ] maybe we should really make eval helpers belong to extensions, not core.
+* [ ] also, identifier can be adjustable:
+  + we may want to track ids manually
+  + or make `a.b.c` identifiers, not operators.
 * [ ] language building tool: create own language with a set of features
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
