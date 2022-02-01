@@ -44,10 +44,10 @@ each3([
   '//', (a, prec) => (skip(c => c >= 32), a||expr(prec)),,
 
   // literals
-  'null', a => a ? err('Unexpected literal') : ()=>null,,
-  'true', a => a ? err('Unexpected literal') : ()=>true,,
-  'false', a => a ? err('Unexpected literal') : ()=>false,,
-  'undefined', a => a ? err('Unexpected literal') : ()=>undefined,,
+  'null', a => a ? err() : ()=>null,,
+  'true', a => a ? err() : ()=>true,,
+  'false', a => a ? err() : ()=>false,,
+  'undefined', a => a ? err() : ()=>undefined,,
 
   ';', a => expr()||(()=>{}),,
 
@@ -60,10 +60,7 @@ each3([
   '?.', (a,id) => (space(), id=skip(isId)) && (ctx => a(ctx)?.[id]),,
 
   // [a,b,c]
-  '[', (a) => !a && (
-    a=expr(0,CBRACK),
-    !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]
-  ),,
+  '[', (a) => !a && (a=expr(0,CBRACK), !a ? ctx => [] : a.all ? ctx => a.all(ctx) : ctx => [a(ctx)]),,
 
   // {a:1, b:2, c:3}
   '{', (a, entries) => !a && (

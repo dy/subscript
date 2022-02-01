@@ -10,13 +10,6 @@ parse = (s, fn) => (
   fn = ctx=>s(ctx||{}), fn.args = args, fn
 ),
 
-isId = c =>
-  (c >= 48 && c <= 57) || // 0..9
-  (c >= 65 && c <= 90) || // A...Z
-  (c >= 97 && c <= 122) || // a...z
-  c == 36 || c == 95 || // $, _,
-  (c >= 192 && c != 215 && c != 247), // any non-ASCII
-
 err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
 skip = (is=1, from=idx, l) => {
@@ -48,6 +41,13 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
 // skip space chars, return first non-space character
 space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
 
+isId = c =>
+  (c >= 48 && c <= 57) || // 0..9
+  (c >= 65 && c <= 90) || // A...Z
+  (c >= 97 && c <= 122) || // a...z
+  c == 36 || c == 95 || // $, _,
+  (c >= 192 && c != 215 && c != 247), // any non-ASCII
+
 // variable identifier
 id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], args.push(name), fn.id=()=>name, fn) : 0,
 
@@ -66,11 +66,11 @@ token = (
   curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) ||
   (idx=from, prev&&prev(a, curPrec)),
 
-
 // numbers
 isNum = c => c>=_0 && c<=_9,
 
 // 1.2e+3, .5
+// FIXME: I wonder if core should include full float notation. Some syntaxes may not need that
 num = n => (
   n&&err('Unexpected number'),
   n = skip(c=>c == PERIOD || isNum(c)),
@@ -78,5 +78,6 @@ num = n => (
   n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
 )
 
+// numbers come built-in
 for (let op=_0;op<=_9;) lookup[op++] = num
 lookup[PERIOD] = a => (idx&&idx--,num())
