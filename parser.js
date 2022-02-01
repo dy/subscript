@@ -1,4 +1,4 @@
-const SPACE=32, CPAREN=41
+const SPACE=32, CPAREN=41, PERIOD=46, _0=48, _9=57
 
 // current string, index and collected ids
 export let idx, cur, args,
@@ -64,4 +64,19 @@ token = (
   word=op.toUpperCase()!==op // make sure word boundary comes after word operator
 ) => lookup[c] = (a, curPrec, from=idx) =>
   curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) ||
-  (idx=from, prev&&prev(a, curPrec))
+  (idx=from, prev&&prev(a, curPrec)),
+
+
+// numbers
+isNum = c => c>=_0 && c<=_9,
+
+// 1.2e+3, .5
+num = n => (
+  n&&err('Unexpected number'),
+  n = skip(c=>c == PERIOD || isNum(c)),
+  (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
+  n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
+)
+
+for (let op=_0;op<=_9;) lookup[op++] = num
+lookup[PERIOD] = a => (idx&&idx--,num())

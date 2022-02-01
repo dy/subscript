@@ -1,18 +1,10 @@
 import {parse, token, lookup, skip, cur, idx, err, expr, isId, args, space} from './parser.js'
 
-const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
+const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 let u, list, op, prec, fn,
-isNum = c => c>=_0 && c<=_9,
-// 1.2e+3, .5
-num = n => (
-  n&&err('Unexpected number'),
-  n = skip(c=>c == PERIOD || isNum(c)),
-  (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
-  n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
-),
 
 // inc operator builder
 incr = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx)),
@@ -33,9 +25,6 @@ operator = (op, fn, prec) => token(op,
   a => !a && (a=expr(prec-1)) && (ctx => fn(a(ctx))),
   prec
 )
-
-// numbers
-for (op=_0;op<=_9;) lookup[op++] = num
 
 // standard operators
 each3([
@@ -82,11 +71,7 @@ each3([
   '"', a => (a=a?err('Unexpected string'):skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
 
   // a.b
-  '.', (a,id) => (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
-
-  // .2
-  // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
-  '.', a => !a && num(skip(-1)),,
+  '.', (a,id) => a && (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
 
   // a[b]
   '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
