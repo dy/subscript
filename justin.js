@@ -22,7 +22,7 @@ each3([
   // operators
   '===', (a,b) => a===b, PREC_EQ,
   '!==', (a,b) => a!==b, PREC_EQ,
-  '~', (a=0) => ~a, PREC_UNARY,
+  '~', (a) => ~a, PREC_UNARY,
 
   // ?:
   ':', (a,b) => [a,b], 3.1,
@@ -69,7 +69,6 @@ each3([
     ),,
   // for JSON case we should not collect arg (different evaluator than ternary)
   ':', (a, prec, b) => (b=expr(1.1)||err(), a.id&&args.pop(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1
-  // FIXME: make conditional result depending on passed precision
 ], token)
 
 export {default} from './subscript.js'

@@ -169,7 +169,7 @@ test('Esprima Comparison', ()=> {
 });
 
 // Should support ternary by default (index.js):
-test('Ternary', ()=> {
+test.only('Ternary', ()=> {
   is(script('a ? b : c')({a:1, b:2, c: 3}), 2);
   is(script('a||b ? c : d')({a:0, b:0, c: 2, d: 3}), 3);
 });

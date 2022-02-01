@@ -20,7 +20,7 @@ operator = (op, fn, prec) => token(op,
     ctx => fn(a(ctx),b(ctx))
   ) :
   // unary postfix (1 arg)
-  fn.length ? a => a && (ctx => fn(a(ctx))) :
+  // fn.length ? a => a && (ctx => fn(a(ctx))) :
   // unary prefix (0 args)
   a => !a && (a=expr(prec-1)) && (ctx => fn(a(ctx))),
   prec
@@ -51,13 +51,13 @@ each3([
 
   // + -
   '+', (a,b)=>a+b, PREC_SUM,
-  '+', (a=0)=>+a, PREC_UNARY,
+  '+', (a)=>+a, PREC_UNARY,
 
   '-', (a,b)=>a-b, PREC_SUM,
-  '-', (a=0)=>-a, PREC_UNARY,
+  '-', (a)=>-a, PREC_UNARY,
 
   // ! ~
-  '!', (a=0)=>!a, PREC_UNARY,
+  '!', (a)=>!a, PREC_UNARY,
 
   // * / %
   '*', (a,b)=>a*b, PREC_MULT,
