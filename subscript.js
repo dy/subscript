@@ -1,10 +1,10 @@
-import {parse, token, lookup, skip, cur, idx, err, expr, isId, args, space} from './parser.js'
+import parse, {token, lookup, skip, cur, idx, err, expr, isId, space} from './parser.js'
 
-const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34,
+const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
-let u, list, op, prec, fn,
+let u, list, op, prec, fn, args,
 
 // inc operator builder
 incr = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx)),
@@ -24,7 +24,26 @@ operator = (op, fn, prec) => token(op,
   // unary prefix (0 args)
   a => !a && (a=expr(prec-1)) && (ctx => fn(a(ctx))),
   prec
+),
+
+// numbers
+isNum = c => c>=_0 && c<=_9,
+
+// 1.2e+3, .5
+// FIXME: I wonder if core should include full float notation. Some syntaxes may not need that
+num = n => (
+  n&&err('Unexpected number'),
+  n = skip(c=>c == PERIOD || isNum(c)),
+  (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
+  n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
 )
+
+// numbers come built-in
+for (let op=_0;op<=_9;) lookup[op++] = num
+
+// parse id into function
+lookup[0] = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], args.push(name), fn.id=()=>name, fn) : null
+
 
 // standard operators
 each3([
@@ -73,14 +92,19 @@ each3([
   // a.b
   '.', (a,id) => a && (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
 
+  // .2
+  '.', a => !a && (skip(-1),num()),,
+
   // a[b]
   '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
 
   // a(), a(b), (a,b), (a+b)
   '(', (a,b,fn) => (
     b=expr(0,CPAREN),
-    // a(), a(b), a(b,c,d)
-    a ? ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : []) :
+    // a(), a(b), a(b,c,d), a.b(c,d)
+    a ? (
+      ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : [])
+    ) :
     // (a+b)
     b || err()
   ), PREC_CALL,
@@ -96,5 +120,5 @@ each3([
   '--', a => incr(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
 ], token)
 
-export default parse
-export { operator, each3 }
+export default (s, fn) => (args=[], s=s.trim() ? parse(s) : ctx=>{}, fn = ctx => s(ctx||{}), fn.args = args, fn)
+export { operator, each3, args }

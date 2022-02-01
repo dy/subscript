@@ -1,14 +1,10 @@
-const SPACE=32, CPAREN=41, PERIOD=46, _0=48, _9=57
+const SPACE=32
 
 // current string, index and collected ids
-export let idx, cur, args,
+export let idx, cur,
 
 // no handling tagged literals since easily done on user side with cache, if needed
-parse = (s, fn) => (
-  idx=0, args=[], cur=s.trim(),
-  !(s = cur ? expr() : ctx=>{}) || cur[idx] ? err() :
-  fn = ctx=>s(ctx||{}), fn.args = args, fn
-),
+parse = s => (idx=0, cur=s, s = expr(), !s || cur[idx] ? err() : s),
 
 err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
@@ -27,7 +23,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
     // it makes extra `space` call for parent exprs on the same character to check precedence again
     ( newNode =
       (fn=lookup[cc]) && fn(token, prec) || // if operator with higher precedence isn't found
-      (!token && id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
+      (!token && lookup[0]()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )
   ) token = newNode;
 
@@ -48,11 +44,9 @@ isId = c =>
   c == 36 || c == 95 || // $, _,
   (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
-// variable identifier
-id = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], args.push(name), fn.id=()=>name, fn) : 0,
-
 // operator/token lookup table
-lookup = [],
+// lookup[0] is id parser to let configs redefine it
+lookup = [n=>skip(isId)],
 
 // create operator checker/mapper (see examples)
 token = (
@@ -64,20 +58,6 @@ token = (
   word=op.toUpperCase()!==op // make sure word boundary comes after word operator
 ) => lookup[c] = (a, curPrec, from=idx) =>
   curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) ||
-  (idx=from, prev&&prev(a, curPrec)),
+  (idx=from, prev&&prev(a, curPrec))
 
-// numbers
-isNum = c => c>=_0 && c<=_9,
-
-// 1.2e+3, .5
-// FIXME: I wonder if core should include full float notation. Some syntaxes may not need that
-num = n => (
-  n&&err('Unexpected number'),
-  n = skip(c=>c == PERIOD || isNum(c)),
-  (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
-  n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
-)
-
-// numbers come built-in
-for (let op=_0;op<=_9;) lookup[op++] = num
-lookup[PERIOD] = a => (idx&&idx--,num())
+export default parse

@@ -1,4 +1,4 @@
-import test, {is, any, throws} from '../lib/test.js'
+import test, {is, throws} from 'tst'
 import script, { operator } from '../subscript.js'
 import { skip, expr, token, err, cur, idx } from '../parser.js'
 
