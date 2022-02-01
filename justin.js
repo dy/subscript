@@ -70,5 +70,6 @@ for (list=[
     ),,
   // for JSON case we should not collect arg (different evaluator than ternary)
   ':', (a, prec, b) => (b=expr(1.1)||err(), a.id&&args.pop(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1
+  // FIXME: make conditional result depending on passed precision
 
 ]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
