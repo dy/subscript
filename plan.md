@@ -409,14 +409,25 @@
   + [ ] we may want to collect all used ids
   + [ ] we may want it to return different target (function, string, etc)
   + [ ] or make `a.b.c` identifiers, not operators.
-* [ ] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
+* [x] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
   * maybe we just need better interop instead (see below)
+  + since ids can be collected externally now, it's better to outsource that indeed, to keep point of performance/size.
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
   * [ ] collecting args via tree traversal
   * [ ] soner transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
-    → that belongs to configs
+    → that belongs to custom langs, not core
+
+* [ ] Would be nice to provide actual analyzable tree, not just eval function.
+  + that would solve collecting arguments case
+  + that would allow easily different targets by user demand
+  + that would allow swizzles, pre-eval and various node optimizations
+  - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
+
+
+
+
 * [ ] language building tool: create own language with a set of features
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]

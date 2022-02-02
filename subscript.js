@@ -4,7 +4,7 @@ const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
-let u, list, op, prec, fn, args,
+let u, list, op, prec, fn,
 
 // inc operator builder
 incr = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx)),
@@ -42,7 +42,7 @@ num = n => (
 for (let op=_0;op<=_9;) lookup[op++] = num
 
 // parse id into function
-lookup[0] = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], args.push(name), fn.id=()=>name, fn) : null
+lookup[0] = (name=skip(isId), fn) => name ? (fn=ctx => ctx[name], fn.id=()=>name, fn) : null
 
 
 // standard operators
@@ -120,5 +120,5 @@ each3([
   '--', a => incr(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
 ], token)
 
-export default (s, fn) => (args=[], s=s.trim() ? parse(s) : ctx=>{}, fn = ctx => s(ctx||{}), fn.args = args, fn)
-export { operator, each3, args }
+export default s => (s=s.trim()) ? parse(s) : ctx=>{}
+export { operator, each3 }

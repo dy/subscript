@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import { token, lookup, skip, cur, idx, err, expr, isId, space } from './parser.js'
-import { each3, operator, args } from './subscript.js'
+import { each3, operator } from './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,
 PREC_SEQ=1, PREC_COND=3, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -68,7 +68,7 @@ each3([
       !a ? ctx => ({}) : ctx => (entries=(a.all||a)(ctx), Object.fromEntries(a.all?entries:[entries]))
     ),,
   // for JSON case we should not collect arg (different evaluator than ternary)
-  ':', (a, prec, b) => (b=expr(1.1)||err(), a.id&&args.pop(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1
+  ':', (a, prec, b) => (b=expr(1.1)||err(), a=a.id||a, ctx => [a(ctx), b(ctx)]), 1.1
 ], token)
 
 export {default} from './subscript.js'

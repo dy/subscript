@@ -1,4 +1,4 @@
-import test, {is, throws} from 'tst'
+import test, {is, throws, same} from 'tst'
 import script, { operator } from '../subscript.js'
 import { skip, expr, token, err, cur, idx } from '../parser.js'
 
@@ -488,11 +488,15 @@ test('stdlib cases', t => {
   is(script('Math.pow(a, 3) / 2 + b * 2 - 1')({Math, a:1, b:1}), 1.5)
 })
 
-test('collect args', async t => {
+test.only('ext: collect args', async t => {
+  const {lookup} = await import('../parser.js')
   const {default: script} = await import('../justin.js')
+
+  let args = [], id = lookup[0]
+  lookup[0] = a => (a=id(), a?.id && args.push(a.id()), a)
+
   let fn = script('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
-  is(fn.args,
-    ['Math', 'a', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'w', 'i', 'j', 'k'],
-    // ['Math', 'a', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
+  same(args,
+    ['Math', 'a', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
   )
 })

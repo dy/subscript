@@ -12,7 +12,6 @@ _Subscript_ is expression evaluator / microlanguage with standard syntax<br/>
 import script from './subscript.js'
 let fn = script`a.b + c(d - 1)`
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
-fn.args // ['a', 'c', 'd']
 ```
 
 ## Motivation
