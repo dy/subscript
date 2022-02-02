@@ -412,6 +412,12 @@
 * [x] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
   * maybe we just need better interop instead (see below)
   + since ids can be collected externally now, it's better to outsource that indeed, to keep point of performance/size.
+  ~ same time, since subscript is not just a thing in itself, it would be useful to expose ast.
+
+* [ ] Should we retain `subscript.eval` and `subscript.parse` for different purpose uses?
+  * Alternatively, we can come up with `node` constructor that can either create an eval function or generate AST
+  * Or we can still stuff ast into eval
+
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
   * [ ] collecting args via tree traversal
