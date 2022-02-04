@@ -1,6 +1,6 @@
 import test, {is, throws, same} from 'tst'
 import script, { operator } from '../subscript.js'
-import { skip, expr, token, err, cur, idx } from '../parser.js'
+import { skip, expr, token, err, cur, idx } from '../parse.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -489,7 +489,7 @@ test('stdlib cases', t => {
 })
 
 test.only('ext: collect args', async t => {
-  const {lookup} = await import('../parser.js')
+  const {lookup} = await import('../parse.js')
   const {default: script} = await import('../justin.js')
 
   let args = [], id = lookup[0]

@@ -1,5 +1,5 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import { token, lookup, skip, cur, idx, err, expr, isId, space } from './parser.js'
+import { token, lookup, skip, cur, idx, err, expr, isId, space } from './parse.js'
 import { each3, operator } from './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,

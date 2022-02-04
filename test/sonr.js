@@ -1,4 +1,4 @@
-import { token } from '../parser.js'
+import { token } from '../parse.js'
 
 // TODO: it should build syntax tree and then be able to convert to:
 // - wat source code

@@ -7,13 +7,13 @@
   "browser": "subscript.js",
   "exports": {
     ".": "./subscript.js",
-    "./parser": "./parser.js",
+    "./parse": "./parse.js",
     "./subscript": "./subscript.js",
     "./justin": "./justin.js"
   },
   "type": "module",
   "files": [
-    "parser.js",
+    "parse.js",
     "subscript.js",
     "subscript.min.js",
     "justin.js",
