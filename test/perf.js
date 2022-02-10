@@ -1,4 +1,4 @@
-import test, {is} from '../lib/test.js'
+import test, {is} from 'tst'
 
 const src = c => `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(${c})`
 const args={a:123, b:234, c:345, d:456, f:{g:[567]}, i:{j: yes => yes && (x => +x ? 0 : 1) }, k:1}
@@ -465,4 +465,17 @@ test.skip('direct fn', async t => {
     fn(a,b,c,d,f,i,k)
   }
   console.timeEnd('direct fn eval')
+})
+
+test('es-module-lexer', async t => {
+  const {init, parse} = await import('https://unpkg.com/es-module-lexer?module')
+  await init;
+
+  console.log(parse(src(1)))
+
+  console.time('es-module-lexer')
+  for (let i = 0; i < RUNS; i++){
+    parse(src(i))
+  }
+  console.timeEnd('es-module-lexer')
 })

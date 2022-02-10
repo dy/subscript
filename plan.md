@@ -431,7 +431,7 @@
   + that would allow swizzles, pre-eval and various node optimizations
   - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
 
-
+* [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
 
 
 * [ ] language building tool: create own language with a set of features

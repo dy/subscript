@@ -488,7 +488,7 @@ test('stdlib cases', t => {
   is(script('Math.pow(a, 3) / 2 + b * 2 - 1')({Math, a:1, b:1}), 1.5)
 })
 
-test.only('ext: collect args', async t => {
+test('ext: collect args', async t => {
   const {lookup} = await import('../parse.js')
   const {default: script} = await import('../justin.js')
 

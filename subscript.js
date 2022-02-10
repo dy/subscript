@@ -7,7 +7,7 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15
 let u, list, op, prec, fn,
 
 // inc operator builder
-incr = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx)),
+incr = (a,fn) => ctx => fn(a.of?a.of(ctx) : ctx, a.id(ctx)),
 
 // call fn for all items with stride 3
 each3 = (list, fn) => { while (list[0]) fn(...list.splice(0,3)) },
