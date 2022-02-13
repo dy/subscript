@@ -471,11 +471,29 @@ test('es-module-lexer', async t => {
   const {init, parse} = await import('https://unpkg.com/es-module-lexer?module')
   await init;
 
-  console.log(parse(src(1)))
+  // console.log(parse(src(1)))
 
   console.time('es-module-lexer')
   for (let i = 0; i < RUNS; i++){
     parse(src(i))
   }
   console.timeEnd('es-module-lexer')
+})
+
+test('object key', async t => {
+  const obj = {}
+  console.time('object key')
+  for (let i = 0; i < RUNS; i++){
+    obj[src(i)] = true
+  }
+  console.timeEnd('object key')
+})
+
+test('Map', async t => {
+  const map = new Map
+  console.time('Map.set')
+  for (let i = 0; i < RUNS; i++){
+    map.set(src(i), true)
+  }
+  console.timeEnd('Map.set')
 })
