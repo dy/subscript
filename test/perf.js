@@ -486,7 +486,7 @@ test.skip('direct fn', async t => {
   console.timeEnd('direct fn eval')
 })
 
-test('es-module-lexer', async t => {
+test.skip('es-module-lexer', async t => {
   const {init, parse} = await import('es-module-lexer')
   await init;
 
