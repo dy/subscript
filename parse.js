@@ -16,12 +16,13 @@ skip = (is=1, from=idx, l) => {
 
 // a + b - c
 expr = (prec=0, end, cc, token, newNode, fn) => {
+
   // chunk/token parser
   while (
     ( cc=space() ) && // till not end
     // FIXME: extra work is happening here, when lookup bails out due to lower precedence -
     // it makes extra `space` call for parent exprs on the same character to check precedence again
-    ( newNode =
+    (newNode =
       (fn=lookup[cc]) && fn(token, prec) || // if operator with higher precedence isn't found
       (!token && lookup[0]()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )

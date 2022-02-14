@@ -417,6 +417,16 @@
 * [ ] Should we retain `subscript.eval` and `subscript.parse` for different purpose uses?
   * Alternatively, we can come up with `node` constructor that can either create an eval function or generate AST
   * Or we can still stuff ast into eval
+  * Wasm is still faster for parsing and evaluating. Keeping ast it useful.
+
+* [ ] Would be nice to provide actual analyzable tree, not just eval function.
+  + ast enables easier access to underlying tokens (no need to fake id function), no need to store .of, .id etc.
+    + that would solve collecting arguments case
+  + that would allow different targets by user demand
+  + ast makes many custom operators direct ones, like . or
+  + ast is possible to eval in wasm, since it's declaratively defined
+  + that would allow swizzles, pre-eval and various node optimizations like a++ → a+=1, a,b = 1 → a=1, b=1
+  - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
 
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
@@ -425,16 +435,11 @@
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
 
-* [ ] Would be nice to provide actual analyzable tree, not just eval function.
-  + that would solve collecting arguments case
-  + that would allow easily different targets by user demand
-  + that would allow swizzles, pre-eval and various node optimizations
-  - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
 
 * [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
 
-
 * [ ] language building tool: create own language with a set of features
+
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -443,6 +448,13 @@
   * [ ] [double.js](https://github.com/munrocket/double.js) scripting
   * [ ] js-based glsl evaluator
   * [ ] language simulators
+
 * [ ] Demo
-* [ ] parse operator groups for faster eval, eg.: a*x + b*y + c
-* [ ] wasmscript
+
+* [ ] complex groups detector: a*x + b*y + c
+
+* [ ] compile groups/complex groups to wasm: a*x + b*y + c
+  - wasm doesn't generically support any-type of argument.
+
+* [ ] WASMify
+  - before interface types it's very problematic for wasm to deal with slicing/passing strings/substrings.

@@ -431,7 +431,7 @@ test.skip('subscript v5', async t => {
 })
 
 
-test('new Function', async t => {
+test.skip('new Function', async t => {
   console.time('new Function')
   for (let n = 0; n < RUNS; n++){
     let fn = new Function('a','b', 'c', 'd', 'f', 'i', 'k', 'return '+src(n))
@@ -468,7 +468,7 @@ test.skip('direct fn', async t => {
 })
 
 test('es-module-lexer', async t => {
-  const {init, parse} = await import('https://unpkg.com/es-module-lexer?module')
+  const {init, parse} = await import('es-module-lexer')
   await init;
 
   // console.log(parse(src(1)))
@@ -496,4 +496,36 @@ test('Map', async t => {
     map.set(src(i), true)
   }
   console.timeEnd('Map.set')
+})
+
+test('TextEncoder/Decoder', async t => {
+  const binary = btoa(src(0))
+
+  console.time('u8array.from')
+  for (let i = 0; i < RUNS; i++){
+    Uint8Array.from(atob(binary), x => x.charCodeAt(0))
+  }
+  console.timeEnd('u8array.from')
+
+  const encoder = new TextEncoder()
+  console.time('TextEncoder')
+  for (let i = 0; i < RUNS; i++){
+    encoder.encode(src(i))
+  }
+  console.timeEnd('TextEncoder')
+
+
+  function copyBE (src, outBuf16 = new Uint16Array(src.length)) {
+    const len = src.length;
+    let i = 0;
+    while (i < len) {
+      const ch = src.charCodeAt(i);
+      outBuf16[i++] = (ch & 0xff) << 8 | ch >>> 8;
+    }
+  }
+  console.time('copyBE')
+  for (let i = 0; i < RUNS; i++){
+    copyBE(src(i))
+  }
+  console.timeEnd('copyBE')
 })

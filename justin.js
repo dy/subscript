@@ -65,7 +65,7 @@ each3([
   // {a:1, b:2, c:3}
   '{', (a, entries) => !a && (
       a=expr(0,125),
-      !a ? ctx => ({}) : ctx => (entries=(a.all||a)(ctx), Object.fromEntries(a.all?entries:[entries]))
+      !a ? ctx => {} : ctx => (entries=(a.all||a)(ctx), Object.fromEntries(a.all?entries:[entries]))
     ),,
   // for JSON case we should not collect arg (different evaluator than ternary)
   ':', (a, prec, b) => (b=expr(1.1)||err(), a=a.id||a, ctx => [a(ctx), b(ctx)]), 1.1
