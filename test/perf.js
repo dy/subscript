@@ -27,6 +27,25 @@ test.skip('expr-eval', async t => {
   console.timeEnd('expr-eval2')
 })
 
+test('subscript-ast', async t => {
+  const {default:parse} = await import('../subscript-ast.js');
+
+  let ast = parse(src(0))
+  // is(ast(args), result);
+
+  console.time('subscript-ast')
+  for (let i = 0; i < RUNS; i++){
+    let ast = parse(src(i));
+  }
+  console.timeEnd('subscript-ast')
+
+  // console.time('subscript eval')
+  // for (let i = 0; i < RUNS; i++){
+  //   ast(args)
+  // }
+  // console.timeEnd('subscript eval')
+})
+
 test('subscript', async t => {
   const {default:parse} = await import('../subscript.js');
 

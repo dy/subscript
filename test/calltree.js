@@ -1,46 +1,6 @@
 import test, {is, any, throws} from 'tst'
-import parse, { skip, isId, expr, token, err, cur, idx, lookup } from '../parse.js'
-
-
-// FIXME: this part can be done via wasm
-const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46, _0=48, _9=57,
-PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
-
-// numbers come built-in
-for (let op=_0;op<=_9;) lookup[op++] = () => skip(c => c === PERIOD || (c <= _9 && c >= _0) || isId(c))
-
-lookup[DQUOTE] = a => skip() + skip(c => c-DQUOTE) + skip()
-
-const unary = (op, prec=PREC_UNARY) => token(op, a => !a && (a=expr(prec-1)) && [op, a], prec)
-const binary = (op, prec=PREC_SEQ) => token(op, (a, b) => a && (b=expr(prec)) && [op,a,b], prec)
-const group = (op, end) => token(op, a => !a ? [op, expr(0,end)] : [op, a, expr(0,end)], PREC_CALL)
-
-binary('+', PREC_SUM)
-binary('-', PREC_SUM)
-unary('+'), unary('-'), unary('!'), unary('~')
-binary('*', PREC_MULT)
-binary('/', PREC_MULT)
-binary('%', PREC_MULT)
-binary('.', PREC_CALL)
-binary(',', PREC_SEQ)
-group('[', CBRACK)
-group('(', CPAREN)
-binary('|', PREC_OR)
-binary('||',  PREC_SOME)
-binary('&', PREC_AND)
-binary('&&',  PREC_EVERY)
-binary('^', PREC_XOR)
-binary('==',  PREC_EQ)
-binary('!=',  PREC_EQ)
-binary('>', PREC_COMP),
-binary('>=',  PREC_COMP),
-binary('>>',  PREC_SHIFT),
-binary('>>>',  PREC_SHIFT),
-binary('<', PREC_COMP),
-binary('<=',  PREC_COMP),
-binary('<<',  PREC_SHIFT)
-
+// import parse, { skip, isId, expr, token, err, cur, idx, lookup } from '../parse.js'
+import parse, { binary } from '../subscript-ast.js'
 
 test.only('parse: basic', t => {
   is(parse('a()'), ['(', 'a', undefined])
@@ -195,10 +155,10 @@ test.only('parse: unaries', t => {
   is(parse('1-+!2'),['-','1',['+',['!','2']]])
   is(parse('1 * -1'),['*','1',['-','1']])
 })
-test('parse: postfix unaries', t => {
-  is(parse('2--'),['--',2])
-  is(parse('2++'),['++',2])
-  is(parse('1++(b)'),[['++',1],'b']) // NOTE: not supported by JS btw
+test.only('parse: postfix unaries', t => {
+  is(parse('2--'),['--','2', undefined])
+  is(parse('2++'),['++','2', undefined])
+  // is(parse('1++(b)'),[['++',1],'b']) // NOTE: not supported by JS btw
 })
 
 test('parse: prop access', t => {
