@@ -431,25 +431,37 @@
   - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
     → parse is faster and even smaller, eval is on par via separate evaluate target
 
-* [ ] Number, primitives parsing: is that part of evaluator or parser? What about mapping/simplifying nodes?
+* [x] Number, primitives parsing: is that part of evaluator or parser? What about mapping/simplifying nodes?
   + we organically may have `[value]` syntax for primitives/literals
-  + some parsing literals can be complicated, like \` or `1.2e+3` - need to be detected parse-time; postponing them is extra _parse_ work
+    - there are 0 operand operators: `;;;`, `a,,,b` taking that signature
+  + some parsing literals can be complicated, like \` or `1.2e+3` - need to be detected parse-time;
+    + postponing them is extra _parse_ work
+    * There are many non-standard number signatures: 0x00, 0b00, 00017, 0123n, 1.23e+5, 1_100_200
     - these literals can be parsed from AST also via custom mappers `['.', '1', '2e']`
-  - optimization mapping can be done on level of evaluator (pre-eval), not before
+    ~ that can be parsed specifically, but AST should be very safe
+  - Numbers are in eg. XML - we'd still store untyped strings there
+  - Type detection therefore can be done on stage of interpreter (eg. XML).
+    * so that is sort-of preparing arguments for eval...
+  - optimization mapping can be done on level of evaluator (pre-eval), not before - we need reducers to do that
+  - null, undefined, false jeopardizes expr eval: need to be strings
   → As a gift for God it should be lightweight, generic and minimal.
     → It should be JSON-compatible, therefore types should be abstracted as much as possible (arrays + strings).
       ~ although json allows booleans and numbers and even null
     → we don't need mappers layer: parser already includes mapping, no need for any extra, it should create calltree.
+    → it's safest to convert initial string to ordered substrings, without particular type detection.
+    → **Evaluating value (converting from stirng to value) is parse of evaluator**
 
 * [ ] AST
   * It can be strictly binary or with multiple args. Multiargs case makes more sense (?:, a(b,c,d), [a,b,c,d], a;b;c;d)
     + multiargs allow SIMD and other optimizations, it better reflect actual execution and doesn't enforce redundant ordering
     + AST should be able to validly codegenerated back, therefore redundant ordering imposes redundant parens
+      * Precedences belong to codegenerator, not to parser, to match against.
     + enables simd
   * AST can reflect either: visual syntactic structure (like exact parens) OR semantic order of execution.
   * AST can not depend on languages and just reflect order of commands execution, can be converted to any language.
     ~ may be challending if target lang has different precedences
   * Parens operator may have semantic sense as either grouping or destructuring
+  * Can be converted to xml as `<mul><a/><b/><c/></mul>`
 
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle

@@ -8,11 +8,12 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15
 
 const unary = (op, prec=PREC_UNARY) => token(op, a => !a && (a=expr(prec-1)) && [op, a], prec)
 const binary = (op, prec) => token(op, (a, b) => a && (b=expr(prec)) && [op,a,b], prec)
-const group = (op, end=op.charCodeAt(1)) => token(op=op[0], a => !a ? [op, expr(0,end)] : [op, a, expr(0,end)], PREC_CALL)
+const sequence = (op, prec) => token(op, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]), prec)
+const group = (op, end=op.charCodeAt(1)) => token(op=op[0], a => !a ? [op, expr(0,end)||''] : [op, a, expr(0,end)||''], PREC_CALL)
 const postfix = (op, prec=PREC_POSTFIX) => token(op, (a, b) => a && [op,a,expr(prec)], prec)
+const literal = (op, map=a=>a) => token(op, a => [map(a)])
 
-
-// numbers
+// number-like ids
 for (let op=_0;op<=_9;) lookup[op++] = () => skip(c => c === PERIOD || isId(c))
 
 // ALT: better float detection
@@ -32,17 +33,17 @@ lookup[DQUOTE] = a => skip() + skip(c => c-DQUOTE) + skip()
 group('[]')
 group('()')
 
-binary('+', PREC_SUM)
+sequence('+', PREC_SUM)
 binary('-', PREC_SUM)
-binary('*', PREC_MULT)
+sequence('*', PREC_MULT)
 binary('/', PREC_MULT)
 binary('%', PREC_MULT)
 binary('.', PREC_CALL)
-binary(',', PREC_SEQ)
+sequence(',', PREC_SEQ)
 binary('|', PREC_OR)
-binary('||',  PREC_SOME)
+sequence('||',  PREC_SOME)
 binary('&', PREC_AND)
-binary('&&',  PREC_EVERY)
+sequence('&&',  PREC_EVERY)
 binary('^', PREC_XOR)
 binary('==',  PREC_EQ)
 binary('!=',  PREC_EQ)
