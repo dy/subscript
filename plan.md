@@ -406,20 +406,22 @@
   + [ ] different config may want parse differently, like versions `1.2.3`
   + [ ] different lang has different number capabilities
 * [x] identifier parser can be configurable:
-  + [ ] we may want to collect all used ids
-  + [ ] we may want it to return different target (function, string, etc)
+  + [ ] we may want to collect all used ids → can be done via AST
+  + [ ] we may want it to return different target (function, string, etc) → can be done via separate eval / AST
   + [ ] or make `a.b.c` identifiers, not operators.
 * [x] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
   * maybe we just need better interop instead (see below)
   + since ids can be collected externally now, it's better to outsource that indeed, to keep point of performance/size.
   ~ same time, since subscript is not just a thing in itself, it would be useful to expose ast.
 
-* [ ] Should we retain `subscript.eval` and `subscript.parse` for different purpose uses?
+* [x] Should we retain `subscript.eval` and `subscript.parse` for different purpose uses?
   * Alternatively, we can come up with `node` constructor that can either create an eval function or generate AST
-  * Or we can still stuff ast into eval
-  * Wasm is still faster for parsing and evaluating. Keeping ast it useful.
+  * Or we can still stuff ast into eval, like .id, .of etc.
+  * Wasm is still faster for parsing and evaluating. Keeping ast is useful.
+  + returning AST from parse method is both fast and useful, rather than single-purpose eval, which can be splitted
+  → eval, as well as compile, map, JSONify, ESify, WASM-compile etc. - are different targets indeed.
 
-* [ ] Would be nice to provide actual analyzable tree, not just eval function.
+* [x] Would be nice to provide actual analyzable tree, not just eval function.
   + ast enables easier access to underlying tokens (no need to fake id function), no need to store .of, .id etc.
     + that would solve collecting arguments case
   + that would allow different targets by user demand
@@ -427,6 +429,27 @@
   + ast is possible to eval in wasm, since it's declaratively defined
   + that would allow swizzles, pre-eval and various node optimizations like a++ → a+=1, a,b = 1 → a=1, b=1
   - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
+    → parse is faster and even smaller, eval is on par via separate evaluate target
+
+* [ ] Number, primitives parsing: is that part of evaluator or parser? What about mapping/simplifying nodes?
+  + we organically may have `[value]` syntax for primitives/literals
+  + some parsing literals can be complicated, like \` or `1.2e+3` - need to be detected parse-time; postponing them is extra _parse_ work
+    - these literals can be parsed from AST also via custom mappers `['.', '1', '2e']`
+  - optimization mapping can be done on level of evaluator (pre-eval), not before
+  → As a gift for God it should be lightweight, generic and minimal.
+    → It should be JSON-compatible, therefore types should be abstracted as much as possible (arrays + strings).
+      ~ although json allows booleans and numbers and even null
+    → we don't need mappers layer: parser already includes mapping, no need for any extra, it should create calltree.
+
+* [ ] AST
+  * It can be strictly binary or with multiple args. Multiargs case makes more sense (?:, a(b,c,d), [a,b,c,d], a;b;c;d)
+    + multiargs allow SIMD and other optimizations, it better reflect actual execution and doesn't enforce redundant ordering
+    + AST should be able to validly codegenerated back, therefore redundant ordering imposes redundant parens
+    + enables simd
+  * AST can reflect either: visual syntactic structure (like exact parens) OR semantic order of execution.
+  * AST can not depend on languages and just reflect order of commands execution, can be converted to any language.
+    ~ may be challending if target lang has different precedences
+  * Parens operator may have semantic sense as either grouping or destructuring
 
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
@@ -458,3 +481,5 @@
 
 * [ ] WASMify
   - before interface types it's very problematic for wasm to deal with slicing/passing strings/substrings.
+  ~ in fact we can initialize lookup tokens in JS and run actual parser in WASM by passing table
+    . and return multiple values from `skip` as ranges to slice
