@@ -431,6 +431,19 @@
   - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
     → parse is faster and even smaller, eval is on par via separate evaluate target
 
+* [x] AST format
+  * It can be strictly binary or with multiple args. Multiargs case makes more sense (?:, a(b,c,d), [a,b,c,d], a;b;c;d)
+    + multiargs allow SIMD and other optimizations, it better reflect actual execution and doesn't enforce redundant ordering
+    + AST should be able to validly codegenerated back, therefore redundant ordering imposes redundant parens
+      * Precedences belong to codegenerator, not to parser, to match against.
+    + enables simd
+  * AST can reflect either: visual syntactic structure (like exact parens) OR semantic order of execution.
+  * AST can not depend on languages and just reflect order of commands execution, can be converted to any language.
+    ~ may be challending if target lang has different precedences → precedences must be defined by target codegenerator
+  * Parens operator may have semantic sense as either grouping or destructuring
+  * Can be converted to xml as `<mul><a/><b/><c/></mul>`
+  → safest is source fragments ordered as nested arrays indicating order of evaluation.
+
 * [x] Number, primitives parsing: is that part of evaluator or parser? What about mapping/simplifying nodes?
   + we organically may have `[value]` syntax for primitives/literals
     - there are 0 operand operators: `;;;`, `a,,,b` taking that signature
@@ -451,17 +464,10 @@
     → it's safest to convert initial string to ordered substrings, without particular type detection.
     → **Evaluating value (converting from stirng to value) is parse of evaluator**
 
-* [ ] AST
-  * It can be strictly binary or with multiple args. Multiargs case makes more sense (?:, a(b,c,d), [a,b,c,d], a;b;c;d)
-    + multiargs allow SIMD and other optimizations, it better reflect actual execution and doesn't enforce redundant ordering
-    + AST should be able to validly codegenerated back, therefore redundant ordering imposes redundant parens
-      * Precedences belong to codegenerator, not to parser, to match against.
-    + enables simd
-  * AST can reflect either: visual syntactic structure (like exact parens) OR semantic order of execution.
-  * AST can not depend on languages and just reflect order of commands execution, can be converted to any language.
-    ~ may be challending if target lang has different precedences
-  * Parens operator may have semantic sense as either grouping or destructuring
-  * Can be converted to xml as `<mul><a/><b/><c/></mul>`
+* [x] Mapping layer?
+  + map various numeric constructs
+  + map swizzles from sonr
+  - nah, mapping is part of parsing. Just handle whatever structures needed in parse.
 
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
@@ -469,7 +475,6 @@
   * [ ] soner transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
-
 
 * [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
 
