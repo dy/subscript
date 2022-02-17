@@ -1,5 +1,5 @@
 import test, {is, throws, same} from 'tst'
-import script from '../subscript-ast.js'
+import script from '../subscript.js'
 import parse, { skip, expr, token, err, cur, idx } from '../parse.js'
 
 const evalTest = (str, ctx={}) => {

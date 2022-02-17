@@ -1,6 +1,6 @@
 import test, {is, any, throws} from 'tst'
 // import parse, { skip, isId, expr, token, err, cur, idx, lookup } from '../parse.js'
-import parse, { binary } from '../subscript-ast.js'
+import parse, { binary } from '../subscript.js'
 
 test.only('parse: basic', t => {
   is(parse('a()'), ['(', 'a', ''])
