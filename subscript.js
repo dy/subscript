@@ -15,7 +15,7 @@ for (let op=_0; op<=_9;) lookup[op++] = () => ['Number', skip(c => c === PERIOD 
 lookup[PERIOD] = (a)=>!a&&lookup[_0]()
 operator.Number = (a,b) => (b=+a, () => b)
 
-lookup[DQUOTE] = () => ['String', skip() + skip(c => c!=DQUOTE) + skip()]
+lookup[DQUOTE] = () => ['String', skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip()||err('Bad string'))]
 operator.String = (a,b) => (b=a.slice(1,-1), () => b)
 
 // token('true', a => ['Boolean', 'true'])

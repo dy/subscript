@@ -8,7 +8,7 @@ const evalTest = (str, ctx={}) => {
   return is(ss(ctx), fn(...Object.values(ctx)))
 }
 
-test.only('basic', t => {
+test('basic', t => {
   is(script('1 + 2')(), 3)
   is(script('1 + 2 + 3')(), 6)
   is(script('1 + 2 * 3')(), 7)
@@ -80,7 +80,7 @@ test.only('basic', t => {
   evalTest('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', {a:{b:1}, x:{y:{z:v=>v}}, c:{456:789}, n:1})
 })
 
-test.only('right-assoc', t => {
+test('right-assoc', t => {
   // **
   binary('**', 14, (a,b)=>a**b, true)
 
@@ -88,7 +88,7 @@ test.only('right-assoc', t => {
   evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
 })
 
-test.only('syntactic', t => {
+test('syntactic', t => {
   is(script('')(), undefined)
   is(script(' ')(), undefined)
   is(script('\n\r')(), undefined)
@@ -134,7 +134,7 @@ test('ext: interpolate string', t => {
   is(script('a+1')({a:1}), 2)
 })
 
-test('strings', t => {
+test.only('strings', t => {
   is(script('"a"')(), 'a')
   throws(x => script('"a'))
   throws(x => script('"a" + "b'))
