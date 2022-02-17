@@ -83,7 +83,7 @@ test('basic', t => {
 
 test('right-assoc', t => {
   // **
-  binary('**', 14, (a,b)=>a**b, true)
+  binary('**', (a,b)=>a**b, 14, true)
 
   evalTest('1 + 2 * 3 ** 4 + 5', {})
   evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
@@ -95,12 +95,12 @@ test('syntactic', t => {
   is(script('\n\r')(), undefined)
 })
 
-test.todo('readme', t => {
+test('readme', t => {
   evalTest(`a.b + c(d-1)`, {a:{b:1}, c:x=>x*2, d:3})
   evalTest(`min * 60 + "sec"`, {min: 5})
 
-  operator('|', ( a, b ) => a?.pipe?.(b) || (a|b), 6 ) // overload pipe operator
-  operator('=>', ( args, body ) => (body = expr(), ctx => (...args) => body() ) ) // single-arg arrow function parser
+  binary('|', ( a, b ) => a?.pipe?.(b) || (a|b), 6 ) // overload pipe operator
+  binary('=>', ( args, body ) => (body = expr(), ctx => (...args) => body() ) ) // single-arg arrow function parser
 
   let evaluate = script(`
     interval(350)
@@ -118,10 +118,10 @@ test.todo('readme', t => {
 
 
   // add ~ unary operator with precedence 15
-  operator('~', a => ~a, 15)
+  unary('~', a => ~a, 15)
 
   // add === binary operator
-  operator('===', (a, b) => a===b, 9)
+  binary('===', (a, b) => a===b, 9)
 
   // add literals
   token('true', a => ()=>true)
@@ -330,7 +330,7 @@ test('chains', t => {
 })
 
 test('ext: in operator', t => {
-  binary('in', 10, (a,b) => a in b)
+  binary('in', (a,b) => a in b, 10)
 
   evalTest('inc in bin', {bin:{inc:1}, inc:'inc'})
   evalTest('bin in inc', {inc:{bin:1}, bin:'bin'})
@@ -399,7 +399,7 @@ test('ext: object', t => {
   ))
   token(':', (a, b) => (b=expr(1.1)||err(), [':',a,b]), 1.1 )
   operator(':', (a,b) => (b=compile(b),a=Array.isArray(a)?compile(a):(a=>a).bind(0,a), ctx=>[a(ctx),b(ctx)]))
-  binary('=', 2, (a,b)=>b)
+  binary('=', (a,b)=>b, 2)
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})

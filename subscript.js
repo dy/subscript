@@ -22,46 +22,46 @@ operator('String', (a,b) => (b=a.slice(1,-1), () => b))
 operator('', v => () => v)
 
 export const each3 = (list, fn) => { while (list[0]) fn(list.shift(),list.shift(),list.shift()) },
-  binary = (op, prec, fn, right=0) => (
+  binary = (op, fn, prec, right=0) => (
     token(op, (a, b) => a && (b=expr(prec-right)) && [op,a,b], prec),
     fn && operator(op, (a,b) => b && (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx))))
   ),
-  unary = (op, prec, fn, post=0) => (
+  unary = (op, fn, prec, post=0) => (
     token(op, a => !a && (a=expr(prec-1)) && [op, a], prec),
     operator(op, (a,b) => !b && (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx))))
   )
 
 // sequences
 each3([
-  ',', PREC_SEQ, args => args[args.length-1],
-  '||',  PREC_SOME, (args, i=0, v) => { for (; !v && i < args.length; ) v = args[i++]; return v },
-  '&&',  PREC_EVERY, (args, i=0, v=true) => { for (; v && i < args.length; ) v = args[i++]; return v }
-], (op, prec, fn) => {
+  ',', args => args[args.length-1], PREC_SEQ,
+  '||', (args, i=0, v) => { for (; !v && i < args.length; ) v = args[i++]; return v }, PREC_SOME,
+  '&&', (args, i=0, v=true) => { for (; v && i < args.length; ) v = args[i++]; return v }, PREC_EVERY,
+], (op, fn, prec) => {
   token(op, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]), prec)
   operator(op, (...args) => (args=args.map(compile), ctx => fn(args.map(arg=>arg(ctx)))))
 })
 
 // binaries
 each3([
-  '+', PREC_SUM, (a,b) => a+b,
-  '-', PREC_SUM, (a,b)=> a-b,
-  '*', PREC_MULT, (a,b) => a*b,
-  '/', PREC_MULT, (a,b)=>a/b,
-  '%', PREC_MULT, (a,b)=>a%b,
-  '|', PREC_OR, (a,b)=>a|b,
-  '&', PREC_AND, (a,b)=>a&b,
-  '^', PREC_XOR, (a,b)=>a^b,
-  '==',  PREC_EQ, (a,b)=>a==b,
-  '!=',  PREC_EQ, (a,b)=>a!=b,
-  '>', PREC_COMP, (a,b)=>a>b,
-  '>=',  PREC_COMP, (a,b)=>a>=b,
-  '<', PREC_COMP, (a,b)=>a<b,
-  '<=',  PREC_COMP, (a,b)=>a<=b,
-  '>>',  PREC_SHIFT, (a,b)=>a>>b,
-  '>>>',  PREC_SHIFT, (a,b)=>a>>>b,
-  '<<',  PREC_SHIFT, (a,b)=>a<<b,
+  '+', (a,b) => a+b, PREC_SUM,
+  '-', (a,b)=> a-b, PREC_SUM,
+  '*', (a,b) => a*b, PREC_MULT,
+  '/', (a,b)=>a/b, PREC_MULT,
+  '%', (a,b)=>a%b, PREC_MULT,
+  '|', (a,b)=>a|b, PREC_OR,
+  '&', (a,b)=>a&b, PREC_AND,
+  '^', (a,b)=>a^b, PREC_XOR,
+  '==', (a,b)=>a==b, PREC_EQ,
+  '!=', (a,b)=>a!=b, PREC_EQ,
+  '>', (a,b)=>a>b, PREC_COMP,
+  '>=', (a,b)=>a>=b, PREC_COMP,
+  '<', (a,b)=>a<b, PREC_COMP,
+  '<=', (a,b)=>a<=b, PREC_COMP,
+  '>>', (a,b)=>a>>b, PREC_SHIFT,
+  '>>>', (a,b)=>a>>>b, PREC_SHIFT,
+  '<<', (a,b)=>a<<b, PREC_SHIFT,
 
-  '.', PREC_CALL,,
+  '.',, PREC_CALL,
 ], binary)
 
 // special . eval
@@ -70,17 +70,17 @@ operator('.', (a,b) => (a=compile(a), ctx => a(ctx)[b]))
 
 // unaries
 each3([
-  '+', PREC_UNARY, a => +a,
-  '-', PREC_UNARY, a => -a,
-  '!', PREC_UNARY, a => !a,
-  '~', PREC_UNARY, a => ~a,
+  '+', a => +a, PREC_UNARY,
+  '-', a => -a, PREC_UNARY,
+  '!', a => !a, PREC_UNARY,
+  '~', a => ~a, PREC_UNARY,
 ], unary)
 
 // increments
 each3([
-  '++', PREC_UNARY, (a,b) => ++a[b],
-  '--', PREC_UNARY, (a,b) => --a[b],
-], (op, prec, fn, ev) => {
+  '++', (a,b) => ++a[b], PREC_UNARY,
+  '--', (a,b) => --a[b], PREC_UNARY,
+], (op, fn, prec, ev) => {
   token(op, a => a ? [op==='++'?'-':'+',[op,a],['Number','1']] : [op,expr(prec-1)], prec) // ++a → [++, a], a++ → [-,[++,a],1]
   operator(op, ev = (a,b) => (
     a[0] === '(' ? ev(a[1]) : // ++(((a)))
