@@ -1,28 +1,8 @@
 // evaluate ast tree
-export const evaluate = tree => (tree.eval || (tree.eval=compile(tree)))(ctx)
+export const evaluate = (tree, ctx) => (tree.eval ||= compile(tree))(ctx)
 
 // build optimized evaluator for the tree
-export const compile = (node) => {
-  const [op, a, b] = node
+export const compile = (node) => !Array.isArray(node) ? ctx => ctx[node] : operator[node[0]](...node.slice(1))
 
-  // literal
-  if (!a) return ctx => op
-
-  a = compile(a)
-
-  // TODO: flatten static unaries/binaries
-
-  // unary
-  if (!b) return ctx => reduce(a(ctx))
-
-  b = compile(b)
-
-  // binary
-  return ctx => reduce(a(ctx), b(ctx))
-}
-
-// operators dict
-export const operator = {
-
-}
-
+// operators or mappers from a signature to evaluator function
+export const operator = {}
