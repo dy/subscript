@@ -501,7 +501,7 @@
 * [ ] compile groups/complex groups to wasm: a*x + b*y + c
   - wasm doesn't generically support any-type of argument.
 
-* [ ] WASMify
+* [ ] WASMify https://youtu.be/awe7swqFOOw?t=778
   - before interface types it's very problematic for wasm to deal with slicing/passing strings/substrings.
   ~ in fact we can initialize lookup tokens in JS and run actual parser in WASM by passing table
     . and return multiple values from `skip` as ranges to slice

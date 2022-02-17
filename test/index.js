@@ -1,5 +1,5 @@
 import test, {is, throws, same} from 'tst'
-import script, { binary } from '../subscript.js'
+import script, { binary, unary } from '../subscript.js'
 import parse, { skip, expr, token, err, cur, idx } from '../parse.js'
 import { operator, compile } from '../evaluate.js'
 
@@ -95,7 +95,7 @@ test('syntactic', t => {
   is(script('\n\r')(), undefined)
 })
 
-test('readme', t => {
+test.todo('readme', t => {
   evalTest(`a.b + c(d-1)`, {a:{b:1}, c:x=>x*2, d:3})
   evalTest(`min * 60 + "sec"`, {min: 5})
 
@@ -339,12 +339,12 @@ test('ext: in operator', t => {
 })
 
 test('ext: list', t => {
-  const prev = operator['[']
-  operator['['] = (a,b) => b ? prev(a,b) : (
+  token('[', a => !a && ['[', expr(0,93)||''], 18)
+  operator('[', (a,b) => !b && (
     !a ? ctx => [] : // []
       a[0] === ',' ? (a=a.slice(1).map(compile), ctx => a.map(a=>a(ctx))) : // [a,b,c]
       (a=compile(a), ctx => [a(ctx)]) // [a]
-  )
+  ))
 
   is(script('[1,2,3,4,5,6]')(),[1,2,3,4,5,6])
   is(script('[1,2,3,4,5]')(),[1,2,3,4,5])
@@ -375,25 +375,31 @@ test('ext: list', t => {
 
 
 test('ext: ternary', t => {
-  token(':', (a, b) => [':', a, expr(3.1)], 3.1)
-  token('?', (a, b) => a && (b=expr(3)) && ['?:', a, b[1], b[2]], 3)
+  token('?', (a, b, c) => a && (b=expr(2,58)) && (c=expr(3), ['?:', a, b, c]), 3)
 
-  operator['?:'] = (a,b,c) => (a=compile(a),b=compile(b),c=compile(c), ctx => a(ctx) ? b(ctx) : c(ctx))
+  operator('?:', (a,b,c) => (a=compile(a),b=compile(b),c=compile(c), ctx => a(ctx) ? b(ctx) : c(ctx)))
 
   evalTest('a?b:c', {a:true,b:1,c:2})
   evalTest('a?b:c', {a:false,b:1,c:2})
   evalTest('a((1 + 2), (e > 0 ? f : g))', {a:(x,y)=>x+y, e:1, f:2, g:3})
 
+  evalTest('a?b:c?d:e', {a:0, c:1, d:2})
+  evalTest('a?b:c?d:e', {a:0, c:0, d:2, e:3})
+  evalTest('a?b:c?d:e?f:g', {a:0, c:0, d:2, e:0, f:3, g:4})
+  evalTest('a? b?c:d :e', {a:0, c:0, d:1, e:2})
 })
 
 test('ext: object', t => {
-  token('{', (a, args) => !a && (
-      a=expr(0,125),
-      !a ? ctx => {} : ctx => (args=(a.all||a)(ctx), Object.fromEntries(a.all?args:[args]))
-    )
-  )
-  token(':', (a, prec, b) => (b=expr(1.1)||err(), ctx => [(a.id||a)(ctx), b(ctx)]), 1.1 )
-  operator('=', (a,b)=>b, 2)
+  token('{', a => !a && (['{', expr(0,125)||'']))
+  operator('{', (a,b) => (
+    !a ? ctx => ({}) : // {}
+    a[0] === ',' ? (a=a.slice(1).map(compile), ctx=>Object.fromEntries(a.map(a=>a(ctx)))) : // {a:1,b:2}
+    a[0] === ':' ? (a=compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
+    (b=compile(a), ctx=>({[a]:b(ctx)}))
+  ))
+  token(':', (a, b) => (b=expr(1.1)||err(), [':',a,b]), 1.1 )
+  operator(':', (a,b) => (b=compile(b),a=Array.isArray(a)?compile(a):(a=>a).bind(0,a), ctx=>[a(ctx),b(ctx)]))
+  binary('=', 2, (a,b)=>b)
 
   evalTest('{}',{})
   evalTest('{x: 1}',{})
@@ -401,7 +407,7 @@ test('ext: object', t => {
   evalTest('{x: 1+2, y:a(3)}',{a:v=>v+1})
   evalTest('{x: 1+2, y:a(3)}',{a:x=>x*2})
   evalTest('{1: 2}')
-  // evalTest('{x}',{x:1})
+  evalTest('{x}',{x:1})
 
   evalTest('{a:b?c:d}', {b:2,c:3,d:4})
   evalTest('{a:b?c:d, e:!f?g:h}', {b:2,c:3,d:4,f:1,g:2,h:3})
@@ -486,7 +492,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  operator('&',(a=0)=>~a, 13)
+  unary('&',13,(a=0)=>~a)
   is(script('&a+b*c')({a:1,b:2,c:3}), 4)
   is(script('&a*b+c')({a:1,b:2,c:3}), 0)
 })
