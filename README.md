@@ -2,7 +2,7 @@
 
 _Subscript_ is expression evaluator / microlanguage with common [infix](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) syntax<br/>
 
-* Any fragment can be copy-pasted to any language: C++, JS, Java, Python, Go, Rust etc. 
+* Any fragment can be copy-pasted to any language: C++, JS, Java, Python, Go, Rust etc.
 * Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
 * :rocket: Fast [performance](#performance)
 * Configurable & extensible
@@ -286,9 +286,10 @@ Parse 30k times:
 
 ```
 es-module-lexer: 50ms 🥇
-subscript: ~170 ms 🥈
-justin: ~183 ms 🥉
-jsep: ~270 ms
+subscript@7: ~150 ms 🥈
+subscript@6.4: ~170 ms
+justin: ~183 ms
+jsep: ~270 ms 🥉
 jexpr: ~297 ms
 mr-parser: ~420 ms
 expr-eval: ~480 ms
@@ -302,8 +303,9 @@ new Function: ~1154 ms
 Eval 30k times:
 ```
 new Function: ~7 ms 🥇
-subscript: ~17 ms 🥈
-justin: ~17 ms 🥈
+subscript@7: ~13 ms 🥈
+subscript@6.4: ~17 ms
+justin: ~17 ms
 jexpr: ~23 ms 🥉
 jsep (expression-eval): ~30 ms
 math-expression-evaluator: ~50ms

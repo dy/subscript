@@ -463,6 +463,7 @@
     → we don't need mappers layer: parser already includes mapping, no need for any extra, it should create calltree.
     → it's safest to convert initial string to ordered substrings, without particular type detection.
     → **Evaluating value (converting from stirng to value) is parse of evaluator**
+      ~ same time on parsing level we can point to a type function to initially parse - it will save time on reparsing in eval.
 
 * [x] Mapping layer?
   + map various numeric constructs
