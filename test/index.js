@@ -1,6 +1,6 @@
 import test, {is, throws, same} from 'tst'
-import script, { operator } from '../subscript.js'
-import { skip, expr, token, err, cur, idx } from '../parse.js'
+import script from '../subscript-ast.js'
+import parse, { skip, expr, token, err, cur, idx } from '../parse.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -8,7 +8,7 @@ const evalTest = (str, ctx={}) => {
   return is(ss(ctx), fn(...Object.values(ctx)))
 }
 
-test('basic', t => {
+test.only('basic', t => {
   is(script('1 + 2')(), 3)
   is(script('1 + 2 + 3')(), 6)
   is(script('1 + 2 * 3')(), 7)
@@ -64,11 +64,6 @@ test('basic', t => {
   evalTest('a()()()', {a:b=>c=>d=>2})
   evalTest('a(b)(c)', {a:x=>y=>x+y, b:2, c:3})
 
-  // **
-  operator('**', (a,b)=>a**b, 14)
-
-  evalTest('1 + 2 * 3 ** 4 + 5', {})
-  evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
   evalTest(`"abcd" + "efgh"`)
 
   evalTest('x(a + 3)',{x:v=>v+1,a:3})
@@ -83,6 +78,14 @@ test('basic', t => {
   evalTest('-1%2')
   evalTest('-(1%2)')
   evalTest('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', {a:{b:1}, x:{y:{z:v=>v}}, c:{456:789}, n:1})
+})
+
+test('right-assoc', t => {
+  // **
+  operator('**', (a,b)=>a**b, 14)
+
+  evalTest('1 + 2 * 3 ** 4 + 5', {})
+  evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
 })
 
 test('syntactic', t => {

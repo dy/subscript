@@ -39,11 +39,11 @@ test('subscript-ast', async t => {
   }
   console.timeEnd('subscript-ast')
 
-  // console.time('subscript eval')
-  // for (let i = 0; i < RUNS; i++){
-  //   ast(args)
-  // }
-  // console.timeEnd('subscript eval')
+  console.time('subscript eval')
+  for (let i = 0; i < RUNS; i++){
+    ast(args)
+  }
+  console.timeEnd('subscript eval')
 })
 
 test('subscript', async t => {
@@ -66,6 +66,7 @@ test('subscript', async t => {
   }
   console.timeEnd('subscript eval')
 })
+
 
 test('jsep', async t => {
   const jsep = await import('../lib/parser/expression-eval.module.js');

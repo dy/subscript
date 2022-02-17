@@ -103,6 +103,7 @@ each3([
     b=expr(0,CPAREN),
     // a(), a(b), a(b,c,d), a.b(c,d)
     a ? (
+      // FIXME: a.of is called here twice. Can be bad if that's something complex like complexMethod(...args).result()
       ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : [])
     ) :
     // (a+b)
