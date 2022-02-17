@@ -1,5 +1,5 @@
 import test, {is, throws, same} from 'tst'
-import script from '../subscript.js'
+import script, {binary} from '../subscript.js'
 import parse, { skip, expr, token, err, cur, idx } from '../parse.js'
 
 const evalTest = (str, ctx={}) => {
@@ -80,15 +80,15 @@ test.only('basic', t => {
   evalTest('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', {a:{b:1}, x:{y:{z:v=>v}}, c:{456:789}, n:1})
 })
 
-test('right-assoc', t => {
+test.only('right-assoc', t => {
   // **
-  operator('**', (a,b)=>a**b, 14)
+  binary('**', 14, (a,b)=>a**b, true)
 
   evalTest('1 + 2 * 3 ** 4 + 5', {})
   evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
 })
 
-test('syntactic', t => {
+test.only('syntactic', t => {
   is(script('')(), undefined)
   is(script(' ')(), undefined)
   is(script('\n\r')(), undefined)

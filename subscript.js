@@ -35,6 +35,11 @@ each3([
 })
 
 // binaries
+export const binary = (op, prec, fn, right=0) => {
+  token(op, (a, b) => a && (b=expr(prec-right)) && [op,a,b], prec)
+  // FIXME: there can really be tiny wasm binary fragment from https://youtu.be/awe7swqFOOw?t=778 - can be reverse-engineered via wat2wasm
+  if (fn) operator[op] = (a,b) => (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx)))
+}
 each3([
   '+', PREC_SUM, (a,b) => a+b,
   '-', PREC_SUM, (a,b)=> a-b,
@@ -55,11 +60,7 @@ each3([
   '<<',  PREC_SHIFT, (a,b)=>a<<b,
 
   '.', PREC_CALL,,
-], (op, prec, fn) => {
-  token(op, (a, b) => a && (b=expr(prec)) && [op,a,b], prec)
-  // FIXME: there can really be tiny wasm binary fragment from https://youtu.be/awe7swqFOOw?t=778 - can be reverse-engineered via wat2wasm
-  if (fn) operator[op] = (a,b) => (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx)))
-})
+], binary)
 
 // special . eval
 operator['.'] = (a,b) => (a=compile(a), ctx => a(ctx)[b])
@@ -110,6 +111,6 @@ each3([
   operator[op] = fn
 })
 
-export default s => (s=parse(s.trim()), evaluate.bind(0,s))
+export default s => (s=s.trim(), s ? (s=parse(s.trim()), evaluate.bind(0,s)) : ()=>{})
 
 
