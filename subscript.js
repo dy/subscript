@@ -11,17 +11,26 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15
 // const postfix = (op, prec=PREC_POSTFIX) => token(op, (a, b) => a && [op,a,expr(prec)], prec)
 
 // number-like ids
-for (let op=_0; op<=_9;) lookup[op++] = () => ['Number', skip(c => c === PERIOD || (c>=_0&c<=_9) || (c===69||c===101?2:0))]
+for (let op=_0; op<=_9;) lookup[op++] = () => ['Number', skip(c => c === PERIOD || (c>=_0 && c<=_9) || (c===69||c===101?2:0))]
 lookup[PERIOD] = (a)=>!a&&lookup[_0]()
 operator.Number = (a,b) => (b=+a, () => b)
 
 lookup[DQUOTE] = () => ['String', skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip()||err('Bad string'))]
 operator.String = (a,b) => (b=a.slice(1,-1), () => b)
 
-// token('true', a => ['Boolean', 'true'])
-// operator.Boolean = (a,b) => (b=a[0]==='t', () => b),
+// null operator returns first value
+operator[''] = v => () => v
 
-const each3 = (list, fn) => { while (list[0]) fn(list.shift(),list.shift(),list.shift()) }
+export const each3 = (list, fn) => { while (list[0]) fn(list.shift(),list.shift(),list.shift()) },
+  binary = (op, prec, fn, right=0, prev=operator[op]) => {
+    token(op, (a, b) => a && (b=expr(prec-right)) && [op,a,b], prec)
+    // FIXME: there can really be tiny wasm binary fragment from https://youtu.be/awe7swqFOOw?t=778 - can be reverse-engineered via wat2wasm
+    if (fn) operator[op] = (a,b) => !b ? prev(a,b) : (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx)))
+  },
+  unary = (op, prec, fn, post=0, prev=operator[op]) => {
+    token(op, a => !a && (a=expr(prec-1)) && [op, a], prec)
+    operator[op] = (a,b) => b ? prev(a,b) : (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx)))
+  }
 
 // sequences
 each3([
@@ -35,11 +44,6 @@ each3([
 })
 
 // binaries
-export const binary = (op, prec, fn, right=0) => {
-  token(op, (a, b) => a && (b=expr(prec-right)) && [op,a,b], prec)
-  // FIXME: there can really be tiny wasm binary fragment from https://youtu.be/awe7swqFOOw?t=778 - can be reverse-engineered via wat2wasm
-  if (fn) operator[op] = (a,b) => (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx)))
-}
 each3([
   '+', PREC_SUM, (a,b) => a+b,
   '-', PREC_SUM, (a,b)=> a-b,
@@ -72,11 +76,7 @@ each3([
   '-', PREC_UNARY, a => -a,
   '!', PREC_UNARY, a => !a,
   '~', PREC_UNARY, a => ~a,
-], (op, prec, fn) => {
-  token(op, a => !a && (a=expr(prec-1)) && [op, a], prec)
-  const prev = operator[op]
-  operator[op] = (a,b) => b ? prev(a,b) : (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx)))
-})
+], unary)
 
 // increments
 each3([
@@ -85,9 +85,10 @@ each3([
 ], (op, prec, fn) => {
   token(op, a => a ? [op==='++'?'-':'+',[op,a],['Number','1']] : [op,expr(prec-1)], prec) // ++a → [++, a], a++ → [-,[++,a],1]
   operator[op] = (a,b) => (
-    a[0] === '.' ? (a=compile(a[1]),b=a[2], ctx => fn(a(ctx), b)) : // ++a.b
-    a[0] === '[' ? (a=compile(a[1]),b=compile(a[2]), ctx => fn(a(ctx),b(ctx))) : // ++a[b]
-    ctx => fn(ctx,a) // ++a
+    a[0] === '(' ? operator[op](a[1]) : // ++(((a)))
+    a[0] === '.' ? (b=a[2], a=compile(a[1]), ctx => fn(a(ctx), b)) : // ++a.b
+    a[0] === '[' ? ([,a,b]=a, a=compile(a),b=compile(b), ctx => fn(a(ctx),b(ctx))) : // ++a[b]
+    (ctx => fn(ctx,a)) // ++a
   )
 })
 

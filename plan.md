@@ -470,6 +470,10 @@
   + map swizzles from sonr
   - nah, mapping is part of parsing. Just handle whatever structures needed in parse.
 
+* [ ] Hide skip, expr, compile as args for defining tokens functions?
+  + shorter exports
+  + easier extending dialects - no need to import parse/eval internals
+
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
   * [ ] collecting args via tree traversal
