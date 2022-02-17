@@ -10,7 +10,7 @@ err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` a
 
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
-  else while (is(cur.charCodeAt(idx))) idx++
+  else while (l=is(cur.charCodeAt(idx))) idx+=l
   return cur.slice(from, idx)
 },
 
