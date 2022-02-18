@@ -86,7 +86,7 @@ See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 ## Parser & compiler
 
-Subscript exposes separate `./parse.js` and `./compile.js` entries, which can be used separately.
+Subscript exposes separate `./parse.js` and `./compile.js` entries.
 
 Parser builds simple AST, compiler converts it to evaluable function.
 
