@@ -78,7 +78,6 @@ list = [
   '+', PREC_UNARY, a => +a,
   '-', PREC_UNARY, a => -a,
   '!', PREC_UNARY, a => !a,
-  '~', PREC_UNARY, a => ~a,
 
   // increments
   ...inc('++', PREC_UNARY, (a,b) => ++a[b]),
