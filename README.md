@@ -302,7 +302,7 @@ new Function: ~1154 ms
 Eval 30k times:
 ```
 new Function: ~7 ms 🥇
-subscript: ~13 ms 🥈
+subscript: ~15 ms 🥈
 justin: ~17 ms
 jexpr: ~23 ms 🥉
 jsep (expression-eval): ~30 ms
