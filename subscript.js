@@ -8,7 +8,7 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15
 const subscript = s => (s=s.trim(), s ? (s=parse(s.trim()), ctx => (s.call?s:(s=compile(s)))(ctx)) : ()=>{}),
 
 // set any operator
-// right assoc is indicated by negative precedence
+// right assoc is indicated by negative precedence (meaning go from right to left)
 set = subscript.set = (op, prec, fn, right=prec<0, parseFn=fn[0], evalFn=fn[1], arity=!parseFn&&fn.length) => (
   parseFn ||=
     !arity ? (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]) :
@@ -99,7 +99,7 @@ list = [
   // (a,b,c), (a)
   '(', PREC_CALL, [
     a => !a && ['(', expr(0,CPAREN)||err()],
-    a => compile(a)
+    compile
   ],
 
   // a(b,c,d), a()

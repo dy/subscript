@@ -261,7 +261,7 @@ test('prop access', t => {
   evalTest('a["b"]["c"][0]',{a:{b:{c:[1]}}})
   is(script('a.b.c')({a:{b:{c:[1]}}}), [1])
   // NOTE: invalid JS
-  // is(script('a.b.c.0')({a:{b:{c:[1]}}}), 1)
+  is(script('a.b.c.0')({a:{b:{c:[1]}}}), 1)
 })
 
 test('parens', t => {
