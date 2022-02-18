@@ -50,9 +50,10 @@ isId = c =>
 lookup = [n=>skip(isId)],
 
 // create operator checker/mapper (see examples)
-token = (
-  op, map,
+set = parse.set = (
+  op,
   prec=SPACE,
+  map,
   c=op.charCodeAt(0),
   l=op.length,
   prev=lookup[c],

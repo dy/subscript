@@ -470,6 +470,8 @@
   + map swizzles from sonr
   - nah, mapping is part of parsing. Just handle whatever structures needed in parse.
 
+* [x] Generalize operator registering
+
 * [ ] Hide skip, expr, compile as args for defining tokens functions?
   + shorter exports
   + easier extending dialects - no need to import parse/eval internals
