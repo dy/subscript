@@ -7,9 +7,10 @@
   "browser": "subscript.js",
   "exports": {
     ".": "./subscript.js",
-    "./parse": "./parse.js",
-    "./subscript": "./subscript.js",
-    "./justin": "./justin.js"
+    "./parse.js": "./parse.js",
+    "./compile.js": "./compile.js",
+    "./subscript.js": "./subscript.js",
+    "./justin.js": "./justin.js"
   },
   "type": "module",
   "files": [
