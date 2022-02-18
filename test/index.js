@@ -90,6 +90,7 @@ test('right-assoc', t => {
 })
 
 test('syntactic', t => {
+  is(parse(''), '')
   is(script('')(), undefined)
   is(script(' ')(), undefined)
   is(script('\n\r')(), undefined)

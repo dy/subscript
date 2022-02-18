@@ -5,7 +5,7 @@ const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18
 
-const subscript = s => (s=s.trim(), s ? (s=parse(s.trim()), ctx => (s.call?s:(s=compile(s)))(ctx)) : ()=>{}),
+const subscript = s => (s=parse(s), ctx => (s.call?s:(s=compile(s)))(ctx)),
 
 // set any operator
 // right assoc is indicated by negative precedence (meaning go from right to left)

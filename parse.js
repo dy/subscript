@@ -4,7 +4,7 @@ const SPACE=32
 export let idx, cur,
 
 // no handling tagged literals since easily done on user side with cache, if needed
-parse = s => (idx=0, cur=s, s = expr(), !s || cur[idx] ? err() : s),
+parse = s => (idx=0, cur=s, s = expr(), cur[idx] ? err() : s || ''),
 
 err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
