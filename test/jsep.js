@@ -1,5 +1,5 @@
 import test, {is, throws} from 'tst'
-import script, {operator} from '../justin.js'
+import script from '../justin.js'
 // import { skip, code, expr, char, operator } from '../justin.js'
 
 test('Expression: Constants', ()=> {
@@ -77,22 +77,22 @@ test('Ops', function (qunit) {
 test('Custom operators', ()=> {
   is(script('a^b')({a: 0xaaa, b:0xbbb}), 0xaaa^0xbbb);
 
-  operator('×', (a,b)=>a*b,  9)
+  script.set('×',  9, (a,b)=>a*b)
   is(script('a×b')({a:2,b:3}), 6);
 
-  operator('or', (a,b)=>a||b, 1)
+  script.set('or', 1, (a,b)=>a||b)
   is(script('oneWord or anotherWord')({oneWord:1,anotherWord:0}), 1);
   throws(() => script('oneWord ordering anotherWord'));
 
-  operator('#',  (a=0)=>[a], 11)
+  script.set('#', 11, (a)=>[a])
   is(script('#a')({a:1}), [1]);
 
-  operator('not', (a=0)=>!a,  13)
+  script.set('not',  13, (a)=>!a)
   is(script('not a')({a:false}), true);
 
   throws(t => script('notes 1'));
 
-  operator('and', (a,b)=>a&&b,  2)
+  script.set('and',  2, (a,b)=>a&&b)
   is(script('a and b')({a:1,b:2}),2);
   is(script('bands')({a:1,b:2}), undefined);
 
@@ -175,7 +175,7 @@ test('Ternary', ()=> {
 });
 
 
-test('should allow manipulating what is considered whitespace', (assert) => {
+test.only('should allow manipulating what is considered whitespace', (assert) => {
   const expr = 'a // skip all this';
   is(script(expr)({a:'a'}), 'a');
 });

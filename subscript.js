@@ -9,7 +9,7 @@ const subscript = s => (s=s.trim(), s ? (s=parse(s.trim()), ctx => (s.call?s:(s=
 
 // set any operator
 // FIXME: make right part of precedence?
-set = subscript.set = (op, prec, fn, right=0, arity=fn.length, parseFn, evalFn) => (
+set = subscript.set = (op, prec, fn, right=prec%1, arity=fn.length, parseFn, evalFn) => (
   parseFn = fn[0] || (
     !arity ? (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]) :
     arity > 1 ? (a, b) => a && (b=expr(prec-right)) && [op,a,b] :
@@ -117,7 +117,7 @@ list = [
   ]
 ]
 
-while (list[2]) set(...list.splice(0,3))
+for (;list[2];) set(...list.splice(0,3))
 
 export default subscript
 export {compile, parse}
