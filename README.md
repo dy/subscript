@@ -1,32 +1,40 @@
 # <img alt="subscript" src="/subscript2.svg" height=28/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>--> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-_Subscript_ is expression evaluator / microlanguage with standard syntax<br/>
+_Subscript_ is expression evaluator / microlanguage with [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)).<br/>
 
-* Any fragment can be copy-pasted to any language: C++, JS, Java, Python, Go, Rust etc. 
+* Any fragment can be copy-pasted to any language: C++, JS, Java, Python, Go, Rust etc.
 * Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
 * :rocket: Fast [performance](#performance)
 * Configurable & extensible
 * Trivial to use
 
 ```js
-import script from './subscript.js'
-let fn = script`a.b + c(d - 1)`
+import script, { parse, compile } from './subscript.js'
+
+// create expression evaluator
+let fn = script('a.b + c(d - 1)')
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
-fn.args // ['a', 'c', 'd']
+
+// or parse expression tree
+let tree = parse('a.b + c')
+tree // ['+', ['.', 'a', 'b'], 'c']
+
+// and compile tree to evaluable function
+let evaluate = compile(tree)
 ```
 
 ## Motivation
 
 _Subscript_ is designed to be useful for:
 
-* templates (perfect match with [template parts](https://github.com/github/template-parts), [templize](https://github.com/spectjs/templize))
+* templates (perfect match with [template parts](https://github.com/github/template-parts), see [templize](https://github.com/spectjs/templize))
 * expressions evaluators, calculators
-* configurable subsets of languages (eg. [justin](#justin)) <!-- see sonr, mineural -->
+* configurable subsets of languages (eg. [justin](#justin))
 * pluggable/mock language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
-* custom DSL
+* custom DSL <!-- see sonr, mineural -->
 
-_Subscript_ has [2kb](https://npmfs.com/package/subscript/6.0.0/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
+_Subscript_ has [2.8kb](https://npmfs.com/package/subscript/7.0.0/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
 
 
 ## Design
@@ -54,25 +62,46 @@ Default literals:
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via `parse.set(token, precedence, operator)` for unary or binary operators (detected by number of arguments in `operator`), or via `parse.set(token, parse, precedence)` for custom tokens.
+Everything else can be extended via `subscript.set(str, prec, fn)` for unary, binary or n-ary operators (detected by number of arguments in `fn`), or via `subscript.set(str, prec, [parse, compile])` for custom tokens.
 
 ```js
-import script from './subscript.js'
+import script, { parse, compile } from './subscript.js'
 
 // add ~ unary operator with precedence 15
-script.set('~', 15, a => ~a)
+operator('~', 15, a => ~a)
 
-// add === binary operator
-script.set('===', 9, (a, b) => a===b)
+// add === binary operator with precedence 9
+operator('===', 9, (a, b) => a===b)
 
 // add literals
-script.set('true', a => ()=>true)
-script.set('false', a => ()=>false)
+token('true', 20, [a => ['',true]])
+token('false', 20, [a => ['',false]])
 
-script`true === false`() // false
+script(`true === false`)() // false
 ```
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
+
+
+## AST
+
+Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser builds simple AST, compiler converts it to evaluable function.
+
+AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk)), opposed to [estree](https://github.com/estree/estree):
+
+* is not limited to particular language, can be cross-compiled
+* reflects execution sequence, rather than code layout
+* has minimal possible overhead, better fits for directly mapping to commands
+* allows manual evaluation and debugging
+* has conventional form and one-liner docs:
+
+```
+import { compile } from 'subscript.js'
+
+const fn = compile(['+', ['*', 'min', ['',60]], ['','sec']])
+
+fn({min: 5}) // min*60 + "sec" == "300sec"
+```
 
 <!--
 Operators can be extended via .
@@ -286,8 +315,9 @@ Subscript shows relatively good performance within other evaluators:
 Parse 30k times:
 
 ```
-subscript: ~170 ms 🥇
-justin: ~183 ms 🥈
+es-module-lexer: 50ms 🥇
+subscript: ~150 ms 🥈
+justin: ~183 ms
 jsep: ~270 ms 🥉
 jexpr: ~297 ms
 mr-parser: ~420 ms
@@ -302,8 +332,8 @@ new Function: ~1154 ms
 Eval 30k times:
 ```
 new Function: ~7 ms 🥇
-subscript: ~17 ms 🥈
-justin: ~17 ms 🥈
+subscript: ~15 ms 🥈
+justin: ~17 ms
 jexpr: ~23 ms 🥉
 jsep (expression-eval): ~30 ms
 math-expression-evaluator: ~50ms

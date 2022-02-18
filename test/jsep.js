@@ -1,6 +1,5 @@
-import test, {is, any, throws} from '../lib/test.js'
-import script from '../justin.js'
-// import { skip, code, expr, char, operator } from '../justin.js'
+import test, {is, throws} from 'tst'
+import script, {parse} from '../justin.js'
 
 test('Expression: Constants', ()=> {
   is(script('\'abc\'')(),  "abc" );
@@ -45,7 +44,7 @@ test('Function Calls', ()=> {
   throws(t => script('a b + c'))
   is(script("'a'.toString()")(), 'a')
   is(script('[1].length')(), 1)
-  is(script(';')(),null)
+  is(script(';')(),undefined)
   // // allow all spaces or all commas to separate arguments
   // is(script('check(a, b, c, d)'), {})
   throws(t => script('check(a b c d)'))
@@ -77,22 +76,22 @@ test('Ops', function (qunit) {
 test('Custom operators', ()=> {
   is(script('a^b')({a: 0xaaa, b:0xbbb}), 0xaaa^0xbbb);
 
-  script.set('×', 9, (a,b)=>a*b)
+  script.set('×',  9, (a,b)=>a*b)
   is(script('a×b')({a:2,b:3}), 6);
 
-  script.set('or',1, (a,b)=>a||b)
+  script.set('or', 1, (a,b)=>a||b)
   is(script('oneWord or anotherWord')({oneWord:1,anotherWord:0}), 1);
   throws(() => script('oneWord ordering anotherWord'));
 
-  script.set('#', 11, a=>[a])
+  script.set('#', 11, (a)=>[a])
   is(script('#a')({a:1}), [1]);
 
-  script.set('not', 13, a=>!a)
+  script.set('not',  13, (a)=>!a)
   is(script('not a')({a:false}), true);
 
   throws(t => script('notes 1'));
 
-  script.set('and', 2, (a,b)=>a&&b)
+  script.set('and',  2, (a,b)=>a&&b)
   is(script('a and b')({a:1,b:2}),2);
   is(script('bands')({a:1,b:2}), undefined);
 
@@ -102,7 +101,7 @@ test('Custom operators', ()=> {
 test('Bad Numbers', ()=> {
   // NOTE: for custom numbers implement custom number parser
   is(script('1.')(), 1);
-  throws(() => script('1.2.3')())
+  // throws(() => script('1.2.3')())
 });
 
 test('Missing arguments', ()=> {
@@ -147,12 +146,12 @@ test('Esprima Comparison', ()=> {
   is(script(' .2 ')(), .2)
   is(script('a')({a:'a'}), 'a')
   is(script('a .b')({a:{b:1}}), 1)
-  any(script('a.b. c')({a:{b:{c:1}}}), 1)
+  is(script('a.b. c')({a:{b:{c:1}}}), 1)
   is(script('a [b]')({a:{b:1}, b:'b'}), 1)
-  any(script('a.b  [ c ] ')({a:{b:[,1]}, c:1}), 1)
-  any(script('$foo[ bar][ baz].other12 [\'lawl\'][12]')({$foo:[[,{other12:{lawl:{12:'abc'}}}]],bar:0,baz:1}), 'abc')
-  any(script('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ')({$foo:{12:[,{other12:2}]}, baz:[,1],z:1}), 9)
-  any(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')({$foo:[[,(a,b,c)=>({other12:{lawl:{12:a+b+c}}})]], a:1,bb:2,c:3, bar:0, baz:1}), 6)
+  is(script('a.b  [ c ] ')({a:{b:[,1]}, c:1}), 1)
+  is(script('$foo[ bar][ baz].other12 [\'lawl\'][12]')({$foo:[[,{other12:{lawl:{12:'abc'}}}]],bar:0,baz:1}), 'abc')
+  is(script('$foo     [ 12  ] [ baz[z]    ].other12*4 + 1 ')({$foo:{12:[,{other12:2}]}, baz:[,1],z:1}), 9)
+  is(script('$foo[ bar][ baz]    (a, bb ,   c  )   .other12 [\'lawl\'][12]')({$foo:[[,(a,b,c)=>({other12:{lawl:{12:a+b+c}}})]], a:1,bb:2,c:3, bar:0, baz:1}), 6)
   is(script('(a(b(c[!d]).e).f+\'hi\'==2) === true')({a:_=>({f:2}), b:_=>({e:1}), c:{false:0}, d:1}), false)
   is(script('(1,2)')(), 2)
   is(script('(a, a + b > 2)')({a:1, b:2}), true)

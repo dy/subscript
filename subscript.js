@@ -1,91 +1,122 @@
-import {parse, set, lookup, skip, cur, idx, err, expr, isId, args, space} from './parser.js'
+import parse, { lookup, skip, cur, idx, err, expr } from './parse.js'
+import compile from './compile.js'
 
-const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, _0=48, _9=57,
+const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
+PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18
 
-let u, list, op, prec, fn,
-    isNum = c => c>=_0 && c<=_9,
-    // 1.2e+3, .5
-    num = n => (
-      n&&err('Unexpected number'),
-      n = skip(c=>c == PERIOD || isNum(c)),
-      (cur.charCodeAt(idx) == 69 || cur.charCodeAt(idx) == 101) && (n += skip(2) + skip(isNum)),
-      n=+n, n!=n ? err('Bad number') : () => n // 0 args means token is static
-    ),
+const subscript = s => (s=s.trim(), s ? (s=parse(s.trim()), ctx => (s.call?s:(s=compile(s)))(ctx)) : ()=>{}),
 
-    inc = (a,fn) => ctx => fn(a.of?a.of(ctx):ctx, a.id(ctx))
+// set any operator
+// right assoc is indicated by negative precedence (meaning go from right to left)
+set = subscript.set = (op, prec, fn, right=prec<0, parseFn=fn[0], evalFn=fn[1], arity=!parseFn&&fn.length) => (
+  parseFn ||=
+    !arity ? (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]) :
+    arity > 1 ? (a, b) => a && (b=expr(prec-right)) && [op,a,b] :
+    a => !a && (a=expr(prec-1)) && [op, a]
+  ,
+  evalFn ||=
+    !arity ? (...args) => (args=args.map(compile), ctx => fn(...args.map(arg=>arg(ctx)))) :
+    arity > 1 ? (a,b) => b && (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx))) :
+    (a,b) => !b && (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx)))
+  ,
+  (prec=right?-prec:prec) ? parse.set(op,prec,parseFn) : (lookup[op.charCodeAt(0)||1]=parseFn),
+  compile.set(op, evalFn)
+),
 
-// numbers
-for (op=_0;op<=_9;) lookup[op++] = num
+// create increment-assign pair from fn
+num = a => a ? err() : ['', (a=+skip(c => c === PERIOD || (c>=_0 && c<=_9) || (c===69||c===101?2:0)))!=a?err():a],
+inc = (op, prec, fn, ev) => [op, prec, [
+  a => a ? [op==='++'?'-':'+',[op,a],['',1]] : [op,expr(prec-1)], // ++a → [++, a], a++ → [-,[++,a],1]
+  ev = (a,b) => (
+    a[0] === '(' ? ev(a[1]) : // ++(((a)))
+    a[0] === '.' ? (b=a[2], a=compile(a[1]), ctx => fn(a(ctx), b)) : // ++a.b
+    a[0] === '[' ? ([,a,b]=a, a=compile(a),b=compile(b), ctx => fn(a(ctx),b(ctx))) : // ++a[b]
+    (ctx => fn(ctx,a)) // ++a
+  )
+]],
+list = [
+  // literals
+  // null operator returns first value (needed for direct literals)
+  '',, [,v => () => v],
 
-// operators
-for (list=[
-  // "a"
-  '"', a => (a=a?err('Unexpected string'):skip(c => c-DQUOTE), skip()||err('Bad string'), ()=>a),,
+  '"',, [
+    (a) => a ? err() : ['', (skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip()||err('Bad string'))).slice(1,-1)],
+  ],
 
-  // a.b
-  '.', (a,id) => (space(), id=skip(isId)||err(), fn=ctx=>a(ctx)[id], fn.id=()=>id, fn.of=a, fn), PREC_CALL,
+  // .1
+  '.',, [a=>!a && num()],
 
-  // .2
-  // FIXME: .123 is not operator, so we skip back, but mb reorganizing num would be better
-  '.', a => !a && num(skip(-1)),,
+  // 0-9
+  ...Array(10).fill(0).flatMap((_,i)=>[''+i,0,[num]]),
 
-  // a[b]
-  '[', (a,b,fn) => a && (b=expr(0,CBRACK)||err(), fn=ctx=>a(ctx)[b(ctx)], fn.id=b, fn.of=a, fn), PREC_CALL,
+  // sequences
+  ',', PREC_SEQ, (...args) => args[args.length-1],
+  '||', PREC_SOME, (...args) => { let i=0, v; for (; !v && i < args.length; ) v = args[i++]; return v },
+  '&&', PREC_EVERY, (...args) => { let i=0, v=true; for (; v && i < args.length; ) v = args[i++]; return v },
 
-  // a(), a(b), (a,b), (a+b)
-  '(', (a,b,fn) => (
-    b=expr(0,CPAREN),
-    // a(), a(b), a(b,c,d)
-    a ? ctx => a(ctx).apply(a.of?.(ctx), b ? b.all ? b.all(ctx) : [b(ctx)] : []) :
-    // (a+b)
-    b || err()
-  ), PREC_CALL,
-
-  // [a,b,c] or (a,b,c)
-  ',', (a,prec,b=expr(PREC_SEQ),fn=ctx => (a(ctx), b(ctx))) => (
-    b ? (fn.all = a.all ? ctx => [...a.all(ctx),b(ctx)] : ctx => [a(ctx),b(ctx)]) : err('Skipped argument',),
-    fn
-  ), PREC_SEQ,
-
-  '|', PREC_OR, (a,b)=>a|b,
-  '||', PREC_SOME, (a,b)=>a||b,
-
-  '&', PREC_AND, (a,b)=>a&b,
-  '&&', PREC_EVERY, (a,b)=>a&&b,
-
-  '^', PREC_XOR, (a,b)=>a^b,
-
-  // ==, !=
-  '==', PREC_EQ, (a,b)=>a==b,
-  '!=', PREC_EQ, (a,b)=>a!=b,
-
-  // > >= >> >>>, < <= <<
-  '>', PREC_COMP, (a,b)=>a>b,
-  '>=', PREC_COMP, (a,b)=>a>=b,
-  '>>', PREC_SHIFT, (a,b)=>a>>b,
-  '>>>', PREC_SHIFT, (a,b)=>a>>>b,
-  '<', PREC_COMP, (a,b)=>a<b,
-  '<=', PREC_COMP, (a,b)=>a<=b,
-  '<<', PREC_SHIFT, (a,b)=>a<<b,
-
-  // + ++ - --
+  // binaries
   '+', PREC_SUM, (a,b)=>a+b,
-  '+', PREC_UNARY, (a)=>+a,
-  '++', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]++ : (a,b)=>++a[b]), PREC_UNARY,
-
   '-', PREC_SUM, (a,b)=>a-b,
-  '-', PREC_UNARY, (a)=>-a,
-  '--', a => inc(a||expr(PREC_UNARY-1), a ? (a,b)=>a[b]-- : (a,b)=>--a[b]), PREC_UNARY,
-
-  // ! ~
-  '!', PREC_UNARY, (a)=>!a,
-
-  // * / %
   '*', PREC_MULT, (a,b)=>a*b,
   '/', PREC_MULT, (a,b)=>a/b,
-  '%', PREC_MULT, (a,b)=>a%b
-]; [op,prec,fn,...list]=list, op;) set(op,prec,fn)
+  '%', PREC_MULT, (a,b)=>a%b,
+  '|', PREC_OR, (a,b)=>a|b,
+  '&', PREC_AND, (a,b)=>a&b,
+  '^', PREC_XOR, (a,b)=>a^b,
+  '==', PREC_EQ, (a,b)=>a==b,
+  '!=', PREC_EQ, (a,b)=>a!=b,
+  '>', PREC_COMP, (a,b)=>a>b,
+  '>=', PREC_COMP, (a,b)=>a>=b,
+  '<', PREC_COMP, (a,b)=>a<b,
+  '<=', PREC_COMP, (a,b)=>a<=b,
+  '>>', PREC_SHIFT, (a,b)=>a>>b,
+  '>>>', PREC_SHIFT, (a,b)=>a>>>b,
+  '<<', PREC_SHIFT, (a,b)=>a<<b,
 
-export default parse
+  // unaries
+  '+', PREC_UNARY, a => +a,
+  '-', PREC_UNARY, a => -a,
+  '!', PREC_UNARY, a => !a,
+
+  // increments
+  ...inc('++', PREC_UNARY, (a,b) => ++a[b]),
+  ...inc('--', PREC_UNARY, (a,b) => --a[b]),
+
+  // a[b]
+  '[', PREC_CALL, [
+    a => a && ['[', a, expr(0,CBRACK)||err()],
+    (a,b) => b && (a=compile(a), b=compile(b), ctx => a(ctx)[b(ctx)])
+  ],
+
+  // a.b
+  '.', PREC_CALL, [
+    (a,b) => a && (b=expr(PREC_CALL)) && ['.',a,b],
+    (a,b) => (a=compile(a),b=!b[0]?b[1]:b, ctx => a(ctx)[b]) // a.true, a.1 → needs to work fine
+  ],
+
+  // (a,b,c), (a)
+  '(', PREC_CALL, [
+    a => !a && ['(', expr(0,CPAREN)||err()],
+    compile
+  ],
+
+  // a(b,c,d), a()
+  '(', PREC_CALL, [
+    a => a && ['(', a, expr(0,CPAREN)||''],
+    (a,b,path,args) => b!=null && (
+      args = b=='' ? () => [] : // a()
+      b[0] === ',' ? (b=b.slice(1).map(compile), ctx => b.map(a=>a(ctx))) : // a(b,c)
+      (b=compile(b), ctx => [b(ctx)]), // a(b)
+
+      a[0] === '.' ? (path=a[2], a=compile(a[1]), ctx => a(ctx)[path](...args(ctx))) : // a.b(...args)
+      a[0] === '[' ? (path=compile(a[2]), a=compile(a[1]), ctx => a(ctx)[path(ctx)](...args(ctx))) : // a[b](...args)
+      (a=compile(a), ctx => a(ctx)(...args(ctx))) // a(...args)
+    )
+  ]
+]
+
+for (;list[2];) set(...list.splice(0,3))
+
+export default subscript
+export {compile, parse}

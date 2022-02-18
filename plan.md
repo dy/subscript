@@ -400,18 +400,93 @@
   . a?.b
   * [x] somewhat possible by passing ids as arguments
   → Just expose direct parser. Requiring it from `/src` is unreliable, but extending is needed
-* [ ] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
+* [x] make `operator`, `token` more external methods with plain API
+* [x] numbers must not be part of core:
+  + [ ] they are valid ids
+  + [ ] different config may want parse differently, like versions `1.2.3`
+  + [ ] different lang has different number capabilities
+* [x] identifier parser can be configurable:
+  + [ ] we may want to collect all used ids → can be done via AST
+  + [ ] we may want it to return different target (function, string, etc) → can be done via separate eval / AST
+  + [ ] or make `a.b.c` identifiers, not operators.
+* [x] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
   * maybe we just need better interop instead (see below)
+  + since ids can be collected externally now, it's better to outsource that indeed, to keep point of performance/size.
+  ~ same time, since subscript is not just a thing in itself, it would be useful to expose ast.
+
+* [x] Should we retain `subscript.eval` and `subscript.parse` for different purpose uses?
+  * Alternatively, we can come up with `node` constructor that can either create an eval function or generate AST
+  * Or we can still stuff ast into eval, like .id, .of etc.
+  * Wasm is still faster for parsing and evaluating. Keeping ast is useful.
+  + returning AST from parse method is both fast and useful, rather than single-purpose eval, which can be splitted
+  → eval, as well as compile, map, JSONify, ESify, WASM-compile etc. - are different targets indeed.
+
+* [x] Would be nice to provide actual analyzable tree, not just eval function.
+  + ast enables easier access to underlying tokens (no need to fake id function), no need to store .of, .id etc.
+    + that would solve collecting arguments case
+  + that would allow different targets by user demand
+  + ast makes many custom operators direct ones, like . or
+  + ast is possible to eval in wasm, since it's declaratively defined
+  + that would allow swizzles, pre-eval and various node optimizations like a++ → a+=1, a,b = 1 → a=1, b=1
+  - stuffing tree into subscript seems to be dissolving main point: terse, fast expressions.
+    → parse is faster and even smaller, eval is on par via separate evaluate target
+
+* [x] AST format
+  * It can be strictly binary or with multiple args. Multiargs case makes more sense (?:, a(b,c,d), [a,b,c,d], a;b;c;d)
+    + multiargs allow SIMD and other optimizations, it better reflect actual execution and doesn't enforce redundant ordering
+    + AST should be able to validly codegenerated back, therefore redundant ordering imposes redundant parens
+      * Precedences belong to codegenerator, not to parser, to match against.
+    + enables simd
+  * AST can reflect either: visual syntactic structure (like exact parens) OR semantic order of execution.
+  * AST can not depend on languages and just reflect order of commands execution, can be converted to any language.
+    ~ may be challending if target lang has different precedences → precedences must be defined by target codegenerator
+  * Parens operator may have semantic sense as either grouping or destructuring
+  * Can be converted to xml as `<mul><a/><b/><c/></mul>`
+  → safest is source fragments ordered as nested arrays indicating order of evaluation.
+
+* [x] Number, primitives parsing: is that part of evaluator or parser? What about mapping/simplifying nodes?
+  + we organically may have `[value]` syntax for primitives/literals
+    - there are 0 operand operators: `;;;`, `a,,,b` taking that signature
+  + some parsing literals can be complicated, like \` or `1.2e+3` - need to be detected parse-time;
+    + postponing them is extra _parse_ work
+    * There are many non-standard number signatures: 0x00, 0b00, 00017, 0123n, 1.23e+5, 1_100_200
+    - these literals can be parsed from AST also via custom mappers `['.', '1', '2e']`
+    ~ that can be parsed specifically, but AST should be very safe
+  - Numbers are in eg. XML - we'd still store untyped strings there
+  - Type detection therefore can be done on stage of interpreter (eg. XML).
+    * so that is sort-of preparing arguments for eval...
+  - optimization mapping can be done on level of evaluator (pre-eval), not before - we need reducers to do that
+  - null, undefined, false jeopardizes expr eval: need to be strings
+  → As a gift for God it should be lightweight, generic and minimal.
+    → It should be JSON-compatible, therefore types should be abstracted as much as possible (arrays + strings).
+      ~ although json allows booleans and numbers and even null
+    → we don't need mappers layer: parser already includes mapping, no need for any extra, it should create calltree.
+    → it's safest to convert initial string to ordered substrings, without particular type detection.
+    → **Evaluating value (converting from stirng to value) is parse of evaluator**
+      ~ same time on parsing level we can point to a type function to initially parse - it will save time on reparsing in eval.
+
+* [x] Mapping layer?
+  + map various numeric constructs
+  + map swizzles from sonr
+  - nah, mapping is part of parsing. Just handle whatever structures needed in parse.
+
+* [x] Generalize operator registering
+
+* [ ] Hide skip, expr, compile as args for defining tokens functions?
+  + shorter exports
+  + easier extending dialects - no need to import parse/eval internals
+
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
   * [ ] collecting args via tree traversal
   * [ ] soner transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
-  * [ ] more direct API: prefix operator, id - may not require low-level extension
-* [ ] maybe we should really make eval helpers belong to extensions, not core.
-* [ ] also, identifier can be adjustable:
-  + we may want to track ids manually
-  + or make `a.b.c` identifiers, not operators.
+  * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
+    → that belongs to custom langs, not core
+
+* [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
+
 * [ ] language building tool: create own language with a set of features
+
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
   * [ ] parser examples as chunks
@@ -420,6 +495,15 @@
   * [ ] [double.js](https://github.com/munrocket/double.js) scripting
   * [ ] js-based glsl evaluator
   * [ ] language simulators
+
 * [ ] Demo
-* [ ] parse operator groups for faster eval, eg.: a*x + b*y + c
-* [ ] wasmscript
+
+* [ ] complex groups detector: a*x + b*y + c
+
+* [ ] compile groups/complex groups to wasm: a*x + b*y + c
+  - wasm doesn't generically support any-type of argument.
+
+* [ ] WASMify https://youtu.be/awe7swqFOOw?t=778
+  - before interface types it's very problematic for wasm to deal with slicing/passing strings/substrings.
+  ~ in fact we can initialize lookup tokens in JS and run actual parser in WASM by passing table
+    . and return multiple values from `skip` as ranges to slice

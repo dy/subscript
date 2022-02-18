@@ -1,4 +1,4 @@
-import test, {is} from '../lib/test.js'
+import test, {is} from 'tst'
 
 const src = c => `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(${c})`
 const args={a:123, b:234, c:345, d:456, f:{g:[567]}, i:{j: yes => yes && (x => +x ? 0 : 1) }, k:1}
@@ -47,6 +47,7 @@ test('subscript', async t => {
   }
   console.timeEnd('subscript eval')
 })
+
 
 test('jsep', async t => {
   const jsep = await import('../lib/parser/expression-eval.module.js');
@@ -151,27 +152,6 @@ test.skip('jsep x3', async t => {
     jsep.eval(ast, args)
   }
   console.timeEnd('jsep eval')
-})
-
-test.skip('subscript x3', async t => {
-  const {default:parse} = await import('../subscript.js');
-
-  let ast = parse(src(0))
-  // console.log(ast);
-  is(ast(args), result);
-
-  console.time('subscript')
-  for (let i = 0; i < RUNS; i++){
-    let ast = parse(src(i));
-    // evaluate(ast, args)
-  }
-  console.timeEnd('subscript')
-
-  console.time('subscript eval')
-  for (let i = 0; i < RUNS; i++){
-    ast(args)
-  }
-  console.timeEnd('subscript eval')
 })
 
 test('justin', async t => {
@@ -431,7 +411,7 @@ test.skip('subscript v5', async t => {
 })
 
 
-test('new Function', async t => {
+test.skip('new Function', async t => {
   console.time('new Function')
   for (let n = 0; n < RUNS; n++){
     let fn = new Function('a','b', 'c', 'd', 'f', 'i', 'k', 'return '+src(n))
@@ -465,4 +445,67 @@ test.skip('direct fn', async t => {
     fn(a,b,c,d,f,i,k)
   }
   console.timeEnd('direct fn eval')
+})
+
+test.skip('es-module-lexer', async t => {
+  const {init, parse} = await import('es-module-lexer')
+  await init;
+
+  // console.log(parse(src(1)))
+
+  console.time('es-module-lexer')
+  for (let i = 0; i < RUNS; i++){
+    parse(src(i))
+  }
+  console.timeEnd('es-module-lexer')
+})
+
+test('object key', async t => {
+  const obj = {}
+  console.time('object key')
+  for (let i = 0; i < RUNS; i++){
+    obj[src(i)] = true
+  }
+  console.timeEnd('object key')
+})
+
+test('Map', async t => {
+  const map = new Map
+  console.time('Map.set')
+  for (let i = 0; i < RUNS; i++){
+    map.set(src(i), true)
+  }
+  console.timeEnd('Map.set')
+})
+
+test('TextEncoder/Decoder', async t => {
+  const binary = btoa(src(0))
+
+  console.time('u8array.from')
+  for (let i = 0; i < RUNS; i++){
+    Uint8Array.from(atob(binary), x => x.charCodeAt(0))
+  }
+  console.timeEnd('u8array.from')
+
+  const encoder = new TextEncoder()
+  console.time('TextEncoder')
+  for (let i = 0; i < RUNS; i++){
+    encoder.encode(src(i))
+  }
+  console.timeEnd('TextEncoder')
+
+
+  function copyBE (src, outBuf16 = new Uint16Array(src.length)) {
+    const len = src.length;
+    let i = 0;
+    while (i < len) {
+      const ch = src.charCodeAt(i);
+      outBuf16[i++] = (ch & 0xff) << 8 | ch >>> 8;
+    }
+  }
+  console.time('copyBE')
+  for (let i = 0; i < RUNS; i++){
+    copyBE(src(i))
+  }
+  console.timeEnd('copyBE')
 })
