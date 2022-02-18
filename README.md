@@ -84,7 +84,7 @@ script(`true === false`)() // false
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 
-## AST
+## Parser & compiler
 
 Subscript exposes separate `./parse.js` and `./compile.js` entries, which can be used separately.
 
