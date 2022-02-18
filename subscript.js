@@ -1,5 +1,5 @@
-import parse, { lookup, skip, cur, idx, err, expr, isId, space } from './parse.js'
-import compile, { operator } from './compile.js'
+import parse, { lookup, skip, cur, idx, err, expr } from './parse.js'
+import compile from './compile.js'
 
 const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -8,24 +8,24 @@ PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15
 const subscript = s => (s=s.trim(), s ? (s=parse(s.trim()), ctx => (s.call?s:(s=compile(s)))(ctx)) : ()=>{}),
 
 // set any operator
-// FIXME: make right part of precedence?
-set = subscript.set = (op, prec, fn, right=prec%1, arity=fn.length, parseFn, evalFn) => (
-  parseFn = fn[0] || (
+// right assoc is indicated by negative precedence
+set = subscript.set = (op, prec, fn, right=prec<0, parseFn=fn[0], evalFn=fn[1], arity=!parseFn&&fn.length) => (
+  parseFn ||=
     !arity ? (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]) :
     arity > 1 ? (a, b) => a && (b=expr(prec-right)) && [op,a,b] :
     a => !a && (a=expr(prec-1)) && [op, a]
-  ),
-  evalFn = fn[1] || (
+  ,
+  evalFn ||=
     !arity ? (...args) => (args=args.map(compile), ctx => fn(...args.map(arg=>arg(ctx)))) :
     arity > 1 ? (a,b) => b && (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx))) :
     (a,b) => !b && (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx)))
-  ),
-  prec ? parse.set(op,prec,parseFn) : (lookup[op.charCodeAt(0)||1]=parseFn),
+  ,
+  (prec=right?-prec:prec) ? parse.set(op,prec,parseFn) : (lookup[op.charCodeAt(0)||1]=parseFn),
   compile.set(op, evalFn)
 ),
 
 // create increment-assign pair from fn
-num = a => a ? err() : ['', +skip(c => c === PERIOD || (c>=_0 && c<=_9) || (c===69||c===101?2:0))],
+num = a => a ? err() : ['', (a=+skip(c => c === PERIOD || (c>=_0 && c<=_9) || (c===69||c===101?2:0)))!=a?err():a],
 inc = (op, prec, fn, ev) => [op, prec, [
   a => a ? [op==='++'?'-':'+',[op,a],['',1]] : [op,expr(prec-1)], // ++a → [++, a], a++ → [-,[++,a],1]
   ev = (a,b) => (
@@ -93,7 +93,7 @@ list = [
   // a.b
   '.', PREC_CALL, [
     (a,b) => a && (b=expr(PREC_CALL)) && ['.',a,b],
-    (a,b) => (a=compile(a), ctx => a(ctx)[b])
+    (a,b) => (a=compile(a),b=!b[0]?b[1]:b, ctx => a(ctx)[b]) // a.true, a.1 → needs to work fine
   ],
 
   // (a,b,c), (a)

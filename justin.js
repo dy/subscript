@@ -1,13 +1,11 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import { skip, cur, idx, err, expr, isId, space } from './parse.js'
+import { skip, cur, idx, err, expr } from './parse.js'
 import compile from './compile.js'
 import subscript from './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,
 PREC_SEQ=1, PREC_COND=3, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
-PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_EXP=14, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19,
-RIGHT = 0b1000000
-
+PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_EXP=14, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18, PREC_GROUP=19
 
 let escape = {n:'\n', r:'\r', t:'\t', b:'\b', f:'\f', v:'\v'},
   string = q => (qc, c, str='') => {
@@ -50,8 +48,8 @@ list = [
   "'", , [string(QUOTE)],
 
   // /**/, //
-  '/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec)),
-  '//', 20, (a, prec) => (skip(c => c >= 32), a||expr(prec)),
+  '/*', 20, [(a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx+1) !== 47), skip(2), a||expr(prec))],
+  '//', 20, [(a, prec) => (skip(c => c >= 32), a||expr(prec))],
 
   // literals
   'null', 20, [a => a ? err() : ['',null]],
@@ -64,7 +62,7 @@ list = [
 
   // right order
   // '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
-  // '**', PREC_EXP|RIGHT, (a,b)=>a**b,
+  '**', -PREC_EXP, (a,b)=>a**b,
 
   // [a,b,c]
   '[', 20, [

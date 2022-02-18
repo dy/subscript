@@ -83,7 +83,7 @@ test('basic', t => {
 
 test('right-assoc', t => {
   // **
-  script.set('**', 14, (a,b)=>a**b, true)
+  script.set('**', -14, (a,b)=>a**b, true)
 
   evalTest('1 + 2 * 3 ** 4 + 5', {})
   evalTest(`a + b * c ** d | e`, {a:1,b:2,c:3,d:4,e:5})
@@ -517,10 +517,11 @@ test('ext: collect args', async t => {
   const {default: script} = await import('../justin.js')
 
   let args = [], id = lookup[0]
-  lookup[0] = a => (a=id(), a?.id && args.push(a.id()), a)
+  lookup[0] = (a,b) => (a=id(), a&&args.push(a), a)
 
+  // FIXME: baybe needs ignoring pow and b?
   let fn = script('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
   same(args,
-    ['Math', 'a', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
+    ['Math', 'pow', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
   )
 })
