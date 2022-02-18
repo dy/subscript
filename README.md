@@ -84,11 +84,9 @@ script(`true === false`)() // false
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 
-## Parser & compiler
+## Parser & Compiler
 
-Subscript exposes separate `./parse.js` and `./compile.js` entries.
-
-Parser builds simple AST, compiler converts it to evaluable function.
+Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser builds AST, compiler converts it to evaluable function.
 
 AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk)), opposed to [ESTree](https://github.com/estree/estree):
 
