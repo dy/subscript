@@ -16,7 +16,6 @@ let fn = script('a.b + c(d - 1)')
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 // or
-
 // parse expression tree
 let tree = parse('a.b + c')
 tree // ['+', ['.', 'a', 'b'], 'c']
@@ -67,17 +66,17 @@ Default literals:
 Everything else can be extended via `subscript.set(str, prec, fn)` for unary, binary or n-ary operators (detected by number of arguments in `fn`), or via `subscript.set(str, prec, [parse, compile])` for custom tokens.
 
 ```js
-import script, { parse, compile } from './subscript.js'
+import script, { compile } from './subscript.js'
 
 // add ~ unary operator with precedence 15
-operator('~', 15, a => ~a)
+script.set('~', 15, a => ~a)
 
 // add === binary operator with precedence 9
-operator('===', 9, (a, b) => a===b)
+script.set('===', 9, (a, b) => a===b)
 
 // add literals
-token('true', 20, [a => ['',true]])
-token('false', 20, [a => ['',false]])
+script.set('true', 20, [a => ['',true], a => ctx => a[1]])
+script.set('false', 20, [a => ['',false], a => ctx => a[1]])
 
 script(`true === false`)() // false
 ```
@@ -87,17 +86,19 @@ See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 ## AST
 
-Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser builds simple AST, compiler converts it to evaluable function.
+Subscript exposes separate `./parse.js` and `./compile.js` entries, which can be used separately.
 
-AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk)), opposed to [estree](https://github.com/estree/estree):
+Parser builds simple AST, compiler converts it to evaluable function.
 
-* is not limited to particular language, can be cross-compiled
-* reflects execution sequence, rather than code layout
-* has minimal possible overhead, better fits for directly mapping to commands
-* allows manual evaluation and debugging
+AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk)), opposed to [ESTree](https://github.com/estree/estree):
+
+* is not limited to particular language, can be cross-compiled;
+* reflects execution sequence, rather than code layout;
+* has minimal possible overhead, better fits for directly mapping to operators;
+* simplifies manual evaluation and debugging;
 * has conventional form and one-liner docs:
 
-```
+```js
 import { compile } from 'subscript.js'
 
 const fn = compile(['+', ['*', 'min', ['',60]], ['','sec']])
