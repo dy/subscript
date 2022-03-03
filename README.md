@@ -2,7 +2,6 @@
 
 _Subscript_ is expression evaluator / microlanguage with [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)).<br/>
 
-* Any fragment can be copy-pasted to any language: C++, JS, Java, Python, Go, Rust etc.
 * Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
 * :rocket: Fast [performance](#performance)
 * Configurable & extensible
