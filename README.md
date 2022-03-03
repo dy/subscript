@@ -15,7 +15,7 @@ let fn = script('a.b + c(d - 1)')
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 // or
-// parse expression tree
+// parse expression
 let tree = parse('a.b + c')
 tree // ['+', ['.', 'a', 'b'], 'c']
 
