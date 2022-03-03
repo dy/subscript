@@ -91,7 +91,7 @@ AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io
 
 * is not limited to particular language, can be cross-compiled;
 * reflects execution sequence, rather than code layout;
-* has minimal possible overhead, better fits for directly mapping to operators;
+* has minimal possible overhead, directly maps to operators;
 * simplifies manual evaluation and debugging;
 * has conventional form and one-liner docs:
 
