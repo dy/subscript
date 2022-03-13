@@ -364,4 +364,4 @@ math-parser: -
 * [Jessie](https://github.com/endojs/Jessie)
 * [xst](https://github.com/Moddable-OpenSource/moddable-xst)
 
-<p align=center>🕉</p>
+<p align=center><a href="https://github.com/krsnzd/license/">🕉</a></p>
