@@ -23,7 +23,7 @@ expr = (prec=0, end, cc, token, newNode, fn) => {
     // FIXME: extra work is happening here, when lookup bails out due to lower precedence -
     // it makes extra `space` call for parent exprs on the same character to check precedence again
     (newNode =
-      (fn=lookup[cc]) && fn(token, prec) || // if operator with higher precedence isn't found
+      ((fn=lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
       (!token && lookup[0]()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
     )
   ) token = newNode;
@@ -59,7 +59,7 @@ set = parse.set = (
   prev=lookup[c],
   word=op.toUpperCase()!==op // make sure word boundary comes after word operator
 ) => lookup[c] = (a, curPrec, from=idx) =>
-  curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec)) ||
-  (idx=from, prev&&prev(a, curPrec))
+  (curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec))) ||
+  (idx=from, prev?.(a, curPrec))
 
 export default parse

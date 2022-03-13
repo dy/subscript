@@ -472,6 +472,8 @@
 
 * [x] Generalize operator registering
 
+* [ ] Recognize false, 0 and '' as results of successfully parsed expressions
+
 * [ ] Hide skip, expr, compile as args for defining tokens functions?
   + shorter exports
   + easier extending dialects - no need to import parse/eval internals
@@ -479,7 +481,7 @@
 * [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
   * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
   * [ ] collecting args via tree traversal
-  * [ ] soner transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
+  * [ ] sonr transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
 
