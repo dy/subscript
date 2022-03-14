@@ -9,7 +9,7 @@ parse = s => (idx=0, cur=s, s = expr(), cur[idx] ? err() : s || ''),
 // err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
 err = (msg='Bad syntax',c=cur[idx],prev=cur.slice(0,idx).split('\n'),last=prev.pop()) => {
-  throw SyntaxError(`${msg} \`${last.slice(-10)}${c}\` at ${prev.length}:${last.length+1}`)
+  throw SyntaxError(`${msg} \`${last.slice(-10)}${c}\` at ${prev.length}:${last.length}`)
 },
 
 skip = (is=1, from=idx, l) => {
