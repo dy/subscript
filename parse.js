@@ -6,7 +6,11 @@ export let idx, cur,
 // no handling tagged literals since easily done on user side with cache, if needed
 parse = s => (idx=0, cur=s, s = expr(), cur[idx] ? err() : s || ''),
 
-err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
+// err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
+
+err = (msg='Bad syntax',c=cur[idx],prev=cur.slice(0,idx).split('\n'),last=prev.pop()) => {
+  throw SyntaxError(`${msg} \`${last.slice(-10)}${c}\` at ${prev.length}:${last.length+1}`)
+},
 
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
