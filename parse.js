@@ -8,7 +8,7 @@ parse = s => (idx=0, cur=s, s = expr(), cur[idx] ? err() : s || ''),
 
 // err = (msg='Bad syntax',c=cur[idx]) => { throw SyntaxError(msg + ' `' + c + '` at ' + idx) },
 
-err = (msg='Bad syntax',frag=cur.slice(idx-10,idx+1),prev=cur.slice(0,idx).split('\n'),last=prev.pop()) => {
+err = (msg='Bad syntax',frag=cur[idx],prev=cur.slice(0,idx).split('\n'),last=prev.pop()) => {
   throw SyntaxError(`${msg} \`${frag}\` at ${prev.length}:${last.length}`)
 },
 
