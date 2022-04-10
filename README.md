@@ -62,20 +62,20 @@ Default literals:
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via `subscript.set(str, prec, fn)` for unary, binary or n-ary operators (detected by number of arguments in `fn`), or via `subscript.set(str, prec, [parse, compile])` for custom tokens.
+Everything else can be extended via `unary`, `binary` or `nary` for operators, or via `token(str, prec, parse, compile)` for custom tokens.
 
 ```js
-import script, { compile } from './subscript.js'
+import script, { compile, unary, nary, binary, token } from './subscript.js'
 
 // add ~ unary operator with precedence 15
-script.set('~', 15, a => ~a)
+unary('~', 15, a => ~a)
 
 // add === binary operator with precedence 9
-script.set('===', 9, (a, b) => a===b)
+binary('===', 9, (a, b) => a===b)
 
 // add literals
-script.set('true', 20, [a => ['',true], a => ctx => a[1]])
-script.set('false', 20, [a => ['',false], a => ctx => a[1]])
+token('true', 20, a => ['',true], a => ctx => a[1])
+token('false', 20, a => ['',false], a => ctx => a[1])
 
 script(`true === false`)() // false
 ```

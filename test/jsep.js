@@ -1,5 +1,6 @@
 import test, {is, throws} from 'tst'
 import script, {parse} from '../justin.js'
+import { unary, binary } from '../subscript.js';
 
 test('Expression: Constants', ()=> {
   is(script('\'abc\'')(),  "abc" );
@@ -69,29 +70,29 @@ test('Ops', function (qunit) {
   is(script('1 + -2')(), -1)
   is(script('-1 + -2 * -3 * 2')(), 11)
   is(script('2 ** 3 ** 2')(), 512)
-  is(script('2 ** 3 ** 4 * 5 ** 6 ** 7 * (8 + 9)')(), 2 ** 3 ** 4 * 5 ** 6 ** 7 * (8 + 9))
+  is(script('2 ** 3 ** 4 * 5 ** 6 ** 7 * (9 + 1)')(), 2 ** 3 ** 4 * 5 ** 6 ** 7 * (9 + 1))
   is(script('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)')(), (2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9))
 });
 
 test('Custom operators', ()=> {
   is(script('a^b')({a: 0xaaa, b:0xbbb}), 0xaaa^0xbbb);
 
-  script.set('×',  9, (a,b)=>a*b)
+  binary('×',  9, (a,b)=>a*b)
   is(script('a×b')({a:2,b:3}), 6);
 
-  script.set('or', 1, (a,b)=>a||b)
+  binary('or', 1, (a,b)=>a||b)
   is(script('oneWord or anotherWord')({oneWord:1,anotherWord:0}), 1);
   throws(() => script('oneWord ordering anotherWord'));
 
-  script.set('#', 11, (a)=>[a])
+  unary('#', 11, (a)=>[a])
   is(script('#a')({a:1}), [1]);
 
-  script.set('not',  13, (a)=>!a)
+  unary('not',  13, (a)=>!a)
   is(script('not a')({a:false}), true);
 
   throws(t => script('notes 1'));
 
-  script.set('and',  2, (a,b)=>a&&b)
+  binary('and',  2, (a,b)=>a&&b)
   is(script('a and b')({a:1,b:2}),2);
   is(script('bands')({a:1,b:2}), undefined);
 
