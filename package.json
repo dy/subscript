@@ -1,6 +1,6 @@
 {
   "name": "subscript",
-  "version": "7.1.0",
+  "version": "7.1.1",
   "description": "Fast and tiny expression evaluator with common syntax microlanguage.",
   "main": "subscript.js",
   "module": "subscript.js",
