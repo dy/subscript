@@ -50,11 +50,11 @@ id = parse.id = n => skip(isId),
 
 // operator/token lookup table
 // lookup[0] is id parser to let configs redefine it
-lookup = parse.lookup = []
+lookup = []
 
 
 // create operator checker/mapper (see examples)
-parse.token = (
+parse.set = (
   op,
   prec=SPACE,
   map,
@@ -67,9 +67,9 @@ parse.token = (
   (idx=from, prev?.(a, curPrec))
 
 // right assoc is indicated by negative precedence (meaning go from right to left)
-parse.binary = (op, prec, right) => parse.token(op, prec, (a, b) => a && (b=expr(prec-!!right)) && [op,a,b] )
-parse.unary = (op, prec, post) => parse.token(op, prec, a => !a && (a=expr(prec-1)) && [op, a])
-parse.nary = (op, prec) => parse.token(op, prec, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]))
+parse.binary = (op, prec, right) => parse.set(op, prec, (a, b) => a && (b=expr(prec-!!right)) && [op,a,b] )
+parse.unary = (op, prec, post) => parse.set(op, prec, a => !a && (a=expr(prec-1)) && [op, a])
+parse.nary = (op, prec) => parse.set(op, prec, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]))
 
 
 export default parse
