@@ -472,7 +472,16 @@
 
 * [x] Generalize operator registering
 
-* [ ] Recognize false, 0 and '' as results of successfully parsed expressions
+
+* [x] Make less cryptic
+  * [x] Provide explicit `binary`, `unary`, `sequence` helpers
+  * [x] Make main clean single entry, without commonscript setup. DSLs may not need shifts or binary by default
+  * [x] Make explicit `lookup.id`, `lookup.space` - parsing should not be cryptic, it should be apparent
+  * [ ] Display better error message with context and underline
+
+* [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
+
+* [ ] Make able to parse sequence of identifiers: s-expressions or html may allow that.
 
 * [ ] Hide skip, expr, compile as args for defining tokens functions?
   + shorter exports

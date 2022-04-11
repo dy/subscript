@@ -1,7 +1,7 @@
 import test, {is, throws, same} from 'tst'
 import script from '../subscript.js'
 import parse, { skip, expr, err, cur, idx } from '../parse.js'
-import evaluate, { operator, compile } from '../compile.js'
+import compile from '../compile.js'
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)
@@ -517,8 +517,8 @@ test('ext: collect args', async t => {
   const {lookup} = await import('../parse.js')
   const {default: script} = await import('../justin.js')
 
-  let args = [], id = lookup[0]
-  lookup[0] = (a,b) => (a=id(), a&&args.push(a), a)
+  let args = [], id = parse.id
+  parse.id = (a,b) => (a=id(), a&&args.push(a), a)
 
   // FIXME: baybe needs ignoring pow and b?
   let fn = script('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')

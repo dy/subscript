@@ -9,19 +9,11 @@ const subscript = s => (s=parse(s), ctx => (s.call?s:(s=compile(s)))(ctx)),
 
 // set any operator
 // right assoc is indicated by negative precedence (meaning go from right to left)
-set = subscript.set = (op, prec, fn, right=prec<0, parseFn=fn[0], evalFn=fn[1], arity=!parseFn&&fn.length) => (
-  parseFn ||=
-    !arity ? (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]) :
-    arity > 1 ? (a, b) => a && (b=expr(prec-right)) && [op,a,b] :
-    a => !a && (a=expr(prec-1)) && [op, a]
-  ,
-  evalFn ||=
-    !arity ? (...args) => (args=args.map(compile), ctx => fn(...args.map(arg=>arg(ctx)))) :
-    arity > 1 ? (a,b) => b && (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx))) :
-    (a,b) => !b && (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx)))
-  ,
-  (prec=right?-prec:prec) ? parse.set(op,prec,parseFn) : (lookup[op.charCodeAt(0)||1]=parseFn),
-  compile.set(op, evalFn)
+set = subscript.set = (op, prec, fn) =>
+  (fn[0]||fn[1]) ? (prec ? parse.set(op,prec,fn[0]) : (lookup[op.charCodeAt(0)||1]=fn[0]), compile.set(op, fn[1])) : (
+  !fn.length ? (parse.nary(op, prec), compile.nary(op, fn)) :
+  fn.length > 1 ? (parse.binary(op, Math.abs(prec), prec<0), compile.binary(op, fn)) :
+  (parse.unary(op, prec), compile.unary(op, fn))
 ),
 
 num = a => a ? err() : ['', (a=+skip(c => c === PERIOD || (c>=_0 && c<=_9) || (c===69||c===101?2:0)))!=a?err():a],

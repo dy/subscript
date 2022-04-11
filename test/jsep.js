@@ -178,4 +178,3 @@ test('should allow manipulating what is considered whitespace', (assert) => {
   const expr = 'a // skip all this';
   is(script(expr)({a:'a'}), 'a');
 });
-
