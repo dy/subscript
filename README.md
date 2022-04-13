@@ -62,7 +62,9 @@ Default literals:
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via:
+## Extending
+
+Operators/tokens can be extended via:
 
 * `unary(str, prec, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, prec, rightAssoc=false)` − register binary operator, optionally right-associative.
@@ -90,7 +92,7 @@ operator('', a => ctx => a[1]])
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 
-## Parser & Compiler
+## Syntax tree
 
 Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser builds AST, compiler converts it to evaluable function.
 
