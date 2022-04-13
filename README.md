@@ -62,20 +62,29 @@ Default literals:
 * `"abc"` strings
 * `1.2e+3` numbers
 
-Everything else can be extended via `subscript.set(str, prec, fn)` for unary, binary or n-ary operators (detected by number of arguments in `fn`), or via `subscript.set(str, prec, [parse, compile])` for custom tokens.
+Everything else can be extended via:
+
+* `unary(str, prec, postfix=false)` − register unary operator, either prefix or postfix.
+* `binary(str, prec, rightAssoc=false)` − register binary operator, optionally right-associative.
+* `nary(str, prec)` − register n-ary (sequence) operator.
+* `token(str, prec, fn)` − register custom token or literal. `fn` takes last token as argument and returns calltree node.
+* `operator(str, fn)` − register evaluator for operator. `fn` takes node arguments and returns evaluator function.
 
 ```js
-import script, { compile } from './subscript.js'
+import script, { operator, unary, binary, token } from './subscript.js'
 
 // add ~ unary operator with precedence 15
-script.set('~', 15, a => ~a)
+unary('~', 15)
+operator('~', a => ~a)
 
 // add === binary operator with precedence 9
-script.set('===', 9, (a, b) => a===b)
+binary('===', 9)
+operator('===', (a, b) => a===b)
 
 // add literals
-script.set('true', 20, [a => ['',true], a => ctx => a[1]])
-script.set('false', 20, [a => ['',false], a => ctx => a[1]])
+token('true', 20, a => ['',true])
+token('false', 20, a => ['',false])
+operator('', a => ctx => a[1]])
 ```
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.

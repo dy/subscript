@@ -50,11 +50,11 @@ id = parse.id = n => skip(isId),
 
 // operator/token lookup table
 // lookup[0] is id parser to let configs redefine it
-lookup = []
+lookup = [],
 
 
 // create operator checker/mapper (see examples)
-parse.set = (
+token = (
   op,
   prec=SPACE,
   map,
@@ -64,12 +64,11 @@ parse.set = (
   word=op.toUpperCase()!==op // make sure word boundary comes after word operator
 ) => lookup[c] = (a, curPrec, from=idx) =>
   (curPrec<prec && (l<2||cur.substr(idx,l)==op) && (!word||!isId(cur.charCodeAt(idx+l))) && (idx+=l, map(a, curPrec))) ||
-  (idx=from, prev?.(a, curPrec))
+  (idx=from, prev?.(a, curPrec)),
 
 // right assoc is indicated by negative precedence (meaning go from right to left)
-parse.binary = (op, prec, right) => parse.set(op, prec, (a, b) => a && (b=expr(prec-!!right)) && [op,a,b] )
-parse.unary = (op, prec, post) => parse.set(op, prec, a => !a && (a=expr(prec-1)) && [op, a])
-parse.nary = (op, prec) => parse.set(op, prec, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]))
-
+binary = (op, prec, right) => token(op, prec, (a, b) => a && (b=expr(prec-!!right)) && [op,a,b] ),
+unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a=expr(prec-1)) && [op, a])),
+nary = (op, prec) => token(op, prec, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]))
 
 export default parse

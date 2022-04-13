@@ -1,7 +1,7 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import { skip, cur, idx, err, expr } from './parse.js'
 import compile from './compile.js'
-import subscript from './subscript.js'
+import subscript, { set } from './subscript.js'
 
 const PERIOD=46, OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, QUOTE=39, _0=48, _9=57, BSLASH=92,
 PREC_SEQ=1, PREC_COND=3, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -88,7 +88,7 @@ list = [
     (a,b) => (b=compile(b),a=Array.isArray(a)?compile(a):(a=>a).bind(0,a), ctx=>[a(ctx),b(ctx)])
   ]
 ]
-for (;list[2];) subscript.set(...list.splice(0,3))
+for (;list[2];) set(...list.splice(0,3))
 
 export default subscript
 export * from './subscript.js'

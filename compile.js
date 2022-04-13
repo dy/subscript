@@ -1,13 +1,8 @@
 // build optimized evaluator for the tree
-export const compile = (node) => !Array.isArray(node) ? ctx => ctx?.[node] : operator[node[0]](...node.slice(1))
+export const compile = (node) => !Array.isArray(node) ? ctx => ctx?.[node] : operators[node[0]](...node.slice(1)),
 
-const operator = {}
+operators = {},
 
-compile.set = (op, fn, prev=operator[op]) => operator[op] = (...args) => fn(...args) || prev && prev(...args)
-compile.binary = (op, fn) => compile.set(op,
-  (a,b) => b && (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx)))
-)
-compile.unary = (op, fn) => compile.set(op, (a,b) => !b && (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx))))
-compile.nary = (op, fn) => compile.set(op, (...args) => (args=args.map(compile), ctx => fn(...args.map(arg=>arg(ctx)))))
+operator = (op, fn, prev=operators[op]) => operators[op] = (...args) => fn(...args) || prev && prev(...args)
 
 export default compile

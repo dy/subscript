@@ -1,5 +1,8 @@
 import test, {is, throws} from 'tst'
 import script, {parse} from '../justin.js'
+import subscript, {set} from '../subscript.js'
+
+subscript.set = set
 
 test('Expression: Constants', ()=> {
   is(script('\'abc\'')(),  "abc" );

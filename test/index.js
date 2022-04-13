@@ -2,6 +2,9 @@ import test, {is, throws, same} from 'tst'
 import script from '../subscript.js'
 import parse, { skip, expr, err, cur, idx } from '../parse.js'
 import compile from '../compile.js'
+import subscript, {set} from '../subscript.js'
+
+subscript.set = set
 
 const evalTest = (str, ctx={}) => {
   let ss=script(str), fn=new Function(...Object.keys(ctx), 'return ' + str)

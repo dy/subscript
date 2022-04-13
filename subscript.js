@@ -1,5 +1,5 @@
-import parse, { lookup, skip, cur, idx, err, expr } from './parse.js'
-import compile from './compile.js'
+import parse, { lookup, nary, binary, unary, token, skip, err, expr } from './parse.js'
+import compile, { operator } from './compile.js'
 
 const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46, _0=48, _9=57,
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
@@ -9,11 +9,22 @@ const subscript = s => (s=parse(s), ctx => (s.call?s:(s=compile(s)))(ctx)),
 
 // set any operator
 // right assoc is indicated by negative precedence (meaning go from right to left)
-set = subscript.set = (op, prec, fn) =>
-  (fn[0]||fn[1]) ? (prec ? parse.set(op,prec,fn[0]) : (lookup[op.charCodeAt(0)||1]=fn[0]), compile.set(op, fn[1])) : (
-  !fn.length ? (parse.nary(op, prec), compile.nary(op, fn)) :
-  fn.length > 1 ? (parse.binary(op, Math.abs(prec), prec<0), compile.binary(op, fn)) :
-  (parse.unary(op, prec), compile.unary(op, fn))
+set = (op, prec, fn) =>
+  (fn[0]||fn[1]) ? (prec ? token(op,prec,fn[0]) : (lookup[op.charCodeAt(0)||1]=fn[0]), operator(op, fn[1])) : (
+  !fn.length ? (
+    nary(op, prec),
+    operator(op, (...args) => (args=args.map(compile), ctx => fn(...args.map(arg=>arg(ctx)))))
+  ) :
+  fn.length > 1 ? (
+    binary(op, Math.abs(prec), prec<0),
+    operator(op,
+      (a,b) => b && (a=compile(a),b=compile(b), !a.length&&!b.length ? (a=fn(a(),b()),()=>a) : ctx => fn(a(ctx),b(ctx)))
+    )
+  ) :
+  (
+    unary(op, prec),
+    operator(op, (a,b) => !b && (a=compile(a), !a.length ? (a=fn(a()),()=>a) : ctx => fn(a(ctx))))
+  )
 ),
 
 num = a => a ? err() : ['', (a=+skip(c => c === PERIOD || (c>=_0 && c<=_9) || (c===69||c===101?2:0)))!=a?err():a],
@@ -27,6 +38,7 @@ inc = (op, prec, fn, ev) => [op, prec, [
     (ctx => fn(ctx,a)) // ++a
   )
 ]],
+
 list = [
   // literals
   // null operator returns first value (needed for direct literals)
@@ -111,4 +123,6 @@ list = [
 for (;list[2];) set(...list.splice(0,3))
 
 export default subscript
-export {compile, parse}
+export {set}
+export * from './parse.js'
+export * from './compile.js'
