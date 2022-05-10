@@ -80,6 +80,6 @@ token = (
 // right assoc is indicated by negative precedence (meaning go from right to left)
 binary = (op, prec, right) => token(op, prec, (a, b) => a && (b=expr(prec-!!right)) && [op,a,b] ),
 unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a=expr(prec-1)) && [op, a])),
-nary = (op, prec, skips) => token(op, prec, (a, b) => a && (b=expr(prec),b||skips) && (a[0] === op && a[2] ? (b&&a.push(b), a) : [op,a,b]))
+nary = (op, prec, skips) => token(op, prec, (a, b) => a && (b=expr(prec),b||skips) && (a[0] === op && a[2] ? (a.push(b||null), a) : [op,a,b]))
 
 export default parse
