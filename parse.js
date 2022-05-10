@@ -10,6 +10,17 @@ err = (msg='Bad syntax', frag=cur[idx], prev=cur.slice(0,idx).split('\n'), last=
   throw SyntaxError(`${msg} \`${frag}\` at ${prev.length}:${last.length}`)
 },
 
+longErr = (msg='Bad syntax',
+  frag=cur[idx],
+  lines=cur.slice(0,idx).split('\n'),
+  last=lines.pop()
+) => {
+  let before = cur.slice(idx-10,idx).split('\n').pop()
+  let after = cur.slice(idx+1, idx+10).split('\n').shift()
+  let location = lines.length + ':' + last.length
+  throw SyntaxError(`${msg} at ${location} \`${before+frag+after}\`\n${' '.repeat(18 + msg.length + location.length + before.length + 1)}^`)
+},
+
 skip = (is=1, from=idx, l) => {
   if (typeof is == 'number') idx += is
   else while (l=is(cur.charCodeAt(idx))) idx+=l
@@ -69,6 +80,6 @@ token = (
 // right assoc is indicated by negative precedence (meaning go from right to left)
 binary = (op, prec, right) => token(op, prec, (a, b) => a && (b=expr(prec-!!right)) && [op,a,b] ),
 unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a=expr(prec-1)) && [op, a])),
-nary = (op, prec) => token(op, prec, (a, b) => a && (b=expr(prec)) && (a[0] === op && a[2] ? (a.push(b), a) : [op,a,b]))
+nary = (op, prec, skips) => token(op, prec, (a, b) => a && (b=expr(prec),b||skips) && (a[0] === op && a[2] ? (b&&a.push(b), a) : [op,a,b]))
 
 export default parse
