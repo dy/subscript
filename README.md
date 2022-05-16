@@ -67,7 +67,7 @@ Operators/tokens can be extended via:
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
 * `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
-* `token(str, precedence, leftNode => exprNodeOrNull)` − register custom token or literal. `fn` takes last token as argument and returns calltree node.
+* `token(str, precedence, leftNode => exprNode)` − register custom token or literal. `fn` takes last token as argument and returns calltree node.
 * `operator(str, fn)` − register evaluator for operator. `fn` takes node arguments and returns evaluator function.
 
 ```js
