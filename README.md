@@ -64,10 +64,10 @@ _Subscript_ has [2.8kb](https://npmfs.com/package/subscript/7.0.0/subscript.min.
 
 Operators/tokens can be extended via:
 
-* `unary(str, prec, postfix=false)` − register unary operator, either prefix or postfix.
-* `binary(str, prec, rightAssoc=false)` − register binary operator, optionally right-associative.
-* `nary(str, prec, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
-* `token(str, prec, fn)` − register custom token or literal. `fn` takes last token as argument and returns calltree node.
+* `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
+* `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
+* `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
+* `token(str, precedence, leftNode => exprNodeOrNull)` − register custom token or literal. `fn` takes last token as argument and returns calltree node.
 * `operator(str, fn)` − register evaluator for operator. `fn` takes node arguments and returns evaluator function.
 
 ```js
