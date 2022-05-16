@@ -96,7 +96,7 @@ Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser build
 
 AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk)), opposed to [ESTree](https://github.com/estree/estree):
 
-* is not limited to particular language, can be cross-compiled;
+* is not limited to particular language, can be compiled to different targets;
 * reflects execution sequence, rather than code layout;
 * has minimal possible overhead, directly maps to operators;
 * simplifies manual evaluation and debugging;
