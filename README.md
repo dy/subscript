@@ -313,7 +313,7 @@ Examples: sonr, template-parts, neural-chunks
 
 ## Performance
 
-Subscript shows relatively good performance within other evaluators:
+Subscript shows relatively good performance within other evaluators. Example expression:
 
 ```
 1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
