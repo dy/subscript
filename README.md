@@ -39,8 +39,6 @@ _Subscript_ has [2.8kb](https://npmfs.com/package/subscript/7.0.0/subscript.min.
 
 ## Operators
 
-In precedence order:
-
 * `( a, b, c )`
 * `a.b`, `a[b]`, `a(b, c)`
 * `a++`, `a--` unary postfix
