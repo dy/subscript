@@ -84,10 +84,10 @@ operator('~', a => ~a)
 binary('===', 9)
 operator('===', (a, b) => a===b)
 
-// add literals
-token('true', 20, a => ['',true])
-token('false', 20, a => ['',false])
-operator('', a => ctx => a[1]])
+// add boolean literals
+token('true', 20, prev => ['',true])
+token('false', 20, prev => ['',false])
+operator('', boolNode => ctx => boolNode[1]])
 ```
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
