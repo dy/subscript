@@ -8,10 +8,10 @@ _Subscript_ is expression evaluator / microlanguage with [common expressions syn
 * Trivial to use
 
 ```js
-import script, { parse, compile } from './subscript.js'
+import createFn, { parse, compile } from './subscript.js'
 
 // create expression evaluator
-let fn = script('a.b + c(d - 1)')
+let fn = createFn('a.b + c(d - 1)')
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 // or
