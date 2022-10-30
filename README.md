@@ -38,7 +38,9 @@ _Subscript_ is designed to be useful for:
 _Subscript_ has [2.8kb](https://npmfs.com/package/subscript/7.0.0/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
 
 
-## Operators (↑ precedence)
+## Operators
+
+<small>↑ precedence order</small>
 
 * `( a, b, c )`
 * `a.b`, `a[b]`, `a(b, c)`
