@@ -20,7 +20,8 @@ let tree = parse('a.b + c')
 tree // ['+', ['.', 'a', 'b'], 'c']
 
 // compile tree to evaluable function
-let evaluate = compile(tree)
+fn = compile(tree)
+fn({a:{b:1}, c:2}) // 3 
 ```
 
 ## Motivation
