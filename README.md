@@ -97,7 +97,7 @@ See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser builds AST, compiler converts it to evaluable function.
 
-AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk)), opposed to [ESTree](https://github.com/estree/estree):
+AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
 
 * is not limited to particular language, can be compiled to different targets;
 * reflects execution sequence, rather than code layout;
