@@ -1,6 +1,6 @@
 # <img alt="subscript" src="/subscript2.svg" height=28/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>--> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-_Subscript_ is expression evaluator / microlanguage with [common expressions syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (JavaScript, Java, C, C++, Rust, Go, Python, Kotlin etc).<br/>
+_Subscript_ is expression evaluator / microlanguage with [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (JavaScript, Java, C, C++, Rust, Go, Python, Kotlin etc).<br/>
 
 * Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
 * :rocket: Fast [performance](#performance)
