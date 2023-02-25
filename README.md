@@ -367,5 +367,6 @@ math-parser: -
 * [math-codegen](https://github.com/mauriciopoppe/math-codegen)
 * [math-parser](https://www.npmjs.com/package/math-parser)
 * [math.js](https://mathjs.org/docs/expressions/parsing.html)
+* [nx-compile](https://github.com/nx-js/compiler-util)
 
 <p align=center><a href="https://github.com/krsnzd/license/">🕉</a></p>
