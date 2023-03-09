@@ -113,41 +113,6 @@ const fn = compile(['+', ['*', 'min', ['',60]], ['','sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
 ```
 
-<!--
-Operators can be extended via .
-
-```js
-import script from 'subscript.js'
-
-script.set('|', 10, ( a, b ) => a.pipe(b))
-
-let evaluate = script(`
-  interval(350)
-  | take(25)
-  | map(gaussian)
-  | "•".repeat(Math.floor(it * 65)))
-`)
-evaluate({ Math, map, take, interval, gaussian })
-```
-
-Literals are extensible by providing custom parser to `lookup`, can be added support of _booleans_, function calls, prop chains, groups, _regexes_, _strings_, _numbers_ and any other constructs.
-
-```js
-import script from 'subscript.js'
-
-script.literal.unshift(c => skip('this') && {x:1})
-script`this.x`() // 1
-```
-
-### Identifiers
-
-Identifiers include
-
-### Spaces/comments
-
-Comments can be added via extending `parse.space`.
--->
-
 ## Justin
 
 _Justin_ is minimal JS subset − JSON with JS expressions (see original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
