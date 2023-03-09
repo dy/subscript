@@ -479,6 +479,8 @@
   * [x] Make explicit `lookup.id`, `lookup.space` - parsing should not be cryptic, it should be apparent
   * [ ] Display better error message with context and underline
 
+* [x] Sometimes nary returns last element as null, other times as undefined. Find out why.
+
 * [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
 
 * [ ] Make able to parse sequence of identifiers: s-expressions or html may allow that.

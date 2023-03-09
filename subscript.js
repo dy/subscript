@@ -5,14 +5,14 @@ const OPAREN=40, CPAREN=41, OBRACK=91, CBRACK=93, SPACE=32, DQUOTE=34, PERIOD=46
 PREC_SEQ=1, PREC_SOME=4, PREC_EVERY=5, PREC_OR=6, PREC_XOR=7, PREC_AND=8,
 PREC_EQ=9, PREC_COMP=10, PREC_SHIFT=11, PREC_SUM=12, PREC_MULT=13, PREC_UNARY=15, PREC_POSTFIX=16, PREC_CALL=18
 
-const subscript = s => (s=parse(s), ctx => (s.call?s:(s=compile(s)))(ctx)),
+const subscript = s => (s=parse(s),ctx => (s.call?s:(s=compile(s)))(ctx)),
 
 // set any operator
 // right assoc is indicated by negative precedence (meaning go from right to left)
 set = (op, prec, fn) =>
   (fn[0]||fn[1]) ? (prec ? token(op,prec,fn[0]) : (lookup[op.charCodeAt(0)||1]=fn[0]), operator(op, fn[1])) : (
   !fn.length ? (
-    nary(op, prec),
+    nary(op, Math.abs(prec), prec<0),
     operator(op, (...args) => (args=args.map(compile), ctx => fn(...args.map(arg=>arg(ctx)))))
   ) :
   fn.length > 1 ? (
@@ -107,7 +107,7 @@ list = [
 
   // a(b,c,d), a()
   '(', PREC_CALL, [
-    (a,b) => a && (b = expr(0,CPAREN), b ? ['()', a, b] : ['()', a]),
+    (a,b) => a && (b = expr(0,CPAREN), b ? ['(', a, b] : ['(', a, '']),
     (a,b,path,args) => b!=null && (
       args = b=='' ? () => [] : // a()
       b[0] === ',' ? (b=b.slice(1).map(compile), ctx => b.map(a=>a(ctx))) : // a(b,c)

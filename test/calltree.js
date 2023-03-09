@@ -1,8 +1,10 @@
-import test, {is, any, throws} from 'tst'
-// import parse, { skip, isId, expr, token, err, cur, idx, lookup } from '../parse.js'
-import parse, { binary } from '../subscript.js'
+// Calltree tests.
+// NOTE: we have redone it so many times that it's just better be kept as is
 
-test.only('parse: basic', t => {
+import test, {is, any, throws} from 'tst'
+import { parse, binary } from '../subscript.js'
+
+test('parse: basic', t => {
   is(parse('a()'), ['(', 'a', ''])
   is(parse('1 + 2 + 3'), ['+', '1', '2', '3'])
   is(parse('1 + 2 * 3'), ['+','1', ['*', '2', '3']])
@@ -124,7 +126,7 @@ test('parse: intersecting binary', t => {
   is(parse('a >> b'), ['>>', 'a', 'b'], 'a>>b')
   is(parse('a >>> b'), ['>>>', 'a', 'b'], 'a>>>b')
 })
-test.only('parse: signs', t => {
+test('parse: signs', t => {
   is(parse('+-1'),['+',['-','1']])
   is(parse('a(+1)'),['(','a',['+','1']])
   is(parse('a[+1]'),['[', 'a',['+','1']])
@@ -146,7 +148,7 @@ test.only('parse: signs', t => {
   is(parse('+1 -2'),['-',['+','1'],'2'])
   is(parse('-1 +2'),['+',['-','1'],'2'])
 })
-test.only('parse: unaries', t => {
+test('parse: unaries', t => {
   is(parse('-2'),['-','2'])
   is(parse('+-2'),['+',['-','2']])
   is(parse('-+-2'),['-',['+',['-','2']]])
@@ -155,20 +157,20 @@ test.only('parse: unaries', t => {
   is(parse('1-+!2'),['-','1',['+',['!','2']]])
   is(parse('1 * -1'),['*','1',['-','1']])
 })
-test.only('parse: postfix unaries', t => {
+test('parse: postfix unaries', t => {
   is(parse('2--'),['--','2', undefined])
   is(parse('2++'),['++','2', undefined])
   // is(parse('1++(b)'),[['++',1],'b']) // NOTE: not supported by JS btw
 })
 
-test.only('parse: prop access', t => {
+test('parse: prop access', t => {
   is(parse('a["b"]["c"][0]'),['[',['[',['[','a','"b"'],'"c"'],'0'])
   is(parse('a.b.c.0'), ['.',['.',['.','a','b'],'c'],'0'])
   // is(evaluate(['.','a','b',new String('c'),0], {a:{b:{c:[2]}}}), 2)
   // is(evaluate(['.',['.',['.','a','b'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
 })
 
-test.only('parse: parens', t => {
+test('parse: parens', t => {
   is(parse('1+(b)()'),['+','1',['(',['(','b'],'']])
   is(parse('(1)+-b()'),['+',['(','1'],['-',['(','b','']]])
   is(parse('1+a(b)'),['+','1',['(','a','b']])
@@ -190,7 +192,7 @@ test.only('parse: parens', t => {
   is(parse('(1,2,3)'),['(',[',','1','2','3']])
 })
 
-test.only('parse: functions', t => {
+test('parse: functions', t => {
   is(parse('a()'),['(','a',''])
   is(parse('(c,d)'),['(',[',', 'c','d']])
   is(parse('a(b)(d)'),['(',['(', 'a', 'b'], 'd'])
@@ -309,8 +311,9 @@ test('ext: object', t => {
 
 test('ext: justin', async t => {
   const {parse} = await import('../justin.js')
-  is(parse(`"abcd" + 'efgh'`), ['+','abcd','efgh'])
   is(parse('a;b'), [';','a','b'])
+  is(parse('a;b;'), [';','a','b'])
+  is(parse(`"abcd" + 'efgh'`), ['+',['', 'abcd'],['','efgh']])
   is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','y',['**',2,2]]], 'x'])
   is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
   is(evaluate(parse('{x:~1, "y":2**2}["x"]')), -2)
