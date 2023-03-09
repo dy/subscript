@@ -309,10 +309,11 @@ test('ext: object', t => {
   is(evaluate(parse('{x: 1+2, y:a(3)}'),{a:x=>x*2}), {x:3, y:6})
 })
 
-test('ext: justin', async t => {
+test.only('ext: justin', async t => {
   const {parse} = await import('../justin.js')
   is(parse('a;b'), [';','a','b'])
   is(parse('a;b;'), [';','a','b'])
+  is(parse('b;'), [';','b'])
   is(parse(`"abcd" + 'efgh'`), ['+',['', 'abcd'],['','efgh']])
   is(parse('{x:~1, "y":2**2}["x"]'), ['.', ['{', [':','x',['~',1]], [':','y',['**',2,2]]], 'x'])
   is(parse('a((1 + 2), (e > 0 ? f : g))'), ['a',['+',1,2],['?:',['>','e',0],'f','g']])
