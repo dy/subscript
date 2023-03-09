@@ -7,7 +7,7 @@ export let idx, cur,
 parse = s => (idx=0, cur=s, s = expr(), cur[idx] ? err() : s || ''),
 
 err = (msg='Bad syntax', frag=cur[idx], prev=cur.slice(0,idx).split('\n'), last=prev.pop()) => {
-  throw SyntaxError(`${msg} \`${frag}\` at ${prev.length}:${last.length}`)
+  throw SyntaxError(`${msg} ${frag ? `\`${frag}\` ` : ''}at ${prev.length}:${last.length}`, prev.length)
 },
 
 longErr = (msg='Bad syntax',
@@ -18,7 +18,7 @@ longErr = (msg='Bad syntax',
   let before = cur.slice(idx-10,idx).split('\n').pop()
   let after = cur.slice(idx+1, idx+10).split('\n').shift()
   let location = lines.length + ':' + last.length
-  throw SyntaxError(`${msg} at ${location} \`${before+frag+after}\`\n${' '.repeat(18 + msg.length + location.length + before.length + 1)}^`)
+  throw EvalError(`${msg} at ${location} \`${before+frag+after}\`\n${' '.repeat(18 + msg.length + location.length + before.length + 1)}^`)
 },
 
 skip = (is=1, from=idx, l) => {
