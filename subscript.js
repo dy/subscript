@@ -107,7 +107,7 @@ list = [
 
   // a(b,c,d), a()
   '(', PREC_CALL, [
-    a => a && ['(', a, expr(0,CPAREN)||''],
+    (a,b) => a && (b = expr(0,CPAREN), b ? ['()', a, b] : ['()', a]),
     (a,b,path,args) => b!=null && (
       args = b=='' ? () => [] : // a()
       b[0] === ',' ? (b=b.slice(1).map(compile), ctx => b.map(a=>a(ctx))) : // a(b,c)
