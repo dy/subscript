@@ -58,7 +58,7 @@ list = [
   'undefined', 20, [a => a ? err() : ['',undefined]],
 
   // FIXME: make sure that is right
-  ';', -20, (...args) => args.findLast(i => i != null),
+  ';', -20, (...args) => { for (let i = args.length; i--; ) if (args[i] != null) return args[i] },
 
   // right order
   // '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
