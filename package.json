@@ -34,7 +34,8 @@
     "min-subscript": "terser subscript.min.js -o subscript.min.js --module -c passes=3 -m",
     "build-justin": "rollup justin.js --file justin.min.js --format esm --name \"Justin\"",
     "min-justin": "terser justin.min.js -o justin.min.js --module -c passes=3 -m",
-    "test": "node test && node test/jsep && node test/perf"
+    "test": "node test && node test/jsep && node test/perf",
+    "check-types": "tsc --noEmit subscript.d.ts"
   },
   "repository": {
     "type": "git",
