@@ -1,10 +1,10 @@
-type OperatorFunction = (...args: any[]) => any;
+export type OperatorFunction = (...args: any[]) => any;
 
-type OperatorMap = {
+export type OperatorMap = {
   [key: string]: OperatorFunction;
 };
 
-type Node = string | [string, ...Node[]];
+export type Node = string | [string, ...Node[]];
 
 export function compile(node: Node): ((ctx?: any) => any) | OperatorFunction;
 export const operators: OperatorMap;
