@@ -5,6 +5,7 @@
   "main": "subscript.js",
   "module": "subscript.js",
   "browser": "subscript.js",
+  "types": "./subscript.d.ts",
   "exports": {
     ".": "./subscript.js",
     "./parse.js": "./parse.js",
