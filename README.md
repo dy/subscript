@@ -38,7 +38,7 @@ _Subscript_ is designed to be useful for:
 _Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
 
 
-## Operators
+## Operators / literals
 
 <small>↑ precedence order</small>
 
@@ -57,11 +57,37 @@ _Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.
 * `a && b`
 * `a || b`
 * `a , b`
-
-## Literals
-
 * `"abc"` strings
 * `1.2e+3` numbers
+
+## Justin
+
+_Justin_ is minimal JS subset − JSON with JS expressions (see original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
+
+It extends _subscript_ with:
+
++ `===`, `!==` operators
++ `**` exponentiation operator (right-assoc)
++ `~` bit inversion operator
++ `'` strings
++ `?:` ternary operator
++ `?.` optional chain operator
++ `??` nullish coalesce operator
++ `[...]` Array literal
++ `{...}` Object literal
++ `in` binary
++ `;` expression separator
++ `//`, `/* */` comments
++ `true`, `false`, `null`, `undefined` literals
+<!-- + `...x` unary operator -->
+<!-- + strings interpolation -->
+
+```js
+import jstin from 'subscript/justin.js'
+
+let xy = jstin('{ x: 1, "y": 2+2 }["x"]')
+xy()  // 1
+```
 
 ## Extending
 
@@ -111,35 +137,6 @@ import { compile } from 'subscript.js'
 const fn = compile(['+', ['*', 'min', ['',60]], ['','sec']])
 
 fn({min: 5}) // min*60 + "sec" == "300sec"
-```
-
-## Justin
-
-_Justin_ is minimal JS subset − JSON with JS expressions (see original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
-
-It extends _subscript_ with:
-
-+ `===`, `!==` operators
-+ `**` exponentiation operator (right-assoc)
-+ `~` bit inversion operator
-+ `'` strings
-+ `?:` ternary operator
-+ `?.` optional chain operator
-+ `??` nullish coalesce operator
-+ `[...]` Array literal
-+ `{...}` Object literal
-+ `in` binary
-+ `;` expression separator
-+ `//`, `/* */` comments
-+ `true`, `false`, `null`, `undefined` literals
-<!-- + `...x` unary operator -->
-<!-- + strings interpolation -->
-
-```js
-import jstin from 'subscript/justin.js'
-
-let xy = jstin('{ x: 1, "y": 2+2 }["x"]')
-xy()  // 1
 ```
 
 <!--
