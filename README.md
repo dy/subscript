@@ -2,16 +2,16 @@
 
 _Subscript_ is expression evaluator / microlanguage with [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (JavaScript, Java, C, C++, Rust, Go, Python, Kotlin etc).<br/>
 
-* Tiny size <sub><a href="https://bundlephobia.com/package/subscript@6.0.0"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
+* Tiny size <sub><a href="https://bundlephobia.com/package/subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a></sub>
 * :rocket: Fast [performance](#performance)
 * Configurable & extensible
 * Trivial to use
 
 ```js
-import createFn, { parse, compile } from './subscript.js'
+import subscript, { parse, compile } from './subscript.js'
 
 // create expression evaluator
-let fn = createFn('a.b + c(d - 1)')
+let fn = subscript('a.b + c(d - 1)')
 fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
 
 // or
@@ -33,9 +33,9 @@ _Subscript_ is designed to be useful for:
 * configurable subsets of languages (eg. [justin](#justin))
 * pluggable/mock language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
-* custom DSL <!-- see sonr, mineural -->
+* custom DSL (see [lino](https://github.com/dy/lino)) <!-- uneural -->
 
-_Subscript_ has [2.8kb](https://npmfs.com/package/subscript/7.0.0/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
+_Subscript_ has [1.8kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
 
 
 ## Operators
