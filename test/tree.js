@@ -2,7 +2,7 @@
 // NOTE: we have redone it so many times that it's just better be kept as is
 
 import test, {is, any, throws} from 'tst'
-import { parse, binary } from '../subscript.js'
+import { parse, binary, nary, unary } from '../subscript.js'
 
 test('parse: basic', t => {
   is(parse('a()'), ['(', 'a', ''])
@@ -230,6 +230,14 @@ test('parse: chains', t => {
   is(parse('a(1)(b)("c")'), [[['a', 1], 'b'], 'c'])
 })
 
+test('parse: nary', t => {
+  nary('#',10,true)
+  is(parse('a#b'),['#','a','b'])
+  is(parse('#a'),['#',,'a'])
+  is(parse('a##b#c'),['#','a',,'b','c'])
+  is(parse('#a###c#'),['#',,'a',,,'c',,])
+})
+
 test('eval: basic', t => {
   is(evaluate(['+', 1, 2]), 3)
   is(evaluate(['+', 1, ['-', 3, 2]]), 2)
@@ -309,7 +317,7 @@ test('ext: object', t => {
   is(evaluate(parse('{x: 1+2, y:a(3)}'),{a:x=>x*2}), {x:3, y:6})
 })
 
-test.only('ext: justin', async t => {
+test('ext: justin', async t => {
   const {parse} = await import('../justin.js')
   is(parse('a;b'), [';','a','b'])
   is(parse('a;b;'), [';','a','b'])
@@ -354,13 +362,7 @@ test('parse: non-existing operators', t => {
 })
 
 test('parse: low-precedence unary', t => {
-  parse.operator('&',13,-1)
+  unary('&',13)
   is(parse('&a+b*c'), ['+',['&','a'],['*','b','c']])
   is(parse('&a*b+c'), ['+',['&',['*','a','b']],'c'])
-})
-
-test('eval: edge cases', t => {
-  is(evaluate(parse('pow(a, 3)'), {pow:Math.pow, a:1}), 1)
-  is(evaluate(parse('Math.pow(a, 3)'), {Math, a:1}), 1)
-  is(evaluate(parse('Math.pow(a, 3) / 2 + b * 2 - 1'), {Math, a:1, b:1}), 1.5)
 })

@@ -21,7 +21,7 @@ tree // ['+', ['.', 'a', 'b'], 'c']
 
 // compile tree to evaluable function
 fn = compile(tree)
-fn({a:{b:1}, c:2}) // 3 
+fn({a:{b:1}, c:2}) // 3
 ```
 
 ## Motivation
@@ -97,7 +97,7 @@ Operators/tokens can be extended via:
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
 * `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
-* `token(str, precedence, map)` − register custom token or literal. `map` takes last token argument and returns calltree node.
+* `token(str, precedence, map)` − register custom token or literal. `map` takes last token argument and returns tree node.
 * `operator(str, fn)` − register evaluator for operator. `fn` takes node arguments and returns evaluator function.
 
 ```js
@@ -124,7 +124,7 @@ See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
 
 Subscript exposes separate `./parse.js` and `./compile.js` entries. Parser builds AST, compiler converts it to evaluable function.
 
-AST has simplified lispy calltree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
+AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
 
 * not limited to particular language (JS), can be compiled to different targets;
 * reflects execution sequence, rather than code layout;
