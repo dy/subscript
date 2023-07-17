@@ -80,6 +80,16 @@ token = (
 // right assoc is indicated by negative precedence (meaning go from right to left)
 binary = (op, prec, right=0) => token(op, prec, (a, b) => a && (b=expr(prec-right/2)) && [op,a,b] ),
 unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a=expr(prec-1)) && [op, a])),
-nary = (op, prec, skips) => token(op, prec, (a, b) => (a || (skips && (a=[op]))) && (b=expr(prec),b||skips) && (!(a[0] === op && a[2]) && (a = [op,a]), b && a.push(b), a))
+nary = (op, prec, skips) => {
+  token(op, prec, (a, b) => (
+    (a || skips) && // if lhs exists or we're ok to skip
+    (b=expr(prec), b||skips) && // either rhs exists or we're ok to skip rhs
+    (
+      (!a || a[0] !== op) && (a = [op,a]), // if beginning of sequence - init node
+      (b || skips) && a.push(b),
+      a
+    ))
+  )
+}
 
 export default parse
