@@ -331,5 +331,6 @@ math-parser: -
 * [math-parser](https://www.npmjs.com/package/math-parser)
 * [math.js](https://mathjs.org/docs/expressions/parsing.html)
 * [nx-compile](https://github.com/nx-js/compiler-util)
+* [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval)
 
 <p align=center><a href="https://github.com/krsnzd/license/">🕉</a></p>
