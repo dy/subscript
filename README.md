@@ -11,12 +11,8 @@ _Subscript_ is expression evaluator / microlanguage with [common syntax](https:/
 import subscript, { parse, compile } from './subscript.js'
 
 // create expression evaluator
-let fn = subscript('a.b + c(d - 1)')
-fn({ a: { b:1 }, c: x => x * 2, d: 3 }) // 5
-
-// include Math, etc.
-fn = subscript('Math.ceil(price)');
-fn({price: 12.5, Math}) // 13
+let fn = subscript('a.b + Math.sqrt(c - 1)')
+fn({ a: { b:1 }, c: 5, Math }) // 3
 
 // --- or ---
 // parse expression
