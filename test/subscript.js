@@ -446,12 +446,15 @@ test('ext: justin', async t => {
 
 test('ext: assignment', async t => {
   binary('=', 10, true)
-  operator('=', (a, b) => ctx => ctx[a] = ctx[b])
+  operator('=', (a, b) => {
+    const calc = compile(b);
+    return ctx => (ctx[a] = calc(ctx))
+  })
 
-  const fn = subscript('a = b')
+  const fn = subscript('a = b * 2')
   let state = { b: 1 }
   fn(state)
-  is(state, { a: 1, b: 1 })
+  is(state, { a: 2, b: 1 })
 })
 
 test('ext: comments', t => {
