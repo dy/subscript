@@ -105,16 +105,16 @@ import script, { operator, unary, binary, token } from './subscript.js'
 
 // add ~ unary operator with precedence 15
 unary('~', 15)
-operator('~', a => ~a)
+operator('~', a => ctx => ~a)
 
 // add === binary operator with precedence 9
 binary('===', 9)
-operator('===', (a, b) => a===b)
+operator('===', (a, b) => ctx => ctx[a]===ctx[b])
 
 // add boolean literals
 token('true', 20, prev => ['',true])
 token('false', 20, prev => ['',false])
-operator('', boolNode => ctx => boolNode[1]])
+operator('', boolNode => ctx => boolNode[1])
 ```
 
 See [subscript.js](subscript.js) or [justin.js](./justin.js) for examples.
