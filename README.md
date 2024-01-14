@@ -28,12 +28,12 @@ fn({a:{b:1}, c:2}) // 3
 
 _Subscript_ is designed to be useful for:
 
-* templates (perfect match with [template parts](https://github.com/github/template-parts), see [templize](https://github.com/spectjs/templize))
+* templates ([sprae](https://github.com/dy/sprae), [templize](https://github.com/dy/templize) etc.)
 * expressions evaluators, calculators
-* configurable subsets of languages (eg. [justin](#justin))
-* pluggable/mock language features (eg. pipe operator)
+* subsets of languages ([justin](#justin), jessie etc.)
+* pluggable/configurable/mock language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
-* custom DSL (see [lino](https://github.com/dy/lino)) <!-- uneural -->
+* custom DSL (see [mell](https://github.com/dy/lino)) <!-- uneural -->
 * preprocessors (see [prepr](https://github.com/dy/prepr))
 
 _Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and better performance.
