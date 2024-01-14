@@ -1,7 +1,6 @@
 import test, { is, throws, same } from 'tst'
 import parse, { skip, expr, err, cur, idx } from '../parse.js'
-import compile, { operator } from '../compile.js'
-import subscript, { set, binary } from '../subscript.js'
+import subscript, { set, binary, operator, compile } from '../subscript.js'
 
 subscript.set = set
 
@@ -455,6 +454,11 @@ test('ext: assignment', async t => {
   let state = { b: 1 }
   fn(state)
   is(state, { a: 2, b: 1 })
+
+  const fn2 = subscript('localvar = 0')
+  let state2 = {}
+  fn2(state2)
+  is(state2, { localvar: 0 })
 })
 
 test('ext: comments', t => {
