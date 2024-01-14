@@ -437,10 +437,12 @@ test('ext: justin', async t => {
   evalTest('e > 0 ? f : g', { e: 1, f: 2, g: 3 }, 2)
   evalTest('a((1 + 2), (e > 0 ? f : g))', { a: (v, w) => v + w, e: 1, f: 2, g: 3 })
 
-
   evalTest('{x: 1+2, y:a(3)}', { a: x => x * 2 })
   evalTest('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
   evalTest('b?{c:1}:{d:2}', { b: 2 })
+
+  // keep context
+  evalTest('a?.valueOf()', { a: true })
 })
 
 test('ext: assignment', async t => {
