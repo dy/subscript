@@ -86,6 +86,7 @@ operator('{', (a, b) => (
       a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
         (b = compile(a), ctx => ({ [a]: b(ctx) }))
 ))
+
 token(':', 1.1, (a, b) => (b = expr(1.1) || err(), [':', a, b]))
 operator(':', (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)]))
 

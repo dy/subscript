@@ -27,6 +27,7 @@ const subscript = s => (s = parse(s), ctx => (s.call ? s : (s = compile(s)))(ctx
   ),
 
   num = a => a ? err() : ['', (a = +skip(c => c === PERIOD || (c >= _0 && c <= _9) || (c === 69 || c === 101 ? 2 : 0))) != a ? err() : a],
+
   // create increment-assign pair from fn
   inc = (op, prec, fn, ev) => (
     token(op, prec, a => a ? [op === '++' ? '-' : '+', [op, a], ['', 1]] : [op, expr(prec - 1)]), // ++a → [++, a], a++ → [-,[++,a],1]
@@ -95,12 +96,10 @@ operator('.', (a, b) => (a = compile(a), b = !b[0] ? b[1] : b, ctx => a(ctx)[b])
 
 // (a,b,c), (a)
 token('(', PREC_CALL, a => !a && ['(', expr(0, CPAREN) || err()])
-operator('(', compile)
-
 
 // a(b,c,d), a()
 token('(', PREC_CALL, (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']))
-operator('(', (a, b, path, args) => b != null && (
+operator('(', (a, b, path, args) => b == null ? compile(a, b) : (
   args = b == '' ? () => [] : // a()
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(a => a(ctx))) : // a(b,c)
       (b = compile(b), ctx => [b(ctx)]), // a(b)
