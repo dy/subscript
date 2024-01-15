@@ -28,9 +28,9 @@ fn({a:{b:1}, c:2}) // 3
 
 _Subscript_ is designed to be useful for:
 
-* templates ([sprae](https://github.com/dy/sprae), [templize](https://github.com/dy/templize) etc.)
+* templates (eg. [sprae](https://github.com/dy/sprae), [templize](https://github.com/dy/templize))
 * expressions evaluators, calculators
-* subsets of languages ([justin](#justin), jessie etc.)
+* subsets of languages (eg. [justin](#justin))
 * pluggable/configurable/mock language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
 * custom DSL (see [mell](https://github.com/dy/lino)) <!-- uneural -->
