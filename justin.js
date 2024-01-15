@@ -54,8 +54,8 @@ lookup[DQUOTE] = string(DQUOTE)
 lookup[QUOTE] = string(QUOTE)
 
 // /**/, //
-token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec)))
-token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec)))
+token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
+token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
 
 // literals
 token('null', 20, a => a ? err() : ['', null])

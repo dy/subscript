@@ -459,13 +459,21 @@ test('ext: assignment', async t => {
 })
 
 test('ext: comments', t => {
-  token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec)))
-  token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec)))
+  token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
+  token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
   is(subscript('/* x */1/* y */+/* z */2')({}), 3)
   is(subscript(`a /
     // abc
     b`)({ a: 1, b: 2 }), 1 / 2)
   is(subscript(`"a" + "b" // concat`)(), 'ab')
+  is(subscript('/* */1/* */+/* */2')({}), 3)
+  is(subscript('')({}), undefined)
+  is(subscript('//\nx')({ x: 1 }), 1)
+  is(subscript('x//\n')({ x: 1 }), 1)
+  is(subscript('x/**/')({ x: 1 }), 1)
+  is(subscript('/**/x')({ x: 1 }), 1)
+  is(subscript('/* */')({}), undefined)
+  is(subscript('//')({}), undefined)
 })
 
 test('unfinished sequences', async t => {
