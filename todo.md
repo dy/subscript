@@ -483,7 +483,7 @@
 
 * [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
 
-* [ ] Make able to parse sequence of identifiers: s-expressions or html may allow that.
+* [x] ~~Make able to parse sequence of identifiers: s-expressions or html may allow that.~~ nah, subscript is not for that
 
 * [ ] Hide skip, expr, compile as args for defining tokens functions?
   + shorter exports
@@ -495,6 +495,11 @@
   * [ ] sonr transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
+
+* [?] ~~remove `a.1` and `a.true` from subscript~~
+* [x] make `a?.valueOf()` context work
+* [] ~~make default difference of `a()` as `['()', 'a']` like in lino, rather then here~~
+* [x] streamline samples (at price of larger codebase - that's fine)
 
 * [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
 
