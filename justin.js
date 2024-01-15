@@ -38,6 +38,15 @@ operator('?.', a => (a = compile(a), ctx => a(ctx) || (() => { })))
 token('?.', PREC_CALL, (a, b) => a && (b = expr(PREC_CALL), !b?.map) && ['?.', a, b])
 operator('?.', (a, b) => b && (a = compile(a), ctx => a(ctx)?.[b]))
 
+// a?.x() - keep context
+operator('(', (a, b, path, args) => b != null && a[0] === '?.' && (
+  args = b == '' ? () => [] : // a()
+    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(a => a(ctx))) : // a(b,c)
+      (b = compile(b), ctx => [b(ctx)]), // a(b)
+  path = a[2], a = compile(a[1]), ctx => a(ctx)?.[path](...args(ctx))
+))
+
+// a in b
 set('in', PREC_COMP, (a, b) => a in b)
 
 // "' with /

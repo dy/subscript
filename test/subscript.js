@@ -437,6 +437,7 @@ test('ext: justin', async t => {
 
   // keep context
   evalTest('a?.valueOf()', { a: true })
+  evalTest('a?.["valueOf"]()', { a: true })
 })
 
 test('ext: assignment', async t => {
