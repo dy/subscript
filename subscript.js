@@ -9,50 +9,48 @@ const subscript = s => (s = parse(s), ctx => (s.call ? s : (s = compile(s)))(ctx
 
   // set any operator
   // right assoc is indicated by negative precedence (meaning go from right to left)
-  set = (op, prec, fn) =>
-    (fn[0] || fn[1]) ? (prec ? token(op, prec, fn[0]) : (lookup[op.charCodeAt(0) || 1] = fn[0]), operator(op, fn[1])) : (
-      !fn.length ? (
-        nary(op, Math.abs(prec), prec < 0),
-        operator(op, (...args) => (args = args.map(compile), ctx => fn(...args.map(arg => arg(ctx)))))
+  set = (op, prec, fn) => (
+    !fn.length ? (
+      nary(op, Math.abs(prec), prec < 0),
+      operator(op, (...args) => (args = args.map(compile), ctx => fn(...args.map(arg => arg(ctx)))))
+    ) :
+      fn.length > 1 ? (
+        binary(op, Math.abs(prec), prec < 0),
+        operator(op,
+          (a, b) => b && (a = compile(a), b = compile(b), !a.length && !b.length ? (a = fn(a(), b()), () => a) : ctx => fn(a(ctx), b(ctx)))
+        )
       ) :
-        fn.length > 1 ? (
-          binary(op, Math.abs(prec), prec < 0),
-          operator(op,
-            (a, b) => b && (a = compile(a), b = compile(b), !a.length && !b.length ? (a = fn(a(), b()), () => a) : ctx => fn(a(ctx), b(ctx)))
-          )
-        ) :
-          (
-            unary(op, prec),
-            operator(op, (a, b) => !b && (a = compile(a), !a.length ? (a = fn(a()), () => a) : ctx => fn(a(ctx))))
-          )
-    ),
+        (
+          unary(op, prec),
+          operator(op, (a, b) => !b && (a = compile(a), !a.length ? (a = fn(a()), () => a) : ctx => fn(a(ctx))))
+        )
+  ),
 
   num = a => a ? err() : ['', (a = +skip(c => c === PERIOD || (c >= _0 && c <= _9) || (c === 69 || c === 101 ? 2 : 0))) != a ? err() : a],
   // create increment-assign pair from fn
-  inc = (op, prec, fn, ev) => set(op, prec, [
-    a => a ? [op === '++' ? '-' : '+', [op, a], ['', 1]] : [op, expr(prec - 1)], // ++a → [++, a], a++ → [-,[++,a],1]
-    ev = (a, b) => (
+  inc = (op, prec, fn, ev) => (
+    token(op, prec, a => a ? [op === '++' ? '-' : '+', [op, a], ['', 1]] : [op, expr(prec - 1)]), // ++a → [++, a], a++ → [-,[++,a],1]
+    operator(op, ev = (a, b) => (
       a[0] === '(' ? ev(a[1]) : // ++(((a)))
         a[0] === '.' ? (b = a[2], a = compile(a[1]), ctx => fn(a(ctx), b)) : // ++a.b
           a[0] === '[' ? ([, a, b] = a, a = compile(a), b = compile(b), ctx => fn(a(ctx), b(ctx))) : // ++a[b]
             (ctx => fn(ctx, a)) // ++a
-    )
-  ])
+    ))
+  )
 
 
 // literals
 // null operator returns first value (needed for direct literals)
-set('', null, [, v => () => v])
+operator('', v => () => v)
 
-set('"', null, [
-  (a) => a ? err() : ['', (skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip() || err('Bad string'))).slice(1, -1)],
-])
+// "a"
+lookup[DQUOTE] = (a) => a ? err() : ['', (skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip() || err('Bad string'))).slice(1, -1)]
 
 // .1
-set('.', null, [a => !a && num()])
+lookup[PERIOD] = a => !a && num()
 
 // 0-9
-for (let i = 0; i < 9; i++) set(String(i), 0, [num])
+for (let i = 0; i < 9; i++) lookup[_0 + i] = num
 
 // sequences
 set(',', PREC_SEQ, (...args) => args[args.length - 1])
@@ -88,36 +86,30 @@ inc('++', PREC_UNARY, (a, b) => ++a[b])
 inc('--', PREC_UNARY, (a, b) => --a[b])
 
 // a[b]
-set('[', PREC_CALL, [
-  a => a && ['[', a, expr(0, CBRACK) || err()],
-  (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx)[b(ctx)])
-])
+token('[', PREC_CALL, a => a && ['[', a, expr(0, CBRACK) || err()])
+operator('[', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx)[b(ctx)]))
 
 // a.b
-set('.', PREC_CALL, [
-  (a, b) => a && (b = expr(PREC_CALL)) && ['.', a, b],
-  (a, b) => (a = compile(a), b = !b[0] ? b[1] : b, ctx => a(ctx)[b]) // a.true, a.1 → needs to work fine
-])
+token('.', PREC_CALL, (a, b) => a && (b = expr(PREC_CALL)) && ['.', a, b])
+operator('.', (a, b) => (a = compile(a), b = !b[0] ? b[1] : b, ctx => a(ctx)[b])) // a.true, a.1 → needs to work fine
 
 // (a,b,c), (a)
-set('(', PREC_CALL, [
-  a => !a && ['(', expr(0, CPAREN) || err()],
-  compile
-])
+token('(', PREC_CALL, a => !a && ['(', expr(0, CPAREN) || err()])
+operator('(', compile)
+
 
 // a(b,c,d), a()
-set('(', PREC_CALL, [
-  (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']),
-  (a, b, path, args) => b != null && (
-    args = b == '' ? () => [] : // a()
-      b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(a => a(ctx))) : // a(b,c)
-        (b = compile(b), ctx => [b(ctx)]), // a(b)
+token('(', PREC_CALL, (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']))
+operator('(', (a, b, path, args) => b != null && (
+  args = b == '' ? () => [] : // a()
+    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(a => a(ctx))) : // a(b,c)
+      (b = compile(b), ctx => [b(ctx)]), // a(b)
 
-    a[0] === '.' ? (path = a[2], a = compile(a[1]), ctx => a(ctx)[path](...args(ctx))) : // a.b(...args)
-      a[0] === '[' ? (path = compile(a[2]), a = compile(a[1]), ctx => a(ctx)[path(ctx)](...args(ctx))) : // a[b](...args)
-        (a = compile(a), ctx => a(ctx)(...args(ctx))) // a(...args)
-  )
-])
+  a[0] === '.' ? (path = a[2], a = compile(a[1]), ctx => a(ctx)[path](...args(ctx))) : // a.b(...args)
+    a[0] === '[' ? (path = compile(a[2]), a = compile(a[1]), ctx => a(ctx)[path(ctx)](...args(ctx))) : // a[b](...args)
+      (a = compile(a), ctx => a(ctx)(...args(ctx))) // a(...args)
+)
+)
 
 export default subscript
 export { set }

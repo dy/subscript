@@ -1,6 +1,6 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import { skip, cur, idx, err, expr } from './parse.js'
-import compile from './compile.js'
+import { skip, cur, idx, err, expr, lookup, token } from './parse.js'
+import compile, { operator } from './compile.js'
 import subscript, { set } from './subscript.js'
 
 const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, SPACE = 32, DQUOTE = 34, QUOTE = 39, _0 = 48, _9 = 57, BSLASH = 92,
@@ -25,36 +25,34 @@ set('!==', PREC_EQ, (a, b) => a !== b)
 set('~', PREC_UNARY, (a) => ~a)
 
 // ?:
-set('?', PREC_COND, [
-  (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]),
-  (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx))
-])
+token('?', PREC_COND, (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
+operator('?', (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx)))
 
 set('??', PREC_OR, (a, b) => a ?? b)
 
 // a?.[, a?.( - postfix operator
-set('?.', PREC_CALL, [a => a && ['?.', a], a => (a = compile(a), ctx => a(ctx) || (() => { }))])
+token('?.', PREC_CALL, a => a && ['?.', a])
+operator('?.', a => (a = compile(a), ctx => a(ctx) || (() => { })))
+
 // a?.b - optional chain operator
-set('?.', PREC_CALL, [
-  (a, b) => a && (b = expr(PREC_CALL), !b?.map) && ['?.', a, b],
-  (a, b) => b && (a = compile(a), ctx => a(ctx)?.[b])
-])
+token('?.', PREC_CALL, (a, b) => a && (b = expr(PREC_CALL), !b?.map) && ['?.', a, b])
+operator('?.', (a, b) => b && (a = compile(a), ctx => a(ctx)?.[b]))
 
 set('in', PREC_COMP, (a, b) => a in b)
 
 // "' with /
-set('"', null, [string(DQUOTE)])
-set("'", null, [string(QUOTE)])
+lookup[DQUOTE] = string(DQUOTE)
+lookup[QUOTE] = string(QUOTE)
 
 // /**/, //
-set('/*', 20, [(a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec))])
-set('//', 20, [(a, prec) => (skip(c => c >= 32), a || expr(prec))])
+token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec)))
+token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec)))
 
 // literals
-set('null', 20, [a => a ? err() : ['', null]])
-set('true', 20, [a => a ? err() : ['', true]])
-set('false', 20, [a => a ? err() : ['', false]])
-set('undefined', 20, [a => a ? err() : ['', undefined]])
+token('null', 20, a => a ? err() : ['', null])
+token('true', 20, a => a ? err() : ['', true])
+token('false', 20, a => a ? err() : ['', false])
+token('undefined', 20, a => a ? err() : ['', undefined])
 
 // FIXME: make sure that is right
 set(';', -20, (...args) => { for (let i = args.length; i--;) if (args[i] != null) return args[i] })
@@ -64,28 +62,23 @@ set(';', -20, (...args) => { for (let i = args.length; i--;) if (args[i] != null
 set('**', -PREC_EXP, (a, b) => a ** b)
 
 // [a,b,c]
-set('[', 20, [
-  (a) => !a && ['[', expr(0, 93) || ''],
-  (a, b) => !b && (
-    !a ? () => [] : // []
-      a[0] === ',' ? (a = a.slice(1).map(compile), ctx => a.map(a => a(ctx))) : // [a,b,c]
-        (a = compile(a), ctx => [a(ctx)]) // [a]
-  )])
+token('[', 20, (a) => !a && ['[', expr(0, 93) || ''])
+operator('[', (a, b) => !b && (
+  !a ? () => [] : // []
+    a[0] === ',' ? (a = a.slice(1).map(compile), ctx => a.map(a => a(ctx))) : // [a,b,c]
+      (a = compile(a), ctx => [a(ctx)]) // [a]
+))
 
 // {a:1, b:2, c:3}
-set('{', 20, [
-  a => !a && (['{', expr(0, 125) || '']),
-  (a, b) => (
-    !a ? ctx => ({}) : // {}
-      a[0] === ',' ? (a = a.slice(1).map(compile), ctx => Object.fromEntries(a.map(a => a(ctx)))) : // {a:1,b:2}
-        a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
-          (b = compile(a), ctx => ({ [a]: b(ctx) }))
-  )
-])
-set(':', 1.1, [
-  (a, b) => (b = expr(1.1) || err(), [':', a, b]),
-  (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)])
-])
+token('{', 20, a => !a && (['{', expr(0, 125) || '']))
+operator('{', (a, b) => (
+  !a ? ctx => ({}) : // {}
+    a[0] === ',' ? (a = a.slice(1).map(compile), ctx => Object.fromEntries(a.map(a => a(ctx)))) : // {a:1,b:2}
+      a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
+        (b = compile(a), ctx => ({ [a]: b(ctx) }))
+))
+token(':', 1.1, (a, b) => (b = expr(1.1) || err(), [':', a, b]))
+operator(':', (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)]))
 
 export default subscript
 export * from './subscript.js'

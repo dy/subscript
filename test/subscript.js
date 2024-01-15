@@ -1,8 +1,6 @@
 import test, { is, throws, same } from 'tst'
 import parse, { skip, expr, err, cur, idx } from '../parse.js'
-import subscript, { set, binary, operator, compile } from '../subscript.js'
-
-subscript.set = set
+import subscript, { set, binary, operator, compile, token } from '../subscript.js'
 
 const evalTest = (str, ctx = {}) => {
   let ss = subscript(str), fn = new Function(...Object.keys(ctx), 'return ' + str)
@@ -84,7 +82,7 @@ test('basic', t => {
 
 test('right-assoc', t => {
   // **
-  subscript.set('**', -14, (a, b) => a ** b, true)
+  set('**', -14, (a, b) => a ** b, true)
 
   evalTest('1 + 2 * 3 ** 4 + 5', {})
   evalTest(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
@@ -101,8 +99,8 @@ test('readme', t => {
   evalTest(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
   evalTest(`min * 60 + "sec"`, { min: 5 })
 
-  subscript.set('|', 6, (a, b) => a?.pipe?.(b) || (a | b)) // overload pipe operator
-  subscript.set('=>', 2, [(args, body) => (body = expr(), ctx => (...args) => body())]) // single-arg arrow function parser
+  set('|', 6, (a, b) => a?.pipe?.(b) || (a | b)) // overload pipe operator
+  token('=>', 2, (args, body) => (body = expr(), ctx => (...args) => body())) // single-arg arrow function parser
 
   let evaluate = subscript(`
     interval(350)
@@ -120,16 +118,16 @@ test('readme', t => {
 
 
   // add ~ unary operator with precedence 15
-  subscript.set('~', 15, a => ~a)
+  set('~', 15, a => ~a)
 
   // add === binary operator
-  subscript.set('===', 9, (a, b) => a === b)
+  set('===', 9, (a, b) => a === b)
 
   // add literals
-  // subscript.set('true',20, [,a => ()=>true])
-  // subscript.set('false',20, [,a => ()=>false])
-  subscript.set('true', 20, [a => ['', true]])
-  subscript.set('false', 20, [a => ['', false]])
+  // set('true',20, [,a => ()=>true])
+  // set('false',20, [,a => ()=>false])
+  token('true', 20, a => ['', true])
+  token('false', 20, a => ['', false])
 
   is(subscript('true === false')(), false) // false
 })
@@ -152,10 +150,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t => {
-  subscript.set('null', 20, [a => a ? err() : ['', null]])
-  subscript.set('true', 20, [a => a ? err() : ['', true]])
-  subscript.set('false', 20, [a => a ? err() : ['', false]])
-  subscript.set('undefined', 20, [a => a ? err() : ['', undefined]])
+  token('null', 20, a => a ? err() : ['', null])
+  token('true', 20, a => a ? err() : ['', true])
+  token('false', 20, a => a ? err() : ['', false])
+  token('undefined', 20, a => a ? err() : ['', undefined])
 
   is(subscript('null')({}), null)
   is(subscript('(null)')({}), null)
@@ -334,7 +332,7 @@ test('chains', t => {
 })
 
 test('ext: in operator', t => {
-  subscript.set('in', 10, (a, b) => a in b)
+  set('in', 10, (a, b) => a in b)
 
   evalTest('inc in bin', { bin: { inc: 1 }, inc: 'inc' })
   evalTest('bin in inc', { inc: { bin: 1 }, bin: 'bin' })
@@ -343,13 +341,12 @@ test('ext: in operator', t => {
 })
 
 test('ext: list', t => {
-  subscript.set('[', 20, [
-    a => !a && ['[', expr(0, 93) || ''],
-    (a, b) => !b && (
-      !a ? ctx => [] : // []
-        a[0] === ',' ? (a = a.slice(1).map(compile), ctx => a.map(a => a(ctx))) : // [a,b,c]
-          (a = compile(a), ctx => [a(ctx)]) // [a]
-    )]
+  token('[', 20, a => !a && ['[', expr(0, 93) || ''])
+  operator('[', (a, b) => !b && (
+    !a ? ctx => [] : // []
+      a[0] === ',' ? (a = a.slice(1).map(compile), ctx => a.map(a => a(ctx))) : // [a,b,c]
+        (a = compile(a), ctx => [a(ctx)]) // [a]
+  )
   )
 
   is(subscript('[1,2,3,4,5,6]')(), [1, 2, 3, 4, 5, 6])
@@ -381,10 +378,11 @@ test('ext: list', t => {
 
 
 test('ext: ternary', t => {
-  subscript.set('?', 3, [
-    (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]),
+  token('?', 3,
+    (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
+  operator('?',
     (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx))
-  ])
+  )
 
   evalTest('a?b:c', { a: true, b: 1, c: 2 })
   evalTest('a?b:c', { a: false, b: 1, c: 2 })
@@ -397,20 +395,16 @@ test('ext: ternary', t => {
 })
 
 test('ext: object', t => {
-  subscript.set('{', 20, [
-    a => !a && (['{', expr(0, 125) || '']),
-    (a, b) => (
-      !a ? ctx => ({}) : // {}
-        a[0] === ',' ? (a = a.slice(1).map(compile), ctx => Object.fromEntries(a.map(a => a(ctx)))) : // {a:1,b:2}
-          a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
-            (b = compile(a), ctx => ({ [a]: b(ctx) }))
-    )
-  ])
-  subscript.set(':', 1.1, [
-    (a, b) => (b = expr(1.1) || err(), [':', a, b]),
-    (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)])
-  ])
-  subscript.set('=', 2, (a, b) => b)
+  token('{', 20, a => !a && (['{', expr(0, 125) || '']))
+  operator('{', (a, b) => (
+    !a ? ctx => ({}) : // {}
+      a[0] === ',' ? (a = a.slice(1).map(compile), ctx => Object.fromEntries(a.map(a => a(ctx)))) : // {a:1,b:2}
+        a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
+          (b = compile(a), ctx => ({ [a]: b(ctx) }))
+  ))
+  token(':', 1.1, (a, b) => (b = expr(1.1) || err(), [':', a, b]))
+  operator(':', (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)]))
+  set('=', 2, (a, b) => b)
 
   evalTest('{}', {})
   evalTest('{x: 1}', {})
@@ -464,8 +458,8 @@ test('ext: assignment', async t => {
 })
 
 test('ext: comments', t => {
-  subscript.set('/*', 20, [(a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec))])
-  subscript.set('//', 20, [(a, prec) => (skip(c => c >= 32), a || expr(prec))])
+  token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec)))
+  token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec)))
   is(subscript('/* x */1/* y */+/* z */2')({}), 3)
   is(subscript(`a /
     // abc
@@ -523,7 +517,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  subscript.set('&', 13, (a) => ~a)
+  set('&', 13, (a) => ~a)
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
 })
