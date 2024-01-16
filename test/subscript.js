@@ -436,8 +436,17 @@ test('ext: justin', async t => {
   evalTest('b?{c:1}:{d:2}', { b: 2 })
 
   // keep context
+  console.log('---a?.()')
+  evalTest('a?.()', { a: v => 1 })
+  console.log('---a?.valueOf()')
   evalTest('a?.valueOf()', { a: true })
+  console.log('---a?.valueOf?.()')
+  evalTest('a?.valueOf?.()', { a: true })
+  // FIXME: these
+  console.log('---a?.["valueOf"]()')
   evalTest('a?.["valueOf"]()', { a: true })
+  console.log('---a?.["valueOf"]?.()')
+  evalTest('a?.["valueOf"]?.()', { a: true })
 })
 
 test('ext: assignment', async t => {

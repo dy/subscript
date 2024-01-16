@@ -51,7 +51,7 @@ lookup[DQUOTE] = (a) => a ? err() : ['', (skip() + skip(c => c - DQUOTE ? 1 : 0)
 lookup[PERIOD] = a => !a && num()
 
 // 0-9
-for (let i = 0; i < 9; i++) lookup[_0 + i] = num
+for (let i = 0; i <= 9; i++) lookup[_0 + i] = num
 
 // sequences
 set(',', PREC_SEQ, (...args) => args[args.length - 1])
@@ -99,9 +99,9 @@ token('(', PREC_CALL, a => !a && ['(', expr(0, CPAREN) || err()])
 
 // a(b,c,d), a()
 token('(', PREC_CALL, (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']))
-operator('(', (a, b, path, args) => b == null ? compile(a, b) : (
+operator('(', (a, b, path, args) => b == null ? (compile(a, b)) : (
   args = b == '' ? () => [] : // a()
-    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(a => a(ctx))) : // a(b,c)
+    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) : // a(b,c)
       (b = compile(b), ctx => [b(ctx)]), // a(b)
 
   a[0] === '.' ? (path = a[2], a = compile(a[1]), ctx => a(ctx)[path](...args(ctx))) : // a.b(...args)
