@@ -6,19 +6,14 @@ export let idx, cur,
   // no handling tagged literals since easily done on user side with cache, if needed
   parse = s => (idx = 0, cur = s, s = expr(), cur[idx] ? err() : s || ''),
 
-  err = (msg = 'Bad syntax', frag = cur[idx], prev = cur.slice(0, idx).split('\n'), last = prev.pop()) => {
-    throw SyntaxError(`${msg} ${frag ? `\`${frag}\` ` : ''}at ${prev.length}:${last.length}`, prev.length)
-  },
-
-  longErr = (msg = 'Bad syntax',
+  err = (msg = 'Bad syntax',
     frag = cur[idx],
     lines = cur.slice(0, idx).split('\n'),
     last = lines.pop()
   ) => {
-    let before = cur.slice(idx - 10, idx).split('\n').pop()
-    let after = cur.slice(idx + 1, idx + 10).split('\n').shift()
-    let location = lines.length + ':' + last.length
-    throw EvalError(`${msg} at ${location} \`${before + frag + after}\`\n${' '.repeat(18 + msg.length + location.length + before.length + 1)}^`)
+    let before = cur.slice(idx - 108, idx).split('\n').pop()
+    let after = cur.slice(idx + 1, idx + 108).split('\n').shift()
+    throw EvalError(`${msg} at ${lines.length}:${last.length} %c\`${before + frag + after}\``, 'font-weight: bold')
   },
 
   skip = (is = 1, from = idx, l) => {

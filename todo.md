@@ -477,7 +477,7 @@
   * [x] Provide explicit `binary`, `unary`, `sequence` helpers
   * [x] Make main clean single entry, without commonscript setup. DSLs may not need shifts or binary by default
   * [x] Make explicit `lookup.id`, `lookup.space` - parsing should not be cryptic, it should be apparent
-  * [ ] Display better error message with context and underline
+  * [x] Display better error message with context and underline
 
 * [x] Sometimes nary returns last element as null, other times as undefined. Find out why.
 
@@ -498,7 +498,7 @@
 
 * [?] ~~remove `a.1` and `a.true` from subscript~~
 * [x] make `a?.valueOf()` context work
-* [] ~~make default difference of `a()` as `['()', 'a']` like in lino, rather then here~~
+* [x] ~~make default difference of `a()` as `['()', 'a']` like in lino, rather then here~~
 * [x] streamline samples (at price of larger codebase - that's fine)
 
 * [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
