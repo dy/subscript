@@ -13,7 +13,7 @@ export let idx, cur,
   ) => {
     let before = cur.slice(idx - 108, idx).split('\n').pop()
     let after = cur.slice(idx + 1, idx + 108).split('\n').shift()
-    throw EvalError(`${msg} at ${lines.length}:${last.length} %c\`${before + frag + after}\``, 'font-weight: bold')
+    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${before + frag + after}\``, 'font-weight: bold')
   },
 
   skip = (is = 1, from = idx, l) => {

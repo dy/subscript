@@ -460,7 +460,7 @@ test.skip('es-module-lexer', async t => {
   console.timeEnd('es-module-lexer')
 })
 
-test('object key', async t => {
+test.skip('bench: object key', async t => {
   const obj = {}
   console.time('object key')
   for (let i = 0; i < RUNS; i++) {
@@ -469,7 +469,7 @@ test('object key', async t => {
   console.timeEnd('object key')
 })
 
-test('Map', async t => {
+test.skip('bench: Map', async t => {
   const map = new Map
   console.time('Map.set')
   for (let i = 0; i < RUNS; i++) {
@@ -478,7 +478,7 @@ test('Map', async t => {
   console.timeEnd('Map.set')
 })
 
-test('TextEncoder/Decoder', async t => {
+test.skip('bench: TextEncoder/Decoder', async t => {
   const binary = btoa(src(0))
 
   console.time('u8array.from')

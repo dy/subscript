@@ -10,12 +10,12 @@ const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, SPACE = 3
 let escape = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' },
   string = q => (qc, c, str = '') => {
     qc && err('Unexpected string') // must not follow another token
-    skip()
+    skip() // first quote
     while (c = cur.charCodeAt(idx), c - q) {
       if (c === BSLASH) skip(), c = skip(), str += escape[c] || c
       else str += skip()
     }
-    skip()
+    skip() || err('Bad string')
     return ['', str]
   }
 

@@ -376,8 +376,8 @@ test('ext: list', t => {
   evalTest('[undefined]', {})
 })
 
-
-test('ext: ternary', t => {
+test.skip('ext: ternary', t => {
+  // NOTE: must be tested separately, else breaks jsep test
   token('?', 3,
     (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
   operator('?',
@@ -419,6 +419,8 @@ test('ext: object', t => {
   evalTest('{a:b?c:d, e:f=g?h:k}', { b: 2, c: 3, d: 4, f: null, g: 0, h: 1, k: 2 })
 
   evalTest('b?{c:1}:{d:2}', { b: 2 })
+
+  // evalTest('{b:true, c:d}', { d: true })
 })
 
 test('ext: justin', async t => {

@@ -45,10 +45,10 @@ const subscript = s => (s = parse(s), ctx => (s.call ? s : (s = compile(s)))(ctx
 operator('', v => () => v)
 
 // "a"
-lookup[DQUOTE] = (a) => a ? err() : ['', (skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip() || err('Bad string'))).slice(1, -1)]
+lookup[DQUOTE] = (a) => (a ? err() : ['', (skip() + skip(c => c - DQUOTE ? 1 : 0) + (skip() || err('Bad string'))).slice(1, -1)])
 
 // .1
-lookup[PERIOD] = a => !a && num()
+lookup[PERIOD] = a => (!a && num())
 
 // 0-9
 for (let i = 0; i <= 9; i++) lookup[_0 + i] = num
