@@ -404,7 +404,7 @@ test('ext: object', t => {
   ))
   token(':', 1.1, (a, b) => (b = expr(1.1) || err(), [':', a, b]))
   operator(':', (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)]))
-  set('=', 2, (a, b) => b)
+  // set('=', 2, (a, b) => b)
 
   evalTest('{}', {})
   evalTest('{x: 1}', {})
@@ -420,7 +420,7 @@ test('ext: object', t => {
 
   evalTest('b?{c:1}:{d:2}', { b: 2 })
 
-  // evalTest('{b:true, c:d}', { d: true })
+  evalTest('{b:true, c:d}', { d: true })
 })
 
 test('ext: justin', async t => {
@@ -449,9 +449,17 @@ test('ext: justin', async t => {
   evalTest('a?.["valueOf"]()', { a: true })
   console.log('---a?.["valueOf"]?.()')
   evalTest('a?.["valueOf"]?.()', { a: true })
+
+  // assigns
+  let s = { a: 0 }
+  subscript('a = {b:0}')(s)
+  is(s, { a: { b: 0 } })
+  subscript('a.b = 1')(s)
+  is(s, { a: { b: 1 } })
 })
 
-test('ext: assignment', async t => {
+test.skip('ext: assignment', async t => {
+  // NOTE: covered by justin, here is simplified impl
   binary('=', 10, true)
   operator('=', (a, b) => {
     const calc = compile(b);
@@ -467,6 +475,11 @@ test('ext: assignment', async t => {
   let state2 = {}
   fn2(state2)
   is(state2, { localvar: 0 })
+
+  const fn3 = subscript('x.y = 0')
+  let state3 = { x: { y: 1 } }
+  fn3(state3)
+  is(state3, { x: { y: 1 } })
 })
 
 test('ext: comments', t => {

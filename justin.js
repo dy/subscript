@@ -1,5 +1,5 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import { skip, cur, idx, err, expr, lookup, token } from './parse.js'
+import { skip, cur, idx, err, expr, lookup, token, binary } from './parse.js'
 import compile, { operator } from './compile.js'
 import subscript, { set } from './subscript.js'
 

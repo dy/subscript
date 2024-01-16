@@ -39,7 +39,6 @@ const subscript = s => (s = parse(s), ctx => (s.call ? s : (s = compile(s)))(ctx
     ))
   )
 
-
 // literals
 // null operator returns first value (needed for direct literals)
 operator('', v => () => v)
@@ -57,6 +56,17 @@ for (let i = 0; i <= 9; i++) lookup[_0 + i] = num
 set(',', PREC_SEQ, (...args) => args[args.length - 1])
 set('||', PREC_SOME, (...args) => { let i = 0, v; for (; !v && i < args.length;) v = args[i++]; return v })
 set('&&', PREC_EVERY, (...args) => { let i = 0, v = true; for (; v && i < args.length;) v = args[i++]; return v })
+
+// assignment
+binary('=', 10, true)
+operator('=', (a, b) => {
+  let calc = compile(b), container, path,
+    set = typeof a === 'string' ? (ctx, v) => ctx[a] = v :
+      a[0] === '.' ? (container = compile(a[1]), path = a[2], (ctx, v) => container(ctx)[path] = v) :
+        a[0] === '[' ? (container = compile(a[1]), path = compile(a[2]), (ctx, v) => container(ctx)[path(ctx)] = v) :
+          err('Bad LHS');
+  return ctx => set(ctx, calc(ctx))
+})
 
 // binaries
 set('+', PREC_SUM, (a, b) => a + b)
@@ -99,7 +109,7 @@ token('(', PREC_CALL, a => !a && ['(', expr(0, CPAREN) || err()])
 
 // a(b,c,d), a()
 token('(', PREC_CALL, (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']))
-operator('(', (a, b, path, args) => b == null ? (compile(a, b)) : (
+operator('(', (a, b, path, container, args) => b == null ? (compile(a, b)) : (
   args = b == '' ? () => [] : // a()
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) : // a(b,c)
       (b = compile(b), ctx => [b(ctx)]), // a(b)
@@ -109,6 +119,7 @@ operator('(', (a, b, path, args) => b == null ? (compile(a, b)) : (
       (a = compile(a), ctx => a(ctx)(...args(ctx))) // a(...args)
 )
 )
+
 
 export default subscript
 export { set }
