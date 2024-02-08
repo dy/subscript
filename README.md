@@ -128,7 +128,7 @@ AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/fri
 
 * not limited to particular language (JS), can be compiled to different targets;
 * reflects execution sequence, rather than code layout;
-* has minimal possible overhead (object wrappers, named properties), directly maps to operators;
+* has minimal overhead, directly maps to operators;
 * simplifies manual evaluation and debugging;
 * has conventional form and one-line docs:
 
