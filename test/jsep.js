@@ -48,7 +48,7 @@ test('Function Calls', () => {
   is(script("'a'.toString()")(), 'a')
   is(script('[1].length')(), 1)
   is(script('1;2;3')(), 3)
-  is(script('1;;')(), 1)
+  is(script('1;;')(), undefined)
   // // allow all spaces or all commas to separate arguments
   // is(script('check(a, b, c, d)'), {})
   throws(t => script('check(a b c d)'))

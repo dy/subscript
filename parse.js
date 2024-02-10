@@ -74,7 +74,11 @@ export let idx, cur,
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
   binary = (op, prec, right = 0) => token(op, prec, (a, b) => a && (b = expr(prec - right / 2)) && [op, a, b]),
+
+  // post indicates postfix rather than prefix operator
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
+
+  // skips means ,,, ;;; are allowed
   nary = (op, prec, skips) => {
     token(op, prec, (a, b) => (
       (a || skips) && // if lhs exists or we're ok to skip

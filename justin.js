@@ -71,8 +71,7 @@ token('false', 20, a => a ? err() : ['', false])
 // token('undefined', 20, a => a ? err() : ['', undefined])
 // token('NaN', 20, a => a ? err() : ['', NaN])
 
-// FIXME: make sure that is right
-set(';', -20, (...args) => { for (let i = args.length; i--;) if (args[i] != null) return args[i] })
+set(';', -20, (...args) => args[args.length - 1])
 
 // right order
 // '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
