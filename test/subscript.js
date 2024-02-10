@@ -458,14 +458,7 @@ test('ext: justin', async t => {
   is(s, { a: { b: 1 } })
 })
 
-test.skip('ext: assignment', async t => {
-  // NOTE: covered by justin, here is simplified impl
-  binary('=', 10, true)
-  operator('=', (a, b) => {
-    const calc = compile(b);
-    return ctx => (ctx[a] = calc(ctx))
-  })
-
+test('assignment', async t => {
   const fn = subscript('a = b * 2')
   let state = { b: 1 }
   fn(state)
@@ -479,7 +472,17 @@ test.skip('ext: assignment', async t => {
   const fn3 = subscript('x.y = 0')
   let state3 = { x: { y: 1 } }
   fn3(state3)
-  is(state3, { x: { y: 1 } })
+  is(state3, { x: { y: 0 } })
+
+  const fn4 = subscript('123, y=0')
+  let state4 = { x: { y: 1 } }
+  fn4(state4)
+  is(state4, { x: { y: 1 }, y: 0 })
+
+  const fn5 = subscript('y = 1; x.y;')
+  let state5 = { x: { y: 1 } }
+  fn5(state5)
+  is(state5, { x: { y: 1 }, y: 1 })
 })
 
 test('ext: comments', t => {

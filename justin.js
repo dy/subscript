@@ -71,7 +71,7 @@ token('false', 20, a => a ? err() : ['', false])
 // token('undefined', 20, a => a ? err() : ['', undefined])
 // token('NaN', 20, a => a ? err() : ['', NaN])
 
-set(';', -20, (...args) => args[args.length - 1])
+set(';', -1, (...args) => args[args.length - 1])
 
 // right order
 // '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,

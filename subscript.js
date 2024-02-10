@@ -64,7 +64,7 @@ operator('=', (a, b) => {
     set = typeof a === 'string' ? (ctx, v) => ctx[a] = v :
       a[0] === '.' ? (container = compile(a[1]), path = a[2], (ctx, v) => container(ctx)[path] = v) :
         a[0] === '[' ? (container = compile(a[1]), path = compile(a[2]), (ctx, v) => container(ctx)[path(ctx)] = v) :
-          err('Bad LHS');
+          err('Bad left value');
   return ctx => set(ctx, calc(ctx))
 })
 
