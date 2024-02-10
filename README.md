@@ -67,19 +67,17 @@ _Justin_ is minimal JS subset − JSON with JS expressions (see original [thread
 
 It extends _subscript_ with:
 
-+ `===`, `!==` operators
 + `**` exponentiation operator (right-assoc)
 + `~` bit inversion operator
 + `'` strings
 + `?:` ternary operator
 + `?.` optional chain operator
-+ `??` nullish coalesce operator
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary
 + `;` expression separator
 + `//`, `/* */` comments
-+ `true`, `false`, `null`, `undefined` literals
++ `true`, `false`, `null` literals
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 

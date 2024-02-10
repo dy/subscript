@@ -20,8 +20,8 @@ let escape = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' },
   }
 
 // operators
-set('===', PREC_EQ, (a, b) => a === b)
-set('!==', PREC_EQ, (a, b) => a !== b)
+// set('===', PREC_EQ, (a, b) => a === b)
+// set('!==', PREC_EQ, (a, b) => a !== b)
 set('~', PREC_UNARY, (a) => ~a)
 
 // ?:
@@ -68,7 +68,8 @@ token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
 token('null', 20, a => a ? err() : ['', null])
 token('true', 20, a => a ? err() : ['', true])
 token('false', 20, a => a ? err() : ['', false])
-token('undefined', 20, a => a ? err() : ['', undefined])
+// token('undefined', 20, a => a ? err() : ['', undefined])
+// token('NaN', 20, a => a ? err() : ['', NaN])
 
 // FIXME: make sure that is right
 set(';', -20, (...args) => { for (let i = args.length; i--;) if (args[i] != null) return args[i] })
