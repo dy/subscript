@@ -1,5 +1,5 @@
 import test, { is, throws, same } from 'tst'
-import parse, { skip, expr, err, cur, idx } from '../parse.js'
+import parse, { skip, expr, err, cur, idx } from '../src/parse.js'
 import subscript, { set, binary, operator, compile, token } from '../subscript.js'
 
 const evalTest = (str, ctx = {}) => {
@@ -565,13 +565,12 @@ test('stdlib cases', t => {
 })
 
 test('ext: collect args', async t => {
-  const { lookup } = await import('../parse.js')
-  const { default: script } = await import('../justin.js')
+  const { lookup, default: script } = await import('../justin.js')
 
   let args = [], id = parse.id
   parse.id = (a, b) => (a = id(), a && args.push(a), a)
 
-  // FIXME: baybe needs ignoring pow and b?
+  // FIXME: maybe needs ignoring pow and b?
   let fn = subscript('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
   same(args,
     ['Math', 'pow', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']

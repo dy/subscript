@@ -1,41 +1,30 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import { skip, cur, idx, err, expr, lookup, token, binary } from './parse.js'
-import compile, { operator } from './compile.js'
-import subscript, { set } from './subscript.js'
+import { skip, cur, idx, err, expr, lookup, token, binary } from './src/parse.js'
+import compile, { operator } from './src/compile.js'
+import subscript, { set } from './src/index.js'
+import { PREC_ASSIGN, PREC_PREFIX, PREC_OR, PREC_ACCESS, PREC_COMP, PREC_EXP } from './src/const.js'
 
-const PERIOD = 46, OPAREN = 40, CPAREN = 41, OBRACK = 91, CBRACK = 93, SPACE = 32, DQUOTE = 34, QUOTE = 39, _0 = 48, _9 = 57, BSLASH = 92,
-  PREC_SEQ = 1, PREC_COND = 3, PREC_SOME = 4, PREC_EVERY = 5, PREC_OR = 6, PREC_XOR = 7, PREC_AND = 8,
-  PREC_EQ = 9, PREC_COMP = 10, PREC_SHIFT = 11, PREC_SUM = 12, PREC_MULT = 13, PREC_EXP = 14, PREC_UNARY = 15, PREC_POSTFIX = 16, PREC_CALL = 18, PREC_GROUP = 19
+// register subscript operators set
+import './subscript.js'
 
-let escape = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' },
-  string = q => (qc, c, str = '') => {
-    qc && err('Unexpected string') // must not follow another token
-    skip() // first quote
-    while (c = cur.charCodeAt(idx), c - q) {
-      if (c === BSLASH) skip(), c = skip(), str += escape[c] || c
-      else str += skip()
-    }
-    skip() || err('Bad string')
-    return ['', str]
-  }
 
 // operators
 // set('===', PREC_EQ, (a, b) => a === b)
 // set('!==', PREC_EQ, (a, b) => a !== b)
-set('~', PREC_UNARY, (a) => ~a)
+set('~', PREC_PREFIX, (a) => ~a)
 
 // ?:
-token('?', PREC_COND, (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
+token('?', PREC_ASSIGN, (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
 operator('?', (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx)))
 
 set('??', PREC_OR, (a, b) => a ?? b)
 
 // a?.[, a?.( - postfix operator
-token('?.', PREC_CALL, a => a && ['?.', a])
+token('?.', PREC_ACCESS, a => a && ['?.', a])
 operator('?.', a => (a = compile(a), ctx => a(ctx) || (() => { })))
 
 // a?.b, a?.() - optional chain operator
-token('?.', PREC_CALL, (a, b) => a && (b = expr(PREC_CALL), !b?.map) && (b ? ['?.', a, b] : ['?.', a, b]))
+token('?.', PREC_ACCESS, (a, b) => a && (b = expr(PREC_ACCESS), !b?.map) && (b ? ['?.', a, b] : ['?.', a, b]))
 operator('?.', (a, b) => b && (a = compile(a), ctx => a(ctx)?.[b]))
 
 // a?.x() - keep context, but watch out a?.()
@@ -55,10 +44,6 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
 
 // a in b
 set('in', PREC_COMP, (a, b) => a in b)
-
-// "' with /
-lookup[DQUOTE] = string(DQUOTE)
-lookup[QUOTE] = string(QUOTE)
 
 // /**/, //
 token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))

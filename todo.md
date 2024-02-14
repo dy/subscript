@@ -481,29 +481,38 @@
 
 * [x] Sometimes nary returns last element as null, other times as undefined. Find out why.
 
-* [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
-
 * [x] ~~Make able to parse sequence of identifiers: s-expressions or html may allow that.~~ nah, subscript is not for that
-
-* [ ] Hide skip, expr, compile as args for defining tokens functions?
-  + shorter exports
-  + easier extending dialects - no need to import parse/eval internals
-
-* [ ] Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting args etc.
-  * [ ] different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle
-  * [ ] collecting args via tree traversal
-  * [ ] sonr transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`
-  * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
-    → that belongs to custom langs, not core
 
 * [?] ~~remove `a.1` and `a.true` from subscript~~
 * [x] make `a?.valueOf()` context work
 * [x] ~~make default difference of `a()` as `['()', 'a']` like in lino, rather then here~~
 * [x] streamline samples (at price of larger codebase - that's fine)
 
-* [ ] ! fluentscript - js without `{}`, or justin with functions (the way subscript is written)
+* [ ] Hide skip, expr, compile as args for defining tokens functions?
+  + shorter exports
+  + easier extending dialects - no need to import parse/eval internals
+
+* [ ] Modularize, make pluggable groups
+  + standardizes base for various languages
+* [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
+  * [ ] Make `[,'path']` for prop access, and `'value'` a direct primitive
+
+* [ ] Flip increments `[+=, a, 1]` for `++a`, and `[++, a]` for `a++`
+* [ ] Untangle prefix/postfix order
+* [ ] See if we can get rid of set
+
+
+## Backlog
+
+* [x] ~~Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting ids etc.~~ -> not clear what's that
+  * [x] ~~different targets: lispy calltree, wasm binaries, regular ast, transform to wat, unswizzle~~
+  * [x] ~~collecting ids via tree traversal~~ -> impl in dependent
+  * [x] ~~sonr transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`~~ -> do client transform
+  * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
+    → that belongs to custom langs, not core
 
 * [ ] language building tool: create own language with a set of features
+  * [ ] Make operator groups, importable; build subscript by including op groups.
 
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
@@ -517,10 +526,8 @@
 * [ ] Demo
 
 * [ ] complex groups detector: a*x + b*y + c
-
 * [ ] compile groups/complex groups to wasm: a*x + b*y + c
   - wasm doesn't generically support any-type of argument.
-
 * [ ] WASMify https://youtu.be/awe7swqFOOw?t=778
   - before interface types it's very problematic for wasm to deal with slicing/passing strings/substrings.
   ~ in fact we can initialize lookup tokens in JS and run actual parser in WASM by passing table
