@@ -6,6 +6,7 @@ import { CPAREN, COLON, PREC_ASSIGN, PREC_PREFIX, PREC_OR, PREC_ACCESS, PREC_COM
 
 // register subscript operators set
 import './subscript.js'
+import './feature/comment.js'
 
 // operators
 // set('===', PREC_EQ, (a, b) => a === b)
@@ -46,10 +47,6 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
 
 // a in b
 set('in', PREC_COMP, (a, b) => a in b)
-
-// /**/, //
-token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
-token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
 
 // literals
 token('null', 20, a => a ? err() : ['', null])

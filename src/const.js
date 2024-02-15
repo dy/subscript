@@ -12,7 +12,9 @@ export const
   _9 = 57,
   _E = 69,
   _e = 101,
-  BSLASH = 92
+  BSLASH = 92,
+  SLASH = 47,
+  STAR = 42
 
 // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_precedence
 export const
@@ -32,4 +34,5 @@ export const
   PREC_PREFIX = 14,
   PREC_POSTFIX = 15,
   PREC_ACCESS = 17,
-  PREC_GROUP = 18
+  PREC_GROUP = 18,
+  PREC_MAX = 20
