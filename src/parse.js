@@ -1,4 +1,4 @@
-const SPACE = 32
+import { SPACE } from "./const.js"
 
 // current string, index and collected ids
 export let idx, cur,
