@@ -2,11 +2,10 @@ import { token, expr } from "../src/parse.js"
 import { operator, compile } from "../src/compile.js"
 import { PREC_POSTFIX } from "../src/const.js"
 
-// create increment-assign pair from fn
-// FIXME: make a++ -> [++, a], ++a -> [+=, a, 1]
+// FIXME: make a++ -> [++, a], ++a -> [+=, a, 1]; although it requires += operator which might be harder to calculate
 
 let inc, dec
-token('++', PREC_POSTFIX, a => a ? ['-', ['++', a], ['', 1]] : ['++', expr(PREC_POSTFIX - 1)]) // ++a → [++, a], a++ → [-,[++,a],1]
+token('++', PREC_POSTFIX, a => a ? ['-', ['++', a], ['', 1]] : ['++', expr(PREC_POSTFIX - 1)])
 operator('++', inc = (a, b) => (
   // ++(((a)))
   a[0] === '()' ? inc(a[1]) :
@@ -18,7 +17,7 @@ operator('++', inc = (a, b) => (
         (ctx => ++ctx[a])
 ))
 
-token('--', PREC_POSTFIX, a => a ? ['+', ['--', a], ['', 1]] : ['--', expr(PREC_POSTFIX - 1)]) // --a → [--, a], a-- → [-,[--,a],1]
+token('--', PREC_POSTFIX, a => a ? ['+', ['--', a], ['', 1]] : ['--', expr(PREC_POSTFIX - 1)])
 operator('--', dec = (a, b) => (
   // --(((a)))
   a[0] === '()' ? dec(a[1]) :
