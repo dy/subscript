@@ -5,12 +5,19 @@ export const compile = (node) => !Array.isArray(node) ? ctx => ctx?.[node] : !no
   operators = {},
 
   // register an operator
-  operator = (op, fn, prev = operators[op]) => (operators[op] = (...args) => fn(...args) || prev && prev(...args))
+  operator = (op, fn, prev = operators[op]) => (operators[op] = (...args) => fn(...args) || prev && prev(...args)),
 
-// literals
-// null operator returns first value (needed for direct literals)
-// FIXME: is there really treally no better way?
-// 1. Can we make ['.','path'] to read from context, and direct primitives just return as-is?
-// operator('', v => () => v)
+  // takes node and returns evaluator depending on the case with passed params (container, path, ctx) =>
+  access = (node, id, prop, computed, generic) =>
+    // (((x))) => x
+    node[0] === '()' ? access(node[1], id, prop, computed, generic) :
+      // (_, name, ctx) => ctx[path]
+      typeof node === 'string' ? id.bind(0, 0, node) :
+        // (container, path, ctx) => container(ctx)[path]
+        node[0] === '.' ? prop.bind(0, compile(node[1]), node[2]) :
+          // (container, path, ctx) => container(ctx)[path(ctx)]
+          node[0] === '[' ? computed.bind(0, compile(node[1]), compile(node[2])) :
+            // (src, _, ctx) => src(ctx)
+            generic ? generic.bind(0, compile(node), 0) : () => err('Bad left value')
 
 export default compile

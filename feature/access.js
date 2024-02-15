@@ -1,5 +1,5 @@
 import { token, expr, err } from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
+import { operator, compile, access } from '../src/compile.js'
 import { CBRACK, CPAREN, PREC_ACCESS } from '../src/const.js'
 
 // a[b]
@@ -17,8 +17,15 @@ operator('(', (a, b, path, container, args) => (
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) : // a(b,c)
       (b = compile(b), ctx => [b(ctx)]), // a(b)
 
-  a[0] === '.' ? (path = a[2], a = compile(a[1]), ctx => a(ctx)[path](...args(ctx))) : // a.b(...args)
-    a[0] === '[' ? (path = compile(a[2]), a = compile(a[1]), ctx => a(ctx)[path(ctx)](...args(ctx))) : // a[b](...args)
-      (a = compile(a), ctx => a(ctx)(...args(ctx))) // a(...args)
+  access(a,
+    // a(...args)
+    (_, path, ctx) => ctx[path](...args(ctx)),
+    // a.b(...args)
+    (obj, path, ctx) => obj(ctx)[path](...args(ctx)),
+    // a[b](...args)
+    (obj, path, ctx) => obj(ctx)[path(ctx)](...args(ctx)),
+    // (a,b,c)(...args)
+    (src, _, ctx) => src(ctx)(...args(ctx))
+  )
 )
 )

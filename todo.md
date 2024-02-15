@@ -502,8 +502,8 @@
 * [ ] Untangle prefix/postfix order
 * [ ] See if we can get rid of `set`
 * [ ] add assign operators
-* [ ] consolidate obj access cases in one function: assign, inc/dec, +=/-=, call, ?. reuse similar chunk
-
+* [ ] consolidate obj access cases in one function: +assign, +inc/dec, +=/-=, +call, ?. reuse similar chunk
+* [ ] Make literals via `[,val]` (no need for empty string)
 
 ## Backlog
 
