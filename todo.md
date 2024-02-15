@@ -498,9 +498,11 @@
 * [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
   * [ ] Make `[,'path']` for prop access, and `'value'` a direct primitive
 
-* [ ] Flip increments `[+=, a, 1]` for `++a`, and `[++, a]` for `a++`
+* [x] ~~Flip increments `[+=, a, 1]` for `++a`, and `[++, a]` for `a++`~~ -> nah, likely that's harder than ++a-1 (dealing with object cases)
 * [ ] Untangle prefix/postfix order
 * [ ] See if we can get rid of `set`
+* [ ] add assign operators
+* [ ] consolidate obj access cases in one function: assign, inc/dec, +=/-=, call, ?. reuse similar chunk
 
 
 ## Backlog

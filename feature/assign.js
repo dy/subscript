@@ -12,6 +12,3 @@ operator('=', (a, b) => {
       a[0] === '[' ? (container = compile(a[1]), path = compile(a[2]), (ctx) => container(ctx)[path(ctx)] = calc(ctx)) :
         err('Bad left value');
 })
-
-// FIXME: add more operators
-// FIXME: consolidate assignments code in one function
