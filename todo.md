@@ -495,15 +495,15 @@
 * [x] Modularize, make pluggable groups
   + standardizes base for various languages
 
-* [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
-  * [ ] Make `[,'path']` for prop access, and `'value'` a direct primitive
+* [x] ~~Recognize false, 0 and '' as results of successfully parsed expressions.~~ -> nah, too much trouble with checks for undefined, null, false, 0, '' as primitives
+  * [x] ~~Make `[,'path']` for prop access, and `'value'` a direct primitive~~ -> can't easily parse direct primitives without wrapping
 
 * [x] ~~Flip increments `[+=, a, 1]` for `++a`, and `[++, a]` for `a++`~~ -> nah, likely that's harder than ++a-1 (dealing with object cases)
 * [ ] Untangle prefix/postfix order
 * [ ] See if we can get rid of `set`
 * [ ] add assign operators
 * [ ] consolidate obj access cases in one function: +assign, +inc/dec, +=/-=, +call, ?. reuse similar chunk
-* [ ] Make literals via `[,val]` (no need for empty string)
+* [x] Make literals via `[,val]` (no need for empty string)
 
 ## Backlog
 

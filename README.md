@@ -30,7 +30,7 @@ fn({ a: { b:1 }, c: 5, Math })
 
 ## Operators
 
-Default _subscript_ provides common-syntax operators, supported by main languages (_JavaScript_,_C_, _C++_, _Java_, _Rust_, _Go_, _Ruby_, _C#_,  _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_) etc.
+Default _subscript_ provides common syntax, supported by all main languages: _JavaScript_,_C_, _C++_, _Java_, _Rust_, _Go_, _Ruby_, _C#_,  _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.
 
 <small>↑ precedence order</small>
 
@@ -48,33 +48,26 @@ Default _subscript_ provides common-syntax operators, supported by main language
 * `a | b`
 * `a && b`
 * `a || b`
-* `a = += -= *= **= *= /= %= <<= >>= >>>= &= ^= |= &&= ||= b`
-* `a , b`
-* `"abc"`
+* `a = b`, `a [+-*/%&^|]= b`
+* `a , b`, `a; b;`
+* `"abc"`, `'abc'`
 * `0.1`, `1.2e+3`
 
-```js
-import subscript from 'subscript/subscript.js'
-
-let xy = subscript('x + y');
-xy({x: 1, y: 2});  // 3
-```
 
 ## Justin
 
-_Justin_ = _JSON_ + _Expressions_, a minimal JS subset. See original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
+_Justin_ = _JSON_ + _Expressions_, a minimal JS subset - handy for templating languages etc.<br/>
+See original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
 
 It extends _subscript_ with:
 
 + `**` exponentiation operator (right-assoc)
 + `~` bit inversion operator
-+ `'` strings
 + `?:` ternary operator
 + `?.` optional chain operator
 + `[...]` Array literal
 + `{...}` Object literal
 + `in` binary
-+ `;` expression separator
 + `//`, `/* */` comments
 + `true`, `false`, `null` literals
 <!-- + `...x` unary operator -->
@@ -89,20 +82,23 @@ xy()  // 1
 
 ## Extending
 
-_Subscript_ defines standard operator groups that can be plugged in:
+_Subscript_ defines set of standard syntax features that can be plugged in optionally:
 
 Name | Syntax
 ---|---
-`operators/core.js` | `a(b,c)`, `(a,(b,(c)))`
-`operators/access.js` | `a.b`, `a[b]`
-`operators/arithmetic.js` | `a+b`, `a-b`, `a/b`, `a*b`, `a%b`
-`operators/bitwise.js` | `a|b`, `a&b`, `a^b`, `~a`
-`operators/logical.js` | `a&&b`, `a||b`, `a??b`
-`operators/assignment.js` | `a=b`, `a-=b`, `a+=b`, ...
-`opeators/comparison.js` | `a==b`, `a!=b`, ...
-`opeators/increment.js` | `a++`, `a--`, `--a`, `++a`
-`opeators/ternary.js` |
-`opeators/special.js` |
+`./feature/call.js` | `a(b,c+d)`
+`./feature/access.js` | `a.b`, `a[b]`
+`./feature/add.js` | `a+b`, `a-b`, `a/b`, `a*b`, `a%b`
+`./feature/mult.js` | `a/b`, `a*b`, `a%b`
+`./feature/bitwise.js` | `a|b`, `a&b`, `a^b`
+`./feature/logical.js` | `a&&b`, `a||b`
+`./feature/assignment.js` | `a=b`, `a-=b`, `a+=b`, ...
+`./feature/comparison.js` | `a==b`, `a!=b`, ...
+`./feature/increment.js` | `a++`, `a--`, `--a`, `++a`
+`./feature/ternary.js` | `a ? b : c`
+`./feature/special.js` |
+
+Just import required feature to register it `import 'subscript/feature/ternary.s'`.
 
 Custom operators/tokens can be defined via:
 
@@ -121,8 +117,8 @@ operator('===', (a, b) => ctx => ctx[a]===ctx[b])
 operator('!==', (a, b) => ctx => ctx[a]!==ctx[b])
 
 // add boolean literals
-token('true', 20, prev => ['',true])
-token('false', 20, prev => ['',false])
+token('true', 20, prev => [,true])
+token('false', 20, prev => [,false])
 operator('', boolNode => ctx => boolNode[1])
 
 // add simple arrow functions
@@ -160,7 +156,7 @@ tree // ['+', ['.', 'a', 'b'], 'c']
 
 // compile tree to evaluable function
 fn = compile(tree)
-fn({a:{b:1}, c:2}) // 3
+fn({ a: {b: 1}, c: 2 }) // 3
 ```
 
 ## Syntax Tree
@@ -176,7 +172,7 @@ AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/fri
 ```js
 import { compile } from 'subscript.js'
 
-const fn = compile(['+', ['*', 'min', ['',60]], ['','sec']])
+const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 
 fn({min: 5}) // min*60 + "sec" == "300sec"
 ```

@@ -3,6 +3,7 @@
  */
 import './feature/number.js'
 import './feature/string.js'
+import './feature/call.js'
 import './feature/access.js'
 import './feature/group.js'
 import './feature/prefix.js'

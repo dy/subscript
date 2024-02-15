@@ -3,7 +3,7 @@ import { operator, compile, access } from "../src/compile.js"
 import { PREC_POSTFIX } from "../src/const.js"
 
 let inc, dec
-token('++', PREC_POSTFIX, a => a ? ['-', ['++', a], ['', 1]] : ['++', expr(PREC_POSTFIX - 1)])
+token('++', PREC_POSTFIX, a => a ? ['-', ['++', a], [, 1]] : ['++', expr(PREC_POSTFIX - 1)])
 operator('++', inc = (a, b) =>
   access(a,
     // ++a, ++((a))
@@ -15,7 +15,7 @@ operator('++', inc = (a, b) =>
   )
 )
 
-token('--', PREC_POSTFIX, a => a ? ['+', ['--', a], ['', 1]] : ['--', expr(PREC_POSTFIX - 1)])
+token('--', PREC_POSTFIX, a => a ? ['+', ['--', a], [, 1]] : ['--', expr(PREC_POSTFIX - 1)])
 operator('--', dec = (a, b) => (
   // --a, --a.b, --a[b]
   access(a, (_, path, ctx) => --ctx[path], (obj, path, ctx) => --obj(ctx)[path], (obj, path, ctx) => --obj(ctx)[path(ctx)])

@@ -7,15 +7,15 @@ import { CPAREN, COLON, PREC_ASSIGN, PREC_PREFIX, PREC_OR, PREC_ACCESS, PREC_COM
 // register subscript operators set
 import './subscript.js'
 import './feature/comment.js'
+import './feature/ternary.js'
+import './feature/bool.js'
+import './feature/array.js'
+import './feature/object.js'
 
 // operators
 // set('===', PREC_EQ, (a, b) => a === b)
 // set('!==', PREC_EQ, (a, b) => a !== b)
 set('~', PREC_PREFIX, (a) => ~a)
-
-// ?:
-token('?', PREC_ASSIGN, (a, b, c) => a && (b = expr(PREC_ASSIGN, COLON)) && (c = expr(PREC_ASSIGN + 1), ['?', a, b, c]))
-operator('?', (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx)))
 
 set('??', PREC_OR, (a, b) => a ?? b)
 
@@ -49,37 +49,14 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
 set('in', PREC_COMP, (a, b) => a in b)
 
 // literals
-token('null', 20, a => a ? err() : ['', null])
-token('true', 20, a => a ? err() : ['', true])
-token('false', 20, a => a ? err() : ['', false])
-// token('undefined', 20, a => a ? err() : ['', undefined])
-// token('NaN', 20, a => a ? err() : ['', NaN])
+token('null', 20, a => a ? err() : [, null])
+// token('undefined', 20, a => a ? err() : [, undefined])
+// token('NaN', 20, a => a ? err() : [, NaN])
 
-set(';', -1, (...args) => args[args.length - 1])
 
 // right order
 // '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
 set('**', -PREC_EXP, (a, b) => a ** b)
-
-// [a,b,c]
-token('[', 20, (a) => !a && ['[', expr(0, 93) || ''])
-operator('[', (a, b) => !b && (
-  !a ? () => [] : // []
-    a[0] === ',' ? (a = a.slice(1).map(compile), ctx => a.map(a => a(ctx))) : // [a,b,c]
-      (a = compile(a), ctx => [a(ctx)]) // [a]
-))
-
-// {a:1, b:2, c:3}
-token('{', 20, a => !a && (['{', expr(0, 125) || '']))
-operator('{', (a, b) => (
-  !a ? ctx => ({}) : // {}
-    a[0] === ',' ? (a = a.slice(1).map(compile), ctx => Object.fromEntries(a.map(a => a(ctx)))) : // {a:1,b:2}
-      a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
-        (b = compile(a), ctx => ({ [a]: b(ctx) }))
-))
-
-token(':', 1.1, (a, b) => (b = expr(1.1) || err(), [':', a, b]))
-operator(':', (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)]))
 
 export default subscript
 export * from './subscript.js'

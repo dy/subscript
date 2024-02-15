@@ -8,7 +8,7 @@ import { PREC_MULT } from '../src/const.js'
 test('parse: basic', t => {
   is(parse('a()'), ['(', 'a', ''])
   // is(parse('1 + 2 + 3'), ['+', '1', '2', '3'])
-  is(parse('1 + 2 + 3'), ['+', ['+', ['', 1], ['', 2]], ['', 3]])
+  is(parse('1 + 2 + 3'), ['+', ['+', [, 1], [, 2]], [, 3]])
   is(parse('a + b * c'), ['+', 'a', ['*', 'b', 'c']])
   is(parse('a * b + c'), ['+', ['*', 'a', 'b'], 'c'])
   is(parse('a + b * c + d'), ['+', ['+', 'a', ['*', 'b', 'c']], 'd'])

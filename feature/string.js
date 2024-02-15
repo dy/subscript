@@ -10,7 +10,7 @@ const escape = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' },
       else str += skip()
     }
     skip() || err('Bad string')
-    return ['', str]
+    return [, str]
   }
 
 

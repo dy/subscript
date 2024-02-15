@@ -4,6 +4,8 @@ export const
   CPAREN = 41,
   OBRACK = 91,
   CBRACK = 93,
+  OBRACE = 123,
+  CBRACE = 125,
   SPACE = 32,
   COLON = 58,
   DQUOTE = 34,
@@ -35,4 +37,4 @@ export const
   PREC_POSTFIX = 15,
   PREC_ACCESS = 17,
   PREC_GROUP = 18,
-  PREC_MAX = 20
+  PREC_TOKEN = 20
