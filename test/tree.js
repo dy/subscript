@@ -3,6 +3,7 @@
 
 import test, { is, any, throws } from 'tst'
 import { parse, binary, nary, unary, token, skip } from '../subscript.js'
+import { PREC_MULT } from '../src/const.js'
 
 test('parse: basic', t => {
   is(parse('a()'), ['(', 'a', ''])
@@ -238,8 +239,8 @@ test('parse: non-existing operators', t => {
   throws(() => parse('a -> b'))
 })
 
-test.skip('parse: low-precedence unary', t => {
-  unary('&', 13)
+test('parse: low-precedence unary', t => {
+  unary('&', PREC_MULT - 0.5)
   is(parse('&a+b*c'), ['+', ['&', 'a'], ['*', 'b', 'c']])
   is(parse('&a*b+c'), ['+', ['&', ['*', 'a', 'b']], 'c'])
 })

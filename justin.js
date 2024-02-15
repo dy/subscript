@@ -1,12 +1,11 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
-import { skip, cur, idx, err, expr, lookup, token, binary } from './src/parse.js'
+import { skip, cur, idx, err, expr, lookup, token, binary, unary } from './src/parse.js'
 import compile, { operator } from './src/compile.js'
 import subscript, { set } from './src/index.js'
-import { PREC_ASSIGN, PREC_PREFIX, PREC_OR, PREC_ACCESS, PREC_COMP, PREC_EXP } from './src/const.js'
+import { CPAREN, COLON, PREC_ASSIGN, PREC_PREFIX, PREC_OR, PREC_ACCESS, PREC_COMP, PREC_EXP, PREC_GROUP } from './src/const.js'
 
 // register subscript operators set
 import './subscript.js'
-
 
 // operators
 // set('===', PREC_EQ, (a, b) => a === b)
@@ -14,17 +13,19 @@ import './subscript.js'
 set('~', PREC_PREFIX, (a) => ~a)
 
 // ?:
-token('?', PREC_ASSIGN, (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
+token('?', PREC_ASSIGN, (a, b, c) => a && (b = expr(PREC_ASSIGN, COLON)) && (c = expr(PREC_ASSIGN + 1), ['?', a, b, c]))
 operator('?', (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx)))
 
 set('??', PREC_OR, (a, b) => a ?? b)
 
 // a?.[, a?.( - postfix operator
 token('?.', PREC_ACCESS, a => a && ['?.', a])
+// a ?.
 operator('?.', a => (a = compile(a), ctx => a(ctx) || (() => { })))
 
 // a?.b, a?.() - optional chain operator
-token('?.', PREC_ACCESS, (a, b) => a && (b = expr(PREC_ACCESS), !b?.map) && (b ? ['?.', a, b] : ['?.', a, b]))
+token('?.', PREC_ACCESS, (a, b) => a && (b = expr(PREC_ACCESS), !b?.map) && ['?.', a, b])
+// a ?. b
 operator('?.', (a, b) => b && (a = compile(a), ctx => a(ctx)?.[b]))
 
 // a?.x() - keep context, but watch out a?.()
@@ -35,12 +36,13 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
   // a?.()
   !a[2] && (optional = true, a = a[1]),
   // a?.['x']?.()
-  a[0] === '[' ? (path = compile(a[2])) : (path = ctx => a[2]),
+  a[0] === '[' ? (path = compile(a[2])) : (path = () => a[2]),
   (container = compile(a[1]), optional ?
     ctx => (container(ctx)?.[path(ctx)]?.(...args(ctx))) :
     ctx => (container(ctx)?.[path(ctx)](...args(ctx)))
   )
 ))
+
 
 // a in b
 set('in', PREC_COMP, (a, b) => a in b)

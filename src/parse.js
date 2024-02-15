@@ -7,13 +7,12 @@ export let idx, cur,
   parse = s => (idx = 0, cur = s, s = expr(), cur[idx] ? err() : s || ''),
 
   err = (msg = 'Bad syntax',
-    frag = cur[idx],
     lines = cur.slice(0, idx).split('\n'),
     last = lines.pop()
   ) => {
     let before = cur.slice(idx - 108, idx).split('\n').pop()
-    let after = cur.slice(idx + 1, idx + 108).split('\n').shift()
-    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${before + frag + after}\``, 'font-weight: bold')
+    let after = cur.slice(idx, idx + 108).split('\n').shift()
+    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${before + after}\``, 'font-weight: bold')
   },
 
   skip = (is = 1, from = idx, l) => {

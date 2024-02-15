@@ -5,6 +5,7 @@ export const
   OBRACK = 91,
   CBRACK = 93,
   SPACE = 32,
+  COLON = 58,
   DQUOTE = 34,
   QUOTE = 39,
   _0 = 48,

@@ -3,8 +3,8 @@
  */
 import './feature/number.js'
 import './feature/string.js'
-import './feature/group.js'
 import './feature/access.js'
+import './feature/group.js'
 import './feature/prefix.js'
 import './feature/postfix.js'
 import './feature/mult.js'

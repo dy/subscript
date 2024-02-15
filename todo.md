@@ -492,14 +492,15 @@
   + shorter exports
   + easier extending dialects - no need to import parse/eval internals
 
-* [ ] Modularize, make pluggable groups
+* [x] Modularize, make pluggable groups
   + standardizes base for various languages
+
 * [ ] Recognize false, 0 and '' as results of successfully parsed expressions.
   * [ ] Make `[,'path']` for prop access, and `'value'` a direct primitive
 
 * [ ] Flip increments `[+=, a, 1]` for `++a`, and `[++, a]` for `a++`
 * [ ] Untangle prefix/postfix order
-* [ ] See if we can get rid of set
+* [ ] See if we can get rid of `set`
 
 
 ## Backlog

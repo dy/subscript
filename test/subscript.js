@@ -1,6 +1,7 @@
 import test, { is, throws, same } from 'tst'
 import parse, { skip, expr, err, cur, idx } from '../src/parse.js'
 import subscript, { set, binary, operator, compile, token } from '../subscript.js'
+import { PREC_MULT } from '../src/const.js'
 
 const evalTest = (str, ctx = {}) => {
   let ss = subscript(str), fn = new Function(...Object.keys(ctx), 'return ' + str)
@@ -424,7 +425,7 @@ test('ext: object', t => {
 })
 
 test('ext: justin', async t => {
-  const { default: script } = await import('../justin.js')
+  await import('../justin.js')
   evalTest(`"abcd" + 'efgh'`)
   is(subscript('a;b')({ a: 1, b: 2 }), 2)
   evalTest('{x:~1, "y":2**2}["x"]', {})
@@ -442,6 +443,8 @@ test('ext: justin', async t => {
   evalTest('a?.()', { a: v => 1 })
   console.log('---a?.valueOf()')
   evalTest('a?.valueOf()', { a: true })
+  console.log('---a?.b?.valueOf?.()')
+  evalTest('a?.b?.valueOf?.()', { a: { b: true } })
   console.log('---a?.valueOf?.()')
   evalTest('a?.valueOf?.()', { a: true })
   // FIXME: these
@@ -553,7 +556,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  set('&', 13, (a) => ~a)
+  set('&', PREC_MULT - 0.5, (a) => ~a)
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
 })
