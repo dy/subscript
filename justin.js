@@ -15,7 +15,6 @@ import './feature/object.js'
 // operators
 // set('===', PREC_EQ, (a, b) => a === b)
 // set('!==', PREC_EQ, (a, b) => a !== b)
-set('~', PREC_PREFIX, (a) => ~a)
 
 set('??', PREC_OR, (a, b) => a ?? b)
 
@@ -34,8 +33,10 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
   args = b == '' ? () => [] : // a()
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(a => a(ctx))) : // a(b,c)
       (b = compile(b), ctx => [b(ctx)]), // a(b)
+
   // a?.()
   !a[2] && (optional = true, a = a[1]),
+
   // a?.['x']?.()
   a[0] === '[' ? (path = compile(a[2])) : (path = () => a[2]),
   (container = compile(a[1]), optional ?
@@ -43,7 +44,6 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
     ctx => (container(ctx)?.[path(ctx)](...args(ctx)))
   )
 ))
-
 
 // a in b
 set('in', PREC_COMP, (a, b) => a in b)
@@ -53,9 +53,6 @@ token('null', 20, a => a ? err() : [, null])
 // token('undefined', 20, a => a ? err() : [, undefined])
 // token('NaN', 20, a => a ? err() : [, NaN])
 
-
-// right order
-// '**', (a,prec,b=expr(PREC_EXP-1)) => ctx=>a(ctx)**b(ctx), PREC_EXP,
 set('**', -PREC_EXP, (a, b) => a ** b)
 
 export default subscript

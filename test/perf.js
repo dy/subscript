@@ -28,9 +28,9 @@ test.skip('expr-eval', async t => {
 })
 
 test('subscript', async t => {
-  const { default: parse } = await import('../subscript.js');
+  const { parse, compile } = await import('../subscript.js');
 
-  let ast = parse(src(0))
+  let ast = compile(parse(src(0)))
   // console.log(ast);
   is(ast(args), result);
 
@@ -73,9 +73,9 @@ test('jsep', async t => {
 })
 
 test('subscript x2', async t => {
-  const { default: parse } = await import('../subscript.js');
+  const { parse, compile } = await import('../subscript.js');
 
-  let ast = parse(src(0))
+  let ast = compile(parse(src(0)))
   // console.log(ast);
   is(ast(args), result);
 
@@ -155,9 +155,9 @@ test.skip('jsep x3', async t => {
 })
 
 test('justin', async t => {
-  const { default: parse } = await import('../justin.js');
+  const { parse, compile } = await import('../justin.js');
 
-  let evaluate = parse(src(0))
+  let evaluate = compile(parse(src(0)))
   is(evaluate(args), result);
 
   console.time('justin')

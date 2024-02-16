@@ -192,7 +192,6 @@ test('intersecting binary', t => {
   sameAsJs('a && b', { a: true, b: true })
 
   sameAsJs('a >> b', { a: 1234, b: 2 })
-  sameAsJs('a >>> b', { a: 1234, b: 2 })
 })
 test('signs', t => {
   sameAsJs('+-1', { a: 123 })
@@ -425,7 +424,7 @@ test('ext: array', async t => {
 })
 
 
-test.only('ext: justin', async t => {
+test('ext: justin', async t => {
   await import('../justin.js')
   sameAsJs(`"abcd" + 'efgh'`)
   is(subscript('a;b')({ a: 1, b: 2 }), 2)
@@ -488,6 +487,11 @@ test('assignment', async t => {
   let state5 = { x: { y: 1 } }
   fn5(state5)
   is(state5, { x: { y: 1 }, y: 1 })
+
+  const fn6 = subscript('x.y += 1; z -= 2; w *= 2;')
+  let state6 = { x: { y: 1 }, z: 1, w: 2 }
+  fn6(state6)
+  is(state6, { x: { y: 2 }, z: -1, w: 4 })
 })
 
 test('ext: comments', async t => {

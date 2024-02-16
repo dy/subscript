@@ -20,4 +20,4 @@ export const set = (op, prec, fn) => (
       )
 )
 
-export default s => (s = parse(s), ctx => (s.call ? s : (s = compile(s)))(ctx));
+export default s => compile(parse(s));

@@ -28,131 +28,59 @@ fn({ a: { b:1 }, c: 5, Math })
 // 3
 ```
 
-## Operators
+## Language
 
-Default _subscript_ provides common syntax, supported by all main languages: _JavaScript_,_C_, _C++_, _Java_, _Rust_, _Go_, _Ruby_, _C#_,  _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.
+Default _subscript_ provides common syntax, supported by all main languages: _JavaScript_,_C_, _C++_, _Java_, _Rust_, _Go_, _Ruby_, _C#_,  _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.:
 
-<small>↑ precedence order</small>
-
-* `( a, b, c )`
 * `a.b`, `a[b]`, `a(b)`
-* `a++`, `a--`
-* `!a`, `+a`, `-a`, `++a`, `--a`
+* `a++`, `a--`, `++a`, `--a`
 * `a * b`, `a / b`, `a % b`
-* `a + b`, `a - b`
-* `a << b`, `a >> b`, `a >>> b`
-* `a < b`, `a <= b`, `a > b`, `a >= b`
-* `a == b`, `a != b`
-* `a & b`
-* `a ^ b`
-* `a | b`
-* `a && b`
-* `a || b`
-* `a = b`, `a [+-*/%&^|]= b`
-* `a , b`, `a; b;`
+* `+a`, `-a`, `a + b`, `a - b`
+* `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b`
+* `~a`, `a & b`, `a ^ b`, `a | b`, `a << b`, `a >> b`
+* `!a`, `a && b`, `a || b`
+* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`
+* `(a, (b))`, `a; b;`
 * `"abc"`, `'abc'`
 * `0.1`, `1.2e+3`
 
+### Justin
 
-## Justin
-
-_Justin_ = _JSON_ + _Expressions_, a minimal JS subset - handy for templating languages etc.<br/>
+_Justin_ = _JSON_ + _Expressions_, a minimal JS subset - handy for template expressions etc.<br/>
 See original [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
 
 It extends _subscript_ with:
 
-+ `**` exponentiation operator (right-assoc)
-+ `~` bit inversion operator
-+ `?:` ternary operator
-+ `?.` optional chain operator
-+ `[...]` Array literal
-+ `{...}` Object literal
-+ `in` binary
-+ `//`, `/* */` comments
++ `a ** b` exponentiation (right-assoc)
++ `a ? b : c` ternary operator
++ `a?.b` optional chain operator
++ `[a, b]` Array literal
++ `{a: b}` Object literal
++ `a in b` binary
++ `// foo`, `/* bar */` comments
 + `true`, `false`, `null` literals
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 
 ```js
-import jstin from 'subscript/justin.js'
+import jstin from './justin.js'
 
 let xy = jstin('{ x: 1, "y": 2+2 }["x"]')
 xy()  // 1
 ```
 
-## Extending
-
-_Subscript_ defines set of standard syntax features that can be plugged in optionally:
-
-Name | Syntax
----|---
-`./feature/call.js` | `a(b,c+d)`
-`./feature/access.js` | `a.b`, `a[b]`
-`./feature/add.js` | `a+b`, `a-b`, `a/b`, `a*b`, `a%b`
-`./feature/mult.js` | `a/b`, `a*b`, `a%b`
-`./feature/bitwise.js` | `a|b`, `a&b`, `a^b`
-`./feature/logical.js` | `a&&b`, `a||b`
-`./feature/assignment.js` | `a=b`, `a-=b`, `a+=b`, ...
-`./feature/comparison.js` | `a==b`, `a!=b`, ...
-`./feature/increment.js` | `a++`, `a--`, `--a`, `++a`
-`./feature/ternary.js` | `a ? b : c`
-`./feature/special.js` |
-
-Just import required feature to register it `import 'subscript/feature/ternary.s'`.
-
-Custom operators/tokens can be defined via:
-
-* `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
-* `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
-* `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
-* `token(str, precedence, prevNode => curNode)` − register custom token or literal. Function takes last token and returns tree node.
-* `operator(str, (a, b) => ctx => result)` − register evaluator for operator. Function takes node arguments and returns evaluator function.
-
-```js
-import script, { operator, unary, binary, token } from './subscript.js'
-
-// add identity operators with precedence 9
-binary('===', 9), binary('!==', 9)
-operator('===', (a, b) => ctx => ctx[a]===ctx[b])
-operator('!==', (a, b) => ctx => ctx[a]!==ctx[b])
-
-// add boolean literals
-token('true', 20, prev => [,true])
-token('false', 20, prev => [,false])
-operator('', boolNode => ctx => boolNode[1])
-
-// add simple arrow functions
-binary('=>', 2)
-operator('=>',
-  (a, b) => {
-    a = a[0] === '(' ? a[1] : a
-    const names = a == '' ? [] : // () =>
-      a[0] === ',' ? a.slice(1) : // (a,c) =>
-      [a] // a =>
-
-    b = compile(b)
-
-    return (ctx) => {
-      const scope = Object.create(ctx)
-      // evaluator
-      return (...args) => (names.map((name, i) => scope[name] = args[i]), b(scope))
-    }
-  }
-)
-```
-
-See [`/operators``](./operators) for examples of different operators.
-
 
 ## Parse / Compile
 
-Subscript exposes `./src/parse.js` and `./src/compile.js` entries. <br/>
-Parser builds AST, compiler converts it to evaluable function.
+Subscript exposes `parse` and `compile` functions. <br/>
+Parser builds AST, compiler creates evaluator function.
 
 ```js
+import { parse, compile } from 'subscript'
+
 // parse expression
-let tree = parse('a.b + c')
-tree // ['+', ['.', 'a', 'b'], 'c']
+let tree = parse('a.b + c - 1')
+tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
 
 // compile tree to evaluable function
 fn = compile(tree)
@@ -177,6 +105,71 @@ const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
 ```
 
+## Extending
+
+_Subscript_ defines set of pluggable syntax features, that can be used as basic blocks for designing a dialect:
+
+Name | Syntax
+---|---
+`./feature/access.js` | `a.b`, `a[b]`
+`./feature/add.js` | `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
+`./feature/array.js` | `[a, [b, c]]`
+`./feature/assign.js` | `a=b`
+`./feature/bitwise.js` | `~a`, `a|b`, `a&b`, `a^b`
+`./feature/bool.js` | `true`, `false`
+`./feature/call.js` | `a(b, c+d)`
+`./feature/comment.js` | `// a`, `/* b */`
+`./feature/compare.js` | `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
+`./feature/group` | `(a, (b, c));`
+`./feature/increment.js` | `a++`, `a--`, `--a`, `++a`
+`./feature/logic.js` | `!a`, `a&&b`, `a||b`
+`./feature/mult.js` | `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
+`./feature/number.js` | `1.23`, `4e-5`
+`./feature/object.js` | `{a: {"b": c}}`
+`./feature/string.js` | `'abc'`, `"def"`
+`./feature/ternary.js` | `a ? b : c`
+
+To add a feature, just import it: `import 'subscript/feature/ternary.js'`.
+
+### Customizing
+
+_Subscript_ provides API to define custom syntax:
+
+* `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
+* `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
+* `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
+* `token(str, precedence, prevNode => curNode)` − register custom token or literal. Function takes last token and returns tree node.
+* `operator(str, (a, b) => ctx => result)` − register evaluator for an operator. Function takes node arguments and returns evaluator function.
+
+```js
+import script, { compile, operator, unary, binary, token } from './subscript.js'
+
+// add identity operators with precedence 9
+binary('===', 9), binary('!==', 9)
+operator('===', (a, b) => ctx => ctx[a]===ctx[b])
+operator('!==', (a, b) => ctx => ctx[a]!==ctx[b])
+
+// add JS literals
+token('undefined', 20, a => a ? err() : [, undefined])
+token('NaN', 20, a => a ? err() : [, NaN])
+
+// add logical OR assignment
+binary('||=', PREC_ASSIGN)
+operator('||=', (a, b) => {
+  let obj, path, val = compile(b)
+  // a ||= b
+  typeof a === 'string' ? ctx => ctx[a] ||= val(ctx) :
+  // a.b ||= c
+  a[0] === '.' ? (obj = compile(a[1]), path = a[2], ctx => obj(ctx)[path] ||= val(ctx)) :
+  // a[b] ||= c
+  a[0] === '[' ? (obj = compile(a[1]), path = compile(a[2]), ctx => obj(ctx)[path(ctx)] ||= val(ctx))
+})
+```
+
+See [`./feature/*`](./feature) for examples.
+
+
+
 <!--
 ## Ideas
 
@@ -190,128 +183,26 @@ template-parts proposal
 </template>
 ```
 
-// a.b.c
-// (node, c) => c === PERIOD ? (index++, space(), ['.', node, '"'+id()+'"']) : node,
-
-// a[b][c]
-// (node, c) => c === OBRACK ? (index++, node=['.', node, expr(CBRACK)], index++, node) : node,
-
-// a(b)(c)
-// (node, c, arg) => c === OPAREN ? (
-//   index++, arg=expr(CPAREN),
-//   node = Array.isArray(arg) && arg[0]===',' ? (arg[0]=node, arg) : arg == null ? [node] : [node, arg],
-//   index++, node
-// ) : node,
-
-<details>
-  <summary>Keyed arrays <code>[a:1, b:2, c:3]</code></summary>
-
-  ```js
-
-  ```
-</details>
-
-<details>
-  <summary>`7!` (factorial)</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`5s`, `5rem` (units)</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`?`, `?.`, `??`</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`arrᵀ` - transpose,</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`int 5` (typecast)</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`$a` (param expansion)</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`1 to 10 by 2`</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`a if b else c`</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`a, b in c`</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>`a.xyz` swizzles</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>vector operators</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>set operators</summary>
-
-  ```js
-  ```
-
-</details>
-<details>
-  <summary>polynomial operators</summary>
-
-  ```js
-  ```
-
-</details>
+* Keyed arrays <code>[a:1, b:2, c:3]</code>
+* 7!` (factorial)
+* `5s`, `5rem` (units)
+* `?`, `?.`, `??`
+* `arrᵀ` - transpose
+* `int 5` (typecast)
+* `$a` (param expansion)
+* `1 to 10 by 2`
+* `a if b else c`
+* `a, b in c`
+* `a.xyz` swizzles
+* vector operators
+* set operators
+* polynomial operators
 
 like versions, units, hashes, urls, regexes etc
 
 2a as `2*a`
 
 string interpolation ` ${} 1 ${} `
-
-keyed arrays? [a:1, b:2, c:3]
-
-Examples: sonr, template-parts, neural-chunks
 -->
 
 ## Performance
@@ -325,11 +216,10 @@ Subscript shows good performance within other evaluators. Example expression:
 Parse 30k times:
 
 ```
-es-module-lexer: 50ms 🥇
-subscript: ~150 ms 🥈
+subscript: ~150 ms 🥇
 justin: ~183 ms
-jsep: ~270 ms 🥉
-jexpr: ~297 ms
+jsep: ~270 ms 🥈
+jexpr: ~297 ms 🥉
 mr-parser: ~420 ms
 expr-eval: ~480 ms
 math-parser: ~570 ms

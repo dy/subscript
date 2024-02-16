@@ -95,7 +95,6 @@ test('parse: intersecting binary', t => {
   is(parse('a && b'), ['&&', 'a', 'b'], 'a&&b')
 
   is(parse('a >> b'), ['>>', 'a', 'b'], 'a>>b')
-  is(parse('a >>> b'), ['>>>', 'a', 'b'], 'a>>>b')
 })
 test('parse: signs', t => {
   is(parse('+-x'), ['+', ['-', 'x']])

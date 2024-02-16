@@ -6,14 +6,6 @@ import { PREC_ASSIGN } from "../src/const.js";
 binary('=', PREC_ASSIGN, true)
 operator('=', (a, b) => (
   b = compile(b),
-  access(a,
-    // a = x, ((a)) = x
-    (_, path, ctx) => ctx[path] = b(ctx),
-    // a.b = x
-    (container, path, ctx) => container(ctx)[path] = b(ctx),
-    // a['b'] = x
-    (container, path, ctx) => container(ctx)[path(ctx)] = b(ctx),
-    // !a = x
-    () => err('Bad assignment left side')
-  )
+  // a = x, ((a)) = x, a.b = x, a['b'] = x
+  access(a, (container, path, ctx) => container(ctx)[path(ctx)] = b(ctx))
 ))
