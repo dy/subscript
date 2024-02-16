@@ -115,47 +115,15 @@ import script, { compile, operator, unary, binary, token } from './subscript.js'
 
 // add identity operators with precedence 9
 binary('===', 9), binary('!==', 9)
-operator('===', (a, b) => ctx => ctx[a]===ctx[b])
-operator('!==', (a, b) => ctx => ctx[a]!==ctx[b])
+operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx))
+operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx))
 
 // add JS literals
 token('undefined', 20, a => a ? err() : [, undefined])
 token('NaN', 20, a => a ? err() : [, NaN])
-
-// add logical OR assignment
-binary('||=', PREC_ASSIGN)
-operator('||=', (a, b) => {
-  let obj, path, val = compile(b)
-  // a ||= b
-  typeof a === 'string' ? ctx => ctx[a] ||= val(ctx) :
-  // a.b ||= c
-  a[0] === '.' ? (obj = compile(a[1]), path = a[2], ctx => obj(ctx)[path] ||= val(ctx)) :
-  // a[b] ||= c
-  a[0] === '[' ? (obj = compile(a[1]), path = compile(a[2]), ctx => obj(ctx)[path(ctx)] ||= val(ctx))
-})
 ```
 
-Common syntax features are defined under [`./feature/*`](./feature) and can be used as language building blocks:
-
-* [`access`](./feature/access.js) - `a.b`, `a[b]`
-* [`add`](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
-* [`array`](./feature/array.js) - `[a, [b, c]]`
-* [`assign`](./feature/assign.js) - `a=b`
-* [`bitwise`](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`
-* [`bool`](./feature/bool.js) - `true`, `false`
-* [`call`](./feature/call.js) - `a(b, c+d)`
-* [`comment`](./feature/comment.js) - `// a`, `/* b */`
-* [`compare`](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
-* [`group`](./feature/group) -`(a, (b, c));`
-* [`increment`](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
-* [`logic`](./feature/logic.js) - `!a`, `a&&b`, `a||b`
-* [`mult`](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
-* [`number`](./feature/number.js) - `1.23`, `4e-5`
-* [`object`](./feature/object.js) - `{a: {"b": c}}`
-* [`string`](./feature/string.js) - `'abc'`, `"def"`
-* [`ternary`](./feature/ternary.js) - `a ? b : c`
-
-
+See [`./feature/*`](./feature) for examples.
 
 
 <!--
