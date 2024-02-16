@@ -11,7 +11,7 @@ Used for:
 * custom DSL (eg. [mell](https://github.com/dy/lino)) <!-- uneural -->
 * preprocessors (eg. [prepr](https://github.com/dy/prepr))
 
-_Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_), [best in class performance](#performance) and wide test coverage.
+_Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_), good [performance](#performance) and wide test coverage.
 
 
 ## Usage
@@ -29,7 +29,7 @@ fn({ a: { b:1 }, c: 5, Math })
 
 ## Operators
 
-_Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (same for _JavaScript_, _C_/_C++_, _Java_, _Rust_, _Swift_, _Kotlin_ etc.):
+_Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (shared by _JavaScript_,_C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
 
 * `a.b`, `a[b]`, `a(b)`
 * `a++`, `a--`, `++a`, `--a`
@@ -45,7 +45,7 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 ### Justin
 
-_Justin_ is minimal JS subset, _JSON_ with expressions (see [thread](https://github.com/endojs/Jessie/issues/66)). It extends _subscript_ with:
+_Justin_ is minimal JS subset, _JSON_ + _Expressions_ (see [thread](https://github.com/endojs/Jessie/issues/66)). It extends _subscript_ with:
 
 + `a ** b` (right-assoc)
 + `a ? b : c`
@@ -115,8 +115,8 @@ import script, { compile, operator, unary, binary, token } from './subscript.js'
 
 // add identity operators with precedence 9
 binary('===', 9), binary('!==', 9)
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx))
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx))
+operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx)))
+operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx)))
 
 // add JS literals
 token('undefined', 20, a => a ? err() : [, undefined])
