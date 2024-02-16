@@ -1,9 +1,11 @@
-import { set } from '../src/index.js'
 import { PREC_EQ } from '../src/const.js'
+import { unary, binary } from "../src/parse.js"
+import { operator, compile } from "../src/compile.js"
 
-set('==', PREC_EQ, (a, b) => a == b)
-set('!=', PREC_EQ, (a, b) => a != b)
-set('>', PREC_EQ, (a, b) => a > b)
-set('>=', PREC_EQ, (a, b) => a >= b)
-set('<', PREC_EQ, (a, b) => a < b)
-set('<=', PREC_EQ, (a, b) => a <= b)
+
+binary('==', PREC_EQ), operator('==', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) == b(ctx)))
+binary('!=', PREC_EQ), operator('!=', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) != b(ctx)))
+binary('>', PREC_EQ), operator('>', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) > b(ctx)))
+binary('<', PREC_EQ), operator('<', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) < b(ctx)))
+binary('>=', PREC_EQ), operator('>=', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) >= b(ctx)))
+binary('<=', PREC_EQ), operator('<=', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) <= b(ctx)))

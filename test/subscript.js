@@ -1,6 +1,6 @@
 import test, { is, throws, same } from 'tst'
-import parse, { skip, expr, err, cur, idx } from '../src/parse.js'
-import subscript, { set, binary, operator, compile, token } from '../subscript.js'
+import parse, { skip, expr, err, cur, idx, unary } from '../src/parse.js'
+import subscript, { binary, operator, compile, token } from '../subscript.js'
 import { PREC_MULT } from '../src/const.js'
 
 // test result to be same as js
@@ -82,9 +82,8 @@ test('basic', t => {
   sameAsJs('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', { a: { b: 1 }, x: { y: { z: v => v } }, c: { 456: 789 }, n: 1 })
 })
 
-test('right-assoc', t => {
-  // **
-  set('**', -14, (a, b) => a ** b, true)
+test('right-assoc', async t => {
+  await import('../feature/pow.js');
 
   sameAsJs('1 + 2 * 3 ** 4 + 5', {})
   sameAsJs(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
@@ -101,7 +100,7 @@ test('readme', t => {
   sameAsJs(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
   sameAsJs(`min * 60 + "sec"`, { min: 5 })
 
-  set('|', 6, (a, b) => a?.pipe?.(b) || (a | b)) // overload pipe operator
+  binary('|', 6), operator('|', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
   token('=>', 2, (args, body) => (body = expr(), ctx => (...args) => body())) // single-arg arrow function parser
 
   let evaluate = subscript(`
@@ -118,12 +117,8 @@ test('readme', t => {
     interval: arg => ({ pipe: b => console.log('interval to', b) }),
   })
 
-
-  // add ~ unary operator with precedence 15
-  set('~', 15, a => ~a)
-
   // add === binary operator
-  set('===', 9, (a, b) => a === b)
+  binary('===', 9), operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)))
 
   // add literals
   // set('true',20, [,a => ()=>true])
@@ -332,8 +327,8 @@ test('chains', t => {
   sameAsJs('a(1)(b)("c")', { a: v => w => z => v + w + z, b: 'b' })
 })
 
-test('ext: in operator', t => {
-  set('in', 10, (a, b) => a in b)
+test('ext: in operator', async t => {
+  await import('../feature/in.js')
 
   sameAsJs('inc in bin', { bin: { inc: 1 }, inc: 'inc' })
   sameAsJs('bin in inc', { inc: { bin: 1 }, bin: 'bin' })
@@ -564,7 +559,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  set('&', PREC_MULT - 0.5, (a) => ~a)
+  unary('&', PREC_MULT - 0.5), operator('&', (a) => (a = compile(a), ctx => ~a(ctx)))
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
 })

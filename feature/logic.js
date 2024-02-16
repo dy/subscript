@@ -1,7 +1,15 @@
-import { set } from '../src/index.js'
 import { PREC_LOR, PREC_LAND, PREC_PREFIX } from '../src/const.js';
+import { unary, binary, nary } from "../src/parse.js"
+import { operator, compile } from "../src/compile.js"
 
-set('!', PREC_PREFIX, a => !a)
+unary('!', PREC_PREFIX), operator('!', (a, b) => !b && (a = compile(a), ctx => !a(ctx)))
 
-set('||', PREC_LOR, (...args) => { let i = 0, v; for (; !v && i < args.length;) v = args[i++]; return v })
-set('&&', PREC_LAND, (...args) => { let i = 0, v = true; for (; v && i < args.length;) v = args[i++]; return v })
+nary('||', PREC_LOR), operator('||', (...args) => (
+  args = args.map(compile),
+  ctx => { let arg, res; for (arg of args) if (res = arg(ctx)) return res; return res }
+))
+
+nary('&&', PREC_LAND), operator('&&', (...args) => (
+  args = args.map(compile),
+  ctx => { let arg, res; for (arg of args) if (!(res = arg(ctx))) return res; return res }
+))

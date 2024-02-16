@@ -1,11 +1,10 @@
-import { set } from '../src/index.js'
 import { binary } from '../src/parse.js'
 import { operator, compile, access } from '../src/compile.js'
 import { PREC_MULT, PREC_ASSIGN } from '../src/const.js'
 
-set('*', PREC_MULT, (a, b) => a * b)
-set('/', PREC_MULT, (a, b) => a / b)
-set('%', PREC_MULT, (a, b) => a % b)
+binary('*', PREC_MULT), operator('*', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) * b(ctx)))
+binary('/', PREC_MULT), operator('/', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) / b(ctx)))
+binary('%', PREC_MULT), operator('%', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) % b(ctx)))
 
 binary('*=', PREC_ASSIGN, true)
 operator('*=', (a, b) => (

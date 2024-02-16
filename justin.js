@@ -1,12 +1,13 @@
 // justin lang https://github.com/endojs/Jessie/issues/66
 import { skip, cur, idx, err, expr, lookup, token, binary, unary } from './src/parse.js'
 import compile, { operator } from './src/compile.js'
-import subscript, { set } from './src/index.js'
 import { CPAREN, COLON, PREC_ASSIGN, PREC_PREFIX, PREC_OR, PREC_ACCESS, PREC_COMP, PREC_EXP, PREC_GROUP } from './src/const.js'
 
 // register subscript operators set
-import './subscript.js'
+import subscript from './subscript.js'
 import './feature/comment.js'
+import './feature/pow.js'
+import './feature/in.js'
 import './feature/ternary.js'
 import './feature/bool.js'
 import './feature/array.js'
@@ -15,8 +16,7 @@ import './feature/object.js'
 // operators
 // set('===', PREC_EQ, (a, b) => a === b)
 // set('!==', PREC_EQ, (a, b) => a !== b)
-
-set('??', PREC_OR, (a, b) => a ?? b)
+binary('??', PREC_OR), operator('??', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)))
 
 // a?.[, a?.( - postfix operator
 token('?.', PREC_ACCESS, a => a && ['?.', a])
@@ -45,15 +45,10 @@ operator('(', (a, b, container, args, path, optional) => (b != null) && (a[0] ==
   )
 ))
 
-// a in b
-set('in', PREC_COMP, (a, b) => a in b)
-
 // literals
 token('null', 20, a => a ? err() : [, null])
 // token('undefined', 20, a => a ? err() : [, undefined])
 // token('NaN', 20, a => a ? err() : [, NaN])
-
-set('**', -PREC_EXP, (a, b) => a ** b)
 
 export default subscript
 export * from './subscript.js'

@@ -499,10 +499,10 @@
   * [x] ~~Make `[,'path']` for prop access, and `'value'` a direct primitive~~ -> can't easily parse direct primitives without wrapping
 
 * [x] ~~Flip increments `[+=, a, 1]` for `++a`, and `[++, a]` for `a++`~~ -> nah, likely that's harder than ++a-1 (dealing with object cases)
-* [ ] Untangle prefix/postfix order
-* [ ] See if we can get rid of `set`
-* [ ] add assign operators
-* [ ] consolidate obj access cases in one function: +assign, +inc/dec, +=/-=, +call, ?. reuse similar chunk
+* [x] ~~Untangle prefix/postfix order~~ not existent anymore
+* [x] See if we can get rid of `set` -> yes, it makes code smaller & simpler
+* [x] add assign operators
+* [x] consolidate obj access cases in one function: +assign, +inc/dec, +=/-=, +call, ?. reuse similar chunk
 * [x] Make literals via `[,val]` (no need for empty string)
 
 ## Backlog

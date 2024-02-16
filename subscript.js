@@ -13,8 +13,10 @@ import './feature/bitwise.js'
 import './feature/compare.js'
 import './feature/logic.js'
 import './feature/assign.js'
+import compile from './src/compile.js'
+import parse from './src/parse.js'
 
 export * from './src/parse.js'
 export * from './src/compile.js'
-export * from './src/index.js'
-export { default } from './src/index.js'
+
+export default s => compile(parse(s))

@@ -1,13 +1,13 @@
-import { set } from '../src/index.js'
-import { binary } from '../src/parse.js'
+
+import { binary, unary } from '../src/parse.js'
 import { PREC_ADD, PREC_PREFIX, PREC_ASSIGN } from '../src/const.js'
 import { compile, access, operator } from '../src/compile.js'
 
-set('+', PREC_PREFIX, a => +a)
-set('-', PREC_PREFIX, a => -a)
+unary('+', PREC_PREFIX), operator('+', (a, b) => !b && (a = compile(a), ctx => +a(ctx)))
+unary('-', PREC_PREFIX), operator('-', (a, b) => !b && (a = compile(a), ctx => -a(ctx)))
 
-set('+', PREC_ADD, (a, b) => a + b)
-set('-', PREC_ADD, (a, b) => a - b)
+binary('+', PREC_ADD), operator('+', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) + b(ctx)))
+binary('-', PREC_ADD), operator('-', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) - b(ctx)))
 
 binary('+=', PREC_ASSIGN, true)
 operator('+=', (a, b) => (

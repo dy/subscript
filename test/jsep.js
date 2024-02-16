@@ -1,8 +1,24 @@
 import test, { is, throws } from 'tst'
-import script, { parse } from '../justin.js'
-import subscript, { set } from '../subscript.js'
+import script, { parse, nary, binary, unary, compile, operator } from '../justin.js'
 
-subscript.set = set
+// set any operator
+// right assoc is indicated by negative precedence (meaning go from right to left)
+export const set = (op, prec, fn) => (
+  !fn.length ? (
+    nary(op, Math.abs(prec), prec < 0),
+    operator(op, (...args) => (args = args.map(compile), ctx => fn(...args.map(arg => arg(ctx)))))
+  ) :
+    fn.length > 1 ? (
+      binary(op, Math.abs(prec), prec < 0),
+      operator(op,
+        (a, b) => b && (a = compile(a), b = compile(b), !a.length && !b.length ? (a = fn(a(), b()), () => a) : ctx => fn(a(ctx), b(ctx)))
+      )
+    ) :
+      (
+        unary(op, prec),
+        operator(op, (a, b) => !b && (a = compile(a), !a.length ? (a = fn(a()), () => a) : ctx => fn(a(ctx))))
+      )
+)
 
 test('Expression: Constants', () => {
   is(script('\'abc\'')(), "abc")
@@ -60,8 +76,6 @@ test('Arrays', () => {
 })
 
 test('Ops', function (qunit) {
-  // script.binary['**'] = 16; // ES2016, right-associative
-
   is(script('1')(), 1)
   is(script('1+2')(), 3)
   is(script('1*2')(), 2)
@@ -81,22 +95,22 @@ test('Ops', function (qunit) {
 test('Custom operators', () => {
   is(script('a^b')({ a: 0xaaa, b: 0xbbb }), 0xaaa ^ 0xbbb)
 
-  script.set('×', 9, (a, b) => a * b)
+  set('×', 9, (a, b) => a * b)
   is(script('a×b')({ a: 2, b: 3 }), 6)
 
-  script.set('or', 1, (a, b) => a || b)
+  set('or', 1, (a, b) => a || b)
   is(script('oneWord or anotherWord')({ oneWord: 1, anotherWord: 0 }), 1)
   throws(() => script('oneWord ordering anotherWord'))
 
-  script.set('#', 11, (a) => [a])
+  set('#', 11, (a) => [a])
   is(script('#a')({ a: 1 }), [1])
 
-  script.set('not', 13, (a) => !a)
+  set('not', 13, (a) => !a)
   is(script('not a')({ a: false }), true)
 
   throws(t => script('notes 1'))
 
-  script.set('and', 2, (a, b) => a && b)
+  set('and', 2, (a, b) => a && b)
   is(script('a and b')({ a: 1, b: 2 }), 2)
   is(script('bands')({ a: 1, b: 2 }), undefined)
 

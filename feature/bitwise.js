@@ -1,9 +1,15 @@
-import { set } from '../src/index.js'
 import { PREC_OR, PREC_AND, PREC_SHIFT, PREC_XOR, PREC_PREFIX } from "../src/const.js"
+import { unary, binary } from "../src/parse.js"
+import { operator, compile } from "../src/compile.js"
 
-set('~', PREC_PREFIX, (a) => ~a)
-set('|', PREC_OR, (a, b) => a | b)
-set('&', PREC_AND, (a, b) => a & b)
-set('^', PREC_XOR, (a, b) => a ^ b)
-set('>>', PREC_SHIFT, (a, b) => a >> b)
-set('<<', PREC_SHIFT, (a, b) => a << b)
+unary('~', PREC_PREFIX), operator('~', (a, b) => !b && (a = compile(a), ctx => ~a(ctx)))
+
+binary('|', PREC_OR), operator('|', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) | b(ctx)))
+
+binary('&', PREC_AND), operator('&', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) & b(ctx)))
+
+binary('^', PREC_XOR), operator('^', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ^ b(ctx)))
+
+binary('>>', PREC_SHIFT), operator('>>', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) >> b(ctx)))
+
+binary('<<', PREC_SHIFT), operator('<<', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) << b(ctx)))
