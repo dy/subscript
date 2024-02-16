@@ -102,7 +102,7 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 
 ## Extending
 
-_Subscript_ provides API to customize or extend syntax:
+_Subscript_ provides pluggable language [features](./features) and API to customize syntax:
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
@@ -112,6 +112,10 @@ _Subscript_ provides API to customize or extend syntax:
 
 ```js
 import script, { compile, operator, unary, binary, token } from './subscript.js'
+
+// include objects/arrays syntax
+import 'subscript/feature/array.js';
+import 'subscript/feature/object.js';
 
 // add identity operators with precedence 9
 binary('===', 9), binary('!==', 9)
