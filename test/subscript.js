@@ -1,8 +1,10 @@
 import test, { is, throws, same } from 'tst'
-import parse, { skip, expr, err, cur, idx } from '../parse.js'
-import subscript, { set, binary, operator, compile, token } from '../subscript.js'
+import parse, { skip, expr, err, cur, idx, unary } from '../src/parse.js'
+import subscript, { binary, operator, compile, token } from '../subscript.js'
+import { PREC_MULT } from '../src/const.js'
 
-const evalTest = (str, ctx = {}) => {
+// test result to be same as js
+const sameAsJs = (str, ctx = {}) => {
   let ss = subscript(str), fn = new Function(...Object.keys(ctx), 'return ' + str)
 
   return is(ss(ctx), fn(...Object.values(ctx)))
@@ -22,15 +24,15 @@ test('basic', t => {
   is(subscript(`1+(2)`)(), 3)
   is(subscript(`1+(2)+3+((4))`)(), 10)
   is(subscript(`-2`)(), -2)
-  evalTest('0 + 1 + 2.0')
-  evalTest('0 + (1 + 2)')
-  evalTest('-2 - 2')
-  evalTest('0 + 1 - 2')
-  evalTest('0 - 1 + 2')
-  evalTest('0 + 1 + 2 - 1 - 2 + 1')
-  evalTest('0 * 1 * 2 / 1 / 2 * 1')
-  evalTest('0 + 1 - 2 * 3')
-  evalTest('1 * 2 - 3')
+  sameAsJs('0 + 1 + 2.0')
+  sameAsJs('0 + (1 + 2)')
+  sameAsJs('-2 - 2')
+  sameAsJs('0 + 1 - 2')
+  sameAsJs('0 - 1 + 2')
+  sameAsJs('0 + 1 + 2 - 1 - 2 + 1')
+  sameAsJs('0 * 1 * 2 / 1 / 2 * 1')
+  sameAsJs('0 + 1 - 2 * 3')
+  sameAsJs('1 * 2 - 3')
   is(subscript(`a()`)({ a: v => 1 }), 1)
   is(subscript(`a( )`)({ a: v => 1 }), 1)
   is(subscript(`a(1)`)({ a: v => v }), 1)
@@ -54,38 +56,37 @@ test('basic', t => {
   is(subscript(`( a,  b )`)({ a: 1, b: 2 }), 2)
   is(subscript(`a( b,  (c, d) )`)({ a: (b, c) => b + c, b: 2, c: 3, d: 4 }), 6)
 
-  evalTest('a.b', { a: { b: 2 } })
-  evalTest('1 + a.b + 3.5', { a: { b: 3 } })
-  evalTest('1 + (a.b + 3.5)', { a: { b: 4 } })
-  evalTest(`a (  ccc. d,  -+1.0 )`, { a: (b, c) => b + c, ccc: { d: 1 } })
-  evalTest(`a.b (  ccc. d , -+1.0 ) . e`, { a: { b: (c, d) => ({ e: c + d }) }, ccc: { d: 10 } })
-  evalTest(`a * 3 / 2`, { a: 42 })
-  evalTest(`(a + 2) * 3 / 2 + b * 2 - 1`, { a: 12, b: 13 })
-  evalTest('a()()()', { a: b => c => d => 2 })
-  evalTest('a(b)(c)', { a: x => y => x + y, b: 2, c: 3 })
+  sameAsJs('a.b', { a: { b: 2 } })
+  sameAsJs('1 + a.b + 3.5', { a: { b: 3 } })
+  sameAsJs('1 + (a.b + 3.5)', { a: { b: 4 } })
+  sameAsJs(`a (  ccc. d,  -+1.0 )`, { a: (b, c) => b + c, ccc: { d: 1 } })
+  sameAsJs(`a.b (  ccc. d , -+1.0 ) . e`, { a: { b: (c, d) => ({ e: c + d }) }, ccc: { d: 10 } })
+  sameAsJs(`a * 3 / 2`, { a: 42 })
+  sameAsJs(`(a + 2) * 3 / 2 + b * 2 - 1`, { a: 12, b: 13 })
+  sameAsJs('a()()()', { a: b => c => d => 2 })
+  sameAsJs('a(b)(c)', { a: x => y => x + y, b: 2, c: 3 })
 
-  evalTest(`"abcd" + "efgh"`)
+  sameAsJs(`"abcd" + "efgh"`)
 
-  evalTest('x(a + 3)', { x: v => v + 1, a: 3 })
-  evalTest('1 + x(a.b + 3.5)', { x: v => v + 1, a: { b: 1 } })
-  evalTest('a[b]', { a: { x: 1 }, b: 'x' })
-  evalTest('(a(b) + 3.5)', { a: v => v * 2, b: 3 })
-  evalTest('1 + x(a[b] + 3.5)', { x: v => v + 1, a: { y: 1 }, b: 'y' })
+  sameAsJs('x(a + 3)', { x: v => v + 1, a: 3 })
+  sameAsJs('1 + x(a.b + 3.5)', { x: v => v + 1, a: { b: 1 } })
+  sameAsJs('a[b]', { a: { x: 1 }, b: 'x' })
+  sameAsJs('(a(b) + 3.5)', { a: v => v * 2, b: 3 })
+  sameAsJs('1 + x(a[b] + 3.5)', { x: v => v + 1, a: { y: 1 }, b: 'y' })
   is(subscript('x.y.z,123')({ x: { y: { z: 345 } } }), 123)
-  evalTest('x.y.z(123)', { x: { y: { z: x => x } } })
-  evalTest('x.y.z(123 + c[456]) + n', { x: { y: { z: v => v + 1 } }, c: { 456: 789 }, n: 1 })
-  evalTest('1 || 1')
-  evalTest('-1%2')
-  evalTest('-(1%2)')
-  evalTest('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', { a: { b: 1 }, x: { y: { z: v => v } }, c: { 456: 789 }, n: 1 })
+  sameAsJs('x.y.z(123)', { x: { y: { z: x => x } } })
+  sameAsJs('x.y.z(123 + c[456]) + n', { x: { y: { z: v => v + 1 } }, c: { 456: 789 }, n: 1 })
+  sameAsJs('1 || 1')
+  sameAsJs('-1%2')
+  sameAsJs('-(1%2)')
+  sameAsJs('+1 * (a.b - 3.5) - "asdf" || x.y.z(123 + c[456]) + n', { a: { b: 1 }, x: { y: { z: v => v } }, c: { 456: 789 }, n: 1 })
 })
 
-test('right-assoc', t => {
-  // **
-  set('**', -14, (a, b) => a ** b, true)
+test('right-assoc', async t => {
+  await import('../feature/pow.js');
 
-  evalTest('1 + 2 * 3 ** 4 + 5', {})
-  evalTest(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
+  sameAsJs('1 + 2 * 3 ** 4 + 5', {})
+  sameAsJs(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
 })
 
 test('syntactic', t => {
@@ -96,10 +97,10 @@ test('syntactic', t => {
 })
 
 test('readme', t => {
-  evalTest(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
-  evalTest(`min * 60 + "sec"`, { min: 5 })
+  sameAsJs(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
+  sameAsJs(`min * 60 + "sec"`, { min: 5 })
 
-  set('|', 6, (a, b) => a?.pipe?.(b) || (a | b)) // overload pipe operator
+  binary('|', 6), operator('|', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
   token('=>', 2, (args, body) => (body = expr(), ctx => (...args) => body())) // single-arg arrow function parser
 
   let evaluate = subscript(`
@@ -116,18 +117,14 @@ test('readme', t => {
     interval: arg => ({ pipe: b => console.log('interval to', b) }),
   })
 
-
-  // add ~ unary operator with precedence 15
-  set('~', 15, a => ~a)
-
   // add === binary operator
-  set('===', 9, (a, b) => a === b)
+  binary('===', 9), operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)))
 
   // add literals
   // set('true',20, [,a => ()=>true])
   // set('false',20, [,a => ()=>false])
-  token('true', 20, a => ['', true])
-  token('false', 20, a => ['', false])
+  token('true', 20, a => [, true])
+  token('false', 20, a => [, false])
 
   is(subscript('true === false')(), false) // false
 })
@@ -150,10 +147,10 @@ test('strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 test('ext: literals', t => {
-  token('null', 20, a => a ? err() : ['', null])
-  token('true', 20, a => a ? err() : ['', true])
-  token('false', 20, a => a ? err() : ['', false])
-  token('undefined', 20, a => a ? err() : ['', undefined])
+  token('null', 20, a => a ? err() : [, null])
+  token('true', 20, a => a ? err() : [, true])
+  token('false', 20, a => a ? err() : [, false])
+  token('undefined', 20, a => a ? err() : [, undefined])
 
   is(subscript('null')({}), null)
   is(subscript('(null)')({}), null)
@@ -184,44 +181,43 @@ test.skip('bad number', t => {
 })
 
 test('intersecting binary', t => {
-  evalTest('a | b', { a: 1234, b: 4567 })
-  evalTest('a || b', { a: false, b: true })
-  evalTest('a & b', { a: 1234, b: 4567 })
-  evalTest('a && b', { a: true, b: true })
+  sameAsJs('a | b', { a: 1234, b: 4567 })
+  sameAsJs('a || b', { a: false, b: true })
+  sameAsJs('a & b', { a: 1234, b: 4567 })
+  sameAsJs('a && b', { a: true, b: true })
 
-  evalTest('a >> b', { a: 1234, b: 2 })
-  evalTest('a >>> b', { a: 1234, b: 2 })
+  sameAsJs('a >> b', { a: 1234, b: 2 })
 })
 test('signs', t => {
-  evalTest('+-1', { a: 123 })
-  evalTest('a(+1)', { a: v => v + 123 })
-  evalTest('a[+1]', { a: [, 123] })
-  evalTest('a+(1)', { a: 123 })
-  evalTest('a+!1', { a: 123 })
-  evalTest('a+-1', { a: 123 })
-  evalTest('1+-1.23e-2-1.12', { a: 123 })
-  evalTest('-+(1)', { a: 123 })
-  evalTest('+1.12-+-a+-(+1)', { a: 123 })
-  evalTest('+1.12-+-a[+1]', { a: [, 123] })
-  evalTest('+1-+-1', { a: 123 })
-  evalTest('-a[1]', { a: [, 123] })
-  evalTest('-a.b[1](2)', { a: { b: [, v => v + 123] } })
-  evalTest('+1-+-a[1]', { a: [, 123] })
-  evalTest('+1 + +2', { a: 123 })
-  evalTest('+1 + -2', { a: 123 })
-  evalTest('+1 -+2', { a: 123 })
-  evalTest('1 -2', { a: 123 })
-  evalTest('+1 -2', { a: 123 })
-  evalTest('-1 +2', { a: 123 })
+  sameAsJs('+-1', { a: 123 })
+  sameAsJs('a(+1)', { a: v => v + 123 })
+  sameAsJs('a[+1]', { a: [, 123] })
+  sameAsJs('a+(1)', { a: 123 })
+  sameAsJs('a+!1', { a: 123 })
+  sameAsJs('a+-1', { a: 123 })
+  sameAsJs('1+-1.23e-2-1.12', { a: 123 })
+  sameAsJs('-+(1)', { a: 123 })
+  sameAsJs('+1.12-+-a+-(+1)', { a: 123 })
+  sameAsJs('+1.12-+-a[+1]', { a: [, 123] })
+  sameAsJs('+1-+-1', { a: 123 })
+  sameAsJs('-a[1]', { a: [, 123] })
+  sameAsJs('-a.b[1](2)', { a: { b: [, v => v + 123] } })
+  sameAsJs('+1-+-a[1]', { a: [, 123] })
+  sameAsJs('+1 + +2', { a: 123 })
+  sameAsJs('+1 + -2', { a: 123 })
+  sameAsJs('+1 -+2', { a: 123 })
+  sameAsJs('1 -2', { a: 123 })
+  sameAsJs('+1 -2', { a: 123 })
+  sameAsJs('-1 +2', { a: 123 })
 })
 test('unaries: seqs', t => {
-  evalTest('-2')
-  evalTest('+-2')
-  evalTest('-+-2')
-  evalTest('-+!2')
-  evalTest('1-+-2')
-  evalTest('1-+!2')
-  evalTest('1 * -1')
+  sameAsJs('-2')
+  sameAsJs('+-2')
+  sameAsJs('-+-2')
+  sameAsJs('-+!2')
+  sameAsJs('1-+-2')
+  sameAsJs('1-+!2')
+  sameAsJs('1 * -1')
 })
 test('unaries: inc/dec', t => {
   let ctx = { a: 2, b: { c: 1 }, d: ['c'] }
@@ -254,89 +250,89 @@ test('unaries: postfix', t => {
   is(ctx.a, 2)
   is(subscript('a ++')(ctx), 2)
   is(subscript('a  --')(ctx), 3)
-  // evalTest('a++(b)',{})
+  // sameAsJs('a++(b)',{})
 })
 
 test('prop access', t => {
-  evalTest('a["b"]["c"][0]', { a: { b: { c: [1] } } })
+  sameAsJs('a["b"]["c"][0]', { a: { b: { c: [1] } } })
   is(subscript('a.b.c')({ a: { b: { c: [1] } } }), [1])
   // NOTE: invalid JS
   is(subscript('a.b.c.0')({ a: { b: { c: [1] } } }), 1)
 })
 
 test('parens', t => {
-  evalTest('1+(b)()', { b: v => 1 })
-  evalTest('(1)+-b()', { b: v => 1 })
-  evalTest('1+a(b)', { b: 1, a: v => v + 1 })
-  evalTest('1+(b)', { b: 1 })
-  evalTest('1+-(b)', { b: 1 })
-  evalTest('(b)', { b: 1 })
-  evalTest('+b', { b: 1 })
-  evalTest('+(b)', { b: 1 })
-  evalTest('+((b))', { b: 1 })
+  sameAsJs('1+(b)()', { b: v => 1 })
+  sameAsJs('(1)+-b()', { b: v => 1 })
+  sameAsJs('1+a(b)', { b: 1, a: v => v + 1 })
+  sameAsJs('1+(b)', { b: 1 })
+  sameAsJs('1+-(b)', { b: 1 })
+  sameAsJs('(b)', { b: 1 })
+  sameAsJs('+b', { b: 1 })
+  sameAsJs('+(b)', { b: 1 })
+  sameAsJs('+((b))', { b: 1 })
   is(subscript('++(b)')({ b: 1 }), 2)
   // NOTE: invalid in JS
   // is(subscript('++a(b)')({b:1, a:v=>v+1}),3)
   is(subscript('!a(b)')({ a: v => v, b: false }), true)
-  evalTest('+(b)', { b: 1 })
-  evalTest('1+(b)', { b: 1 })
-  evalTest('1+((b))', { b: 1 })
-  evalTest('(1)+-b', { b: 1 })
-  evalTest('x[1]+-b', { b: 1, x: [, 2] })
-  evalTest('x[+-1]', { b: 1, x: [, 2] })
-  evalTest('(+-1)', { b: 1 })
-  evalTest('x(+-1)', { b: 1, x: v => v + 1 })
-  evalTest('(1,2,3)', { b: 1 })
+  sameAsJs('+(b)', { b: 1 })
+  sameAsJs('1+(b)', { b: 1 })
+  sameAsJs('1+((b))', { b: 1 })
+  sameAsJs('(1)+-b', { b: 1 })
+  sameAsJs('x[1]+-b', { b: 1, x: [, 2] })
+  sameAsJs('x[+-1]', { b: 1, x: [, 2] })
+  sameAsJs('(+-1)', { b: 1 })
+  sameAsJs('x(+-1)', { b: 1, x: v => v + 1 })
+  sameAsJs('(1,2,3)', { b: 1 })
 })
 
 test('functions', t => {
-  evalTest('a()', { a: v => 123 })
-  evalTest('a(1)', { a: (v) => v })
-  evalTest('a(1,2)', { a: (v, w) => v + w })
-  evalTest('(c,d)', { a: v => ++v, c: 1, d: 2 })
-  evalTest('a(b)(d)', { a: v => w => v + w, b: 1, d: 2 })
-  evalTest('a(b,c)(d)', { a: (v, w) => z => z + v + w, b: 1, c: 2, d: 3 })
-  evalTest('(c)(e)', { c: v => ++v, e: 1 })
-  evalTest('b(c,d)', { b: (v, w) => v + w, c: 1, d: 2 })
-  evalTest('b(c)(e)', { b: v => w => v + w, c: 1, e: 2 })
-  evalTest('(c,d)(e)', { d: v => ++v, c: 1, e: 1 })
-  evalTest('a.b(c,d)', { a: { b: (v, w) => w + v }, c: 1, d: 2 })
-  evalTest('a.b(c.d)', { a: { b: (v) => ++v }, c: { d: 2 } })
+  sameAsJs('a()', { a: v => 123 })
+  sameAsJs('a(1)', { a: (v) => v })
+  sameAsJs('a(1,2)', { a: (v, w) => v + w })
+  sameAsJs('(c,d)', { a: v => ++v, c: 1, d: 2 })
+  sameAsJs('a(b)(d)', { a: v => w => v + w, b: 1, d: 2 })
+  sameAsJs('a(b,c)(d)', { a: (v, w) => z => z + v + w, b: 1, c: 2, d: 3 })
+  sameAsJs('(c)(e)', { c: v => ++v, e: 1 })
+  sameAsJs('b(c,d)', { b: (v, w) => v + w, c: 1, d: 2 })
+  sameAsJs('b(c)(e)', { b: v => w => v + w, c: 1, e: 2 })
+  sameAsJs('(c,d)(e)', { d: v => ++v, c: 1, e: 1 })
+  sameAsJs('a.b(c,d)', { a: { b: (v, w) => w + v }, c: 1, d: 2 })
+  sameAsJs('a.b(c.d)', { a: { b: (v) => ++v }, c: { d: 2 } })
 })
 
 test('chains', t => {
-  evalTest('a["b"]["c"]["d"]', { a: { b: { c: { d: 1 } } } })
-  evalTest('a.b.c.d', { a: { b: { c: { d: 1 } } } })
-  evalTest('a.f', { a: { f: 1 } })
-  evalTest('a.b[c.d].e.f', { a: { b: { d: { e: { f: 1 } } } }, c: { d: 'd' } })
-  evalTest('a.b(1)(2).c', { a: { b: v => w => ({ c: v + w }) } })
-  evalTest('a.b(1)(2)', { a: { b: v => w => v + w } })
-  evalTest('a()()()', { a: () => () => () => 2 })
-  evalTest('a( )( )( )', { a: () => () => () => 2 })
-  evalTest('a.b()()', { a: { b: () => () => 2 } })
-  evalTest('(a)()()', { a: () => () => 2 })
-  evalTest('a.b(c.d).e.f', { a: { b: v => ({ e: { f: v } }) }, c: { d: 123 } })
-  evalTest('(c.d).e', { c: { d: { e: 1 } } })
-  evalTest('a.b(c.d).e(f).g()', { a: { b: v => ({ e: w => ({ g: () => v + w }) }) }, c: { d: 123 }, f: 456 })
-  evalTest('a.b[c.d].e', { a: { b: [, { e: 1 }] }, c: { d: 1 } })
-  evalTest('a.b[c.d].e(g.h)', { a: { b: [, { e: v => v }] }, c: { d: 1 }, g: { h: 2 } })
-  evalTest('a(b)(c)', { a: v => w => v + w, b: 1, c: 2 })
-  evalTest('a(1,2)(b)', { a: (v, w) => z => v + w + z, b: 1 })
-  evalTest('(1,a)(b)', { a: v => v, b: 1 })
-  evalTest('+(1,a)(b)', { a: v => v, b: 1 })
-  evalTest('a[b][c]', { a: { b: { c: 1 } }, b: 'b', c: 'c' })
-  evalTest('a[1](b)["c"]', { a: [, v => ({ c: v })], b: 1 })
-  evalTest('a(1)[b]("c")', { a: v => ({ b: w => v + w }), b: 'b' })
-  evalTest('a[1][b]["c"]', { a: [, { b: { c: 1 } }], b: 'b', c: 'c' })
-  evalTest('a(1)(b)("c")', { a: v => w => z => v + w + z, b: 'b' })
+  sameAsJs('a["b"]["c"]["d"]', { a: { b: { c: { d: 1 } } } })
+  sameAsJs('a.b.c.d', { a: { b: { c: { d: 1 } } } })
+  sameAsJs('a.f', { a: { f: 1 } })
+  sameAsJs('a.b[c.d].e.f', { a: { b: { d: { e: { f: 1 } } } }, c: { d: 'd' } })
+  sameAsJs('a.b(1)(2).c', { a: { b: v => w => ({ c: v + w }) } })
+  sameAsJs('a.b(1)(2)', { a: { b: v => w => v + w } })
+  sameAsJs('a()()()', { a: () => () => () => 2 })
+  sameAsJs('a( )( )( )', { a: () => () => () => 2 })
+  sameAsJs('a.b()()', { a: { b: () => () => 2 } })
+  sameAsJs('(a)()()', { a: () => () => 2 })
+  sameAsJs('a.b(c.d).e.f', { a: { b: v => ({ e: { f: v } }) }, c: { d: 123 } })
+  sameAsJs('(c.d).e', { c: { d: { e: 1 } } })
+  sameAsJs('a.b(c.d).e(f).g()', { a: { b: v => ({ e: w => ({ g: () => v + w }) }) }, c: { d: 123 }, f: 456 })
+  sameAsJs('a.b[c.d].e', { a: { b: [, { e: 1 }] }, c: { d: 1 } })
+  sameAsJs('a.b[c.d].e(g.h)', { a: { b: [, { e: v => v }] }, c: { d: 1 }, g: { h: 2 } })
+  sameAsJs('a(b)(c)', { a: v => w => v + w, b: 1, c: 2 })
+  sameAsJs('a(1,2)(b)', { a: (v, w) => z => v + w + z, b: 1 })
+  sameAsJs('(1,a)(b)', { a: v => v, b: 1 })
+  sameAsJs('+(1,a)(b)', { a: v => v, b: 1 })
+  sameAsJs('a[b][c]', { a: { b: { c: 1 } }, b: 'b', c: 'c' })
+  sameAsJs('a[1](b)["c"]', { a: [, v => ({ c: v })], b: 1 })
+  sameAsJs('a(1)[b]("c")', { a: v => ({ b: w => v + w }), b: 'b' })
+  sameAsJs('a[1][b]["c"]', { a: [, { b: { c: 1 } }], b: 'b', c: 'c' })
+  sameAsJs('a(1)(b)("c")', { a: v => w => z => v + w + z, b: 'b' })
 })
 
-test('ext: in operator', t => {
-  set('in', 10, (a, b) => a in b)
+test('ext: in operator', async t => {
+  await import('../feature/in.js')
 
-  evalTest('inc in bin', { bin: { inc: 1 }, inc: 'inc' })
-  evalTest('bin in inc', { inc: { bin: 1 }, bin: 'bin' })
-  evalTest('bin in(inc)', { bin: 'bin', inc: { bin: 1 } })
+  sameAsJs('inc in bin', { bin: { inc: 1 }, inc: 'inc' })
+  sameAsJs('bin in inc', { inc: { bin: 1 }, bin: 'bin' })
+  sameAsJs('bin in(inc)', { bin: 'bin', inc: { bin: 1 } })
   throws(() => subscript('b inc'))
 })
 
@@ -366,14 +362,14 @@ test('ext: list', t => {
   // is(subscript('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
   // is(subscript('[1,,2,b]')({b:3}),[1,undefined,2,3])
 
-  evalTest('[1]')
-  evalTest('[1,2,3]')
-  evalTest('[0]', {})
-  evalTest('[""]', {})
-  evalTest('[true]', {})
-  evalTest('[false]', {})
-  evalTest('[null]', {})
-  evalTest('[undefined]', {})
+  sameAsJs('[1]')
+  sameAsJs('[1,2,3]')
+  sameAsJs('[0]', {})
+  sameAsJs('[""]', {})
+  sameAsJs('[true]', {})
+  sameAsJs('[false]', {})
+  sameAsJs('[null]', {})
+  sameAsJs('[undefined]', {})
 })
 
 test.skip('ext: ternary', t => {
@@ -384,71 +380,74 @@ test.skip('ext: ternary', t => {
     (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx))
   )
 
-  evalTest('a?b:c', { a: true, b: 1, c: 2 })
-  evalTest('a?b:c', { a: false, b: 1, c: 2 })
-  evalTest('a((1 + 2), (e > 0 ? f : g))', { a: (x, y) => x + y, e: 1, f: 2, g: 3 })
+  sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
+  sameAsJs('a?b:c', { a: false, b: 1, c: 2 })
+  sameAsJs('a((1 + 2), (e > 0 ? f : g))', { a: (x, y) => x + y, e: 1, f: 2, g: 3 })
 
-  evalTest('a?b:c?d:e', { a: 0, c: 1, d: 2 })
-  evalTest('a?b:c?d:e', { a: 0, c: 0, d: 2, e: 3 })
-  evalTest('a?b:c?d:e?f:g', { a: 0, c: 0, d: 2, e: 0, f: 3, g: 4 })
-  evalTest('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
+  sameAsJs('a?b:c?d:e', { a: 0, c: 1, d: 2 })
+  sameAsJs('a?b:c?d:e', { a: 0, c: 0, d: 2, e: 3 })
+  sameAsJs('a?b:c?d:e?f:g', { a: 0, c: 0, d: 2, e: 0, f: 3, g: 4 })
+  sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
 })
 
-test('ext: object', t => {
-  token('{', 20, a => !a && (['{', expr(0, 125) || '']))
-  operator('{', (a, b) => (
-    !a ? ctx => ({}) : // {}
-      a[0] === ',' ? (a = a.slice(1).map(compile), ctx => Object.fromEntries(a.map(a => a(ctx)))) : // {a:1,b:2}
-        a[0] === ':' ? (a = compile(a), ctx => Object.fromEntries([a(ctx)])) : // {a:1}
-          (b = compile(a), ctx => ({ [a]: b(ctx) }))
-  ))
-  token(':', 1.1, (a, b) => (b = expr(1.1) || err(), [':', a, b]))
-  operator(':', (a, b) => (b = compile(b), a = Array.isArray(a) ? compile(a) : (a => a).bind(0, a), ctx => [a(ctx), b(ctx)]))
-  // set('=', 2, (a, b) => b)
+test('ext: object', async t => {
+  await import('../feature/object.js')
 
-  evalTest('{}', {})
-  evalTest('{x: 1}', {})
-  evalTest('{x: 1, "y":2}', {})
-  evalTest('{x: 1+2, y:a(3)}', { a: v => v + 1 })
-  evalTest('{x: 1+2, y:a(3)}', { a: x => x * 2 })
-  evalTest('{1: 2}')
-  evalTest('{x}', { x: 1 })
+  sameAsJs('{}', {})
+  sameAsJs('{x: 1}', {})
+  sameAsJs('{x: 1, "y":2}', {})
+  sameAsJs('{x: 1+2, y:a(3)}', { a: v => v + 1 })
+  sameAsJs('{x: 1+2, y:a(3)}', { a: x => x * 2 })
+  sameAsJs('{1: 2}')
+  sameAsJs('{x}', { x: 1 })
 
-  evalTest('{a:b?c:d}', { b: 2, c: 3, d: 4 })
-  evalTest('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
-  evalTest('{a:b?c:d, e:f=g?h:k}', { b: 2, c: 3, d: 4, f: null, g: 0, h: 1, k: 2 })
+  sameAsJs('{a:b?c:d}', { b: 2, c: 3, d: 4 })
+  sameAsJs('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
+  sameAsJs('{a:b?c:d, e:f=g?h:k}', { b: 2, c: 3, d: 4, f: null, g: 0, h: 1, k: 2 })
 
-  evalTest('b?{c:1}:{d:2}', { b: 2 })
+  sameAsJs('b?{c:1}:{d:2}', { b: 2 })
 
-  evalTest('{b:true, c:d}', { d: true })
+  sameAsJs('{b:true, c:d}', { d: true })
 })
+
+test('ext: array', async t => {
+  await import('../feature/array.js')
+
+  is(subscript('[]')(), [])
+  is(subscript('[ 1 ]')(), [1])
+  is(subscript('[ 1, 2+3, "4" ]')(), [1, 5, '4'])
+})
+
 
 test('ext: justin', async t => {
-  const { default: script } = await import('../justin.js')
-  evalTest(`"abcd" + 'efgh'`)
+  await import('../justin.js')
+  sameAsJs(`"abcd" + 'efgh'`)
   is(subscript('a;b')({ a: 1, b: 2 }), 2)
-  evalTest('{x:~1, "y":2**2}["x"]', {})
-  evalTest('{x:~1, "y":2**2}["x"]', {})
-  evalTest('{x:~1, "y":2**2}["y"]', {})
-  evalTest('e > 0 ? f : g', { e: 1, f: 2, g: 3 }, 2)
-  evalTest('a((1 + 2), (e > 0 ? f : g))', { a: (v, w) => v + w, e: 1, f: 2, g: 3 })
 
-  evalTest('{x: 1+2, y:a(3)}', { a: x => x * 2 })
-  evalTest('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
-  evalTest('b?{c:1}:{d:2}', { b: 2 })
+  sameAsJs('{x:~1, "y":2**2}["x"]', {})
+  sameAsJs('{x:~1, "y":2**2}["x"]', {})
+  sameAsJs('{x:~1, "y":2**2}["y"]', {})
+  sameAsJs('e > 0 ? f : g', { e: 1, f: 2, g: 3 }, 2)
+  sameAsJs('a((1 + 2), (e > 0 ? f : g))', { a: (v, w) => v + w, e: 1, f: 2, g: 3 })
+
+  sameAsJs('{x: 1+2, y:a(3)}', { a: x => x * 2 })
+  sameAsJs('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
+  sameAsJs('b?{c:1}:{d:2}', { b: 2 })
 
   // keep context
   console.log('---a?.()')
-  evalTest('a?.()', { a: v => 1 })
+  sameAsJs('a?.()', { a: v => 1 })
   console.log('---a?.valueOf()')
-  evalTest('a?.valueOf()', { a: true })
+  sameAsJs('a?.valueOf()', { a: true })
+  console.log('---a?.b?.valueOf?.()')
+  sameAsJs('a?.b?.valueOf?.()', { a: { b: true } })
   console.log('---a?.valueOf?.()')
-  evalTest('a?.valueOf?.()', { a: true })
+  sameAsJs('a?.valueOf?.()', { a: true })
   // FIXME: these
   console.log('---a?.["valueOf"]()')
-  evalTest('a?.["valueOf"]()', { a: true })
+  sameAsJs('a?.["valueOf"]()', { a: true })
   console.log('---a?.["valueOf"]?.()')
-  evalTest('a?.["valueOf"]?.()', { a: true })
+  sameAsJs('a?.["valueOf"]?.()', { a: true })
 
   // assigns
   let s = { a: 0 }
@@ -483,11 +482,17 @@ test('assignment', async t => {
   let state5 = { x: { y: 1 } }
   fn5(state5)
   is(state5, { x: { y: 1 }, y: 1 })
+
+  const fn6 = subscript('x.y += 1; z -= 2; w *= 2;')
+  let state6 = { x: { y: 1 }, z: 1, w: 2 }
+  fn6(state6)
+  is(state6, { x: { y: 2 }, z: -1, w: 4 })
 })
 
-test('ext: comments', t => {
-  token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
-  token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
+test('ext: comments', async t => {
+  await import('../feature/comment.js')
+  // token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
+  // token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
   is(subscript('/* x */1/* y */+/* z */2')({}), 3)
   is(subscript(`a /
     // abc
@@ -530,6 +535,7 @@ test('err: missing arguments', t => {
   throws(() => console.log(subscript('a+')))
   throws(() => console.log(subscript('(a / )')))
 })
+
 test('err: unclosed parens', t => {
   throws(() => subscript('a[  '))
   throws(() => subscript('(  +1'))
@@ -553,7 +559,7 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  set('&', 13, (a) => ~a)
+  unary('&', PREC_MULT - 0.5), operator('&', (a) => (a = compile(a), ctx => ~a(ctx)))
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
 })
@@ -565,13 +571,12 @@ test('stdlib cases', t => {
 })
 
 test('ext: collect args', async t => {
-  const { lookup } = await import('../parse.js')
-  const { default: script } = await import('../justin.js')
+  const { lookup, default: script } = await import('../justin.js')
 
   let args = [], id = parse.id
   parse.id = (a, b) => (a = id(), a && args.push(a), a)
 
-  // FIXME: baybe needs ignoring pow and b?
+  // FIXME: maybe needs ignoring pow and b?
   let fn = subscript('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
   same(args,
     ['Math', 'pow', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
