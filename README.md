@@ -1,18 +1,17 @@
 # <img alt="subscript" src="/subscript2.svg" height=28/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>--> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlephobia.com/package/subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-_Subscript_ is fast, tiny & extensible expression evaluator / microlanguage.
+> _Subscript_ is fast, tiny & extensible expression evaluator / microlanguage.
 
 Used for:
 
 * templates (eg. [sprae](https://github.com/dy/sprae), [templize](https://github.com/dy/templize))
 * expressions evaluators, calculators
 * subsets of languages (eg. [justin](#justin))
-* pluggable/configurable/mock language features (eg. pipe operator)
 * sandboxes, playgrounds, safe eval
-* custom DSL (see [mell](https://github.com/dy/lino)) <!-- uneural -->
-* preprocessors (see [prepr](https://github.com/dy/prepr))
+* custom DSL (eg. [mell](https://github.com/dy/lino)) <!-- uneural -->
+* preprocessors (eg. [prepr](https://github.com/dy/prepr))
 
-_Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint, compared to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_, with better test coverage and [better performance](#performance).
+_Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_), [best in class performance](#performance) and wide test coverage.
 
 
 ## Usage
@@ -30,7 +29,7 @@ fn({ a: { b:1 }, c: 5, Math })
 
 ## Operators
 
-_Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (supported by main languages: _JavaScript_, _C_/_C++_, _Java_, _Rust_ etc.):
+_Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (same for _JavaScript_, _C_/_C++_, _Java_, _Rust_, _Swift_, _Kotlin_ etc.):
 
 * `a.b`, `a[b]`, `a(b)`
 * `a++`, `a--`, `++a`, `--a`
@@ -46,9 +45,7 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 ### Justin
 
-_Justin_ is minimal JS subset, _JSON_ with expressions (see [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
-
-It extends _subscript_ with:
+_Justin_ is minimal JS subset, _JSON_ with expressions (see [thread](https://github.com/endojs/Jessie/issues/66)). It extends _subscript_ with:
 
 + `a ** b` (right-assoc)
 + `a ? b : c`
@@ -71,8 +68,7 @@ xy()  // 1
 
 ## Parse / Compile
 
-Subscript exposes `parse` and `compile` functions. <br/>
-Parser builds AST, compiler creates evaluator function.
+Subscript exposes `parse` to build AST and `compile` to create evaluators.
 
 ```js
 import { parse, compile } from 'subscript'
@@ -106,27 +102,25 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 
 ## Extending
 
-_Subscript_ defines set of pluggable syntax features, that can be used as basic blocks for designing a dialect:
+_Subscript_ defines set of pluggable syntax features, that can be used as basic blocks:
 
-Name | Syntax
----|---
-`./feature/access.js` | `a.b`, `a[b]`
-`./feature/add.js` | `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
-`./feature/array.js` | `[a, [b, c]]`
-`./feature/assign.js` | `a=b`
-`./feature/bitwise.js` | `~a`, `a|b`, `a&b`, `a^b`
-`./feature/bool.js` | `true`, `false`
-`./feature/call.js` | `a(b, c+d)`
-`./feature/comment.js` | `// a`, `/* b */`
-`./feature/compare.js` | `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
-`./feature/group` | `(a, (b, c));`
-`./feature/increment.js` | `a++`, `a--`, `--a`, `++a`
-`./feature/logic.js` | `!a`, `a&&b`, `a||b`
-`./feature/mult.js` | `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
-`./feature/number.js` | `1.23`, `4e-5`
-`./feature/object.js` | `{a: {"b": c}}`
-`./feature/string.js` | `'abc'`, `"def"`
-`./feature/ternary.js` | `a ? b : c`
+* [./feature/access.js](./feature/access.js) - `a.b`, `a[b]`
+* [./feature/add.js](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
+* [./feature/array.js](./feature/array.js) - `[a, [b, c]]`
+* [./feature/assign.js](./feature/assign.js) - `a=b`
+* [./feature/bitwise.js](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`
+* [./feature/bool.js](./feature/bool.js) - `true`, `false`
+* [./feature/call.js](./feature/call.js) - `a(b, c+d)`
+* [./feature/comment.js](./feature/comment.js) - `// a`, `/* b */`
+* [./feature/compare.js](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
+* [./feature/group`](./feature/group`) -`(a, (b, c));`
+* [./feature/increment.js](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
+* [./feature/logic.js](./feature/logic.js) - `!a`, `a&&b`, `a||b`
+* [./feature/mult.js](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
+* [./feature/number.js](./feature/number.js) - `1.23`, `4e-5`
+* [./feature/object.js](./feature/object.js) - `{a: {"b": c}}`
+* [./feature/string.js](./feature/string.js) - `'abc'`, `"def"`
+* [./feature/ternary.js](./feature/ternary.js) - `a ? b : c`
 
 To add a feature, just import it: `import 'subscript/feature/ternary.js'`.
 
