@@ -102,31 +102,7 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 
 ## Extending
 
-_Subscript_ defines set of pluggable syntax features, that can be used as building blocks:
-
-* [`./feature/access`](./feature/access.js) - `a.b`, `a[b]`
-* [`./feature/add`](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
-* [`./feature/array`](./feature/array.js) - `[a, [b, c]]`
-* [`./feature/assign`](./feature/assign.js) - `a=b`
-* [`./feature/bitwise`](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`
-* [`./feature/bool`](./feature/bool.js) - `true`, `false`
-* [`./feature/call`](./feature/call.js) - `a(b, c+d)`
-* [`./feature/comment`](./feature/comment.js) - `// a`, `/* b */`
-* [`./feature/compare`](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
-* [`./feature/group`](./feature/group) -`(a, (b, c));`
-* [`./feature/increment`](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
-* [`./feature/logic`](./feature/logic.js) - `!a`, `a&&b`, `a||b`
-* [`./feature/mult`](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
-* [`./feature/number`](./feature/number.js) - `1.23`, `4e-5`
-* [`./feature/object`](./feature/object.js) - `{a: {"b": c}}`
-* [`./feature/string`](./feature/string.js) - `'abc'`, `"def"`
-* [`./feature/ternary`](./feature/ternary.js) - `a ? b : c`
-
-To add a feature, just import it: `import 'subscript/feature/ternary.js'`.
-
-### Customizing
-
-_Subscript_ provides API to define custom syntax:
+_Subscript_ provides API to customize or extend syntax:
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
@@ -159,7 +135,8 @@ operator('||=', (a, b) => {
 })
 ```
 
-See [`./feature/*`](./feature) for examples.
+Common syntax features are defined under [`./feature/*`](./feature):
+, [`access`](./feature/access.js) - `a.b`, `a[b]`, [`add`](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`, [`array`](./feature/array.js) - `[a, [b, c]]`, [`assign`](./feature/assign.js) - `a=b`, [`bitwise`](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`, [`bool`](./feature/bool.js) - `true`, `false`, [`call`](./feature/call.js) - `a(b, c+d)`, [`comment`](./feature/comment.js) - `// a`, `/* b */`, [`compare`](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`, [`group`](./feature/group) -`(a, (b, c));`, [`increment`](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`, [`logic`](./feature/logic.js) - `!a`, `a&&b`, `a||b`, [`mult`](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`, [`number`](./feature/number.js) - `1.23`, `4e-5`, [`object`](./feature/object.js) - `{a: {"b": c}}`, [`string`](./feature/string.js) - `'abc'`, `"def"`, [`ternary`](./feature/ternary.js) - `a ? b : c`
 
 
 
