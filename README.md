@@ -102,25 +102,25 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 
 ## Extending
 
-_Subscript_ defines set of pluggable syntax features, that can be used as basic blocks:
+_Subscript_ defines set of pluggable syntax features, that can be used as building blocks:
 
-* [./feature/access.js](./feature/access.js) - `a.b`, `a[b]`
-* [./feature/add.js](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
-* [./feature/array.js](./feature/array.js) - `[a, [b, c]]`
-* [./feature/assign.js](./feature/assign.js) - `a=b`
-* [./feature/bitwise.js](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`
-* [./feature/bool.js](./feature/bool.js) - `true`, `false`
-* [./feature/call.js](./feature/call.js) - `a(b, c+d)`
-* [./feature/comment.js](./feature/comment.js) - `// a`, `/* b */`
-* [./feature/compare.js](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
-* [./feature/group](./feature/group) -`(a, (b, c));`
-* [./feature/increment.js](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
-* [./feature/logic.js](./feature/logic.js) - `!a`, `a&&b`, `a||b`
-* [./feature/mult.js](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
-* [./feature/number.js](./feature/number.js) - `1.23`, `4e-5`
-* [./feature/object.js](./feature/object.js) - `{a: {"b": c}}`
-* [./feature/string.js](./feature/string.js) - `'abc'`, `"def"`
-* [./feature/ternary.js](./feature/ternary.js) - `a ? b : c`
+* [`./feature/access`](./feature/access.js) - `a.b`, `a[b]`
+* [`./feature/add`](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
+* [`./feature/array`](./feature/array.js) - `[a, [b, c]]`
+* [`./feature/assign`](./feature/assign.js) - `a=b`
+* [`./feature/bitwise`](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`
+* [`./feature/bool`](./feature/bool.js) - `true`, `false`
+* [`./feature/call`](./feature/call.js) - `a(b, c+d)`
+* [`./feature/comment`](./feature/comment.js) - `// a`, `/* b */`
+* [`./feature/compare`](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
+* [`./feature/group`](./feature/group) -`(a, (b, c));`
+* [`./feature/increment`](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
+* [`./feature/logic`](./feature/logic.js) - `!a`, `a&&b`, `a||b`
+* [`./feature/mult`](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
+* [`./feature/number`](./feature/number.js) - `1.23`, `4e-5`
+* [`./feature/object`](./feature/object.js) - `{a: {"b": c}}`
+* [`./feature/string`](./feature/string.js) - `'abc'`, `"def"`
+* [`./feature/ternary`](./feature/ternary.js) - `a ? b : c`
 
 To add a feature, just import it: `import 'subscript/feature/ternary.js'`.
 
