@@ -135,8 +135,26 @@ operator('||=', (a, b) => {
 })
 ```
 
-Common syntax features are defined under [`./feature/*`](./feature):
-, [`access`](./feature/access.js) - `a.b`, `a[b]`, [`add`](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`, [`array`](./feature/array.js) - `[a, [b, c]]`, [`assign`](./feature/assign.js) - `a=b`, [`bitwise`](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`, [`bool`](./feature/bool.js) - `true`, `false`, [`call`](./feature/call.js) - `a(b, c+d)`, [`comment`](./feature/comment.js) - `// a`, `/* b */`, [`compare`](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`, [`group`](./feature/group) -`(a, (b, c));`, [`increment`](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`, [`logic`](./feature/logic.js) - `!a`, `a&&b`, `a||b`, [`mult`](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`, [`number`](./feature/number.js) - `1.23`, `4e-5`, [`object`](./feature/object.js) - `{a: {"b": c}}`, [`string`](./feature/string.js) - `'abc'`, `"def"`, [`ternary`](./feature/ternary.js) - `a ? b : c`
+Common syntax features are defined under [`./feature/*`](./feature) and can be used as language building blocks:
+
+* [`access`](./feature/access.js) - `a.b`, `a[b]`
+* [`add`](./feature/add.js) - `-a`, `+a`, `a+b`, `a-b`, `a-=b`, `a+=b`
+* [`array`](./feature/array.js) - `[a, [b, c]]`
+* [`assign`](./feature/assign.js) - `a=b`
+* [`bitwise`](./feature/bitwise.js) - `~a`, `a|b`, `a&b`, `a^b`
+* [`bool`](./feature/bool.js) - `true`, `false`
+* [`call`](./feature/call.js) - `a(b, c+d)`
+* [`comment`](./feature/comment.js) - `// a`, `/* b */`
+* [`compare`](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
+* [`group`](./feature/group) -`(a, (b, c));`
+* [`increment`](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
+* [`logic`](./feature/logic.js) - `!a`, `a&&b`, `a||b`
+* [`mult`](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
+* [`number`](./feature/number.js) - `1.23`, `4e-5`
+* [`object`](./feature/object.js) - `{a: {"b": c}}`
+* [`string`](./feature/string.js) - `'abc'`, `"def"`
+* [`ternary`](./feature/ternary.js) - `a ? b : c`
+
 
 
 
