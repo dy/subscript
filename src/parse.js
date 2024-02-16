@@ -12,7 +12,7 @@ export let idx, cur,
   ) => {
     let before = cur.slice(idx - 108, idx).split('\n').pop()
     let after = cur.slice(idx, idx + 108).split('\n').shift()
-    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${before + after}\``, 'font-weight: bold')
+    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}▶${after}\``, 'font-weight: bold')
   },
 
   skip = (is = 1, from = idx, l) => {
@@ -48,10 +48,11 @@ export let idx, cur,
     c == 36 || c == 95 || // $, _,
     (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
+  // parse identifier (configurable)
+  id = parse.id = n => skip(isId),
+
   // skip space chars, return first non-space character
   space = parse.space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
-
-  id = parse.id = n => skip(isId),
 
   // operator/token lookup table
   // lookup[0] is id parser to let configs redefine it

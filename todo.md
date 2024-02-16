@@ -402,13 +402,13 @@
   → Just expose direct parser. Requiring it from `/src` is unreliable, but extending is needed
 * [x] make `operator`, `token` more external methods with plain API
 * [x] numbers must not be part of core:
-  + [ ] they are valid ids
-  + [ ] different config may want parse differently, like versions `1.2.3`
-  + [ ] different lang has different number capabilities
+  + they are valid ids
+  + different config may want parse differently, like versions `1.2.3`
+  + different lang has different number capabilities
 * [x] identifier parser can be configurable:
-  + [ ] we may want to collect all used ids → can be done via AST
-  + [ ] we may want it to return different target (function, string, etc) → can be done via separate eval / AST
-  + [ ] or make `a.b.c` identifiers, not operators.
+  + we may want to collect all used ids → can be done via AST
+  + we may want it to return different target (function, string, etc) → can be done via separate eval / AST
+  + or make `a.b.c` identifiers, not operators.
 * [x] don't collect arguments? it slows down parsing and can be done as separate analyzing routine in target DSL.
   * maybe we just need better interop instead (see below)
   + since ids can be collected externally now, it's better to outsource that indeed, to keep point of performance/size.
@@ -472,7 +472,6 @@
 
 * [x] Generalize operator registering
 
-
 * [x] Make less cryptic
   * [x] Provide explicit `binary`, `unary`, `sequence` helpers
   * [x] Make main clean single entry, without commonscript setup. DSLs may not need shifts or binary by default
@@ -488,7 +487,7 @@
 * [x] ~~make default difference of `a()` as `['()', 'a']` like in lino, rather then here~~
 * [x] streamline samples (at price of larger codebase - that's fine)
 
-* [ ] Hide skip, expr, compile as args for defining tokens functions?
+* [x] ~~Hide skip, expr, compile as args for defining tokens functions?~~ -> nah, passing as args is messy
   + shorter exports
   + easier extending dialects - no need to import parse/eval internals
 
