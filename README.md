@@ -113,7 +113,7 @@ _Subscript_ defines set of pluggable syntax features, that can be used as basic 
 * [./feature/call.js](./feature/call.js) - `a(b, c+d)`
 * [./feature/comment.js](./feature/comment.js) - `// a`, `/* b */`
 * [./feature/compare.js](./feature/compare.js) - `a==b`, `a!=b`, `a>=b`, `a<=b`, `a>b`, `a<b`
-* [./feature/group`](./feature/group`) -`(a, (b, c));`
+* [./feature/group](./feature/group) -`(a, (b, c));`
 * [./feature/increment.js](./feature/increment.js) - `a++`, `a--`, `--a`, `++a`
 * [./feature/logic.js](./feature/logic.js) - `!a`, `a&&b`, `a||b`
 * [./feature/mult.js](./feature/mult.js) - `a/b`, `a*b`, `a%b`, `a*=b`, `a/=b`, `a%=b`
