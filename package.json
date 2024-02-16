@@ -8,15 +8,15 @@
   "types": "./subscript.d.ts",
   "exports": {
     ".": "./subscript.js",
-    "./parse.js": "./parse.js",
-    "./compile.js": "./compile.js",
+    "./parse.js": "./src/parse.js",
+    "./compile.js": "./src/compile.js",
     "./subscript.js": "./subscript.js",
     "./justin.js": "./justin.js"
   },
   "type": "module",
   "files": [
-    "parse.js",
-    "compile.js",
+    "src",
+    "feature",
     "subscript.js",
     "subscript.min.js",
     "justin.js",

@@ -4,4 +4,3 @@ export default subscript;
 export * from "./src/parse.js";
 export * from "./src/compile.js";
 declare function subscript(s: string): ((ctx?: any) => any) | OperatorFunction;
-export function set(op: string, prec: number, fn: OperatorFunction): void;
