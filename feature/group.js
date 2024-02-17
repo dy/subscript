@@ -1,4 +1,4 @@
-import { token, expr, err, nary, group } from '../src/parse.js'
+import { err, nary, group } from '../src/parse.js'
 import { compile, operator } from '../src/compile.js'
 import { PREC_ACCESS, PREC_GROUP, PREC_SEQ } from '../src/const.js'
 
