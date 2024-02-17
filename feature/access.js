@@ -1,10 +1,10 @@
-import { token, expr, err, binary } from '../src/parse.js'
-import { operator, compile, access } from '../src/compile.js'
+import { access, binary, group } from '../src/parse.js'
+import { operator, compile } from '../src/compile.js'
 import { CBRACK, PREC_ACCESS } from '../src/const.js'
 
 // a[b]
-token('[', PREC_ACCESS, a => a && ['[', a, expr(0, CBRACK) || err()])
-operator('[', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx)[b(ctx)]))
+access('[]', PREC_ACCESS)
+operator('[', (a, b) => !b ? err() : (a = compile(a), b = compile(b), ctx => a(ctx)[b(ctx)]))
 
 // a.b
 binary('.', PREC_ACCESS)

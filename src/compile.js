@@ -10,9 +10,9 @@ export const compile = (node) => !Array.isArray(node) ? ctx => ctx?.[node] : !no
   operator = (op, fn, prev = operators[op]) => (operators[op] = (...args) => fn(...args) || prev && prev(...args)),
 
   // takes node and returns evaluator depending on the case with passed params (container, path, ctx) =>
-  access = (a, fn, generic) => (
+  prop = (a, fn, generic) => (
     // (((x))) => x
-    a[0] === '()' ? access(a[1], fn, generic) :
+    a[0] === '()' ? prop(a[1], fn, generic) :
       // (_, name, ctx) => ctx[path]
       typeof a === 'string' ? fn.bind(0, ctx => ctx, () => a) :
         // (container, path, ctx) => container(ctx)[path]

@@ -105,7 +105,8 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 * `[⚬, a, b]` - binary operator `a ⚬ b`
 * `[⚬, a, b, c]` n-ary operator `a ⚬ b ⚬ c`
 * `[, a]` - literal value `'a'`
-* `[⦅⦆, a, b]` - group operator `a⦅b⦆`
+* `[⦅⦆, a]` - group operator `⦅a⦆`
+* `[⦅, a, b]` - access operator `a⦅b⦆`
 * `a` - variable (from scope)
 
 
@@ -115,8 +116,9 @@ _Subscript_ provides pluggable language [features](./features) and API to custom
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
-* `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
-* `group(str, precedence, prefix=false)` - register a group, like `[]`, `{}`, `()` etc, optionally parse prefix id eg. `a[]`, `a{}`.
+* `nary(str, precedence)` − register n-ary (sequence) operator.
+* `group(str, precedence)` - register group, like `[]`, `{}`, `()`, optionally allow empty.
+* `access(str, precedence)` - register access operator, like `a[b]`.
 * `token(str, precedence, lnode => node)` − register custom token or literal. Callback takes left-side node and returns complete expression node.
 * `operator(str, (a, b) => ctx => value)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
 

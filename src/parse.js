@@ -78,13 +78,12 @@ export let idx, cur,
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
 
   // skips means ,,, ;;; are allowed
-  nary = (op, prec, skips) => {
+  nary = (op, prec) => {
     token(op, prec, (a, b) => (
-      (a || skips) && // if lhs exists or we're ok to skip
-      (b = expr(prec), b || skips) && // either rhs exists or we're ok to skip rhs
+      (b = expr(prec)),
       (
         (!a || a[0] !== op) && (a = [op, a]), // if beginning of sequence - init node
-        (b || skips) && a.push(b),
+        a.push(b),
         a
       ))
     )
@@ -92,7 +91,10 @@ export let idx, cur,
 
   // register (a), [b], {c} etc groups
   // FIXME: add "Unclosed paren" error
-  group = (op, prec, notEmpty) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1)) || (notEmpty && err(`Empty ${op}`))]))
+  group = (op, prec) => token(op[0], prec, a => (!a && ([op, expr(0, op.charCodeAt(1))]))),
+
+  // register a(b), a[b], a<b> etc,
+  access = (op, prec) => token(op[0], prec, a => (a && [op[0], a, expr(0, op.charCodeAt(1))]))
 
 
 export default parse

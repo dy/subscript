@@ -1,7 +1,7 @@
 
 import { binary, unary } from '../src/parse.js'
 import { PREC_ADD, PREC_PREFIX, PREC_ASSIGN } from '../src/const.js'
-import { compile, access, operator } from '../src/compile.js'
+import { compile, prop, operator } from '../src/compile.js'
 
 unary('+', PREC_PREFIX), operator('+', (a, b) => !b && (a = compile(a), ctx => +a(ctx)))
 unary('-', PREC_PREFIX), operator('-', (a, b) => !b && (a = compile(a), ctx => -a(ctx)))
@@ -12,11 +12,11 @@ binary('-', PREC_ADD), operator('-', (a, b) => b && (a = compile(a), b = compile
 binary('+=', PREC_ASSIGN, true)
 operator('+=', (a, b) => (
   b = compile(b),
-  access(a, (container, path, ctx) => container(ctx)[path(ctx)] += b(ctx))
+  prop(a, (container, path, ctx) => container(ctx)[path(ctx)] += b(ctx))
 ))
 
 binary('-=', PREC_ASSIGN, true)
 operator('-=', (a, b) => (
   b = compile(b),
-  access(a, (container, path, ctx) => (container(ctx)[path(ctx)] -= b(ctx)))
+  prop(a, (container, path, ctx) => (container(ctx)[path(ctx)] -= b(ctx)))
 ))

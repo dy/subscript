@@ -1,15 +1,15 @@
-import { token, expr, err } from '../src/parse.js'
-import { operator, compile, access } from '../src/compile.js'
-import { CPAREN, PREC_ACCESS } from '../src/const.js'
+import { access } from '../src/parse.js'
+import { operator, compile, prop } from '../src/compile.js'
+import { PREC_ACCESS } from '../src/const.js'
 
 // a(b,c,d), a()
-token('(', PREC_ACCESS, (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']))
+access('()', PREC_ACCESS)
 operator('(', (a, b, args) => (
-  args = b == '' ? () => [] : // a()
-    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) : // a(b,c)
+  args = !b ? () => [] : // a()
+    b[0] === ',' ? (b = b.slice(1).map(b => !b ? err() : compile(b)), ctx => b.map(arg => arg(ctx))) : // a(b,c)
       (b = compile(b), ctx => [b(ctx)]), // a(b)
 
   // a(...args), a.b(...args), a[b](...args)
-  access(a, (obj, path, ctx) => obj(ctx)[path(ctx)](...args(ctx)), true)
+  prop(a, (obj, path, ctx) => obj(ctx)[path(ctx)](...args(ctx)), true)
 )
 )
