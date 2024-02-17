@@ -1,4 +1,4 @@
-# <img alt="subscript" src="/subscript2.svg" height=28/> <!--sub͘<em>script</em>--> <!--<sub>SUB͘<em>SCRIPT</em></sub>--> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlephobia.com/package/subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
+# sub<em>script</em> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlephobia.com/package/subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
 > _Subscript_ is fast, tiny & extensible expression evaluator / microlanguage.
 
@@ -102,7 +102,7 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 
 ## Extending
 
-_Subscript_ provides API to customize or extend syntax:
+_Subscript_ provides pluggable language [features](./features) and API to customize syntax:
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
@@ -113,6 +113,10 @@ _Subscript_ provides API to customize or extend syntax:
 
 ```js
 import script, { compile, operator, unary, binary, token } from './subscript.js'
+
+// include objects/arrays syntax
+import 'subscript/feature/array.js';
+import 'subscript/feature/object.js';
 
 // add identity operators with precedence 9
 binary('===', 9), binary('!==', 9)
