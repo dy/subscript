@@ -101,9 +101,9 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 
 #### Node Kinds
 
-* `['∘', a]` - unary prefix or postfix operator
-* `['∘', a, b]` - binary operator
-* `['∘', a, b, c]` n-ary operator
+* `[∘, a]` - unary prefix or postfix operator
+* `[∘, a, b]` - binary operator
+* `[∘, a, b, c]` n-ary operator
 * `[, a]` - literal value
 * `a` - variable (from scope)
 
