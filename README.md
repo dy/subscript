@@ -107,7 +107,8 @@ _Subscript_ provides API to customize or extend syntax:
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
 * `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
-* `token(str, precedence, prevNode => curNode)` − register custom token or literal. Function takes last token and returns tree node.
+* `group(str, precedence, notEmpty=false)` - register a group, like `[]`, `{}`, `()` etc, optionally prohibit empty group.
+* `token(str, precedence, lnode => node)` − register custom token or literal. Function takes left-side node and returns complete expression node.
 * `operator(str, (a, b) => ctx => result)` − register evaluator for an operator. Function takes node arguments and returns evaluator function.
 
 ```js

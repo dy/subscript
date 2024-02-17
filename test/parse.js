@@ -79,7 +79,6 @@ test('parse: strings', t => {
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 
-
 test('parse: bad number', t => {
   is(parse('-1.23e-2'), ['-', ['', 1.23e-2]])
   throws(t => parse('.e-1'))
@@ -205,22 +204,22 @@ test.skip('parse: nary', t => {
   is(parse('#a###c#'), ['#', , 'a', , , 'c', ,])
 })
 
-test.skip('ext: in operator', t => {
-  binary('in', 10, node => code(2) <= 32 && [skip(2), '' + node, expr(10)])
+test('ext: in operator', async t => {
+  await import('../feature/in.js')
 
   is(parse('inc in bin'), ['in', 'inc', 'bin'])
   is(parse('bin in inc'), ['in', 'bin', 'inc'])
   throws(() => parse('b inc'))
 })
 
-test.skip('ext: justin', async t => {
+test('ext: justin', async t => {
   const { parse } = await import('../justin.js')
   is(parse('a;b'), [';', 'a', 'b'])
   is(parse('a;b;'), [';', 'a', 'b', ,])
   is(parse('b;'), [';', 'b', ,])
   is(parse(`"abcd" + 'efgh'`), ['+', ['', 'abcd'], ['', 'efgh']])
-  is(parse('{x:~1, "y":2**2}["x"]'), ['[', ['{', [',', [':', 'x', ['~', ['', 1]]], [':', ['', 'y'], ['**', ['', 2], ['', 2]]]]], ['', 'x']])
-  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['(', 'a', [',', ['(', ['+', ['', 1], ['', 2]]], ['(', ['?', ['>', 'e', ['', 0]], 'f', 'g']]]])
+  is(parse('{x:~1, "y":2**2}["x"]'), ['[', ['{}', [',', [':', 'x', ['~', ['', 1]]], [':', ['', 'y'], ['**', ['', 2], ['', 2]]]]], ['', 'x']])
+  is(parse('a((1 + 2), (e > 0 ? f : g))'), ['(', 'a', [',', ['()', ['+', ['', 1], ['', 2]]], ['()', ['?', ['>', 'e', ['', 0]], 'f', 'g']]]])
 })
 
 test('parse: unfinished sequences', async t => {

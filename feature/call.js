@@ -1,6 +1,6 @@
 import { token, expr, err } from '../src/parse.js'
 import { operator, compile, access } from '../src/compile.js'
-import { CBRACK, CPAREN, PREC_ACCESS } from '../src/const.js'
+import { CPAREN, PREC_ACCESS } from '../src/const.js'
 
 // a(b,c,d), a()
 token('(', PREC_ACCESS, (a, b) => a && (b = expr(0, CPAREN), b ? ['(', a, b] : ['(', a, '']))

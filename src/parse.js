@@ -49,7 +49,7 @@ export let idx, cur,
     (c >= 192 && c != 215 && c != 247), // any non-ASCII
 
   // parse identifier (configurable)
-  id = parse.id = n => skip(isId),
+  id = parse.id = () => skip(isId),
 
   // skip space chars, return first non-space character
   space = parse.space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
@@ -73,7 +73,7 @@ export let idx, cur,
     (idx = from, prev?.(a, curPrec)),
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
-  binary = (op, prec, right = 0) => token(op, prec, (a, b) => a && (b = expr(prec - right / 2)) && [op, a, b]),
+  binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
 
   // post indicates postfix rather than prefix operator
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
@@ -89,6 +89,10 @@ export let idx, cur,
         a
       ))
     )
-  }
+  },
+
+  // register (a), [b], {c} etc groups
+  group = (op, prec, notEmpty) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1)) || (notEmpty && err(`Empty ${op}`))]))
+
 
 export default parse
