@@ -35,7 +35,6 @@ export let idx, cur,
     ) token = newNode;
 
     // check end character
-    // FIXME: can't show "Unclosed paren", because can be unknown operator within group as well
     if (end) cc == end ? idx++ : err()
 
     return token
@@ -92,6 +91,7 @@ export let idx, cur,
   },
 
   // register (a), [b], {c} etc groups
+  // FIXME: add "Unclosed paren" error
   group = (op, prec, notEmpty) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1)) || (notEmpty && err(`Empty ${op}`))]))
 
 

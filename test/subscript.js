@@ -418,6 +418,13 @@ test('ext: array', async t => {
   is(subscript('[ 1, 2+3, "4" ]')(), [1, 5, '4'])
 })
 
+test('ext: arrow', async t => {
+  await import('../feature/arrow.js')
+
+  is(subscript('() => 1')()(), 1)
+  is(subscript('(a) => a+1')()(1), 2)
+  is(subscript('(a) => a+b')({ b: 2 })(1), 3)
+})
 
 test('ext: justin', async t => {
   await import('../justin.js')
