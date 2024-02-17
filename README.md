@@ -82,7 +82,7 @@ fn = compile(tree)
 fn({ a: {b: 1}, c: 2 }) // 3
 ```
 
-## Syntax Tree
+### Syntax Tree
 
 AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
 
@@ -90,15 +90,23 @@ AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/fri
 * reflects execution sequence, rather than code layout;
 * has minimal overhead, directly maps to operators;
 * simplifies manual evaluation and debugging;
-* has conventional form and one-line docs:
+* has conventional form and one-liner docs:
 
 ```js
 import { compile } from 'subscript.js'
 
 const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
-
 fn({min: 5}) // min*60 + "sec" == "300sec"
 ```
+
+### Node kinds:
+
+* `['∘', a]` - unary prefix or postfix operator
+* `['∘', a, b]` - binary operator
+* `['∘', a, b, c]` n-ary operator
+* `[, a]` - literal value
+* `a` - variable (from scope)
+
 
 ## Extending
 
