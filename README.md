@@ -116,8 +116,8 @@ _Subscript_ provides pluggable language [features](./features) and API to custom
 * `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
 * `nary(str, precedence, allowSkip=false)` − register n-ary (sequence) operator, optionally allowing skipping args.
 * `group(str, precedence, notEmpty=false)` - register a group, like `[]`, `{}`, `()` etc, optionally prohibit empty group.
-* `token(str, precedence, lnode => node)` − register custom token or literal. Function takes left-side node and returns complete expression node.
-* `operator(str, (a, b) => ctx => result)` − register evaluator for an operator. Function takes node arguments and returns evaluator function.
+* `token(str, precedence, lnode => node)` − register custom token or literal. Callback takes left-side node and returns complete expression node.
+* `operator(str, (a, b) => ctx => result)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
 
 ```js
 import script, { compile, operator, unary, binary, token } from './subscript.js'
