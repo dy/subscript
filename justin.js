@@ -14,15 +14,7 @@ import './feature/array.js'
 import './feature/object.js'
 import './feature/optional.js'
 
-// operators
-// set('===', PREC_EQ, (a, b) => a === b)
-// set('!==', PREC_EQ, (a, b) => a !== b)
-// binary('??', PREC_OR), operator('??', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)))
-
-// literals
 token('null', 20, a => a ? err() : [, null])
-// token('undefined', 20, a => a ? err() : [, undefined])
-// token('NaN', 20, a => a ? err() : [, NaN])
 
 export default subscript
 export * from './subscript.js'

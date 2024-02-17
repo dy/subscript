@@ -97,18 +97,16 @@ import { compile } from 'subscript.js'
 
 const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
+
+// node kinds
+['+', a];       // unary prefix or postfix operator `+a`
+['+', a, b];    // binary operator `a + b`
+['+', a, b, c]; // n-ary operator `a + b + c`
+['()', a];      // group operator `(a)`
+['(', a, b];    // access operator `a(b)`
+[, a];          // literal value `'a'`
+a;              // variable (from scope)
 ```
-
-#### Node Kinds
-
-* `[⚬, a]` - unary prefix or postfix operator `⚬a`
-* `[⚬, a, b]` - binary operator `a ⚬ b`
-* `[⚬, a, b, c]` n-ary operator `a ⚬ b ⚬ c`
-* `[, a]` - literal value `'a'`
-* `[⦅⦆, a]` - group operator `⦅a⦆`
-* `[⦅, a, b]` - access operator `a⦅b⦆`
-* `a` - variable (from scope)
-
 
 ## Extending
 
@@ -129,10 +127,14 @@ import script, { compile, operator, unary, binary, token } from './subscript.js'
 import 'subscript/feature/array.js';
 import 'subscript/feature/object.js';
 
-// add identity operators with precedence 9
+// add identity operators (precedence of comparison)
 binary('===', 9), binary('!==', 9)
 operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx)))
 operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx)))
+
+// add nullish coalescing (precedence of logical or)
+binary('??', 3)
+operator('??', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)))
 
 // add JS literals
 token('undefined', 20, a => a ? err() : [, undefined])
