@@ -99,7 +99,7 @@ const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
 ```
 
-### Node kinds:
+#### Node Kinds
 
 * `['∘', a]` - unary prefix or postfix operator
 * `['∘', a, b]` - binary operator
