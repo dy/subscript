@@ -125,7 +125,7 @@ _Subscript_ provides pluggable language [features](./features) and API to custom
 ```js
 import script, { compile, operator, unary, binary, token } from './subscript.js'
 
-// include objects/arrays syntax
+// enable objects/arrays syntax
 import 'subscript/feature/array.js';
 import 'subscript/feature/object.js';
 
