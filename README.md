@@ -115,8 +115,8 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 _Subscript_ provides pluggable language [features](./features) and API to customize syntax:
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix or postfix.
-* `binary(str, precedence, rightAssoc=false)` − register binary operator, optionally right-associative.
-* `nary(str, precedence)` − register n-ary (sequence) operator.
+* `binary(str, precedence, rassoc=false)` − register binary operator, optionally right-associative.
+* `nary(str, precedence)` − register n-ary (sequence) operator like `a;b;` or `a,b`, allows missing args.
 * `group(str, precedence)` - register group, like `[]`, `{}`, `()`, optionally allow empty.
 * `access(str, precedence)` - register access operator, like `a[b]`.
 * `token(str, precedence, lnode => node)` − register custom token or literal. Callback takes left-side node and returns complete expression node.

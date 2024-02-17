@@ -101,7 +101,6 @@ test('readme', t => {
   sameAsJs(`min * 60 + "sec"`, { min: 5 })
 
   binary('|', 6), operator('|', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
-  token('=>', 2, (args, body) => (body = expr(), ctx => (...args) => body())) // single-arg arrow function parser
 
   let evaluate = subscript(`
     interval(350)
@@ -336,14 +335,12 @@ test('ext: in operator', async t => {
   throws(() => subscript('b inc'))
 })
 
-test('ext: list', t => {
-  token('[', 20, a => !a && ['[', expr(0, 93) || ''])
-  operator('[', (a, b) => !b && (
-    !a ? ctx => [] : // []
-      a[0] === ',' ? (a = a.slice(1).map(compile), ctx => a.map(a => a(ctx))) : // [a,b,c]
-        (a = compile(a), ctx => [a(ctx)]) // [a]
-  )
-  )
+test('ext: list', async t => {
+  await import('../feature/array.js')
+
+  is(subscript('[]')(), [])
+  is(subscript('[ 1 ]')(), [1])
+  is(subscript('[ 1, 2+3, "4" ]')(), [1, 5, '4'])
 
   is(subscript('[1,2,3,4,5,6]')(), [1, 2, 3, 4, 5, 6])
   is(subscript('[1,2,3,4,5]')(), [1, 2, 3, 4, 5])
@@ -408,14 +405,6 @@ test('ext: object', async t => {
   sameAsJs('b?{c:1}:{d:2}', { b: 2 })
 
   sameAsJs('{b:true, c:d}', { d: true })
-})
-
-test('ext: array', async t => {
-  await import('../feature/array.js')
-
-  is(subscript('[]')(), [])
-  is(subscript('[ 1 ]')(), [1])
-  is(subscript('[ 1, 2+3, "4" ]')(), [1, 5, '4'])
 })
 
 test('ext: arrow', async t => {
