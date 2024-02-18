@@ -110,7 +110,7 @@ a;              // variable (from scope)
 
 ## Extending
 
-_Subscript_ provides pluggable language [features](./features) and API to customize syntax:
+_Subscript_ provides premade language [features](./features) and API to customize syntax:
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix `⚬a` or postfix `a⚬`.
 * `binary(str, precedence, rassoc=false)` − register binary operator `a ⚬ b`, optionally right-associative.
