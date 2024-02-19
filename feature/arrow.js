@@ -3,7 +3,7 @@ import { compile, operator } from "../src/compile.js"
 import { PREC_ASSIGN, PREC_TOKEN } from "../src/const.js"
 
 // arrow functions (useful for array methods)
-binary('=>', PREC_ASSIGN)
+binary('=>', PREC_ASSIGN, true)
 operator('=>',
   (a, b) => (
     a = a[0] === '()' ? a[1] : a,

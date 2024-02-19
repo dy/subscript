@@ -413,6 +413,9 @@ test('ext: arrow', async t => {
   is(subscript('() => 1')()(), 1)
   is(subscript('(a) => a+1')()(1), 2)
   is(subscript('(a) => a+b')({ b: 2 })(1), 3)
+  is(subscript('a=>a+=1')()(1), 2)
+  is(parse('a=>a,b=>b=c=d'), [',', ['=>', 'a', 'a'], ['=>', 'b', ['=', 'b', ['=', 'c', 'd']]]])
+  is(parse('a=>b=>c=d'), ['=>', 'a', ['=>', 'b', ['=', 'c', 'd']]])
 })
 
 test('ext: justin', async t => {
