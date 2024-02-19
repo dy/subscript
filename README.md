@@ -1,6 +1,6 @@
 # sub<em>script</em> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlephobia.com/package/subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlephobia/minzip/subscript/latest?color=brightgreen&label=gzip"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-> _Subscript_ is fast, tiny & extensible expression evaluator / microlanguage.
+> _Subscript_ is fast, tiny & extensible expression evaluator / microlanguage with standard syntax.
 
 ####  Used for:
 
@@ -110,7 +110,7 @@ a;              // variable (from scope)
 
 ## Extending
 
-_Subscript_ provides pluggable language [features](./features) and API to customize syntax:
+_Subscript_ provides premade language [features](./features) and API to customize syntax:
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix `⚬a` or postfix `a⚬`.
 * `binary(str, precedence, rassoc=false)` − register binary operator `a ⚬ b`, optionally right-associative.
