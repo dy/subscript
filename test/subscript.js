@@ -33,6 +33,7 @@ test('basic', t => {
   sameAsJs('0 * 1 * 2 / 1 / 2 * 1')
   sameAsJs('0 + 1 - 2 * 3')
   sameAsJs('1 * 2 - 3')
+  is(subscript(`a`)({ a: 1 }), 1)
   is(subscript(`a()`)({ a: v => 1 }), 1)
   is(subscript(`a( )`)({ a: v => 1 }), 1)
   is(subscript(`a(1)`)({ a: v => v }), 1)
