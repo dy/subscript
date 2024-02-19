@@ -10,6 +10,6 @@ operator('(', (a, b, args) => (
       (b = compile(b), ctx => [b(ctx)]), // a(b)
 
   // a(...args), a.b(...args), a[b](...args)
-  prop(a, (obj, path, ctx) => obj(ctx)[path(ctx)](...args(ctx)), true)
+  prop(a, (obj, path, ctx) => obj[path](...args(ctx)), true)
 )
 )

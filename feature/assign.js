@@ -7,5 +7,5 @@ binary('=', PREC_ASSIGN, true)
 operator('=', (a, b) => (
   b = compile(b),
   // a = x, ((a)) = x, a.b = x, a['b'] = x
-  prop(a, (container, path, ctx) => container(ctx)[path(ctx)] = b(ctx))
+  prop(a, (container, path, ctx) => container[path] = b(ctx))
 ))
