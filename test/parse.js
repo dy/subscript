@@ -122,11 +122,9 @@ test('parse: unaries', t => {
   is(parse('a-+-b'), ['-', 'a', ['+', ['-', 'b']]])
   is(parse('a-+!b'), ['-', 'a', ['+', ['!', 'b']]])
   is(parse('a * -a'), ['*', 'a', ['-', 'a']])
-})
-test('parse: postfix unaries', t => {
-  is(parse('a--'), ['+', ['--', 'a'], [, 1]])
-  is(parse('a++'), ['-', ['++', 'a'], [, 1]])
-  // is(parse('1++(b)'),[['++',1],'b']) // NOTE: not supported by JS btw
+
+  is(parse('a--'), ['--+', 'a'])
+  is(parse('a++'), ['++-', 'a'])
 })
 
 test('parse: prop access', t => {
