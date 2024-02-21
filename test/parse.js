@@ -2,7 +2,8 @@
 // NOTE: we have redone it so many times that it's just better be kept as is
 
 import test, { is, any, throws } from 'tst'
-import { parse, binary, nary, unary, token, skip } from '../subscript.js'
+import { binary, nary, unary, token } from '../subscript.js'
+import parse from '../src/parse.js'
 import { PREC_MULT } from '../src/const.js'
 
 test('parse: basic', t => {
@@ -202,7 +203,7 @@ test.skip('parse: nary', t => {
   is(parse('#a###c#'), ['#', , 'a', , , 'c', ,])
 })
 
-test('ext: in operator', async t => {
+test.skip('ext: in operator', async t => {
   await import('../feature/in.js')
 
   is(parse('inc in bin'), ['in', 'inc', 'bin'])

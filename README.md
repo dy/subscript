@@ -47,14 +47,18 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 _Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ (see [thread](https://github.com/endojs/Jessie/issues/66)).<br/> It extends _subscript_ with:
 
-+ `a ** b` (right-assoc)
-+ `a ? b : c`
-+ `a?.b`
++ `a === b`, `a !== b`
++ `a ** b`, `a **= b`
++ `a ?? b`, `a ??= b`
++ `a ||= b`, `a &&= b`
++ `a ? b : c`, `a?.b`
 + `[a, b]` Array
 + `{a: b}` Object
-+ `a in b`
++ `(a, b) => c` Function
 + `// foo`, `/* bar */`
-+ `true`, `false`, `null`
++ `a ||= b`
++ `true`, `false`, `null`, `NaN`, `undefined`
++ `a in b`
 <!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 
