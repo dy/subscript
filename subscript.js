@@ -17,6 +17,6 @@ import compile from './src/compile.js'
 import parse from './src/parse.js'
 
 export { parse, access, binary, unary, nary, group, lookup, token } from './src/parse.js'
-export { compile, operator } from './src/compile.js'
+export { compile, operator, prop } from './src/compile.js'
 
 export default s => compile(parse(s))
