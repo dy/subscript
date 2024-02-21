@@ -45,8 +45,7 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 ### Justin
 
-_Justin_ is minimal JS subset, _JSON_ + _expressions_, no keywords (just `in`).
-See [thread](https://github.com/endojs/Jessie/issues/66) for details. It extends _subscript_ with:
+_Justin_ is minimal no-keywords JS subset, _JSON_ + _expressions_ (see [thread](https://github.com/endojs/Jessie/issues/66)).<br/> It extends _subscript_ with:
 
 + `a ** b` (right-assoc)
 + `a ? b : c`
