@@ -1,6 +1,6 @@
 // no-keywords js, just in https://github.com/endojs/Jessie/issues/66
 import { err, token, binary } from './src/parse.js'
-import compile, { operator } from './src/compile.js'
+import compile, { operator, prop } from './src/compile.js'
 
 import subscript from './subscript.js'
 import './feature/comment.js'

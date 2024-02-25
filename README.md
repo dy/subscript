@@ -145,7 +145,7 @@ token('undefined', 20, a => a ? err() : [, undefined])
 token('NaN', 20, a => a ? err() : [, NaN])
 ```
 
-See [`./feature/*`](./feature) for examples.
+See [`./feature/*`](./feature) or [`./justin.js`](./justin.js) for examples.
 
 
 <!--
