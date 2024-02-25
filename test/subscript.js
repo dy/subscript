@@ -454,7 +454,7 @@ test('ext: justin', async t => {
   let s = { a: 0 }
   subscript('a = {b:0}')(s)
   is(s, { a: { b: 0 } })
-  subscript('a.b = 1')(s)
+  subscript('a.b ||= 1')(s)
   is(s, { a: { b: 1 } })
 })
 
