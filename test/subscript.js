@@ -377,7 +377,7 @@ test('array', async t => {
   sameAsJs('[undefined]', {})
 })
 
-test.only('ternary', async t => {
+test('ternary', async t => {
   await import('../feature/ternary.js')
 
   sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
@@ -388,8 +388,6 @@ test.only('ternary', async t => {
   sameAsJs('a?b:c?d:e', { a: 0, c: 0, d: 2, e: 3 })
   sameAsJs('a?b:c?d:e?f:g', { a: 0, c: 0, d: 2, e: 0, f: 3, g: 4 })
   sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
-
-  // (hash.value === '#/active' ? (item.value.done) : hash.value === '#/completed' ? !item.value.done : false)
 })
 
 test('object', async t => {
