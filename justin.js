@@ -19,7 +19,7 @@ binary('in', PREC_COMP), operator('in', (a, b) => b && (a = compile(a), b = comp
 // register !==, ===
 binary('===', PREC_EQ), binary('!==', 9)
 operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)))
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) !== b(ctx)))
+operator('!==', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) !== b(ctx)))
 
 // add nullish coalescing
 binary('??', PREC_LOR)
