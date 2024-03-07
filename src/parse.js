@@ -15,11 +15,13 @@ export let idx, cur,
     throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}▶${after}\``, 'font-weight: bold')
   },
 
+  // advance until condition meets
   next = (is, from = idx, l) => {
     while (l = is(cur.charCodeAt(idx))) idx += l
     return cur.slice(from, idx)
   },
 
+  // consume n characters
   skip = (n = 1, from = idx) => (idx += n, cur.slice(from, idx)),
 
   // a + b - c
