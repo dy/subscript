@@ -8,10 +8,9 @@
   "types": "./subscript.d.ts",
   "exports": {
     ".": "./subscript.js",
-    "./parse.js": "./src/parse.js",
-    "./compile.js": "./src/compile.js",
-    "./subscript.js": "./subscript.js",
-    "./justin.js": "./justin.js"
+    "./parse": "./src/parse.js",
+    "./compile": "./src/compile.js",
+    "./justin": "./justin.js"
   },
   "type": "module",
   "files": [
