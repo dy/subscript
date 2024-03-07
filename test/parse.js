@@ -243,5 +243,7 @@ test('parse: low-precedence unary', t => {
 
 test('parse: ternary', t => {
   is(parse('a ? b : c ? d : e'), ['?', 'a', 'b', ['?', 'c', 'd', 'e']])
+  is(parse('a ? b : c ? d : e ? f : g'), ['?', 'a', 'b', ['?', 'c', 'd', ['?', 'e', 'f', 'g']]])
+  is(parse('a ? b ? c : d : e'), ['?', 'a', ['?', 'b', 'c', 'd'], 'e'])
   is(parse('a ? b ? c : d : e'), ['?', 'a', ['?', 'b', 'c', 'd'], 'e'])
 })
