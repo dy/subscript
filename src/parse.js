@@ -30,7 +30,7 @@ export let idx, cur,
       // it makes extra `space` call for parent exprs on the same character to check precedence again
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
-        (!token && parse.id()) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
+        (!token && skip(parse.id)) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
       )
     ) token = newNode;
 
@@ -40,15 +40,13 @@ export let idx, cur,
     return token
   },
 
-  isId = c =>
+  // parse identifier (configurable)
+  id = parse.id = c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
     (c >= 192 && c != 215 && c != 247), // any non-ASCII
-
-  // parse identifier (configurable)
-  id = parse.id = () => skip(isId),
 
   // skip space chars, return first non-space character
   space = parse.space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
@@ -68,7 +66,7 @@ export let idx, cur,
     prev = lookup[c],
     word = op.toUpperCase() !== op // make sure word boundary comes after word operator
   ) => lookup[c] = (a, curPrec, from = idx) =>
-    (curPrec < prec && (l < 2 || cur.substr(idx, l) == op) && (!word || !isId(cur.charCodeAt(idx + l))) && (idx += l, map(a, curPrec))) ||
+    (curPrec < prec && (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (idx += l, map(a, curPrec))) ||
     (idx = from, prev?.(a, curPrec)),
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
