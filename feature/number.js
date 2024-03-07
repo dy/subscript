@@ -1,8 +1,8 @@
-import { lookup, skip, err } from "../src/parse.js"
+import { lookup, next, err } from "../src/parse.js"
 import { PERIOD, _0, _E, _e, _9 } from "../src/const.js"
 
 // parse number
-const num = a => a ? err() : [, (a = +skip(c => c === PERIOD || (c >= _0 && c <= _9) || (c === _E || c === _e ? 2 : 0))) != a ? err() : a]
+const num = a => a ? err() : [, (a = +next(c => c === PERIOD || (c >= _0 && c <= _9) || (c === _E || c === _e ? 2 : 0))) != a ? err() : a]
 
 // .1
 lookup[PERIOD] = a => (!a && num())

@@ -15,11 +15,12 @@ export let idx, cur,
     throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}▶${after}\``, 'font-weight: bold')
   },
 
-  skip = (is = 1, from = idx, l) => {
-    if (typeof is == 'number') idx += is
-    else while (l = is(cur.charCodeAt(idx))) idx += l
+  next = (is = 1, from = idx, l) => {
+    while (l = is(cur.charCodeAt(idx))) idx += l
     return cur.slice(from, idx)
   },
+
+  skip = (n = 1, from = idx) => (idx += n, cur.slice(from, idx)),
 
   // a + b - c
   expr = (prec = 0, end, cc, token, newNode, fn) => {
@@ -30,7 +31,7 @@ export let idx, cur,
       // it makes extra `space` call for parent exprs on the same character to check precedence again
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
-        (!token && skip(parse.id)) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
+        (!token && next(parse.id)) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
       )
     ) token = newNode;
 
