@@ -1,3 +1,4 @@
+// tests cover all jsep ones + extra
 import test, { is, throws } from 'tst'
 import script, { parse, nary, binary, unary, compile, operator } from '../justin.js'
 
@@ -75,7 +76,7 @@ test('Arrays', () => {
   is(script('[a]')({ a: 1 }), [1])
 })
 
-test('Ops', function (qunit) {
+test('Ops', function(qunit) {
   is(script('1')(), 1)
   is(script('1+2')(), 3)
   is(script('1*2')(), 2)
@@ -193,7 +194,11 @@ test('Ternary', () => {
 })
 
 
-test('should allow manipulating what is considered whitespace', (assert) => {
+test('comment case', () => {
   const expr = 'a // skip all this'
   is(script(expr)({ a: 'a' }), 'a')
+})
+
+test('spread', () => {
+  is(script('{...a, y:2}')({ a: { x: 1 } }), { x: 1, y: 2 })
 })
