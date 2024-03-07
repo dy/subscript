@@ -15,7 +15,7 @@ export let idx, cur,
     throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}▶${after}\``, 'font-weight: bold')
   },
 
-  next = (is = 1, from = idx, l) => {
+  next = (is, from = idx, l) => {
     while (l = is(cur.charCodeAt(idx))) idx += l
     return cur.slice(from, idx)
   },
