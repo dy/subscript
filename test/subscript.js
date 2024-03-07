@@ -129,9 +129,14 @@ test('readme', t => {
   is(subscript('true === false')(), false) // false
 })
 
-
-test('ext: interpolate string', t => {
-  is(subscript('a+1')({ a: 1 }), 2)
+test('numbers', t => {
+  is(subscript('1')(), 1)
+  is(subscript('42')(), 42)
+  is(subscript('3.14')(), 3.14)
+  is(subscript('.1')(), .1)
+  is(subscript('0.1')(), 0.1)
+  is(subscript('0.1E+3')(), 0.1E+3)
+  is(subscript('1E-3')(), 1E-3)
 })
 
 test('strings', t => {
@@ -388,7 +393,7 @@ test.skip('ext: ternary', t => {
   sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
 })
 
-test('ext: object', async t => {
+test('object', async t => {
   await import('../feature/object.js')
   await import('../feature/ternary.js')
 
@@ -399,6 +404,8 @@ test('ext: object', async t => {
   sameAsJs('{x: 1+2, y:a(3)}', { a: x => x * 2 })
   sameAsJs('{1: 2}')
   sameAsJs('{x}', { x: 1 })
+  sameAsJs('{x, y}', { x: 1, y: 2 })
+  // sameAsJs('{...x}', { x: 1 })
 
   sameAsJs('{a:b?c:d}', { b: 2, c: 3, d: 4 })
   sameAsJs('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
