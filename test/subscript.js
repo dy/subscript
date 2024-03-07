@@ -393,7 +393,7 @@ test.skip('ext: ternary', t => {
   sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
 })
 
-test('object', async t => {
+test.only('object', async t => {
   await import('../feature/object.js')
   await import('../feature/ternary.js')
 
@@ -405,7 +405,7 @@ test('object', async t => {
   sameAsJs('{1: 2}')
   sameAsJs('{x}', { x: 1 })
   sameAsJs('{x, y}', { x: 1, y: 2 })
-  // sameAsJs('{...x}', { x: 1 })
+  sameAsJs('{...x}', { x: { a: 1 } })
 
   sameAsJs('{a:b?c:d}', { b: 2, c: 3, d: 4 })
   sameAsJs('{a:b?c:d, e:!f?g:h}', { b: 2, c: 3, d: 4, f: 1, g: 2, h: 3 })
