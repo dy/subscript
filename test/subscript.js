@@ -377,13 +377,8 @@ test('array', async t => {
   sameAsJs('[undefined]', {})
 })
 
-test.skip('ext: ternary', t => {
-  // NOTE: must be tested separately, else breaks jsep test
-  token('?', 3,
-    (a, b, c) => a && (b = expr(2, 58)) && (c = expr(3), ['?', a, b, c]))
-  operator('?',
-    (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx))
-  )
+test.only('ternary', async t => {
+  await import('../feature/ternary.js')
 
   sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
   sameAsJs('a?b:c', { a: false, b: 1, c: 2 })
@@ -393,6 +388,8 @@ test.skip('ext: ternary', t => {
   sameAsJs('a?b:c?d:e', { a: 0, c: 0, d: 2, e: 3 })
   sameAsJs('a?b:c?d:e?f:g', { a: 0, c: 0, d: 2, e: 0, f: 3, g: 4 })
   sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
+
+  // (hash.value === '#/active' ? (item.value.done) : hash.value === '#/completed' ? !item.value.done : false)
 })
 
 test('object', async t => {

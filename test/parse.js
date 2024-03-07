@@ -93,6 +93,7 @@ test('parse: intersecting binary', t => {
 
   is(parse('a >> b'), ['>>', 'a', 'b'], 'a>>b')
 })
+
 test('parse: signs', t => {
   is(parse('+-x'), ['+', ['-', 'x']])
   is(parse('a(+x)'), ['(', 'a', ['+', 'x']])
@@ -115,6 +116,7 @@ test('parse: signs', t => {
   is(parse('+x -y'), ['-', ['+', 'x'], 'y'])
   is(parse('-x +y'), ['+', ['-', 'x'], 'y'])
 })
+
 test('parse: unaries', t => {
   is(parse('-b'), ['-', 'b'])
   is(parse('+-b'), ['+', ['-', 'b']])
@@ -203,7 +205,7 @@ test.skip('parse: nary', t => {
   is(parse('#a###c#'), ['#', , 'a', , , 'c', ,])
 })
 
-test.skip('ext: in operator', async t => {
+test.skip('in operator', async t => {
   await import('../feature/in.js')
 
   is(parse('inc in bin'), ['in', 'inc', 'bin'])
@@ -211,7 +213,7 @@ test.skip('ext: in operator', async t => {
   throws(() => parse('b inc'))
 })
 
-test('ext: justin', async t => {
+test('justin', async t => {
   const { parse } = await import('../justin.js')
   is(parse('a;b'), [';', 'a', 'b'])
   is(parse('a;b;'), [';', 'a', 'b', ,])

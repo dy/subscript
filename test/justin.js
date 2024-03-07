@@ -187,7 +187,6 @@ test('Esprima Comparison', () => {
   is(justin('a[1](2)')({ a: [, x => x] }), 2)
 })
 
-// Should support ternary by default (index.js):
 test('Ternary', () => {
   is(justin('a ? b : c')({ a: 1, b: 2, c: 3 }), 2)
   is(justin('a||b ? c : d')({ a: 0, b: 0, c: 2, d: 3 }), 3)
