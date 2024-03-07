@@ -382,12 +382,18 @@ test('ternary', async t => {
 
   sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
   sameAsJs('a?b:c', { a: false, b: 1, c: 2 })
-  sameAsJs('a((1 + 2), (e > 0 ? f : g))', { a: (x, y) => x + y, e: 1, f: 2, g: 3 })
 
-  sameAsJs('a?b:c?d:e', { a: 0, c: 1, d: 2 })
-  sameAsJs('a?b:c?d:e', { a: 0, c: 0, d: 2, e: 3 })
+  sameAsJs('a ? b ? c : d : e', { a: 0, b: 0, c: 2, d: 3, e: 4 })
+  sameAsJs('a ? b ? c : d : e', { a: 1, b: 0, c: 2, d: 3, e: 4 })
+  sameAsJs('a ? b ? c : d : e', { a: 1, b: 1, c: 2, d: 3, e: 4 })
+
+  sameAsJs('a ? b : c ? d : e', { a: 0, b: 0, c: 2, d: 3, e: 4 })
+  sameAsJs('a ? b : c ? d : e', { a: 1, b: 0, c: 2, d: 3, e: 4 })
+  sameAsJs('a ? b : c ? d : e', { a: 1, b: 1, c: 2, d: 3, e: 4 })
+
   sameAsJs('a?b:c?d:e?f:g', { a: 0, c: 0, d: 2, e: 0, f: 3, g: 4 })
-  sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
+
+  sameAsJs('a((1 + 2), (e > 0 ? f : g))', { a: (x, y) => x + y, e: 1, f: 2, g: 3 })
 })
 
 test('object', async t => {

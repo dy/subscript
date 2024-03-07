@@ -240,3 +240,8 @@ test('parse: low-precedence unary', t => {
   is(parse('&a+b*c'), ['+', ['&', 'a'], ['*', 'b', 'c']])
   is(parse('&a*b+c'), ['+', ['&', ['*', 'a', 'b']], 'c'])
 })
+
+test('parse: ternary', t => {
+  is(parse('a ? b : c ? d : e'), ['?', 'a', 'b', ['?', 'c', 'd', 'e']])
+  is(parse('a ? b ? c : d : e'), ['?', 'a', ['?', 'b', 'c', 'd'], 'e'])
+})
