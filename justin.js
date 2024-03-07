@@ -1,5 +1,5 @@
 // no-keywords js, just in https://github.com/endojs/Jessie/issues/66
-import { err, token, binary } from './src/parse.js'
+import { err, token, binary, unary } from './src/parse.js'
 import compile, { operator, prop } from './src/compile.js'
 
 import subscript from './subscript.js'
@@ -11,6 +11,7 @@ import './feature/array.js'
 import './feature/object.js'
 import './feature/arrow.js'
 import './feature/optional.js'
+import './feature/spread.js'
 import { PREC_ASSIGN, PREC_EQ, PREC_LOR, PREC_COMP } from './src/const.js'
 
 binary('in', PREC_COMP), operator('in', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) in b(ctx)))

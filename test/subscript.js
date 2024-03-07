@@ -341,7 +341,7 @@ test.skip('ext: in operator', async t => {
   throws(() => subscript('b inc'))
 })
 
-test('ext: list', async t => {
+test('array', async t => {
   await import('../feature/array.js')
 
   is(subscript('[]')(), [])
@@ -357,6 +357,8 @@ test('ext: list', async t => {
 
   is(subscript('[]')(), [])
   is(subscript('[ ]')(), [])
+
+  is(subscript('[ 1, ...x ]')({ x: [2, 3] }), [1, 2, 3])
 
   // TODO: prefix/postfix maybe?
   // is(subscript('[1,]')({}),[1])
@@ -393,7 +395,7 @@ test.skip('ext: ternary', t => {
   sameAsJs('a? b?c:d :e', { a: 0, c: 0, d: 1, e: 2 })
 })
 
-test.only('object', async t => {
+test('object', async t => {
   await import('../feature/object.js')
   await import('../feature/ternary.js')
 
