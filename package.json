@@ -38,7 +38,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/spectjs/subscript.git"
+    "url": "git+https://github.com/dy/subscript.git"
   },
   "keywords": [
     "jexl",
@@ -73,9 +73,9 @@
   "author": "Dmitry Iv.",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/spectjs/subscript/issues"
+    "url": "https://github.com/dy/subscript/issues"
   },
-  "homepage": "https://github.com/spectjs/subscript#readme",
+  "homepage": "https://github.com/dy/subscript#readme",
   "devDependencies": {
     "rollup": "^2.60.2",
     "terser": "^5.10.0",
