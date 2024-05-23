@@ -53,13 +53,12 @@ _Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ (see [thread](https:/
 + `a ||= b`, `a &&= b`
 + `a ? b : c`, `a?.b`
 + `...a`
-+ `[a, b]` Array
-+ `{a: b}` Object
-+ `(a, b) => c` Function
++ `[a, b]`
++ `{a: b}`
++ `(a, b) => c`
 + `// foo`, `/* bar */`
 + `true`, `false`, `null`, `NaN`, `undefined`
 + `a in b`
-<!-- + `...x` unary operator -->
 <!-- + strings interpolation -->
 
 ```js
