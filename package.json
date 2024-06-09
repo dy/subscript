@@ -9,8 +9,11 @@
   "exports": {
     ".": "./subscript.js",
     "./parse": "./src/parse.js",
+    "./parse.js": "./src/parse.js",
     "./compile": "./src/compile.js",
-    "./justin": "./justin.js"
+    "./compile.js": "./src/compile.js",
+    "./justin": "./justin.js",
+    "./feature/*": "./feature/*"
   },
   "type": "module",
   "files": [

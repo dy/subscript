@@ -19,22 +19,23 @@ export const
   STAR = 42
 
 // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_precedence
+// we mult by 10 to leave space for extensions
 export const
-  PREC_SEQ = 1,
-  PREC_ASSIGN = 2,
-  PREC_LOR = 3,
-  PREC_LAND = 4,
-  PREC_OR = 5,
-  PREC_XOR = 6,
-  PREC_AND = 7,
-  PREC_EQ = 8,
-  PREC_COMP = 9,
-  PREC_SHIFT = 10,
-  PREC_ADD = 11,
-  PREC_MULT = 12,
-  PREC_EXP = 13,
-  PREC_PREFIX = 14,
-  PREC_POSTFIX = 15,
-  PREC_ACCESS = 17,
-  PREC_GROUP = 18,
-  PREC_TOKEN = 20
+  PREC_SEQ = 10,
+  PREC_ASSIGN = 20,
+  PREC_LOR = 30,
+  PREC_LAND = 40,
+  PREC_OR = 50,
+  PREC_XOR = 60,
+  PREC_AND = 70,
+  PREC_EQ = 80,
+  PREC_COMP = 90,
+  PREC_SHIFT = 100,
+  PREC_ADD = 110,
+  PREC_MULT = 120,
+  PREC_EXP = 130,
+  PREC_PREFIX = 140,
+  PREC_POSTFIX = 150,
+  PREC_ACCESS = 170,
+  PREC_GROUP = 180,
+  PREC_TOKEN = 200
