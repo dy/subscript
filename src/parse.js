@@ -69,7 +69,7 @@ export let idx, cur,
     prev = lookup[c],
     word = op.toUpperCase() !== op // make sure word boundary comes after word operator
   ) => lookup[c] = (a, curPrec, from = idx) =>
-    (curPrec < prec && (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (idx += l, map(a, curPrec))) ||
+    (curPrec < prec && (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (idx += l, map(a))) ||
     (idx = from, prev?.(a, curPrec)),
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
