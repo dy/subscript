@@ -21,6 +21,7 @@ export const
 // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_precedence
 // we mult by 10 to leave space for extensions
 export const
+  PREC_STATEMENT = 1,
   PREC_SEQ = 10,
   PREC_ASSIGN = 20,
   PREC_LOR = 30,
