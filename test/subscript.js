@@ -151,6 +151,7 @@ test('strings', t => {
   // parse.quote['<--']='-->'
   // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
+
 test('ext: literals', t => {
   token('null', 20, a => a ? err() : [, null])
   token('true', 20, a => a ? err() : [, true])
@@ -193,6 +194,7 @@ test('intersecting binary', t => {
 
   sameAsJs('a >> b', { a: 1234, b: 2 })
 })
+
 test('signs', t => {
   sameAsJs('+-1', { a: 123 })
   sameAsJs('a(+1)', { a: v => v + 123 })
@@ -215,6 +217,7 @@ test('signs', t => {
   sameAsJs('+1 -2', { a: 123 })
   sameAsJs('-1 +2', { a: 123 })
 })
+
 test('unaries: seqs', t => {
   sameAsJs('-2')
   sameAsJs('+-2')
@@ -224,6 +227,7 @@ test('unaries: seqs', t => {
   sameAsJs('1-+!2')
   sameAsJs('1 * -1')
 })
+
 test('unaries: inc/dec', t => {
   let ctx = { a: 2, b: { c: 1 }, d: ['c'] }
   is(subscript('--a')(ctx), 1)
@@ -247,6 +251,7 @@ test('unaries: inc/dec', t => {
   is(ctx.a, 3)
   is(ctx.b.c, 6)
 })
+
 test('unaries: postfix', t => {
   let ctx = { a: 2 }
   is(subscript('a--')(ctx), 2)
@@ -454,7 +459,6 @@ test('ext: justin', async t => {
   sameAsJs('a?.b?.valueOf?.()', { a: { b: true } })
   console.log('---a?.valueOf?.()')
   sameAsJs('a?.valueOf?.()', { a: true })
-  // FIXME: these
   console.log('---a?.["valueOf"]()')
   sameAsJs('a?.["valueOf"]()', { a: true })
   console.log('---a?.["valueOf"]?.()')
@@ -500,7 +504,7 @@ test('assignment', async t => {
   is(state6, { x: { y: 2 }, z: -1, w: 4 })
 })
 
-test('ext: comments', async t => {
+test('comments', async t => {
   await import('../feature/comment.js')
   // token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
   // token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
@@ -517,6 +521,10 @@ test('ext: comments', async t => {
   is(subscript('/**/x')({ x: 1 }), 1)
   is(subscript('/* */')({}), undefined)
   is(subscript('//')({}), undefined)
+
+  is(parse(`a;
+  //b
+  b;c`), [';', 'a', 'b', 'c'])
 })
 
 test('unfinished sequences', async t => {

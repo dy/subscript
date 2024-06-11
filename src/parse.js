@@ -84,7 +84,7 @@ export let idx, cur,
       (b = expr(prec)),
       (
         (!a || a[0] !== op) && (a = [op, a]), // if beginning of sequence - init node
-        a.push(b),
+        b?.[0] === op ? [, ...b] = b : b = [b], a.push(...b), // comments can return same-token expr
         a
       ))
     )

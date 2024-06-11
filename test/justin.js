@@ -45,6 +45,7 @@ test('Variables', () => {
   is(justin('a.b[c[0]]')({ a: { b: [1] }, c: [0] }), 1)
   is(justin('Δέλτα')({ Δέλτα: 123 }), 123)
 })
+
 test('Question operator', () => {
   is(justin('a?.b')({ a: { b: 1 } }), 1)
   is(justin('a?.b')({ a: 2 }), undefined)
@@ -192,13 +193,13 @@ test('Ternary', () => {
   is(justin('a||b ? c : d')({ a: 0, b: 0, c: 2, d: 3 }), 3)
 })
 
-
-test('comment case', () => {
+test('Comment case', () => {
   const expr = 'a // skip all this'
   is(justin(expr)({ a: 'a' }), 'a')
 })
 
-test('identities', t => {
+
+test('Identities', t => {
   is(justin(`a !== b`)({ a: 1, b: 2 }), true)
   is(justin(`a === b`)({ a: 1, b: '1' }), false)
   justin(`i.value.text !== item.value.text`)
