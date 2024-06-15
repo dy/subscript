@@ -9,10 +9,10 @@
   "exports": {
     ".": "./subscript.js",
     "./parse": "./src/parse.js",
-    "./parse.js": "./src/parse.js",
     "./compile": "./src/compile.js",
-    "./compile.js": "./src/compile.js",
+    "./const": "./src/const.js",
     "./justin": "./justin.js",
+    "./src/*": "./src/*",
     "./feature/*": "./feature/*"
   },
   "type": "module",
