@@ -1,15 +1,37 @@
 import { err } from "./parse.js"
 
-// build optimized evaluator for the tree
-export const compile = (node) => !Array.isArray(node) ? compile.id(node) : !node[0] ? () => node[1] : operators[node[0]](...node.slice(1)),
+/**
+ * @typedef {Object.<string, OperatorFunction>} OperatorMap
+ * Represents a map of operator names to their corresponding functions.
+ */
+
+/**
+ * @typedef {(...args: any[]) => any} OperatorFunction
+ * Represents a function for an operator, which can take any number of arguments.
+ */
+
+export const
+  /**
+   * Compiles a syntax tree into an evaluator function.
+   * @param {Node} node - The node to compile, which can be a string or an array representing an operation.
+   * @returns {Function} A function that takes a context and returns the evaluated result.
+   */
+  compile = (node) => !Array.isArray(node) ? compile.id(node) : !node[0] ? () => node[1] : operators[node[0]](...node.slice(1)),
+
   // compile id getter
   id = compile.id = name => ctx => ctx?.[name],
 
-
-  // registered operators
+  /**
+   * Registered operators map.
+   * @type {OperatorMap}
+   */
   operators = {},
 
-  // register an operator
+  /**
+   * Registers an operator function.
+   * @param {string} op - The operator string.
+   * @param {OperatorFunction} fn - The function that implements the operator.
+   */
   operator = (op, fn, prev = operators[op]) => (operators[op] = (...args) => fn(...args) || prev && prev(...args)),
 
   // takes node and returns evaluator depending on the case with passed params (container, path, ctx) =>

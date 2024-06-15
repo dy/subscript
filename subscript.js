@@ -1,6 +1,8 @@
 /**
- * Subscript dialect includes common operators / primitives for all languages
+ * Subscript dialect includes common operators / primitives for all languages.
+ * This file imports various language features and exports the main parsing and compiling functions.
  */
+// @ts-check
 import './feature/number.js'
 import './feature/string.js'
 import './feature/call.js'
@@ -19,4 +21,9 @@ import parse from './src/parse.js'
 export { parse, access, binary, unary, nary, group, lookup, token } from './src/parse.js'
 export { compile, operator, prop } from './src/compile.js'
 
+/**
+ * Parses and compiles a given string into an executable function.
+ * @param {string} s - The string to parse and compile.
+ * @returns {Function} A function that, when executed, evaluates the parsed expression within a given context.
+ */
 export default s => compile(parse(s))
