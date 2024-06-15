@@ -12,6 +12,6 @@ operator('{}', (a, b) => (
   ctx => Object.fromEntries(a.flatMap(frag => frag(ctx)))
 ))
 
-binary(':', PREC_ASSIGN - 0.5, true)
+binary(':', PREC_ASSIGN - 1, true)
 // "a": a, a: a
 operator(':', (a, b) => (b = compile(b), Array.isArray(a) ? (a = compile(a), ctx => [[a(ctx), b(ctx)]]) : ctx => [[a, b(ctx)]]))
