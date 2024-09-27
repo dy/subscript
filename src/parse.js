@@ -74,9 +74,9 @@ export let idx, cur,
     (curPrec < prec &&
       (l < 2 || cur.substr(idx, l) == op) &&
       (!word || !parse.id(cur.charCodeAt(idx + l))) &&
-      (idx += l, (map(a) || (!prev && err()))) // throw if operator didn't detect usage pattern: (a;^b) etc
+      (idx += l, (map(a) || (idx = from, !prev && err()))) // throw if operator didn't detect usage pattern: (a;^b) etc
     ) ||
-    (idx = from, prev?.(a, curPrec)),
+    prev?.(a, curPrec),
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
   binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
