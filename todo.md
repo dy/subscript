@@ -513,6 +513,8 @@
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
 
+* [ ] `(a ? ^b; 123)` error points to `(a ┃? ^-a; 123)` instead of `(a ? ┃^-a; 123)`
+
 * [ ] language building tool: create own language with a set of features
   * [ ] Make operator groups, importable; build subscript by including op groups.
 

@@ -101,7 +101,7 @@ test('readme', t => {
   sameAsJs(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
   sameAsJs(`min * 60 + "sec"`, { min: 5 })
 
-  binary('|', 6), operator('|', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
+  binary('|', 60), operator('|', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
 
   let evaluate = subscript(`
     interval(350)

@@ -8,7 +8,6 @@ import { PREC_MULT } from '../src/const.js'
 
 test('parse: basic', t => {
   is(parse('a()'), ['(', 'a', ,])
-  // is(parse('1 + 2 + 3'), ['+', '1', '2', '3'])
   is(parse('1 + 2 + 3'), ['+', ['+', [, 1], [, 2]], [, 3]])
   is(parse('a + b * c'), ['+', 'a', ['*', 'b', 'c']])
   is(parse('a * b + c'), ['+', ['*', 'a', 'b'], 'c'])
@@ -197,12 +196,25 @@ test.todo('parse: chains', t => {
   is(parse('a(1)(b)("c")'), [[['a', 1], 'b'], 'c'])
 })
 
-test.skip('parse: nary', t => {
+test('parse: nary', t => {
   nary('#', 10, true)
   is(parse('a#b'), ['#', 'a', 'b'])
   is(parse('#a'), ['#', , 'a'])
   is(parse('a##b#c'), ['#', 'a', , 'b', 'c'])
   is(parse('#a###c#'), ['#', , 'a', , , 'c', ,])
+
+  is(parse('a;;'), [';', 'a', , ,])
+  is(parse(';a'), [';', , 'a'])
+  is(parse('a;b'), [';', 'a', 'b'])
+  is(parse('a;b;'), [';', 'a', 'b', ,])
+  is(parse('a;;b;c'), [';', 'a', , 'b', 'c'])
+  is(parse(';a;;;c;'), [';', , 'a', , , 'c', ,])
+
+  // console.log(parse('a;&b'))
+  // special error case
+  throws(() => parse('&a;'), /syntax/)
+  throws(() => parse(';&b'), /syntax/)
+  throws(() => parse('a;&b'), /syntax/)
 })
 
 test.skip('in operator', async t => {
