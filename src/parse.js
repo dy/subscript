@@ -71,12 +71,15 @@ export let idx, cur,
     prev = lookup[c],
     word = op.toUpperCase() !== op // make sure word boundary comes after word operator
   ) => lookup[c] = (a, curPrec, from = idx) =>
-    (curPrec < prec && (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (idx += l, map(a, prev))) ||
+    (curPrec < prec &&
+      (l < 2 || cur.substr(idx, l) == op) &&
+      (!word || !parse.id(cur.charCodeAt(idx + l))) &&
+      (idx += l, (map(a) || (!prev && err()))) // throw if operator didn't detect usage pattern: (a;^b) etc
+    ) ||
     (idx = from, prev?.(a, curPrec)),
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
-  // FIXME: move err() check to token function
-  binary = (op, prec, right = false) => token(op, prec, (a, prev, b) => !a ? (!prev && (idx -= op.length, err())) : (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
+  binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
 
   // post indicates postfix rather than prefix operator
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
