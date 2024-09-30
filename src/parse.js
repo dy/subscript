@@ -71,9 +71,9 @@ export let idx, cur,
     prev = lookup[c],
     word = op.toUpperCase() !== op // make sure word boundary comes after word operator
   ) => lookup[c] = (a, curPrec, from = idx) =>
-    (curPrec < prec &&
-      (l < 2 || cur.substr(idx, l) == op) &&
-      (!word || !parse.id(cur.charCodeAt(idx + l))) &&
+    (curPrec < prec && // matches precedence
+      (l < 2 || cur.substr(idx, l) == op) && // matches operator
+      !(word && parse.id(cur.charCodeAt(idx + l))) && // finished word, not part of bigger word
       (idx += l, (map(a) || (idx = from, !prev && err()))) // throw if operator didn't detect usage pattern: (a;^b) etc
     ) ||
     prev?.(a, curPrec),

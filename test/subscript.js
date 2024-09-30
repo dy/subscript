@@ -590,8 +590,6 @@ test('stdlib cases', t => {
 })
 
 test.skip('ext: collect args', async t => {
-  const { lookup, default: script } = await import('../justin.js')
-
   let args = [], id = parse.id
   parse.id = (a, b) => (a = id(), a && args.push(a), a)
 
