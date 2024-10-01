@@ -33,6 +33,12 @@ operator('||=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path
 binary('&&=', PREC_ASSIGN, true)
 operator('&&=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path] &&= b(ctx)))))
 
+// unsigned shift
+binary('>>>', PREC_EQ)
+operator('>>>', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) >>> b(ctx)))
+binary('>>>=', PREC_ASSIGN, true)
+operator('>>>=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path] >>>= b(ctx)))))
+
 // add JS literals
 token('undefined', 20, a => a ? err() : [, undefined])
 token('NaN', 20, a => a ? err() : [, NaN])

@@ -21,14 +21,14 @@ export const set = (op, prec, fn) => (
       )
 )
 
-test('Expression: Constants', () => {
+test('justin: Expression: Constants', () => {
   is(justin('\'abc\'')(), "abc")
   is(justin('"abc"')(), 'abc')
   is(justin('123')(), 123)
   is(justin('12.3')(), 12.3)
 })
 
-test('String escapes', () => {
+test('justin: String escapes', () => {
   is(justin("'a \\w b'")(), "a w b")
   is(justin("'a \\' b'")(), "a ' b")
   is(justin("'a \\n b'")(), "a \n b")
@@ -40,13 +40,13 @@ test('String escapes', () => {
   is(justin("'a \\\ b'")(), "a \ b")
 })
 
-test('Variables', () => {
+test('justin: Variables', () => {
   is(justin('abc')({ abc: 123 }), 123)
   is(justin('a.b[c[0]]')({ a: { b: [1] }, c: [0] }), 1)
   is(justin('Δέλτα')({ Δέλτα: 123 }), 123)
 })
 
-test('Question operator', () => {
+test('justin: Question operator', () => {
   is(justin('a?.b')({ a: { b: 1 } }), 1)
   is(justin('a?.b')({ a: 2 }), undefined)
   is(justin('a?.[1]')({ a: [, 1] }), 1)
@@ -60,7 +60,7 @@ test('Question operator', () => {
   is(justin('a?.b?.(arg)?.[c] ?. d')({ a: { b: d => [, , { d }] }, arg: 1, c: 2 }), 1)
 })
 
-test('Function Calls', () => {
+test('justin: Function Calls', () => {
   is(justin("a(b, c(d,e), f)")({ a: (b, c, f) => b + c + f, b: 1, c: (d, e) => d + e, f: 2, d: 3, e: 4 }), 10)
   throws(t => justin('a b + c'))
   is(justin("'a'.toString()")(), 'a')
@@ -72,14 +72,15 @@ test('Function Calls', () => {
   throws(t => justin('check(a b c d)'))
 })
 
-test('Arrays', () => {
+test('justin: Arrays', () => {
   is(justin('[]')(), [])
   is(justin('[a]')({ a: 1 }), [1])
 })
 
-test('Ops', function (qunit) {
+test('justin: Ops', function (qunit) {
   is(justin('1')(), 1)
   is(justin('1+2')(), 3)
+  is(justin('1>>2,3<<4,5>>>6')(), 0)
   is(justin('1*2')(), 2)
   is(justin('1*(2+3)')(), 5)
   is(justin('(1+2)*3')(), 9)
@@ -94,7 +95,7 @@ test('Ops', function (qunit) {
   is(justin('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)')(), (2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9))
 })
 
-test('Custom operators', () => {
+test('justin: Custom operators', () => {
   is(justin('a^b')({ a: 0xaaa, b: 0xbbb }), 0xaaa ^ 0xbbb)
 
   set('×', 9, (a, b) => a * b)
@@ -119,13 +120,13 @@ test('Custom operators', () => {
   throws(t => justin('b ands'))
 })
 
-test('Bad Numbers', () => {
+test('justin: Bad Numbers', () => {
   // NOTE: for custom numbers implement custom number parser
   is(justin('1.')(), 1)
   // throws(() => justin('1.2.3')())
 })
 
-test('Missing arguments', () => {
+test('justin: Missing arguments', () => {
   // NOTE: these cases don't matter as much, can be either for or against
   throws(() => is(justin('check(,)'), ['check', null, null]))
   throws(() => is(justin('check(,1,2)'), ['check', null, 1, 2]))
@@ -137,7 +138,7 @@ test('Missing arguments', () => {
   throws(() => justin('check(a b c, d)'), 'spaced args first')
 })
 
-test('Uncompleted expression-call/array', () => {
+test('justin: Uncompleted expression-call/array', () => {
   throws(() => console.log(justin('(a,b')))
   throws(() => console.log(justin('myFunction(a,b')), 'detects unfinished expression call')
 
@@ -146,7 +147,7 @@ test('Uncompleted expression-call/array', () => {
   throws(() => justin('-1+2-'), 'detects trailing operator')
 })
 
-test(`should throw on invalid expr`, () => {
+test(`Invalid Expressions`, () => {
   throws(() => console.log(justin('!')))
   throws(() => console.log(justin('*x')))
   throws(() => console.log(justin('||x')))
@@ -157,7 +158,7 @@ test(`should throw on invalid expr`, () => {
   throws(() => console.log(justin('() + 1')))
 })
 
-test('Esprima Comparison', () => {
+test('justin: Esprima Comparison', () => {
   // is(justin('[1,,3]'), [1,null,3])
   // is(justin('[1,,]'), [])
 
@@ -188,18 +189,18 @@ test('Esprima Comparison', () => {
   is(justin('a[1](2)')({ a: [, x => x] }), 2)
 })
 
-test('Ternary', () => {
+test('justin: Ternary', () => {
   is(justin('a ? b : c')({ a: 1, b: 2, c: 3 }), 2)
   is(justin('a||b ? c : d')({ a: 0, b: 0, c: 2, d: 3 }), 3)
 })
 
-test('Comment case', () => {
+test('justin: Comment case', () => {
   const expr = 'a // skip all this'
   is(justin(expr)({ a: 'a' }), 'a')
 })
 
 
-test('Identities', t => {
+test('justin: Identities', t => {
   is(justin(`a !== b`)({ a: 1, b: 2 }), true)
   is(justin(`a === b`)({ a: 1, b: '1' }), false)
   justin(`i.value.text !== item.value.text`)

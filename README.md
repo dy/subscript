@@ -38,7 +38,7 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 * `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b`
 * `~a`, `a & b`, `a ^ b`, `a | b`, `a << b`, `a >> b`
 * `!a`, `a && b`, `a || b`
-* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`
+* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`, , `a <<= b`, `a >>= b`
 * `(a, (b))`, `a; b;`
 * `"abc"`, `'abc'`
 * `0.1`, `1.2e+3`
@@ -52,6 +52,7 @@ It extends _subscript_ with:
 + `a ** b`, `a **= b`
 + `a ?? b`, `a ??= b`
 + `a ||= b`, `a &&= b`
++ `a >>> b`, `a >>>= b`
 + `a ? b : c`, `a?.b`
 + `...a`
 + `[a, b]`
