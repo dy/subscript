@@ -70,14 +70,17 @@ export let idx, cur,
     l = op.length,
     prev = lookup[c],
     word = op.toUpperCase() !== op // make sure word boundary comes after word operator
-  ) => lookup[c] = (a, curPrec, from = idx) =>
+  ) => lookup[c] = (a, curPrec, curOp, from = idx) =>
     (
-      curPrec < prec && // matches precedence
-      (l < 2 || cur.substr(idx, l) == op) && // matches operator
+      (curOp ?
+        op == curOp :
+        ((l < 2 || cur.substr(idx, l) == op) && (curOp = op)) // save matched op to avoid mismatches like `|` as part of `||`
+      ) &&
+      curPrec < prec && // matches precedence AFTER operator matched
       !(word && parse.id(cur.charCodeAt(idx + l))) && // finished word, not part of bigger word
-      (idx += l, (map(a) || (idx = from, !prev && err()))) // throw if operator didn't detect usage pattern: (a;^b) etc
+      (idx += l, map(a) || (idx = from, !prev && err())) // throw if operator didn't detect usage pattern: (a;^b) etc
     ) ||
-    prev?.(a, curPrec),
+    prev?.(a, curPrec, curOp),
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
   binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
