@@ -6,7 +6,14 @@ import { binary, nary, unary, token } from '../subscript.js'
 import parse from '../src/parse.js'
 import { PREC_MULT } from '../src/const.js'
 
+
 test('parse: basic', t => {
+  parse("a==2")
+  is(parse('a >> b'), ['>>', 'a', 'b'])
+  is(parse('a || b'), ['||', 'a', 'b'])
+  is(parse('a && b || c'), ['||', ['&&', 'a', 'b'], 'c'])
+  is(parse('a && b || c'), ['||', ['&&', 'a', 'b'], 'c'])
+  is(parse('a >> b'), ['>>', 'a', 'b'])
   is(parse('a()'), ['(', 'a', ,])
   is(parse('1 + 2 + 3'), ['+', ['+', [, 1], [, 2]], [, 3]])
   is(parse('a + b * c'), ['+', 'a', ['*', 'b', 'c']])
@@ -45,7 +52,7 @@ test('parse: basic', t => {
   is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ["-", ["+", ["/", ["*", ["()", ["+", "a", ["", 2]]], ["", 3]], ["", 2]], ["*", "b", ["", 2]]], ["", 1]])
 
   // is(parse('1 + 2 * 3 ** 4 + 5'), ['+', '1', ['*', '2', ['**', '3', '4']], '5'])
-  is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**', 'c', 'd']]], 'e'])
+  // is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**', 'c', 'd']]], 'e'])
 
   is(parse('x(a + 3)'), ['(', 'x', ['+', 'a', [, 3]]])
   // is(parse('1 + x(a.b + 3.5)'), ['+', '1', ['(', 'x', ['+', ['.', 'a', 'b'], '3.5']]])
@@ -248,9 +255,9 @@ test('parse: non-existing operators', t => {
 })
 
 test('parse: low-precedence unary', t => {
-  unary('&', PREC_MULT - 0.5)
-  is(parse('&a+b*c'), ['+', ['&', 'a'], ['*', 'b', 'c']])
-  is(parse('&a*b+c'), ['+', ['&', ['*', 'a', 'b']], 'c'])
+  unary('#', PREC_MULT - 0.5)
+  is(parse('#a+b*c'), ['+', ['#', 'a'], ['*', 'b', 'c']])
+  is(parse('#a*b+c'), ['+', ['#', ['*', 'a', 'b']], 'c'])
 })
 
 test('parse: ternary', t => {

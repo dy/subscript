@@ -124,6 +124,8 @@ _Subscript_ provides premade language [features](./features) and API to customiz
 * `token(str, precedence, lnode => node)` − register custom token or literal. Callback takes left-side node and returns complete expression node.
 * `operator(str, (a, b) => ctx => value)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
 
+Longer operators should be registered after shorter ones, eg. first `|`, then `||`, then `||=`.
+
 ```js
 import script, { compile, operator, unary, binary, token } from './subscript.js'
 

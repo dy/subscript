@@ -101,11 +101,11 @@ test('readme', t => {
   sameAsJs(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
   sameAsJs(`min * 60 + "sec"`, { min: 5 })
 
-  binary('|', 60), operator('|', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
+  binary('|>', 60), operator('|>', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
 
   let evaluate = subscript(`
     interval(350)
-    | take(25)`
+    |> take(25)`
     // | map(gaussian)
     // | map(num => "•".repeat(Math.floor(num * 65)))
   )
@@ -186,7 +186,8 @@ test.skip('bad number', t => {
   throws(x => subscript('.e-1')())
 })
 
-test('intersecting binary', t => {
+test('intersecting binary', async t => {
+  // await import('./justin.js')
   sameAsJs('a | b', { a: 1234, b: 4567 })
   sameAsJs('a || b', { a: false, b: true })
   sameAsJs('a & b', { a: 1234, b: 4567 })
@@ -348,6 +349,7 @@ test.skip('ext: in operator', async t => {
 
 test('array', async t => {
   await import('../feature/array.js')
+  await import('../feature/spread.js')
 
   is(subscript('[]')(), [])
   is(subscript('[ 1 ]')(), [1])

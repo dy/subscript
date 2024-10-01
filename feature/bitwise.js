@@ -9,7 +9,3 @@ binary('|', PREC_OR), operator('|', (a, b) => b && (a = compile(a), b = compile(
 binary('&', PREC_AND), operator('&', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) & b(ctx)))
 
 binary('^', PREC_XOR), operator('^', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ^ b(ctx)))
-
-binary('>>', PREC_SHIFT), operator('>>', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) >> b(ctx)))
-
-binary('<<', PREC_SHIFT), operator('<<', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) << b(ctx)))
