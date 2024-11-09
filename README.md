@@ -4,11 +4,11 @@
 
 ####  Used for:
 
-* templates (eg. [sprae](https://github.com/dy/sprae), [templize](https://github.com/dy/templize))
+* templates (eg. [sprae](https://github.com/dy/sprae))
 * expressions evaluators, calculators
 * subsets of languages (eg. [justin](#justin))
 * sandboxes, playgrounds, safe eval
-* custom DSL (eg. [lino](https://github.com/dy/lino)) <!-- uneural -->
+* custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
 * preprocessors (eg. [prepr](https://github.com/dy/prepr))
 
 _Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_), best [performance](#performance) and extensive test coverage.
@@ -104,13 +104,36 @@ const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
 
 // node kinds
-['+', a];       // unary prefix or postfix operator `+a`
+['+', a];       // unary operator `+a`
 ['+', a, b];    // binary operator `a + b`
 ['+', a, b, c]; // n-ary operator `a + b + c`
 ['()', a];      // group operator `(a)`
-['(', a, b];    // access operator `a(b)`
+['()', a, b];   // access operator `a(b)`
 [, a];          // literal value `'a'`
 a;              // variable (from scope)
+null;           // placeholder
+
+// eg.
+['()', 'a'] // (a)
+['()', 'a', null] // a()
+```
+<!--
+['()'] // ()
+['()', 'a'] // (a)
+['()', 'a', 'b'] // a(b)
+['+',1] // +1
+['+',1,,] // 1+
+-->
+
+### Stringify
+
+To convert tree back to code, there's codegenerator function:
+
+```js
+import { stringify } from 'subscript.js'
+
+stringify(['+', ['*', 'min', [,60]], [,'sec']])
+// 'min*60 + "sec" == "300sec"'
 ```
 
 ## Extending
@@ -154,23 +177,12 @@ See [`./feature/*`](./feature) or [`./justin.js`](./justin.js) for examples.
 <!--
 ## Ideas
 
-These are custom DSL operators snippets for your inspiration:
-
-
-```html
-template-parts proposal
-<template id="timer">
-  <time datetime="{{ date.toUTCString() }}">{{ date.toLocaleTimeString() }}</time>
-</template>
-```
-
 * Keyed arrays <code>[a:1, b:2, c:3]</code>
 * 7!` (factorial)
 * `5s`, `5rem` (units)
-* `?`, `?.`, `??`
 * `arrᵀ` - transpose
 * `int 5` (typecast)
-* `$a` (param expansion)
+* `$a` (parameter expansion)
 * `1 to 10 by 2`
 * `a if b else c`
 * `a, b in c`
@@ -178,12 +190,11 @@ template-parts proposal
 * vector operators
 * set operators
 * polynomial operators
-
-like versions, units, hashes, urls, regexes etc
-
-2a as `2*a`
-
-string interpolation ` ${} 1 ${} `
+* versions
+* hashes, urls
+* regexes
+* 2a as `2*a`
+* string interpolation ` ${} 1 ${} `
 -->
 
 ## Performance
