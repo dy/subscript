@@ -94,8 +94,8 @@ export let idx, cur,
       (a, b) => (
         b = expr(prec),
         (
-          (a?.[0] !== op) && (a = [op, a]), // if beginning of sequence - init node
-          b?.[0] === op ? a.push(...b.slice(1)) : a.push(b), // comments can return same-token expr
+          (a?.[0] !== op) && (a = [op, a || null]), // if beginning of sequence - init node
+          b?.[0] === op ? a.push(...b.slice(1)) : a.push(b || null), // comments can return same-token expr
           a
         ))
     )
@@ -103,10 +103,11 @@ export let idx, cur,
 
   // register (a), [b], {c} etc groups
   // FIXME: add "Unclosed paren" error
-  group = (op, prec) => token(op[0], prec, a => (!a && ([op, expr(0, op.charCodeAt(1))]))),
+  group = (op, prec) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1))])),
 
   // register a(b), a[b], a<b> etc,
-  access = (op, prec) => token(op[0], prec, a => (a && [op[0], a, expr(0, op.charCodeAt(1))]))
+  // NOTE: we make sure `null` indicates placeholder
+  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]))
 
 
 export default parse

@@ -5,7 +5,7 @@ import { PREC_ACCESS, PREC_GROUP, PREC_SEQ, PREC_STATEMENT } from '../src/const.
 // (a,b,c), (a)
 // FIXME: try raising group precedence (it causes conflict in ?. though)
 group('()', PREC_ACCESS)
-operator('()', (a) => (!a && err('Empty ()'), compile(a)))
+operator('()', (a, b) => b === undefined && (!a && err('Empty ()'), compile(a)))
 
 const last = (...args) => (args = args.map(compile), ctx => args.map(arg => arg(ctx)).pop())
 nary(',', PREC_SEQ), operator(',', last)

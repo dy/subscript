@@ -4,7 +4,7 @@ import { CBRACK, PREC_ACCESS } from '../src/const.js'
 
 // a[b]
 access('[]', PREC_ACCESS)
-operator('[', (a, b) => !b ? err() : (a = compile(a), b = compile(b), ctx => a(ctx)[b(ctx)]))
+operator('[]', (a, b) => !b ? err() : (a = compile(a), b = compile(b), ctx => a(ctx)[b(ctx)]))
 
 // a.b
 binary('.', PREC_ACCESS)

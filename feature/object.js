@@ -5,7 +5,7 @@ import { PREC_ASSIGN, PREC_SEQ, PREC_TOKEN } from '../src/const.js'
 
 // {a:1, b:2, c:3}
 group('{}', PREC_TOKEN)
-operator('{}', (a, b) => (
+operator('{}', (a, b) => b === undefined && (
   // {}, {a:b}, {a}, {a, b}
   a = (!a ? [] : a[0] !== ',' ? [a] : a.slice(1)),
   a = a.map(p => compile(typeof p === 'string' ? [':', p, p] : p)),
