@@ -5,7 +5,7 @@
 // * custom spacing/newlines (`a.b` vs `a + b` vs `a, b` vs `a; b`)
 // * newlines?
 // * custom literals?
-export default function stringify(node) {
+export function stringify(node) {
   if (!node) return ''
 
   if (Array.isArray(node)) {

@@ -1,7 +1,6 @@
 
 import test, { is, any, throws } from 'tst'
-import parse from '../src/parse.js'
-import stringify from '../src/stringify.js'
+import { stringify } from '../src/stringify.js'
 
 let src = `1 + (a * b / c % d) - 2 + -0.003 * +44000 / f.g[0] - i.j(+k == 1)(10)`
 let nodes = ['-', ['+', ['-', ['+', [, 1], ['()', ['%', ['/', ['*', 'a', 'b'], 'c'], 'd']]], [, 2]], ['/', ['*', ['-', [, 0.003]], ['+', [, 44000]]], ['[]', ['.', 'f', 'g'], [, 0]]]], ['()', ['()', ['.', 'i', 'j'], ['==', ['+', 'k'], [, 1]]], [, 10]]]
