@@ -5,8 +5,8 @@
 ####  Used for:
 
 * templates (eg. [sprae](https://github.com/dy/sprae))
-* expressions evaluators, calculators
-* subsets of languages (eg. [justin](#justin))
+* expressions evaluators, calculators (eg. [justin](#justin))
+* subsets of languages (eg. [jayscript](https://github.com/dy/jayscript))
 * sandboxes, playgrounds, safe eval
 * custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
 * preprocessors (eg. [prepr](https://github.com/dy/prepr))
