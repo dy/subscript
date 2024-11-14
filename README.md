@@ -6,7 +6,7 @@
 
 * expressions evaluators, calculators 
 * subsets of languages (eg. [jayscript](https://github.com/dy/jayscript), [justin](#justin))
-* sandboxes, playgrounds, safe eval
+* sandboxes, playgrounds, safe eval (eg. [glsl-transpiler](https://github.com/stackgl/glsl-transpiler))
 * custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
 * preprocessors (eg. [prepr](https://github.com/dy/prepr))
 * templates (eg. [sprae](https://github.com/dy/sprae))
