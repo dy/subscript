@@ -1,12 +1,12 @@
 # sub<em>script</em> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-> _Subscript_ is fast, tiny & extensible expression evaluator / microlanguage with standard syntax.
+> _Subscript_ is fast, tiny & extensible microlanguage / parser / evaluator with standard syntax.
 
 ####  Used for:
 
 * templates (eg. [sprae](https://github.com/dy/sprae))
 * expressions evaluators, calculators (eg. [justin](#justin))
-* subsets of languages, compilers (eg. [jayscript](https://github.com/dy/jayscript))
+* subsets of languages (eg. [jayscript](https://github.com/dy/jayscript))
 * sandboxes, playgrounds, safe eval
 * custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
 * preprocessors (eg. [prepr](https://github.com/dy/prepr))
