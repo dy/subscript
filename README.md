@@ -1,6 +1,6 @@
 # sub<em>script</em> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-> _Subscript_ is fast, tiny & extensible expressions parser / evaluator / microlanguage with standard syntax.
+> _Subscript_ is fast, tiny & extensible parser / evaluator / microlanguage with standard syntax.
 
 ####  Used for:
 
