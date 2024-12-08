@@ -5,7 +5,7 @@
 ####  Used for:
 
 * expressions evaluators, calculators 
-* subsets of languages (eg. [jayscript](https://github.com/dy/jayscript), [justin](#justin))
+* subsets of languages (eg. [jasm](https://github.com/dy/jasm), [justin](#justin))
 * sandboxes, playgrounds, safe eval (eg. [glsl-transpiler](https://github.com/stackgl/glsl-transpiler))
 * custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
 * preprocessors (eg. [prepr](https://github.com/dy/prepr))
