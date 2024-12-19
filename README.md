@@ -104,26 +104,22 @@ const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
 
 // node kinds
-['+', a];       // unary operator `+a`
-['+', a, b];    // binary operator `a + b`
-['+', a, b, c]; // n-ary operator `a + b + c`
-['()', a];      // group operator `(a)`
-['()', a, b];   // access operator `a(b)`
-[, a];          // literal value `'a'`
-a;              // variable (from scope)
-null;           // placeholder
+['+', a];         // unary operator `+a`
+['+', a, b];      // binary operator `a + b`
+['+', a, b, c];   // n-ary operator `a + b + c`
+['()', a];        // group operator `(a)`
+['()', a, b];     // access operator `a(b)`
+[, 'a'];          // literal value `'a'`
+a;                // variable (from scope)
+null;             // placeholder
 
 // eg.
-['()', 'a'] // (a)
-['()', 'a', null] // a()
-```
-<!--
-['()'] // ()
-['()', 'a'] // (a)
+['()', 'a']       // (a)
+['()', 'a',,]     // a()
 ['()', 'a', 'b'] // a(b)
 ['+',1] // +1
 ['+',1,,] // 1+
--->
+```
 
 ### Stringify
 
