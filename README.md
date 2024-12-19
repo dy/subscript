@@ -111,7 +111,7 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 ['()', a, b];     // access operator `a(b)`
 [, 'a'];          // literal value `'a'`
 a;                // variable (from scope)
-null;             // placeholder
+null|empty;   // placeholder
 
 // eg.
 ['()', 'a']       // (a)
