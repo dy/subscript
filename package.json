@@ -21,6 +21,7 @@
     "feature",
     "subscript.js",
     "subscript.min.js",
+    "subscript.d.ts",
     "justin.js",
     "justin.min.js"
   ],
