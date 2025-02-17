@@ -84,7 +84,7 @@ tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
 
 // compile tree to evaluable function
 fn = compile(tree)
-fn({ a: {b: 1}, c: 2 }) // 3
+fn({ a: {b: 1}, c: 2 }) // 2
 ```
 
 ### Syntax Tree
