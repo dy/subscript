@@ -1,10 +1,9 @@
 import { err } from "./parse.js"
 
 // build optimized evaluator for the tree
-export const compile = (node) => !Array.isArray(node) ? compile.id(node) : !node[0] ? () => node[1] : operators[node[0]](...node.slice(1)),
+export const compile = (node) => !Array.isArray(node) ? compile.id(node) : !node[0] ? () => node[1] : operators[node[0]].call(...node),
   // compile id getter
   id = compile.id = name => ctx => ctx?.[name],
-
 
   // registered operators
   operators = {},

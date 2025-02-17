@@ -513,6 +513,10 @@
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
 
+* [ ] FIXMEs in code
+
+* [ ] Better error cases: unclosed group etc. Never show internal JS errors.
+
 * [ ] `(a ? ^b; 123)` error points to `(a ┃? ^-a; 123)` instead of `(a ? ┃^-a; 123)`
 
 * [ ] language building tool: create own language with a set of features
@@ -531,8 +535,5 @@
 
 * [ ] complex groups detector: a*x + b*y + c
 * [ ] compile groups/complex groups to wasm: a*x + b*y + c
-  - wasm doesn't generically support any-type of argument.
-* [ ] WASMify https://youtu.be/awe7swqFOOw?t=778
-  - before interface types it's very problematic for wasm to deal with slicing/passing strings/substrings.
-  ~ in fact we can initialize lookup tokens in JS and run actual parser in WASM by passing table
-    . and return multiple values from `skip` as ranges to slice
+
+* [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
