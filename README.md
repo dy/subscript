@@ -4,7 +4,7 @@
 
 ####  Used for:
 
-* expressions evaluators, calculators 
+* expressions evaluators, calculators
 * subsets of languages (eg. [justin](#justin)<!-- [jz](https://github.com/dy/jz) -->)
 * sandboxes, playgrounds, safe eval (eg. [glsl-transpiler](https://github.com/stackgl/glsl-transpiler))
 * custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
@@ -38,7 +38,7 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 * `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b`
 * `~a`, `a & b`, `a ^ b`, `a | b`, `a << b`, `a >> b`
 * `!a`, `a && b`, `a || b`
-* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`, , `a <<= b`, `a >>= b`
+* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`, `a <<= b`, `a >>= b`
 * `(a, (b))`, `a; b;`
 * `"abc"`, `'abc'`
 * `0.1`, `1.2e+3`
@@ -115,10 +115,10 @@ null|empty;       // placeholder
 
 // eg.
 ['()', 'a']       // (a)
-['()', 'a',,]     // a()
+['()', 'a', null] // a()
 ['()', 'a', 'b']  // a(b)
-['+', 'a']        // +a
-['+','a',,]       // a+
+['++', 'a']       // ++a
+['++','a', null]  // a++
 ```
 
 ### Stringify
