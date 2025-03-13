@@ -6,7 +6,7 @@ export namespace parse {
   function id(n: any): any;
 }
 export function err(msg?: string, frag?: string): never;
-export function skip(n: number): string;
+export function skip(): string;
 export function next(is: ((c: number) => number)): string;
 export const lookup: ((a: any, b: any) => any)[];
 export function token(op: string, prec: number, map: (a: any, curPrec: number, from: number) => any): (a: any, curPrec: number, from?: any) => any;

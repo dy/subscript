@@ -1,4 +1,4 @@
-import { lookup, next, skip, err, cur, idx } from "../src/parse.js"
+import { lookup, next, err } from "../src/parse.js"
 import { PERIOD, _0, _E, _e, _9 } from "../src/const.js"
 
 // parse number

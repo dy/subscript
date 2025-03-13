@@ -22,8 +22,8 @@ export let idx, cur,
     return cur.slice(from, idx)
   },
 
-  // consume n characters
-  skip = (n = 1, from = idx) => (idx += n, cur.slice(from, idx)),
+  // advance n characters
+  skip = () => cur[idx++],
 
   // a + b - c
   expr = (prec = 0, end) => {
