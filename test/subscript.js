@@ -1,5 +1,5 @@
 import test, { is, throws, same } from 'tst'
-import parse, { skip, expr, err, cur, idx, unary } from '../src/parse.js'
+import parse, { err, unary } from '../src/parse.js'
 import subscript, { binary, operator, compile, token } from '../subscript.js'
 import { PREC_MULT } from '../src/const.js'
 
