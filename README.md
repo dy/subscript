@@ -232,6 +232,12 @@ mr-parser: -
 math-parser: -
 ```
 
+<!--
+## Used by
+
+[prepr](https://github.com/dy/prepr), [justin](#justin), [jz](https://github.com/dy/jz), [glsl-transpiler](https://github.com/stackgl/glsl-transpiler), [piezo](https://github.com/dy/piezo)
+-->
+
 ## Alternatives
 
 [jexpr](https://github.com/justinfagnani/jexpr), [jsep](https://github.com/EricSmekens/jsep), [jexl](https://github.com/TomFrost/Jexl), [mozjexl](https://github.com/mozilla/mozjexl), [expr-eval](https://github.com/silentmatt/expr-eval), [expression-eval](https://github.com/donmccurdy/expression-eval), [string-math](https://github.com/devrafalko/string-math), [nerdamer](https://github.com/jiggzson/nerdamer), [math-codegen](https://github.com/mauriciopoppe/math-codegen), [math-parser](https://www.npmjs.com/package/math-parser), [math.js](https://mathjs.org/docs/expressions/parsing.html), [nx-compile](https://github.com/nx-js/compiler-util), [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval)
