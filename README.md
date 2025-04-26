@@ -1,17 +1,17 @@
 # sub<em>script</em> <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-> _Subscript_ is fast, tiny & extensible parser / evaluator / microlanguage with standard syntax.
+> _Subscript_ is fast, tiny & extensible parser / evaluator / microlanguage.
 
 ####  Used for:
 
 * expressions evaluators, calculators
-* subsets of languages (eg. [justin](#justin)<!-- [jz](https://github.com/dy/jz) -->)
-* sandboxes, playgrounds, safe eval (eg. [glsl-transpiler](https://github.com/stackgl/glsl-transpiler))
-* custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
-* preprocessors (eg. [prepr](https://github.com/dy/prepr))
-* templates (eg. [sprae](https://github.com/dy/sprae))
+* subsets of languages 
+* sandboxes, playgrounds, safe eval
+* custom DSL
+* preprocessors 
+* templates
 
-_Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_), best [performance](#performance) and extensive test coverage.
+_Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint <!-- (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_) -->, good [performance](#performance) and extensive test coverage.
 
 
 ## Usage
@@ -231,6 +231,12 @@ mathjs: ~119 ms
 mr-parser: -
 math-parser: -
 ```
+
+<!--
+## Used by
+
+[prepr](https://github.com/dy/prepr), [justin](#justin), [jz](https://github.com/dy/jz), [glsl-transpiler](https://github.com/stackgl/glsl-transpiler), [piezo](https://github.com/dy/piezo)
+-->
 
 ## Alternatives
 
