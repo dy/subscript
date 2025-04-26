@@ -5,10 +5,10 @@
 ####  Used for:
 
 * expressions evaluators, calculators
-* subsets of languages (eg. [justin](#justin)<!-- [jz](https://github.com/dy/jz) -->)
-* sandboxes, playgrounds, safe eval (eg. [glsl-transpiler](https://github.com/stackgl/glsl-transpiler))
-* custom DSL (eg. [piezo](https://github.com/dy/piezo)) <!-- uneural -->
-* preprocessors (eg. [prepr](https://github.com/dy/prepr))
+* subsets of languages 
+* sandboxes, playgrounds, safe eval
+* custom DSL
+* preprocessors 
 * templates
 
 _Subscript_ has [3.5kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_), best [performance](#performance) and extensive test coverage.
