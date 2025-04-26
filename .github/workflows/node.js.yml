@@ -1,31 +1,62 @@
-# This workflow will do a clean install of node dependencies, cache/restore them, build the source code and run tests across different versions of node
-# For more information see: https://help.github.com/actions/language-and-framework-guides/using-nodejs-with-github-actions
-
+# Workflow for testing Node.js applications with clean dependency installation, caching, build, and tests
 name: test
 
+# Trigger the workflow on push and pull requests to the main branch
 on:
   push:
     branches: [ main ]
   pull_request:
     branches: [ main ]
 
-jobs:
-  build:
+# Define permissions for security best practices
+permissions:
+  contents: read
 
+jobs:
+  test:
     runs-on: ubuntu-latest
 
-    strategy:
-      matrix:
-        node-version: [16.x]
-        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
-
     steps:
-    - uses: actions/checkout@v2
-    - name: Use Node.js ${{ matrix.node-version }}
-      uses: actions/setup-node@v2
-      with:
-        node-version: ${{ matrix.node-version }}
-        cache: 'npm'
-    - run: npm ci
-    - run: npm run build --if-present
-    - run: npm test
+      # Check out the repository code
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # Set up Node.js with the latest available version
+      - name: Set up Node.js (latest)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 'latest' # Dynamically uses the latest Node.js version
+          check-latest: true # Ensures the newest version is fetched (optional)
+          cache: 'npm'
+          cache-dependency-path: '**/package-lock.json'
+
+      # Clean npm cache to prevent cache bloat
+      - name: Clean npm cache
+        run: npm cache clean --force
+
+      # Install dependencies
+      - name: Install dependencies
+        run: npm ci
+
+      # Build the project if a build script exists
+      - name: Build project
+        run: npm run build --if-present
+
+      # Run tests
+      - name: Run tests
+        run: npm test
+
+      # Upload artifacts for debugging if the job fails
+      - name: Upload build artifacts (if build fails)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: |
+            dist/
+            build/
+          retention-days: 7
+
+# Enable debug logging for troubleshooting
+env:
+  ACTIONS_STEP_DEBUG: true
