@@ -110,7 +110,7 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 ['()', a];        // group operator `(a)`
 ['()', a, b];     // access operator `a(b)`
 [, 'a'];          // literal value `'a'`
-a;                // variable (from scope)
+'a';              // variable (from scope)
 null|empty;       // placeholder
 
 // eg.
@@ -129,7 +129,7 @@ To convert tree back to code, there's codegenerator function:
 import { stringify } from 'subscript.js'
 
 stringify(['+', ['*', 'min', [,60]], [,'sec']])
-// 'min*60 + "sec" == "300sec"'
+// 'min * 60 + "sec"'
 ```
 
 ## Extending
