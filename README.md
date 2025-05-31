@@ -64,7 +64,7 @@ It extends _subscript_ with:
 <!-- + strings interpolation -->
 
 ```js
-import jstin from './justin.js'
+import jstin from 'subscript/justin'
 
 let xy = jstin('{ x: 1, "y": 2+2 }["x"]')
 xy()  // 1
