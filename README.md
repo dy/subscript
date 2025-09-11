@@ -156,7 +156,7 @@ import 'subscript/feature/object.js';
 // add identity operators (precedence of comparison)
 binary('===', 9), binary('!==', 9)
 operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx)))
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx)))
+operator('!==', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx)))
 
 // add nullish coalescing (precedence of logical or)
 binary('??', 3)
