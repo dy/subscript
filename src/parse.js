@@ -13,7 +13,7 @@ export let idx, cur,
   ) => {
     const before = cur.slice(idx - 108, idx).split('\n').pop()
     const after = cur.slice(idx, idx + 108).split('\n').shift()
-    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}┃${after}\``, 'font-weight: bold')
+    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}┃${after}\``)
   },
 
   // advance until condition meets
