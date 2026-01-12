@@ -77,6 +77,9 @@ fn()  // 1
 + `{ a; b }` — block scope
 + `let x`, `const x = 1`
 + `break`, `continue`, `return x`
++ `` `a ${x} b` `` — template literals
++ `/pattern/flags` — regex literals
++ `5px`, `10rem` — unit suffixes
 
 ```js
 import subscript from 'subscript/justin'
@@ -124,21 +127,41 @@ const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
 fn({min: 5}) // min*60 + "sec" == "300sec"
 
 // node kinds
-['+', a];         // unary operator `+a`
-['+', a, b];      // binary operator `a + b`
-['+', a, b, c];   // n-ary operator `a + b + c`
-['()', a];        // group operator `(a)`
-['()', a, b];     // access operator `a(b)`
-[, 'a'];          // literal value `'a'`
-'a';              // variable (from scope)
-null|empty;       // placeholder
+'a'                // identifier — variable from scope
+[, value]          // literal — [0] empty distinguishes from operator
+[op, a]            // unary — prefix operator
+[op, a, null]      // unary — postfix operator (null marks postfix)
+[op, a, b]         // binary
+[op, a, b, c]      // n-ary / ternary
 
-// eg.
-['()', 'a']       // (a)
-['()', 'a', null] // a()
-['()', 'a', 'b']  // a(b)
-['++', 'a']       // ++a
-['++','a', null]  // a++
+// operators
+['+', a, b]        // a + b
+['.', a, 'b']      // a.b — property access
+['[]', a, b]       // a[b] — bracket access
+['()', a]          // (a) — grouping
+['()', a, b]       // a(b) — function call
+['()', a, null]    // a() — call with no args
+
+// literals & structures
+[, 1]              // 1
+[, 'hello']        // "hello"
+['[]', [',', ...]] // [a, b] — array literal
+['{}', [':', ...]] // {a: b} — object literal
+
+// justin extensions
+['?', a, b, c]     // a ? b : c — ternary
+['=>', params, x]  // (a) => x — arrow function
+['...', a]         // ...a — spread
+
+// control flow (extra)
+['if', cond, then, else]
+['while', cond, body]
+['for', init, cond, step, body]
+
+// postfix example
+['++', 'a']        // ++a
+['++', 'a', null]  // a++
+['px', [,5]]       // 5px (unit suffix)
 ```
 
 ### Stringify

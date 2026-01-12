@@ -1,14 +1,21 @@
-import { lookup, next, err, skip } from "../src/parse.js"
-import { cur, idx } from "../src/parse.js"
+import { lookup, next, err, skip, cur, idx } from "../src/parse.js"
 import { PERIOD, _0, _E, _e, _9 } from "../src/const.js"
 
 // Char codes for prefixes
 const _b = 98, _B = 66, _o = 111, _O = 79, _x = 120, _X = 88
 const _a = 97, _f = 102, _A = 65, _F = 70
+const PLUS = 43, MINUS = 45
+
+// Check if char at offset is digit or sign (valid after 'e')
+const isExpFollow = off => {
+  const c = cur.charCodeAt(idx + off)
+  return (c >= _0 && c <= _9) || c === PLUS || c === MINUS
+}
 
 // parse decimal number (with optional exponent)
+// Only consume 'e' if followed by digit or +/-
 const num = (a, _) => [, (
-  a = +next(c => (c === PERIOD) || (c >= _0 && c <= _9) || (c === _E || c === _e ? 2 : 0))
+  a = +next(c => (c === PERIOD) || (c >= _0 && c <= _9) || ((c === _E || c === _e) && isExpFollow(1) ? 2 : 0))
 ) != a ? err() : a]
 
 // .1

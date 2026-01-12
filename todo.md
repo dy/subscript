@@ -542,29 +542,22 @@
 
 ## Extra features
 
-* [ ] ideas snippets
-  * [ ] !keyed arrays? [a:1, b:2, c:3]
-  * [ ] parser examples as chunks
-  * [ ] string interpolation ` ${} 1 ${} `
-  * [ ] readme ideas
-  * [ ] [double.js](https://github.com/munrocket/double.js) scripting
-  * [ ] language simulators
+* [x] string interpolation `` `a ${x} b` `` → feature/template.js
+* [x] regexes `/abc/gi` → feature/regex.js (disambiguates from division by context)
+* [x] units `5s`, `5rem` → feature/unit.js (hybrid: wraps number handlers)
 
-* [ ] Keyed arrays <code>[a:1, b:2, c:3]</code>
-* [ ] 7!` (factorial)
-* [ ] `5s`, `5rem` (units)
-* [ ] `arrᵀ` - transpose
-* [ ] `int 5` (typecast)
-* [ ] `$a` (parameter expansion)
-* [ ] `1 to 10 by 2`
-* [ ] `a if b else c`
-* [ ] `a, b in c`
-* [ ] `a.xyz` swizzles
-* [ ] vector operators
-* [ ] set operators
-* [ ] polynomial operators
-* [ ] versions
-* [ ] hashes, urls
-* [ ] regexes
-* [ ] 2a as `2*a`
-* [ ] string interpolation ` ${} 1 ${} `
+* ~~Keyed arrays `[a:1, b:2, c:3]`~~ — just use object syntax `{a:1}`
+* ~~`7!` factorial~~ — math-heavy DSL only, trivial postfix via `token('!', ...)`
+* ~~`arrᵀ` transpose~~ — Unicode gimmick, user defines via `token('ᵀ', ...)`
+* ~~`int 5` typecast~~ — prefix word op already supported, user defines
+* ~~`$a` parameter expansion~~ — shell DSL, trivial `token('$', ...)`
+* ~~`1 to 10 by 2`~~ — range syntax too domain-specific
+* ~~`a if b else c`~~ — Python ternary, subscript has `?:`
+* ~~`a, b in c`~~ — already in justin as `in` operator
+* ~~`a.xyz` swizzles~~ — graphics DSL, needs custom `.` handler
+* ~~vector operators~~ — too specialized, userland
+* ~~set operators `∪ ∩ ∈`~~ — userland
+* ~~polynomial operators~~ — academic niche
+* ~~versions `1.2.3`~~ — custom number parser, userland
+* ~~hashes, urls~~ — string literals, parse in userland
+* ~~`2a` as `2*a`~~ — implicit multiply breaks identifier rules
