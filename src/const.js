@@ -40,3 +40,6 @@ export const
   PREC_ACCESS = 170,
   PREC_GROUP = 180,
   PREC_TOKEN = 200
+
+// Block prototype chain attacks: constructor, prototype, __proto__, __defineGetter__, etc.
+export const unsafe = k => k?.[0] === '_' && k[1] === '_' || k === 'constructor' || k === 'prototype'
