@@ -13,7 +13,7 @@ html { font-size: 16px; }
   --ln: #484f58;
 }
 body { font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; background: var(--bg); color: var(--fg); min-height: 100vh; display: flex; }
-.wrap { display: flex; flex-direction: row; flex: 1; min-height: 0; height: 100%; }
+.wrap { display: flex; flex-direction: row; flex: 1; min-height: 0; }
 
 /* Dark scrollbars */
 ::-webkit-scrollbar { width: 8px; height: 8px; }
@@ -22,7 +22,7 @@ body { font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; ba
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* Main */
-main { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; overflow: auto; height: 100%; }
+main { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
 
 /* Header */
 header { display: flex; align-items: center; gap: 0.625rem; }
@@ -63,7 +63,7 @@ h1 span { color: var(--accent); }
 .output-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
 .output-panel { display: none; padding: 0.5rem 0; }
 .output-panel.active { display: block; }
-#ast { font-size: 0.875rem; color: var(--muted); white-space: pre; line-height: 1.5; max-height: 18.75rem; overflow: auto; }
+#ast { font-size: 0.875rem; color: var(--muted); white-space: pre; line-height: 1.5; }
 
 /* Eval section */
 .eval-content { padding: 0.5rem 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem; }
@@ -161,13 +161,19 @@ h1 span { color: var(--accent); }
 .modal-toggle input { accent-color: var(--accent); }
 .size-info { font-size: 0.75rem; color: var(--muted); }
 .modal-right { margin-left: auto; display: flex; gap: 0.625rem; align-items: center; }
+
+/* Header links */
+.header-link { color: var(--muted); text-decoration: none; opacity: 0.5; font-size: 1.125rem; line-height: 1; transition: opacity .15s, color .15s; }
+.header-link:hover { opacity: 1; color: var(--accent); }
 </style>
 </head>
 <body>
+<a href="https://github.com/krishnized/license" class="header-link" style="position: absolute; bottom: 1rem; right: 1rem;" target="_blank" rel="noopener" title="krishnized license">ॐ</a>
 <div class="wrap">
   <main>
     <header>
       <h1><span>subscript</span> repl</h1>
+      <a href="https://github.com/dy/subscript" class="header-link" target="_blank" rel="noopener" title="github">⎇</a>
       <button class="toggle-sidebar" id="toggleSidebar">
         <span>Features</span>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
@@ -180,11 +186,7 @@ h1 span { color: var(--accent); }
 2
 3
 4</div>
-        <textarea id="input" placeholder="Type expression..." spellcheck="false" rows="4">// Data processing pipeline
-items
-  .filter(x => x > threshold)
-  .map(x => x * multiplier)
-  .reduce((sum, x) => sum + x, 0) // total</textarea>
+        <textarea id="input" placeholder="Type expression..." spellcheck="false" rows="4"></textarea>
       </div>
     </div>
 
@@ -203,11 +205,7 @@ items
         <div class="eval-content">
           <div class="eval-field">
             <span class="label">Context</span>
-            <textarea id="context" placeholder="{}">{
-  "items": [1, 2, 3, 4, 5, 6, 7, 8],
-  "threshold": 3,
-  "multiplier": 2
-}</textarea>
+            <textarea id="context" placeholder="{}">{}</textarea>
             </div>
             <div class="eval-field">
               <span class="label">Result</span>
@@ -304,92 +302,165 @@ const DESC = {
   'if': 'if/else', loop: 'for/while', 'var': 'let/const'
 }
 
-// Feature-specific code fragments
-const FEATURE_CODE = {
-  number: { frag: '42', ctx: {} },
-  string: { frag: '"hello"', ctx: {} },
-  access: { frag: 'data.value', ctx: { data: { value: 100 } } },
-  call: { frag: 'Math.abs(n)', ctx: { n: -5 } },
-  group: { frag: '(1 + 2) * 3', ctx: {} },
-  assign: { frag: 'x = 5', ctx: { x: 0 } },
-  mult: { frag: 'a * b', ctx: { a: 3, b: 4 } },
-  add: { frag: 'a + b', ctx: { a: 10, b: 5 } },
-  increment: { frag: '++count', ctx: { count: 0 } },
-  bitwise: { frag: 'flags | mask', ctx: { flags: 5, mask: 3 } },
-  shift: { frag: 'bits >> 2', ctx: { bits: 16 } },
-  pow: { frag: 'base ** exp', ctx: { base: 2, exp: 8 } },
-  compare: { frag: 'a > b', ctx: { a: 5, b: 3 } },
-  logic: { frag: 'ready && !done', ctx: { ready: true, done: false } },
-  bool: { frag: 'true', ctx: {} },
-  array: { frag: '[1, 2, 3]', ctx: {} },
-  object: { frag: '({ x: 1, y: 2 })', ctx: {} },
-  ternary: { frag: 'ok ? "yes" : "no"', ctx: { ok: true } },
-  arrow: { frag: 'nums.map(n => n * 2)', ctx: { nums: [1, 2, 3] } },
-  optional: { frag: 'user?.profile?.name', ctx: { user: { profile: { name: 'Bob' } } } },
-  spread: { frag: '[...arr, 4]', ctx: { arr: [1, 2, 3] } },
-  comment: { frag: '1 + 1 // two', ctx: {} },
-  'if': { frag: 'if (x) { 1 } else { 0 }', ctx: { x: true } },
-  loop: { frag: 'for (;i<3;i++) i', ctx: { i: 0 } },
-  'var': { frag: 'let x = 1; x', ctx: {} }
+// Multiline example templates for different feature combinations
+const TEMPLATES = {
+  full: {
+    code: `let x = 10; let y = 20; if (x > 5) { y = y + x } else { y = y - x }; y`,
+    ctx: {}
+  },
+
+  justin: {
+    code: `items
+  .filter(x => x.value > threshold)
+  .map(x => ({
+    ...x,
+    doubled: x.value * 2,
+    label: x.active ? "on" : "off"
+  }))
+  .reduce((sum, x) => sum + x.doubled, 0)`,
+    ctx: {
+      items: [
+        { value: 10, active: true },
+        { value: 5, active: false },
+        { value: 20, active: true }
+      ],
+      threshold: 8
+    }
+  }
 }
 
-// Elaborate initial example showcasing justin features
-const INITIAL_CODE = `// Data processing pipeline
-items
-  .filter(x => x > threshold)
-  .map(x => x * multiplier)
-  .reduce((sum, x) => sum + x, 0) // total`
-
-const INITIAL_CTX = {
-  items: [1, 2, 3, 4, 5, 6, 7, 8],
-  threshold: 3,
-  multiplier: 2
-}
-
-// Merge context objects
-function mergeCtx(base, add) {
-  return { ...base, ...add }
-}
-
-// Generate combined example for preset
-function generateCombinedExample() {
-  // Use initial elaborate example if justin or more
+// Generate example based on enabled features
+function generateExample() {
   const has = f => selected.has(f)
-  if (has('arrow') && has('call') && has('access') && has('compare') && has('mult') && has('add') && has('comment')) {
-    return { expr: INITIAL_CODE, ctx: INITIAL_CTX }
+  const all = f => f.every(has)
+
+  // Full subscript with control flow
+  if (all(['var', 'loop', 'if', 'arrow', 'spread', 'ternary', 'optional', 'object', 'array', 'compare', 'logic', 'comment'])) {
+    return TEMPLATES.full
   }
 
-  // Build from enabled features
-  const parts = []
-  const ctx = {}
-
-  if (has('arrow') && has('array') && has('call')) {
-    parts.push('[1, 2, 3].map(x => x * 2)')
-  } else if (has('ternary') && has('compare')) {
-    parts.push('x > 0 ? "positive" : "negative"')
-    ctx.x = 5
-  } else if (has('logic') && has('compare')) {
-    parts.push('a > 0 && a < 100')
-    ctx.a = 50
-  } else if (has('pow') && has('mult')) {
-    parts.push('x ** 2 * y')
-    ctx.x = 3; ctx.y = 2
-  } else if (has('mult') && has('add')) {
-    parts.push('(a + b) * c')
-    ctx.a = 2; ctx.b = 3; ctx.c = 4
-  } else if (has('add')) {
-    parts.push('1 + 2 + 3')
-  } else if (has('string')) {
-    parts.push('"hello"')
-  } else {
-    parts.push('42')
+  // Justin preset - functional style
+  if (all(['arrow', 'call', 'access', 'spread', 'ternary', 'object', 'array', 'compare', 'mult', 'add', 'comment'])) {
+    return TEMPLATES.justin
   }
 
-  if (has('comment') && parts.length) {
-    parts[parts.length - 1] += ' // result'
+  // Has control flow - build multiline program
+  if (has('var') || has('loop') || has('if')) {
+    const lines = []
+    const ctx = {}
+
+    if (has('var')) {
+      lines.push('let x = 10')
+      lines.push('let y = 20')
+    }
+
+    if (has('array') && has('var')) {
+      lines.push('let nums = [1, 2, 3, 4, 5]')
+      ctx.nums = [1, 2, 3, 4, 5]
+    }
+
+    if (has('if') && has('compare')) {
+      lines.push('')
+      lines.push('if (x > 5) {')
+      lines.push('  y = y + x')
+      lines.push('} else {')
+      lines.push('  y = y - x')
+      lines.push('}')
+    } else if (has('if')) {
+      lines.push('')
+      lines.push('if (flag) {')
+      lines.push('  x = 1')
+      lines.push('} else {')
+      lines.push('  x = 0')
+      lines.push('}')
+      ctx.flag = true
+    }
+
+    if (has('loop') && has('compare') && has('increment')) {
+      lines.push('')
+      lines.push('let sum = 0')
+      lines.push('for (let i = 0; i < 5; i++) {')
+      lines.push('  sum = sum + i')
+      lines.push('}')
+    }
+
+    if (has('arrow') && has('call') && has('access') && has('array')) {
+      lines.push('')
+      lines.push('nums.map(n => n * 2)')
+    } else if (lines.length > 0) {
+      lines.push('')
+      lines.push(has('var') ? 'x + y' : 'result')
+    }
+
+    if (lines.length > 0) {
+      return { code: lines.join('\n'), ctx }
+    }
   }
 
-  return { expr: parts.join('; '), ctx }
+  // Expression-only (no control flow) - build compound expression
+  if (has('arrow') && has('call') && has('access') && has('array')) {
+    if (has('spread') && has('object') && has('ternary')) {
+      return {
+        code: `items.map(x => ({
+  ...x,
+  status: x.value > 10 ? "high" : "low"
+}))`,
+        ctx: { items: [{ value: 5 }, { value: 15 }, { value: 8 }] }
+      }
+    }
+    if (has('ternary') && has('compare')) {
+      return {
+        code: `data
+  .filter(x => x.score > threshold)
+  .map(x => x.score * 2)`,
+        ctx: { data: [{ score: 80 }, { score: 60 }, { score: 90 }], threshold: 70 }
+      }
+    }
+    return {
+      code: `nums.map(n => n * multiplier)`,
+      ctx: { nums: [1, 2, 3, 4], multiplier: 10 }
+    }
+  }
+
+  if (has('ternary') && has('compare') && has('logic')) {
+    return {
+      code: `x > 0 && x < 100
+  ? x * 2
+  : 0`,
+      ctx: { x: 50 }
+    }
+  }
+
+  if (has('ternary') && has('compare')) {
+    return {
+      code: `a > b ? a : b`,
+      ctx: { a: 42, b: 17 }
+    }
+  }
+
+  if (has('mult') && has('add') && has('group')) {
+    return {
+      code: `(a + b) * (c - d)`,
+      ctx: { a: 10, b: 5, c: 8, d: 3 }
+    }
+  }
+
+  if (has('mult') && has('add')) {
+    return {
+      code: `a * b + c * d`,
+      ctx: { a: 2, b: 3, c: 4, d: 5 }
+    }
+  }
+
+  if (has('add')) {
+    return { code: 'a + b + c', ctx: { a: 1, b: 2, c: 3 } }
+  }
+
+  if (has('number')) {
+    return { code: '42', ctx: {} }
+  }
+
+  return { code: '1', ctx: {} }
 }
 
 const PRESETS = {
@@ -445,7 +516,20 @@ function buildWorkerSrc() {
   let src = `// Bundled subscript\n${constCode}\n${parseCode}\n${compileCode}\n${stringifyCode}\n`
 
   // Create P object for features that use `import * as P`
-  src += `\nvar P = { parse, token, space, expr, skip, next, idx, cur, err };\n`
+  // Use getters for idx/cur since they change during parsing
+  src += `
+var P = {
+  parse: parse,
+  token: token,
+  space: space,
+  expr: expr,
+  skip: skip,
+  next: next,
+  err: err,
+  get idx() { return idx },
+  get cur() { return cur }
+};
+`
 
   for (const f of featureOrder) {
     if (selected.has(f)) {
@@ -716,40 +800,10 @@ inputEl.addEventListener('keydown', e => {
   }
 })
 
-// Update example and context based on toggled feature
-function updateExampleForFeature(featureId, enabled) {
-  const currentCode = inputEl.value.trim()
-  let currentCtx = {}
-  try { currentCtx = JSON.parse(contextEl.value || '{}') } catch {}
-
-  if (enabled) {
-    // ADD: Append feature's code fragment to current code
-    const feat = FEATURE_CODE[featureId]
-    if (feat && feat.frag) {
-      // Only add if not already present (simple check)
-      if (!currentCode.includes(feat.frag.slice(0, 10))) {
-        const newCode = currentCode
-          ? currentCode + '\n' + feat.frag
-          : feat.frag
-        inputEl.value = newCode
-        contextEl.value = formatJSON(mergeCtx(currentCtx, feat.ctx))
-      }
-    }
-  } else {
-    // REMOVE: Generate fresh combined example from enabled features
-    // (AST manipulation would need parser in main thread - too complex)
-    const ex = generateCombinedExample()
-    inputEl.value = ex.expr
-    contextEl.value = formatJSON(ex.ctx)
-  }
-  updateEditor()
-  resizeContext()
-}
-
-// Update example for preset change
-function updateExampleForPreset() {
-  const ex = generateCombinedExample()
-  inputEl.value = ex.expr
+// Update editor with generated example
+function updateExample() {
+  const ex = generateExample()
+  inputEl.value = ex.code
   contextEl.value = formatJSON(ex.ctx)
   updateEditor()
   resizeContext()
@@ -770,7 +824,7 @@ FEATURES.forEach(cat => {
       enabled ? selected.add(id) : selected.delete(id)
       updatePresetSelect()
       await rebuildWorker()
-      updateExampleForFeature(id, enabled)
+      updateExample()
       compile()
     })
     featuresEl.appendChild(el)
@@ -786,7 +840,7 @@ presetSelect.addEventListener('change', async () => {
   document.querySelectorAll('.feat input').forEach(cb => cb.checked = selected.has(cb.dataset.id))
   programmaticChange = false
   await rebuildWorker()
-  updateExampleForPreset()
+  updateExample()
   compile()
 })
 
@@ -935,6 +989,7 @@ document.addEventListener('keydown', e => {
 // Init
 updatePresetSelect()
 await rebuildWorker()
+updateExample()
 compile()
 </script>
 </body>

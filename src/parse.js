@@ -89,10 +89,11 @@ export let idx, cur,
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
 
   // NOTE: allows ;;; (valid empty statements) and ,,, (debatable but harmless)
-  nary = (op, prec, skips) => {
+  // right=true allows same-precedence tokens on RHS (like statements after semicolon)
+  nary = (op, prec, right) => {
     token(op, prec,
       (a, b) => (
-        b = expr(prec),
+        b = expr(prec - (right ? .5 : 0)),
         (
           (a?.[0] !== op) && (a = [op, a || null]), // if beginning of sequence - init node
           b?.[0] === op ? a.push(...b.slice(1)) : a.push(b || null), // comments can return same-token expr

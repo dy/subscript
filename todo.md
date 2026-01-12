@@ -523,14 +523,16 @@
 * [x] ~~compile groups/complex groups to wasm: a*x + b*y + c~~ - no use cases
 
 * [x] split loops feature from coditions
-* [ ] add integration links to readme
+* [ ] ASI injection
+
+* [x] add integration links to readme
 
 
-## [ ] Demo
+## [x] Demo
 
-* [ ] REPL
-* [ ] language building tool: create own language with a set of features
-  * [ ] Make operator groups, importable; build subscript by including op groups.
+* [x] REPL
+* [x] language building tool: create own language with a set of features
+  * [x] Make operator groups, importable; build subscript by including op groups.
 
 ## [ ] Integrations
 
