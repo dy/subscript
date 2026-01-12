@@ -171,6 +171,30 @@ Keywords are literals — they have no operator, only a value.
 ['...', a]                    ...a (spread)
 ```
 
+### Templates
+```
+['`', [,'a'], 'x', [,'b']]    `a${x}b` (template literal)
+['``', 'tag', [,'a'], 'x']    tag`a${x}` (tagged template)
+```
+
+Template literals contain string parts (as literals) interleaved with expression parts (as nodes).
+
+### Statements (jessie)
+```
+['if', cond, then]            if (cond) then
+['if', cond, then, else]      if (cond) then else alt
+['while', cond, body]         while (cond) body
+['for', init, cond, step, body]  for (init; cond; step) body
+['block', body]               { body }
+['let', 'x']                  let x
+['let', 'x', val]             let x = val
+['const', 'x', val]           const x = val
+['break']                     break
+['continue']                  continue
+['return']                    return
+['return', val]               return val
+```
+
 ---
 
 ## Design Principles

@@ -24,7 +24,7 @@
 - [ ] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
 
 ### Decide
-- [ ] feature/loop.js, feature/block.js, feature/var.js — promote to subscript/full or mark experimental
+- [x] feature/loop.js, feature/block.js, feature/var.js — promoted to jessie.js
 - [ ] Integrations section — either commit or delete the dreams
 
 - [ ] "Parser/evaluator/microlanguage" — three nouns = unclear positioning

@@ -7,16 +7,20 @@
 * 2x faster than popular alternative
 * Modular syntax extensions
 
-<!-- ####  Used for:
+<!--
+####  Used for:
 
 * expressions evaluators, calculators
 * subsets of languages
 * sandboxes, playgrounds, safe eval
 * custom DSL
 * preprocessors
-* templates -->
+* templates
+-->
 
-_Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint <!-- (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_) -->, good [performance](#performance) and extensive test coverage.
+<!--
+_Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint  (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_) , good [performance](#performance) and extensive test coverage.
+-->
 
 
 ## Usage
@@ -50,8 +54,8 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 ### Justin
 
-_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ (see [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
-It extends _subscript_ with:
+[Justin](https://github.com/endojs/Jessie) is the expression layer of Jessie — a safe JavaScript subset for mobile code.<br/>
+_JSON_ superset with expressions: no keywords, no statements, no side-effects beyond assignment.
 
 + `a === b`, `a !== b`
 + `a ** b`, `a **= b`
@@ -60,21 +64,23 @@ It extends _subscript_ with:
 + `a >>> b`, `a >>>= b`
 + `a ? b : c`, `a?.b`
 + `...a`
-+ `[a, b]`
-+ `{a: b}`
++ `[a, b]`, `{a: b}`, `{a}`
 + `(a, b) => c`
 + `// foo`, `/* bar */`
 + `true`, `false`, `null`, `NaN`, `undefined`
 + `a in b`
++ `` `a ${x} b` ``, `` tag`...` ``
 
 ```js
-import justin from 'subscript/justin'
+import justin from 'subscript/justin.js'
 
 let fn = justin('{ x: 1, "y": 2+2 }["x"]')
 fn()  // 1
 ```
 
-### Extra
+### Jessie (experimental)
+
+[Jessie](https://github.com/endojs/Jessie) extends Justin with statements and declarations — a safe subset for executable code.
 
 + `if (c) a`, `if (c) a else b`
 + `while (c) body`
@@ -82,20 +88,30 @@ fn()  // 1
 + `{ a; b }` — block scope
 + `let x`, `const x = 1`
 + `break`, `continue`, `return x`
-+ `` `a ${x} b` `` — template literals
+
+```js
+import jessie from 'subscript/jessie.js'
+
+let sum = jessie(`
+  let sum = 0;
+  for (let i = 0; i < 10; i += 1) sum += i;
+  sum
+`)
+sum() // 45
+```
+
+Note: This provides Jessie's _syntax surface_. For full Jessie security guarantees,
+you need `harden()` and [SES](https://github.com/endojs/endo/tree/master/packages/ses) runtime.
+
+### Extras
+
 + `/pattern/flags` — regex literals
 + `5px`, `10rem` — unit suffixes
 
 ```js
-import subscript from 'subscript/justin'
-import 'subscript/feature/loop.js'
-
-let sum = subscript(`
-  let sum = 0;
-  for (i = 0; i < 10; i += 1) sum += i;
-  sum
-`)
-sum() // 45
+import subscript from 'subscript/justin.js'
+import 'subscript/feature/regex.js'
+import 'subscript/feature/unit.js'
 ```
 
 

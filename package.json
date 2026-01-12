@@ -12,6 +12,7 @@
     "./compile": "./src/compile.js",
     "./const": "./src/const.js",
     "./justin": "./justin.js",
+    "./jessie": "./jessie.js",
     "./src/*": "./src/*",
     "./feature/*": "./feature/*"
   },
@@ -23,7 +24,8 @@
     "subscript.min.js",
     "subscript.d.ts",
     "justin.js",
-    "justin.min.js"
+    "justin.min.js",
+    "jessie.js"
   ],
   "directories": {
     "lib": "lib",

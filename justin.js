@@ -1,4 +1,5 @@
-// no-keywords js, just in https://github.com/endojs/Jessie/issues/66
+// Justin: JSON superset expression language
+// Compatible with Jessie's Justin layer: https://github.com/endojs/Jessie
 import { err, token, binary, unary } from './src/parse.js'
 import compile, { operator, prop } from './src/compile.js'
 
@@ -12,6 +13,7 @@ import './feature/object.js'
 import './feature/arrow.js'
 import './feature/optional.js'
 import './feature/spread.js'
+import './feature/template.js'
 import { PREC_ASSIGN, PREC_EQ, PREC_LOR, PREC_COMP } from './src/const.js'
 
 binary('in', PREC_COMP), operator('in', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) in b(ctx)))
