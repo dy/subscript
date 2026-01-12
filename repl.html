@@ -22,7 +22,8 @@ body { font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; ba
 ::-webkit-scrollbar-thumb:hover { background: var(--muted); }
 
 /* Main */
-main { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; }
+main { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; margin-right: 16.25rem; transition: margin-right .2s ease; }
+main.sidebar-collapsed { margin-right: 0; }
 
 /* Header */
 header { display: flex; align-items: center; gap: 0.625rem; }
@@ -44,7 +45,7 @@ h1 span { color: var(--accent); }
 }
 #input {
   flex: 1; background: transparent; border: none; color: var(--fg);
-  padding: 0.5rem 0.5rem 0.5rem 0.25rem; font: inherit; outline: none; tab-size: 2; line-height: 1.6;
+  padding: 0.5rem 0.5rem 0.5rem 0.25rem; font: inherit; font-size: 0.875rem; outline: none; tab-size: 2; line-height: 1.6;
   resize: none; overflow: hidden; min-height: 1.6em;
   white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
 }
@@ -95,6 +96,7 @@ h1 span { color: var(--accent); }
 .sidebar {
   width: 16.25rem; background: var(--bg2); display: flex; flex-direction: column; flex-shrink: 0;
   transition: width .2s ease, opacity .15s;
+  position: fixed; right: 0; top: 0; height: 100vh; z-index: 10;
 }
 .sidebar.collapsed { width: 0; opacity: 0; overflow: hidden; }
 
@@ -144,7 +146,7 @@ h1 span { color: var(--accent); }
 .modal-code {
   background: var(--bg); border: 1px solid var(--border); border-radius: 0.375rem;
   padding: 0.75rem; font-size: 0.875rem; line-height: 1.5; overflow: auto;
-  flex: 1; min-height: 0; white-space: pre; color: var(--muted);
+  flex: 1; min-height: 0; white-space: pre-wrap; word-break: break-all; color: var(--muted);
 }
 .modal-code-wrap .copy-btn {
   position: absolute; top: 0.5rem; right: 0.5rem; background: var(--bg2); border: 1px solid var(--border);
@@ -165,6 +167,17 @@ h1 span { color: var(--accent); }
 /* Header links */
 .header-link { color: var(--muted); text-decoration: none; opacity: 0.5; font-size: 1.125rem; line-height: 1; transition: opacity .15s, color .15s; }
 .header-link:hover { opacity: 1; color: var(--accent); }
+
+/* Error highlight in editor */
+.editor.has-error #input { background: linear-gradient(transparent var(--err-line-top), rgba(248,81,73,.1) var(--err-line-top), rgba(248,81,73,.1) var(--err-line-bot), transparent var(--err-line-bot)); }
+
+/* Feature tooltips - show left of sidebar */
+.feat { position: relative; }
+.feat-tip { display: none; position: fixed; background: var(--bg); padding: 0.5rem 0.625rem; font-size: 0.75rem; line-height: 1.5; color: var(--fg); z-index: 100; pointer-events: none; max-width: 14rem; text-align: right; white-space: normal; }
+.feat-tip code { color: var(--muted); background: rgba(139,148,158,.1); padding: 0.1em 0.3em; border-radius: 2px; margin: 0.15em; display: inline-block; }
+
+/* Dependency indicator */
+.feat-dep { font-size: 0.625rem; color: var(--muted); opacity: 0.7; margin-left: 0.25rem; }
 </style>
 </head>
 <body>
@@ -205,7 +218,7 @@ h1 span { color: var(--accent); }
         <div class="eval-content">
           <div class="eval-field">
             <span class="label">Context</span>
-            <textarea id="context" placeholder="{}">{}</textarea>
+            <textarea id="context" placeholder="{ }">{ "x": 10 }</textarea>
             </div>
             <div class="eval-field">
               <span class="label">Result</span>
@@ -242,8 +255,8 @@ h1 span { color: var(--accent); }
     <div class="features" id="features"></div>
     <div class="sidebar-actions">
       <button class="btn primary" id="getBundleBtn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7v10c0 .55.45 1 1 1h14c.55 0 1-.45 1-1V9c0-.55-.45-1-1-1h-5.59c-.27 0-.52-.11-.71-.29l-1.41-1.41c-.19-.19-.44-.3-.71-.3H5c-.55 0-1 .45-1 1z"/></svg>
-        Export
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V13"/><path d="M12 15V3M12 3L8.5 6.5M12 3L15.5 6.5"/></svg>
+        Export <span id="bundleSizeHint" style="opacity: 0.6; font-weight: 400"></span>
       </button>
     </div>
   </aside>
@@ -267,10 +280,6 @@ h1 span { color: var(--accent); }
             <input type="checkbox" id="bundleToggle">
             <span>bundle</span>
           </label>
-          <label class="modal-toggle">
-            <input type="checkbox" id="minToggle">
-            <span>min</span>
-          </label>
           <button class="btn primary" id="modalDownload" title="Download">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 20h12M12 4v12m0 0l3.5-3.5M12 16l-3.5-3.5"/></svg>
             Save
@@ -284,13 +293,13 @@ h1 span { color: var(--accent); }
 <script type="module">
 const featureOrder = ['number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add',
   'increment', 'bitwise', 'logic', 'compare', 'shift', 'pow', 'bool', 'array', 'object',
-  'ternary', 'arrow', 'optional', 'spread', 'comment', 'block', 'if', 'loop', 'var']
+  'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'regex', 'unit', 'block', 'if', 'loop', 'var']
 
 const FEATURES = [
   { cat: 'Core', items: ['number', 'string', 'access', 'call', 'group'] },
   { cat: 'Operators', items: ['assign', 'mult', 'add', 'increment', 'bitwise', 'shift', 'pow', 'compare', 'logic'] },
-  { cat: 'Literals', items: ['bool', 'array', 'object'] },
-  { cat: 'Advanced', items: ['ternary', 'arrow', 'optional', 'spread', 'comment'] },
+  { cat: 'Literals', items: ['bool', 'array', 'object', 'template', 'regex'] },
+  { cat: 'Advanced', items: ['ternary', 'arrow', 'optional', 'spread', 'comment', 'unit'] },
   { cat: 'Control', items: ['if', 'loop', 'var'] },
 ]
 
@@ -299,14 +308,50 @@ const DESC = {
   assign: '=', mult: '*/%', add: '+-', increment: '++', bitwise: '&|^', shift: '<<', pow: '**',
   compare: '==<>', logic: '&&!', bool: 'true', array: '[]', object: '{}',
   ternary: '?:', arrow: '=>', optional: '?.', spread: '...', comment: '//',
-  'if': 'if/else', loop: 'for/while', 'var': 'let/const'
+  'if': 'if/else', loop: 'for/while', 'var': 'let/const',
+  template: '`${}`', regex: '/re/', unit: '5px'
+}
+
+// Extended tooltips with syntax examples
+const TIPS = {
+  number: 'Numeric literals<br><code>42</code> <code>3.14</code> <code>1e-3</code> <code>0xFF</code> <code>0b1010</code> <code>0o755</code>',
+  string: 'String literals with escapes<br><code>"hello"</code> <code>\'world\'</code> <code>"line\\nbreak"</code>',
+  access: 'Property access<br><code>a.b</code> <code>obj.prop.nested</code>',
+  call: 'Function calls<br><code>fn()</code> <code>fn(a, b)</code> <code>obj.method()</code>',
+  group: 'Grouping parentheses<br><code>(a + b) * c</code>',
+  assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code> <code>%=</code> <code>**=</code>',
+  mult: 'Multiplicative<br><code>*</code> <code>/</code> <code>%</code>',
+  add: 'Additive & unary<br><code>a + b</code> <code>a - b</code> <code>-x</code> <code>+x</code>',
+  increment: 'Increment/decrement<br><code>++x</code> <code>x++</code> <code>--x</code> <code>x--</code>',
+  bitwise: 'Bitwise operators<br><code>&</code> <code>|</code> <code>^</code> <code>~x</code>',
+  shift: 'Bit shift<br><code>&lt;&lt;</code> <code>&gt;&gt;</code> <code>&gt;&gt;&gt;</code>',
+  pow: 'Exponentiation<br><code>2 ** 10</code> → 1024',
+  compare: 'Comparison<br><code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code> <code>===</code> <code>!==</code>',
+  logic: 'Logical operators<br><code>&&</code> <code>||</code> <code>!</code> <code>??</code>',
+  bool: 'Boolean & nil literals<br><code>true</code> <code>false</code> <code>null</code> <code>undefined</code>',
+  array: 'Array literal & indexing<br><code>[1, 2, 3]</code> <code>arr[i]</code> <code>arr[0]</code>',
+  object: 'Object literal<br><code>{ a: 1, b: 2 }</code> <code>{ [key]: val }</code> <code>{ x }</code>',
+  ternary: 'Conditional expression<br><code>cond ? then : else</code>',
+  arrow: 'Arrow functions<br><code>x => x * 2</code> <code>(a, b) => a + b</code> <code>() => 42</code>',
+  optional: 'Optional chaining<br><code>a?.b</code> <code>a?.()</code> <code>a?.[i]</code>',
+  spread: 'Spread operator<br><code>[...arr]</code> <code>{ ...obj }</code> <code>fn(...args)</code>',
+  comment: 'Comments (ignored)<br><code>// line comment</code> <code>/* block */</code>',
+  'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code> <code>if (c) { ... }</code>',
+  loop: 'Loops<br><code>while (c) body</code> <code>for (init; cond; step) body</code>',
+  'var': 'Variable declaration<br><code>let x = 1</code> <code>const y = 2</code>',
+  template: 'Template literals<br><code>\`hello \${name}\`</code> <code>\`${a} + ${b} = ${a+b}\`</code>',
+  regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code> <code>/^start/i</code>',
+  unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code> <code>100ms</code> <code>90deg</code>'
 }
 
 // Multiline example templates for different feature combinations
 const TEMPLATES = {
   full: {
-    code: `let x = 10; let y = 20; if (x > 5) { y = y + x } else { y = y - x }; y`,
-    ctx: {}
+    code: `let sum = 0;
+for (let i = 1; i <= n; i++)
+  sum = sum + i;
+Math.sqrt(sum)`,
+    ctx: { n: 10 }
   },
 
   justin: {
@@ -314,18 +359,38 @@ const TEMPLATES = {
   .filter(x => x.value > threshold)
   .map(x => ({
     ...x,
-    doubled: x.value * 2,
+    sqrt: Math.sqrt(x.value),
     label: x.active ? "on" : "off"
   }))
-  .reduce((sum, x) => sum + x.doubled, 0)`,
+  .reduce((sum, x) => sum + x.sqrt, 0)`,
     ctx: {
       items: [
-        { value: 10, active: true },
-        { value: 5, active: false },
-        { value: 20, active: true }
+        { value: 16, active: true },
+        { value: 9, active: false },
+        { value: 25, active: true }
       ],
       threshold: 8
     }
+  }
+}
+
+// =============================================================================
+// PARSER CONSTRAINT: Subscript requires explicit semicolons between statements.
+// Unlike JavaScript, there is NO Automatic Semicolon Insertion (ASI).
+// Multi-line code MUST use `;` to separate statements: `let x = 1; let y = 2`
+// =============================================================================
+
+// Validate that code can be parsed with current features (catches syntax errors early)
+function validateSyntax(code) {
+  if (!workerReady || !currentWorker) return { valid: true } // Can't validate yet
+  try {
+    // Quick parse check - if we have parse function available
+    if (typeof parse === 'function') {
+      parse(code)
+    }
+    return { valid: true }
+  } catch (e) {
+    return { valid: false, error: e.message }
   }
 }
 
@@ -350,38 +415,37 @@ function generateExample() {
     const ctx = {}
 
     if (has('var')) {
-      lines.push('let x = 10')
-      lines.push('let y = 20')
+      lines.push('let x = 10;')
+      lines.push('let y = 20;')
     }
 
     if (has('array') && has('var')) {
-      lines.push('let nums = [1, 2, 3, 4, 5]')
+      lines.push('let nums = [1, 2, 3, 4, 5];')
       ctx.nums = [1, 2, 3, 4, 5]
     }
 
     if (has('if') && has('compare')) {
       lines.push('')
       lines.push('if (x > 5) {')
-      lines.push('  y = y + x')
+      lines.push('  y = y + x;')
       lines.push('} else {')
-      lines.push('  y = y - x')
+      lines.push('  y = y - x;')
       lines.push('}')
     } else if (has('if')) {
       lines.push('')
       lines.push('if (flag) {')
-      lines.push('  x = 1')
+      lines.push('  x = 1;')
       lines.push('} else {')
-      lines.push('  x = 0')
+      lines.push('  x = 0;')
       lines.push('}')
       ctx.flag = true
     }
 
     if (has('loop') && has('compare') && has('increment')) {
       lines.push('')
-      lines.push('let sum = 0')
-      lines.push('for (let i = 0; i < 5; i++) {')
-      lines.push('  sum = sum + i')
-      lines.push('}')
+      lines.push('let sum = 0;')
+      lines.push('for (let i = 0; i < 5; i++)')
+      lines.push('  sum = sum + i;')
     }
 
     if (has('arrow') && has('call') && has('access') && has('array')) {
@@ -492,6 +556,32 @@ const [parseSrc, compileSrc, constSrc, stringifySrc] = await Promise.all([
   fetch('./src/stringify.js').then(r => r.text()),
 ])
 
+// Terser for minification (~400KB vs esbuild-wasm ~2MB)
+let terser = null
+let terserReady = false
+async function initTerser() {
+  if (terserReady) return true
+  if (terser === 'loading') return false
+  terser = 'loading'
+  try {
+    const mod = await import('https://esm.sh/terser@5.37.0')
+    console.log('ESM module loaded:', Object.keys(mod).slice(0, 10))
+    terser = mod.default || mod
+    console.log('Terser object:', typeof terser, 'minify:', typeof terser?.minify)
+    if (!terser || !terser.minify) {
+      throw new Error('Terser minify not found on module')
+    }
+    terserReady = true
+    console.log('✓ Terser ready for minification')
+    return true
+  } catch (e) {
+    console.error('Terser init failed:', e)
+    terser = null
+    terserReady = false
+    return false
+  }
+}
+
 // Build worker source
 function buildWorkerSrc() {
   let constCode = constSrc.replace(/^export\s+const\s+/gm, 'var ')
@@ -526,7 +616,9 @@ var P = {
   skip: skip,
   next: next,
   err: err,
+  lookup: lookup,
   get idx() { return idx },
+  set idx(v) { idx = v },
   get cur() { return cur }
 };
 `
@@ -539,15 +631,20 @@ var P = {
     if (shouldInclude) {
       let code = featureSources[f]
         .replace(/^import\s+.*$/gm, '')
+        .replace(/^export\s+\{[^}]+\}\s+from\s+['"].*['"];?\s*$/gm, '') // Remove re-exports
         .replace(/^export\s+/gm, '')
         // Convert destructuring const { x, y } = P to individual assignments
         .replace(/^const\s*\{([^}]+)\}\s*=\s*(\w+)\s*$/gm, (_, vars, obj) => {
           return vars.split(',').map(v => v.trim()).filter(Boolean)
             .map(v => `var ${v} = ${obj}.${v}`).join('\n')
         })
-      // Don't wrap block.js in IIFE - its exports need to be visible to if.js/loop.js
-      if (f === 'block') {
+      // Don't wrap block/if/loop/var in IIFE - they share exports between them
+      if (f === 'block' || f === 'if' || f === 'loop' || f === 'var') {
         src += `\n// feature: ${f}\n${code}\n`
+      } else if (f === 'unit') {
+        // Unit needs `unit` function exposed globally, then register default units
+        src += `\n// feature: ${f}\n${code}\n`
+        src += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n`
       } else {
         // Wrap in IIFE to avoid naming conflicts between features
         src += `\n// feature: ${f}\n;(function(){\n${code}\n})();\n`
@@ -556,6 +653,26 @@ var P = {
   }
 
   src += `
+// Built-in globals available in context
+var BUILTINS = {
+  Math: Math,
+  Date: Date,
+  JSON: JSON,
+  parseInt: parseInt,
+  parseFloat: parseFloat,
+  isNaN: isNaN,
+  isFinite: isFinite,
+  Infinity: Infinity,
+  NaN: NaN,
+  undefined: undefined,
+  Array: Array,
+  Object: Object,
+  String: String,
+  Number: Number,
+  Boolean: Boolean,
+  RegExp: RegExp
+}
+
 // Worker handler
 self.onmessage = function(e) {
   var data = e.data
@@ -574,7 +691,9 @@ self.onmessage = function(e) {
       var t0 = performance.now()
       var ast = parse(data.code)
       var fn = compile(ast)
-      var result = fn(data.ctx)
+      // Merge builtins with user context (user context wins)
+      var ctx = Object.assign({}, BUILTINS, data.ctx)
+      var result = fn(ctx)
       var evalTime = performance.now() - t0
       var serializable = typeof result === 'function'
         ? { __type: 'function', length: result.length }
@@ -625,11 +744,31 @@ function rebuildWorker() {
   })
 }
 
+const editorEl = document.querySelector('.editor')
+
+function highlightError(error) {
+  // Parse error position: "... at 2:5 — ..."
+  const match = error?.match(/at (\d+):(\d+)/)
+  if (match) {
+    const line = parseInt(match[1])
+    const lineHeight = 1.6 // em, matches CSS
+    const padding = 0.5 // em, matches CSS
+    const top = `calc(${padding}em + ${(line - 1) * lineHeight}em)`
+    const bot = `calc(${padding}em + ${line * lineHeight}em)`
+    editorEl.style.setProperty('--err-line-top', top)
+    editorEl.style.setProperty('--err-line-bot', bot)
+    editorEl.classList.add('has-error')
+  } else {
+    editorEl.classList.remove('has-error')
+  }
+}
+
 function handleWorkerMsg(e) {
   if (e.data.id !== evalId) return
 
   const { ok, ast, result, error, time } = e.data
   if (ok) {
+    editorEl.classList.remove('has-error')
     if (ast !== undefined) {
       currentAST = ast
       astEl.textContent = formatAST(ast)
@@ -645,7 +784,12 @@ function handleWorkerMsg(e) {
       evalTimeEl.textContent = time !== undefined ? `${time.toFixed(1)}ms` : ''
     }
   } else {
-    errorEl.textContent = error
+    // Hint: if error looks like missing semicolon (keyword after expression)
+    const hint = /Unexpected token.*\^(for|while|if|let|const|return)/.test(error)
+      ? ' — Hint: use ; between statements'
+      : ''
+    errorEl.textContent = error + hint
+    highlightError(error)
     evalTimeEl.textContent = ''
     if (result === undefined) {
       astEl.textContent = ''
@@ -809,9 +953,17 @@ inputEl.addEventListener('keydown', e => {
   }
 })
 
-// Update editor with generated example
+// Update editor with generated example (validates syntax before setting)
 function updateExample() {
   const ex = generateExample()
+
+  // Validate generated code syntax before displaying
+  // This catches bugs in example generation early
+  const validation = validateSyntax(ex.code)
+  if (!validation.valid) {
+    console.warn('Generated example has syntax error:', validation.error, '\nCode:', ex.code)
+  }
+
   inputEl.value = ex.code
   contextEl.value = formatJSON(ex.ctx)
   updateEditor()
@@ -821,18 +973,44 @@ function updateExample() {
 // Render features
 let programmaticChange = false
 const featuresEl = document.getElementById('features')
+const DEPS = { 'if': ['block'], loop: ['block'] } // Hidden dependencies
+
+// Tooltip element for features
+const featTip = document.createElement('div')
+featTip.className = 'feat-tip'
+document.body.appendChild(featTip)
+
 FEATURES.forEach(cat => {
   featuresEl.insertAdjacentHTML('beforeend', `<div class="cat-head">${cat.cat}</div>`)
   cat.items.forEach(id => {
     const el = document.createElement('label')
     el.className = 'feat'
-    el.innerHTML = `<input type="checkbox" data-id="${id}" ${selected.has(id) ? 'checked' : ''}>${id}<span class="feat-desc">${DESC[id]}</span>`
+    const dep = DEPS[id] ? `<span class="feat-dep">+${DEPS[id].join(',')}</span>` : ''
+    el.innerHTML = `<input type="checkbox" data-id="${id}" ${selected.has(id) ? 'checked' : ''}>${id}${dep}<span class="feat-desc">${DESC[id]}</span>`
+    el.dataset.tip = TIPS[id] || DESC[id]
+
+    // Tooltip handlers - show left of sidebar
+    el.addEventListener('mouseenter', e => {
+      featTip.innerHTML = el.dataset.tip
+      featTip.style.display = 'block'
+      const rect = el.getBoundingClientRect()
+      const sidebar = document.querySelector('.sidebar')
+      const sidebarRect = sidebar.getBoundingClientRect()
+      const tipRect = featTip.getBoundingClientRect()
+      // Position to the left of sidebar, vertically aligned with feature
+      featTip.style.right = (window.innerWidth - sidebarRect.left + 8) + 'px'
+      featTip.style.left = 'auto'
+      featTip.style.top = rect.top + 'px'
+    })
+    el.addEventListener('mouseleave', () => featTip.style.display = 'none')
+
     el.querySelector('input').addEventListener('change', async e => {
       if (programmaticChange) return
       const enabled = e.target.checked
       enabled ? selected.add(id) : selected.delete(id)
       updatePresetSelect()
       await rebuildWorker()
+      updateBundleSizeHint()
       updateExample()
       compile()
     })
@@ -849,6 +1027,7 @@ presetSelect.addEventListener('change', async () => {
   document.querySelectorAll('.feat input').forEach(cb => cb.checked = selected.has(cb.dataset.id))
   programmaticChange = false
   await rebuildWorker()
+  updateBundleSizeHint()
   updateExample()
   compile()
 })
@@ -868,32 +1047,128 @@ function updatePresetSelect() {
 // Sidebar toggle
 const sidebar = document.getElementById('sidebar')
 const toggleBtn = document.getElementById('toggleSidebar')
+const mainEl = document.querySelector('main')
 toggleBtn.addEventListener('click', () => {
   sidebar.classList.toggle('collapsed')
+  mainEl.classList.toggle('sidebar-collapsed')
   const chevron = toggleBtn.querySelector('svg')
   chevron.style.transform = sidebar.classList.contains('collapsed') ? 'rotate(180deg)' : ''
 })
 
-// Bundle generation - import version imports subscript first
+// Bundle generation - import version (requires subscript package)
 function generateImportBundle() {
   const imports = featureOrder.filter(f => selected.has(f)).map(f => `import 'subscript/feature/${f}.js'`).join('\n')
   return `// subscript dialect (${selected.size} features)
 import { parse } from 'subscript/parse'
 import compile from 'subscript/compile'
 ${imports}
+
 export { parse, compile }
 export default s => compile(parse(s))
+
+// Usage:
+// import evaluate from './dialect.js'
+// const result = evaluate('1 + 2 * 3')({ x: 10 })
 `
 }
 
+// Self-contained ES module bundle - proper bundling that preserves exports
 function generateSelfContainedBundle() {
-  return buildWorkerSrc()
-    .replace(/\/\/ Worker handler[\s\S]*$/, '')
-    .trim() + '\n'
+  const stripImports = code => code.replace(/^import\s+.*$/gm, '')
+  const stripExports = code => code
+    .replace(/^export\s+default\s+/gm, '')
+    .replace(/^export\s+(const|let|function)\s+/gm, '$1 ')
+    .replace(/^export\s+\{[^}]+\}.*$/gm, '')
+
+  let bundle = `// Bundled subscript (${selected.size} features)
+// https://github.com/phtml/subscript
+
+`
+
+  // 1. Constants
+  bundle += `// === src/const.js ===\n`
+  bundle += stripExports(constSrc) + '\n\n'
+
+  // 2. Parse - FIRST module to define shared vars like 'id'
+  bundle += `// === src/parse.js ===\n`
+  let parseModule = stripImports(parseSrc)
+    .replace(/^export\s+let\s+/gm, 'let ')
+    .replace(/^export\s+default\s+parse\s*;?\s*$/gm, '')
+  bundle += parseModule + '\n\n'
+
+  // 3. Compile
+  bundle += `// === src/compile.js ===\n`
+  let compileModule = stripImports(compileSrc)
+    .replace(/^export\s+const\s+/gm, 'const ')
+    .replace(/^export\s+default\s+compile\s*;?\s*$/gm, '')
+  bundle += compileModule + '\n\n'
+
+  // 4. Features
+  for (const f of featureOrder) {
+    const shouldInclude = f === 'block'
+      ? (selected.has('if') || selected.has('loop'))
+      : selected.has(f)
+
+    if (shouldInclude) {
+      bundle += `// === feature/${f}.js ===\n`
+      let featureCode = featureSources[f]
+      featureCode = stripImports(featureCode)
+      featureCode = featureCode.replace(/^export\s+\{[^}]+\}\s+from\s+['"].*['"];?\s*$/gm, '')
+      featureCode = stripExports(featureCode)
+      bundle += featureCode + '\n\n'
+
+      if (f === 'unit') {
+        bundle += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n\n`
+      }
+    }
+  }
+
+  // ESM exports
+  bundle += `export { parse, compile }
+export default (code) => compile(parse(code))
+`
+  return bundle
 }
 
-// Simple minification
-function minify(code) {
+// Real minification via Terser (async)
+async function minify(code) {
+  if (!terserReady) {
+    const ok = await initTerser()
+    if (!ok) {
+      console.warn('Terser failed to load, using fallback')
+      return minifyFallback(code)
+    }
+  }
+  try {
+    if (!terser || !terser.minify) {
+      console.warn('Terser not ready, using fallback')
+      return minifyFallback(code)
+    }
+    console.log('Minifying with Terser...', code.length, 'bytes')
+    const result = await terser.minify(code, {
+      module: true,
+      compress: { passes: 3, ecma: 2020, unsafe: true },
+      mangle: { toplevel: false },
+      format: { ecma: 2020, comments: false, semicolons: false }
+    })
+    if (result.error) {
+      console.error('❌ Terser parse/minify error:', result.error)
+      return minifyFallback(code)
+    }
+    if (!result.code) {
+      console.warn('⚠️  Terser returned no code')
+      return minifyFallback(code)
+    }
+    console.log('✓ Minified to', result.code.length, 'bytes')
+    return result.code
+  } catch (e) {
+    console.error('❌ Terser exception:', e.message, e.stack)
+    return minifyFallback(code)
+  }
+}
+
+// Fallback minification (basic)
+function minifyFallback(code) {
   return code
     .replace(/\/\/.*$/gm, '')
     .replace(/\/\*[\s\S]*?\*\//g, '')
@@ -902,8 +1177,6 @@ function minify(code) {
     .replace(/\s+$/gm, '')
     .replace(/\n/g, ' ')
     .replace(/\s+/g, ' ')
-    .replace(/\s*([{}();,:])\s*/g, '$1')
-    .replace(/\s*([=+\-*/<>!&|?])\s*/g, '$1')
     .trim()
 }
 
@@ -925,28 +1198,49 @@ async function gzipSize(str) {
   return compressedBlob.size
 }
 
+// Update bundle size hint on export button (shows minified self-contained size)
+const bundleSizeHint = document.getElementById('bundleSizeHint')
+let lastBundleSize = null
+async function updateBundleSizeHint() {
+  const code = generateSelfContainedBundle()
+  const minCode = await minify(code)
+  const gz = await gzipSize(minCode)
+  lastBundleSize = { raw: new Blob([code]).size, min: new Blob([minCode]).size, gz }
+  bundleSizeHint.textContent = `(${formatSize(gz)} gz)`
+}
+
 // Modal
 const bundleModal = document.getElementById('bundleModal')
 const modalCode = document.getElementById('modalCode')
 const bundleToggle = document.getElementById('bundleToggle')
-const minToggle = document.getElementById('minToggle')
 const sizeInfo = document.getElementById('sizeInfo')
 let currentBundleCode = ''
 
 async function updateModalCode() {
   const isBundle = bundleToggle.checked
-  const isMin = minToggle.checked
+  console.log('updateModalCode called, isBundle:', isBundle)
 
   let code = isBundle ? generateSelfContainedBundle() : generateImportBundle()
-  if (isMin) code = minify(code)
+  console.log('Generated code:', code.length, 'bytes')
+
+  if (isBundle) {
+    modalCode.textContent = 'Bundling & minifying...'
+    console.log('Calling minify...')
+    code = await minify(code)
+    console.log('After minify:', code.length, 'bytes')
+  }
 
   currentBundleCode = code
   modalCode.textContent = code
 
-  // Update size - show both raw and gzip
-  const rawSize = new Blob([code]).size
-  const gzip = await gzipSize(code)
-  sizeInfo.textContent = `${formatSize(rawSize)} / ${formatSize(gzip)} gzip`
+  // Update size info
+  if (isBundle) {
+    const rawSize = new Blob([code]).size
+    const gzip = await gzipSize(code)
+    sizeInfo.textContent = `${formatSize(rawSize)} / ${formatSize(gzip)} gzip`
+  } else {
+    sizeInfo.textContent = `${selected.size} features`
+  }
 }
 
 document.getElementById('getBundleBtn').addEventListener('click', () => {
@@ -959,12 +1253,10 @@ bundleModal.addEventListener('click', e => {
 })
 
 bundleToggle.addEventListener('change', updateModalCode)
-minToggle.addEventListener('change', updateModalCode)
 
 document.getElementById('modalDownload').addEventListener('click', () => {
   const isBundle = bundleToggle.checked
-  const isMin = minToggle.checked
-  const filename = isBundle ? (isMin ? 'dialect.min.js' : 'dialect.bundle.js') : 'dialect.js'
+  const filename = isBundle ? 'dialect.min.js' : 'dialect.js'
   const a = document.createElement('a')
   a.href = URL.createObjectURL(new Blob([currentBundleCode], { type: 'text/javascript' }))
   a.download = filename
@@ -995,11 +1287,71 @@ document.addEventListener('keydown', e => {
   }
 })
 
-// Init
+// URL state - encode code/preset in hash for sharing
+function encodeState() {
+  const code = inputEl.value
+  const preset = presetSelect.value
+  const ctx = contextEl.value
+  const params = new URLSearchParams()
+  if (code) params.set('c', btoa(encodeURIComponent(code)))
+  if (preset !== 'justin') params.set('p', preset)
+  if (ctx && ctx !== '{ "x": 10 }') params.set('x', btoa(encodeURIComponent(ctx)))
+  const hash = params.toString()
+  history.replaceState(null, '', hash ? '#' + hash : location.pathname)
+}
+
+function decodeState() {
+  const hash = location.hash.slice(1)
+  if (!hash) return false
+  const params = new URLSearchParams(hash)
+  let hasState = false
+
+  if (params.has('c')) {
+    try {
+      inputEl.value = decodeURIComponent(atob(params.get('c')))
+      hasState = true
+    } catch (e) {}
+  }
+  if (params.has('p')) {
+    const preset = params.get('p')
+    if (PRESETS[preset]) {
+      presetSelect.value = preset
+      selected = new Set(PRESETS[preset])
+      programmaticChange = true
+      document.querySelectorAll('.feat input').forEach(cb => cb.checked = selected.has(cb.dataset.id))
+      programmaticChange = false
+      hasState = true
+    }
+  }
+  if (params.has('x')) {
+    try {
+      contextEl.value = decodeURIComponent(atob(params.get('x')))
+    } catch (e) {}
+  }
+  return hasState
+}
+
+// Debounced state save
+let stateTimer
+const saveState = () => { clearTimeout(stateTimer); stateTimer = setTimeout(encodeState, 500) }
+inputEl.addEventListener('input', saveState)
+contextEl.addEventListener('input', saveState)
+presetSelect.addEventListener('change', saveState)
+
+// Init - check URL state first
+const hasUrlState = decodeState()
 updatePresetSelect()
 await rebuildWorker()
-updateExample()
+updateBundleSizeHint()
+if (!hasUrlState) updateExample()
+updateEditor()
+resizeContext()
 compile()
+
+console.log('=== PAGE STARTUP ===')
+console.log('initTerser starting...')
+initTerser()
+console.log('initTerser complete, terser:', typeof terser, terser ? Object.keys(terser).slice(0,5) : 'NOT LOADED')
 </script>
 </body>
 </html>

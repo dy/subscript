@@ -198,29 +198,28 @@ test.describe('Subscript REPL', () => {
     await expect(modal).not.toHaveClass(/open/)
   })
 
-  test('bundle and min toggles work', async ({ page }) => {
+  test('bundle toggle produces minified bundle', async ({ page }) => {
     const getBundleBtn = page.locator('#getBundleBtn')
     const bundleToggle = page.locator('#bundleToggle')
-    const minToggle = page.locator('#minToggle')
     const modalCode = page.locator('#modalCode')
     const sizeInfo = page.locator('#sizeInfo')
     
     await getBundleBtn.click()
     
-    // Default is imports mode (not bundle, not min)
+    // Default is imports mode
     const importCode = await modalCode.textContent()
     expect(importCode).toContain('import')
     
-    // Enable bundle - should have full code
+    // Enable bundle+min - should produce minified bundle
     await bundleToggle.check()
+    // Wait for minification (shows "Bundling & minifying..." first)
+    await expect(modalCode).not.toContainText('Bundling', { timeout: 5000 })
     const bundleCode = await modalCode.textContent()
-    expect(bundleCode).toContain('Bundled subscript')
-    expect(bundleCode.length).toBeGreaterThan(importCode.length)
     
-    // Enable min - should be shorter
-    await minToggle.check()
-    const minCode = await modalCode.textContent()
-    expect(minCode.length).toBeLessThan(bundleCode.length)
+    // Minified code should not have multi-char whitespace or comments
+    expect(bundleCode).not.toMatch(/\n\s*\n/)
+    // Should export parse/compile
+    expect(bundleCode).toContain('export')
     
     // Size info should show something
     await expect(sizeInfo).not.toBeEmpty()
@@ -238,6 +237,95 @@ test.describe('Subscript REPL', () => {
     await expect(sizeInfo).toContainText('gzip', { timeout: 2000 })
     const text = await sizeInfo.textContent()
     expect(text).toMatch(/\d+(\.\d+)?\s*(B|KB)\s*\/\s*\d+(\.\d+)?\s*(B|KB)\s*gzip/)
+  })
+
+  // Comprehensive feature toggle test - ensures each feature can be enabled without errors
+  test.describe('Feature toggles', () => {
+    const features = [
+      'number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add',
+      'increment', 'bitwise', 'logic', 'compare', 'shift', 'pow', 'bool', 
+      'array', 'object', 'ternary', 'arrow', 'optional', 'spread', 'comment',
+      'template', 'regex', 'unit', 'if', 'loop', 'var'
+    ]
+
+    for (const feature of features) {
+      test(`enabling ${feature} compiles without error`, async ({ page }) => {
+        const preset = page.locator('[data-testid="preset"]')
+        const errorEl = page.locator('#error')
+        const ast = page.locator('#ast')
+        const input = page.locator('#input')
+        
+        // Start from minimal preset
+        await preset.selectOption('minimal')
+        await expect(ast).not.toBeEmpty({ timeout: 3000 })
+        await expect(errorEl).toBeEmpty()
+        
+        // Enable the feature
+        const checkbox = page.locator(`input[data-id="${feature}"]`)
+        if (await checkbox.isVisible()) {
+          const wasChecked = await checkbox.isChecked()
+          if (!wasChecked) {
+            await checkbox.check()
+          }
+          
+          // Wait for worker rebuild
+          await page.waitForTimeout(500)
+          
+          // Set simple input AFTER enabling feature (updateExample() overwrites input)
+          await input.fill('1 + 2')
+          await page.waitForTimeout(300)
+          
+          // Check for worker errors in error element
+          const error = await errorEl.textContent()
+          expect(error, `Feature ${feature} caused error: ${error}`).toBe('')
+          
+          // AST should still be populated
+          await expect(ast).not.toBeEmpty({ timeout: 3000 })
+        }
+      })
+    }
+
+    test('all features can be enabled together (full preset)', async ({ page }) => {
+      const preset = page.locator('[data-testid="preset"]')
+      const errorEl = page.locator('#error')
+      const ast = page.locator('#ast')
+      const input = page.locator('#input')
+      
+      // Select full preset first (this triggers updateExample)
+      await preset.selectOption('full')
+      await page.waitForTimeout(500)
+      
+      // Then override with simple input that definitely works
+      await input.fill('1 + 2 * 3')
+      await page.waitForTimeout(500)
+      
+      const error = await errorEl.textContent()
+      expect(error, `Full preset caused error: ${error}`).toBe('')
+      await expect(ast).not.toBeEmpty({ timeout: 5000 })
+    })
+
+    test('cycling through all presets produces no errors', async ({ page }) => {
+      const preset = page.locator('[data-testid="preset"]')
+      const errorEl = page.locator('#error')
+      const ast = page.locator('#ast')
+      const input = page.locator('#input')
+      
+      const presets = ['minimal', 'justin', 'full']
+      
+      for (const p of presets) {
+        // Select preset first (this triggers updateExample)
+        await preset.selectOption(p)
+        await page.waitForTimeout(300)
+        
+        // Then override with simple input
+        await input.fill('1 + 2')
+        await page.waitForTimeout(300)
+        
+        const error = await errorEl.textContent()
+        expect(error, `Preset ${p} caused error: ${error}`).toBe('')
+        await expect(ast).not.toBeEmpty({ timeout: 3000 })
+      }
+    })
   })
 
 })

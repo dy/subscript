@@ -53,6 +53,7 @@ const wrapHandler = (charCode) => {
 }
 
 // Wrap all number entry points (0-9 and .)
-const PERIOD = 46, _0 = 48, _9 = 57
+// PERIOD, _0, _9 are from src/const.js
+import { PERIOD, _0, _9 } from '../src/const.js'
 wrapHandler(PERIOD)
 for (let i = _0; i <= _9; i++) wrapHandler(i)

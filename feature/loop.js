@@ -13,7 +13,7 @@ import { PREC_STATEMENT, OPAREN, CPAREN, CBRACE, PREC_SEQ, PREC_TOKEN } from '..
 import { parseBody, loop, BREAK, CONTINUE, Return_ as Return } from './block.js'
 export { BREAK, CONTINUE } from './block.js'
 
-const { token, expr, skip, space, err } = P
+const { token, expr, skip, space, err, next, parse } = P
 const SEMI = 59
 
 // while (cond) body
@@ -40,11 +40,35 @@ operator('while', (cond, body) => {
 })
 
 // for (init; cond; step) body
+// Note: init supports both expressions AND let/const declarations
 token('for', PREC_STATEMENT, a => {
   if (a) return
   space() === OPAREN || err('Expected (')
   skip()
-  const init = space() === SEMI ? null : expr(PREC_SEQ)
+  // Parse init: can be expression (PREC_SEQ) or let/const declaration (PREC_STATEMENT)
+  // Using expr(PREC_SEQ) excludes statement-level tokens like let/const
+  // So we detect let/const keywords and parse the declaration inline
+  let init
+  const cc = space()
+  if (cc === SEMI) init = null
+  else if (cc === 108 && P.cur.substr(P.idx, 3) === 'let' && !parse.id(P.cur.charCodeAt(P.idx + 3))) {
+    skip(); skip(); skip() // skip 'let'
+    space()
+    const name = next(parse.id)
+    if (!name) err('Expected identifier')
+    space()
+    if (P.cur.charCodeAt(P.idx) === 61 && P.cur.charCodeAt(P.idx + 1) !== 61) {
+      skip(); init = ['let', name, expr(PREC_SEQ)]
+    } else init = ['let', name]
+  } else if (cc === 99 && P.cur.substr(P.idx, 5) === 'const' && !parse.id(P.cur.charCodeAt(P.idx + 5))) {
+    skip(); skip(); skip(); skip(); skip() // skip 'const'
+    space()
+    const name = next(parse.id)
+    if (!name) err('Expected identifier')
+    space()
+    P.cur.charCodeAt(P.idx) === 61 && P.cur.charCodeAt(P.idx + 1) !== 61 || err('Expected =')
+    skip(); init = ['const', name, expr(PREC_SEQ)]
+  } else init = expr(PREC_SEQ)
   space() === SEMI ? skip() : err('Expected ;')
   const cond = space() === SEMI ? null : expr(PREC_SEQ)
   space() === SEMI ? skip() : err('Expected ;')
