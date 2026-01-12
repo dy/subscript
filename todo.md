@@ -504,6 +504,7 @@
 * [x] consolidate obj access cases in one function: +assign, +inc/dec, +=/-=, +call, ?. reuse similar chunk
 * [x] Make literals via `[,val]` (no need for empty string)
 
+
 ## Backlog
 
 * [x] ~~Better interop. Maybe we're too narrow atm. Practice shows some syntax info is missing, like collecting ids etc.~~ -> not clear what's that
@@ -513,14 +514,13 @@
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
 
+* [ ] Protect eval from accessing global
+
 * [ ] FIXMEs in code
 
 * [ ] Better error cases: unclosed group etc. Never show internal JS errors.
 
 * [ ] `(a ? ^b; 123)` error points to `(a ┃? ^-a; 123)` instead of `(a ? ┃^-a; 123)`
-
-* [ ] language building tool: create own language with a set of features
-  * [ ] Make operator groups, importable; build subscript by including op groups.
 
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
@@ -531,9 +531,38 @@
   * [ ] js-based glsl evaluator
   * [ ] language simulators
 
-* [ ] Demo
-
 * [ ] complex groups detector: a*x + b*y + c
 * [ ] compile groups/complex groups to wasm: a*x + b*y + c
 
 * [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
+
+
+
+## [ ] Demo
+
+* [ ] REPL
+* [ ] language building tool: create own language with a set of features
+  * [ ] Make operator groups, importable; build subscript by including op groups.
+
+<!--
+## Ideas
+
+* Keyed arrays <code>[a:1, b:2, c:3]</code>
+* 7!` (factorial)
+* `5s`, `5rem` (units)
+* `arrᵀ` - transpose
+* `int 5` (typecast)
+* `$a` (parameter expansion)
+* `1 to 10 by 2`
+* `a if b else c`
+* `a, b in c`
+* `a.xyz` swizzles
+* vector operators
+* set operators
+* polynomial operators
+* versions
+* hashes, urls
+* regexes
+* 2a as `2*a`
+* string interpolation ` ${} 1 ${} `
+-->

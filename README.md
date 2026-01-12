@@ -61,13 +61,35 @@ It extends _subscript_ with:
 + `// foo`, `/* bar */`
 + `true`, `false`, `null`, `NaN`, `undefined`
 + `a in b`
-<!-- + strings interpolation -->
 
 ```js
-import jstin from 'subscript/justin'
+import justin from 'subscript/justin'
 
-let xy = jstin('{ x: 1, "y": 2+2 }["x"]')
-xy()  // 1
+let fn = justin('{ x: 1, "y": 2+2 }["x"]')
+fn()  // 1
+```
+
+### Control Flow
+
+For statement syntax, import `subscript/feature/control.js`:
+
++ `if (c) a`, `if (c) a else b`
++ `while (c) body`
++ `for (init; cond; step) body`
++ `{ a; b }` — block scope
++ `let x`, `const x = 1`
++ `break`, `continue`, `return x`
+
+```js
+import subscript from 'subscript/justin'
+import 'subscript/feature/control.js'
+
+let sum = subscript(`
+  let sum = 0;
+  for (i = 0; i < 10; i += 1) sum += i;
+  sum
+`)
+sum() // 45
 ```
 
 
@@ -170,28 +192,6 @@ token('NaN', 20, a => a ? err() : [, NaN])
 See [`./feature/*`](./feature) or [`./justin.js`](./justin.js) for examples.
 
 
-<!--
-## Ideas
-
-* Keyed arrays <code>[a:1, b:2, c:3]</code>
-* 7!` (factorial)
-* `5s`, `5rem` (units)
-* `arrᵀ` - transpose
-* `int 5` (typecast)
-* `$a` (parameter expansion)
-* `1 to 10 by 2`
-* `a if b else c`
-* `a, b in c`
-* `a.xyz` swizzles
-* vector operators
-* set operators
-* polynomial operators
-* versions
-* hashes, urls
-* regexes
-* 2a as `2*a`
-* string interpolation ` ${} 1 ${} `
--->
 
 ## Performance
 
