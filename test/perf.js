@@ -1,12 +1,16 @@
 import test, { is } from 'tst'
 
+// Browser: importmap resolves bare specifiers to CDN
+// Node: skip competitor tests (run in browser for full benchmarks)
+const BROWSER = typeof window !== 'undefined'
+
 const src = c => `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(${c})`
 const args = { a: 123, b: 234, c: 345, d: 456, f: { g: [567] }, i: { j: yes => yes && (x => +x ? 0 : 1) }, k: 1 }
 const result = 81.19328272371752
 const RUNS = 3e4
 
 test.skip('expr-eval', async t => {
-  const { Parser } = await import('./lib/parser/expr-eval.min.js');
+  const { Parser } = await import('expr-eval@2.0.2');
 
   let eeparser = new Parser({ logical: true }), expr = eeparser.parse(src(0))
   // console.log(expr);
@@ -48,9 +52,8 @@ test('subscript', async t => {
   console.timeEnd('subscript eval')
 })
 
-
 test('jsep', async t => {
-  const jsep = await import('./lib/parser/expression-eval.module.js');
+  const jsep = await import('expression-eval@5.0.1');
 
   let ast = jsep.parse(src(0))
   // console.log(ast);
@@ -67,88 +70,6 @@ test('jsep', async t => {
 
   console.time('jsep eval')
   for (let i = 0; i < RUNS; i++) {
-    jsep.eval(ast, args)
-  }
-  console.timeEnd('jsep eval')
-})
-
-test('subscript x2', async t => {
-  const { parse, compile } = await import('../subscript.js');
-
-  let ast = compile(parse(src(0)))
-  // console.log(ast);
-  is(ast(args), result);
-
-  console.time('subscript')
-  for (let i = 0; i < RUNS; i++) {
-    let ast = parse(src(i));
-    // evaluate(ast, args)
-  }
-  console.timeEnd('subscript')
-
-  console.time('subscript eval')
-  for (let i = 0; i < RUNS; i++) {
-    ast(args)
-  }
-  console.timeEnd('subscript eval')
-})
-
-test('jsep x2', async t => {
-  const jsep = await import('./lib/parser/expression-eval.module.js');
-
-  let ast = jsep.parse(src(0))
-  // console.log(ast);
-  is(jsep.eval(ast, args), result);
-
-  console.time('jsep')
-  for (let i = 0; i < RUNS; i++) {
-    let ast = jsep.parse(src(i));
-    // jsep.eval(ast, args)
-  }
-  console.timeEnd('jsep')
-
-  console.time('jsep eval')
-  for (let i = 0; i < RUNS; i++) {
-    jsep.eval(ast, args)
-  }
-  console.timeEnd('jsep eval')
-})
-
-test.skip('jsep-strip', async t => {
-  const { parse } = await import('./lib/parser/jsep-strip.js');
-
-  let ast = parse(src(0))
-  // console.log(ast );
-  // is(evaluate(ast, args), result);
-
-  console.time('jsep-strip')
-  for (let i = 0; i < RUNS; i++) {
-    let ast = parse(src(i));
-  }
-  console.timeEnd('jsep-strip')
-  // console.time('jsep-strip eval')
-  // for (let i = 0; i < RUNS; i++){
-  //   let ast = parse(src(i));
-  // }
-  // console.timeEnd('jsep-strip eval')
-})
-
-test.skip('jsep x3', async t => {
-  const jsep = await import('./lib/parser/expression-eval.module.js');
-
-  let ast = jsep.parse(src(0))
-  // console.log(ast);
-  is(jsep.eval(ast, args), result);
-
-  console.time('jsep')
-  for (let i = 0; i < RUNS; i++) {
-    let ast = jsep.parse(src(i));
-    // jsep.eval(ast, args)
-  }
-  console.timeEnd('jsep')
-  console.time('jsep eval')
-  for (let i = 0; i < RUNS; i++) {
-    let ast = jsep.parse(src(i));
     jsep.eval(ast, args)
   }
   console.timeEnd('jsep eval')
@@ -173,7 +94,7 @@ test('justin', async t => {
   console.timeEnd('justin eval')
 })
 
-test.skip('jexpr', async t => {
+test('jexpr', async t => {
   const { default: parseSS } = await import('../subscript.js')
 
   const src = `1 + (a * b / c % d) - 2.0 + -0.003 * +44000  / f.g[0] - i.j(+k == 1)(0)`
@@ -206,8 +127,8 @@ test.skip('jexpr', async t => {
   console.timeEnd('jexpr eval')
 })
 
-test.skip('jexl', async t => {
-  const { Jexl } = await import('./lib/parser/jexl.min.js');
+test('jexl', async t => {
+  const { Jexl } = await import('jexl@2.3.0');
 
   let jexl = new Jexl, expr, jexlArgs = Object.assign({}, args, { i: [1] }),
     src = x => `1 + (a * b / c % d) - 2.0 + -0.003 * 44000 / f.g[0] - i[0]`
@@ -252,7 +173,7 @@ test.skip('mozjexl', async t => {
 })
 
 test.skip('string-math', async t => {
-  const { default: sm } = await import('./lib/parser/string-math.js');
+  const { default: sm } = await import('string-math');
   console.time('string-math')
   for (let i = 0; i < RUNS; i++) {
     sm(`(3 + 2) * 3 / 2 + 4 * 2 - ${i}`)
@@ -354,60 +275,6 @@ test.skip('math-expression-evaluator', async t => {
     postfix.postfixEval()
   }
   console.timeEnd('math-expression-evaluator eval')
-})
-
-
-test.skip('subscript-refs', async t => {
-  const { default: dislex, parse: dparse, evaluate } = await import('./lib/parser/subscript-refs.js');
-  console.time('dislex')
-  for (let i = 0; i < RUNS; i++) {
-    let tree = dparse(src(i))
-    // evaluate(tree,args)
-  }
-  console.timeEnd('dislex')
-  console.time('dislex eval')
-  for (let i = 0; i < RUNS; i++) {
-    let tree = dparse(src(i))
-    evaluate(tree, args)
-  }
-  console.timeEnd('dislex eval')
-})
-
-test.skip('subscript-v1', async t => {
-  const { default: v1, parse: v1parse, evaluate } = await import('./lib/parser/subscript-lex.js');
-  console.time('subscript1')
-  for (let i = 0; i < RUNS; i++) {
-    let tree = v1parse(src(i))
-    // evaluate(tree,args)
-  }
-  console.timeEnd('subscript1')
-  // console.time('subscript1 eval')
-  // for (let i = 0; i < RUNS; i++){
-  //   let tree = v1parse(src(i))
-  //   evaluate(tree,args)
-  // }
-  // console.timeEnd('subscript1 eval')
-})
-
-
-test.skip('subscript v5', async t => {
-  const { parse, evaluate } = await import('./lib/parser/subscript-v5.js');
-
-  let ast = parse(src(0))
-  // console.log(ast);
-  is(evaluate(ast, args), result);
-
-  console.time('subscript')
-  for (let i = 0; i < RUNS; i++) {
-    let ast = parse(src(i));
-    // evaluate(ast, args)
-  }
-  console.timeEnd('subscript')
-  console.time('subscript eval')
-  for (let i = 0; i < RUNS; i++) {
-    evaluate(ast, args)
-  }
-  console.timeEnd('subscript eval')
 })
 
 

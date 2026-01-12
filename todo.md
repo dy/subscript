@@ -4,8 +4,8 @@
 
 ### Delete
 - [x] This file (todo.md) — 564 lines of done items, archive to docs/history.md if needed
-- [ ] test/lib/parser/* — competitor code living in repo
-- [ ] test/bench/* — internal experiments, not tests
+- [x] test/lib/parser/* — competitor code moved to CDN (esm.sh)
+- [x] test/bench/* — internal experiments, not tests
 - [ ] README: commented-out "Used by" section — either fill or remove
 
 ### Add
