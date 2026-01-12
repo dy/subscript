@@ -32,6 +32,7 @@
   },
   "scripts": {
     "build": "esbuild subscript.js --bundle --minify --format=esm --outfile=subscript.min.js && esbuild justin.js --bundle --minify --format=esm --outfile=justin.min.js",
+    "prepublishOnly": "npm run build",
     "test": "node test/test.js",
     "check-types": "tsc --noEmit subscript.d.ts"
   },
