@@ -7,13 +7,18 @@ export let idx, cur,
   parse = s => (idx = 0, cur = s, s = expr(), cur[idx] ? err() : s || ''),
 
   // display error with context
+  // err.ptr: string suffix (combining diacritics) or [before, after] wrapper
   err = (msg = 'Unexpected token',
     lines = cur.slice(0, idx).split('\n'),
     last = lines.pop(),
     before = cur.slice(Math.max(0, idx - 40), idx),
-    after = cur.slice(idx, idx + 20)
+    ptr = err.ptr,
+    at = cur[idx]
+      ? (ptr[1] ? ptr[0] + cur[idx] + ptr[1] : cur[idx] + ptr)
+      : (ptr[1] ? ptr[0] + '∅' + ptr[1] : '∅' + ptr),
+    after = cur.slice(idx + 1, idx + 20)
   ) => {
-    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1} — ${before}^${after}`)
+    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1} — ${before}${at}${after}`)
   },
 
   // advance until condition meets
@@ -109,5 +114,7 @@ export let idx, cur,
   // NOTE: we make sure `null` indicates placeholder
   access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]))
 
+// Error pointer: string suffix (diacritics) or [before, after] wrapper
+err.ptr = '\u030C\u032D'  // caron + circumflex below (pinch)
 
 export default parse

@@ -6,6 +6,10 @@ export namespace parse {
   function id(n: any): any;
 }
 export function err(msg?: string, frag?: string): never;
+export namespace err {
+  /** Error pointer: string suffix (diacritics) or [before, after] wrapper */
+  let ptr: string | [string, string];
+}
 export function skip(): string;
 export function next(is: ((c: number) => number)): string;
 export const lookup: ((a: any, b: any) => any)[];
