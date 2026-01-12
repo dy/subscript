@@ -515,24 +515,14 @@
     → that belongs to custom langs, not core
 * [x] Protect eval from accessing global
 * [x] FIXMEs in code
-* [ ] Better error cases: unclosed group etc. Never show internal JS errors.
+* [x] Better error cases: unclosed group etc. Never show internal JS errors.
 
-* [ ] `(a ? ^b; 123)` error points to `(a ┃? ^-a; 123)` instead of `(a ? ┃^-a; 123)`
+* [x] `(a ? ^b; 123)` error points to `(a ┃? ^-a; 123)` instead of `(a ? ┃^-a; 123)`
 
-* [ ] ideas snippets
-  * [ ] !keyed arrays? [a:1, b:2, c:3]
-  * [ ] parser examples as chunks
-  * [ ] string interpolation ` ${} 1 ${} `
-  * [ ] readme ideas
-  * [ ] [double.js](https://github.com/munrocket/double.js) scripting
-  * [ ] js-based glsl evaluator
-  * [ ] language simulators
-
-* [ ] complex groups detector: a*x + b*y + c
-* [ ] compile groups/complex groups to wasm: a*x + b*y + c
+* [x] ~~complex groups detector: a*x + b*y + c~~ - no use cases
+* [x] ~~compile groups/complex groups to wasm: a*x + b*y + c~~ - no use cases
 
 * [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
-
 
 
 ## [ ] Demo
@@ -541,8 +531,21 @@
 * [ ] language building tool: create own language with a set of features
   * [ ] Make operator groups, importable; build subscript by including op groups.
 
+## [ ] Integrations
+
+  * [ ] js-based glsl evaluator
+
 <!--
 ## Ideas
+
+
+* [ ] ideas snippets
+  * [ ] !keyed arrays? [a:1, b:2, c:3]
+  * [ ] parser examples as chunks
+  * [ ] string interpolation ` ${} 1 ${} `
+  * [ ] readme ideas
+  * [ ] [double.js](https://github.com/munrocket/double.js) scripting
+  * [ ] language simulators
 
 * Keyed arrays <code>[a:1, b:2, c:3]</code>
 * 7!` (factorial)

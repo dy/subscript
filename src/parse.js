@@ -6,14 +6,14 @@ export let idx, cur,
   // no handling tagged literals since easily done on user side with cache, if needed
   parse = s => (idx = 0, cur = s, s = expr(), cur[idx] ? err() : s || ''),
 
-  // display error
-  err = (msg = 'Bad syntax',
+  // display error with context
+  err = (msg = 'Unexpected token',
     lines = cur.slice(0, idx).split('\n'),
-    last = lines.pop()
+    last = lines.pop(),
+    before = cur.slice(Math.max(0, idx - 40), idx),
+    after = cur.slice(idx, idx + 20)
   ) => {
-    const before = cur.slice(idx - 108, idx).split('\n').pop()
-    const after = cur.slice(idx, idx + 108).split('\n').shift()
-    throw EvalError(`${msg} at ${lines.length}:${last.length} \`${idx >= 108 ? '…' : ''}${before}┃${after}\``)
+    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1} — ${before}^${after}`)
   },
 
   // advance until condition meets
