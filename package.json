@@ -1,6 +1,6 @@
 {
   "name": "subscript",
-  "version": "9.1.0",
+  "version": "9.2.0",
   "description": "Fast and tiny expression evaluator with minimal syntax.",
   "main": "subscript.js",
   "module": "subscript.js",
