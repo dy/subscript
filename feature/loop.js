@@ -137,6 +137,7 @@ operator('for', (init, cond, step, body) => {
 })
 
 // for-of loop
+operator('for-of', (name, iterable, body) => {
   iterable = compile(iterable)
   body = compile(body)
   return ctx => {

@@ -163,12 +163,12 @@ test('for-of: continue skip odds', () => {
 })
 
 test('for-of: nested for-of', () => {
-  is(run(`if (1) { 
-    let r = ""; 
-    for (a of [1, 2]) 
-      for (b of ["a", "b"]) 
-        r += a + b + ","; 
-    r 
+  is(run(`if (1) {
+    let r = "";
+    for (a of [1, 2])
+      for (b of ["a", "b"])
+        r += a + b + ",";
+    r
   }`), '1a,1b,2a,2b,')
 })
 
@@ -254,10 +254,10 @@ test('function: returned from function', () => {
 })
 
 test('function: counter closure', () => {
-  is(run(`if (1) { 
-    let count = 0; 
-    function inc() { count = count + 1; count }; 
-    inc(); inc(); inc() 
+  is(run(`if (1) {
+    let count = 0;
+    function inc() { count = count + 1; count };
+    inc(); inc(); inc()
   }`), 3)
 })
 

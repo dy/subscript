@@ -63,7 +63,7 @@ operator('try', (tryBody, catchName, catchBody, finallyBody) => {
     } catch (e) {
       // Let control flow signals through - don't catch break/continue/return
       if (e === BREAK || e === CONTINUE || e instanceof Return) throw e
-      
+
       if (catchName !== null) {
         // Have a catch clause (even if empty body)
         if (catchBody) {

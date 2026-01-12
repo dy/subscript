@@ -30,7 +30,7 @@ t('asi: keepNewlines option', () => {
 import '../subscript.js'
 import '../feature/var.js'
 import '../feature/loop.js'
-import '../feature/array.js'
+import '../feature/collection.js'
 import { parse, compile } from '../subscript.js'
 
 t('asi: parse integration', () => {

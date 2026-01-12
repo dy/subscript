@@ -1,19 +1,19 @@
 /**
- * Subscript dialect includes common operators / primitives for all languages
+ * Subscript: safe expression evaluator (base dialect)
+ *
+ * Literals: numbers, strings
+ * Operators: arithmetic, bitwise, logical, comparison, shift
+ * Access: member, index, call
+ * Assignment: =, +=, etc.
  */
-import './feature/number.js'
-import './feature/string.js'
-import './feature/call.js'
-import './feature/access.js'
+import './feature/literal.js'
+import './feature/member.js'
 import './feature/group.js'
 import './feature/assign.js'
-import './feature/mult.js'
-import './feature/add.js'
-import './feature/increment.js'
-import './feature/bitwise.js'
-import './feature/logic.js'
-import './feature/compare.js'
-import './feature/shift.js'
+import './feature/arithmetic.js'
+import './feature/bit.js'
+import './feature/cmp.js'
+import './feature/shift.js'  // Must come AFTER cmp.js (>> chains after >)
 import compile from './src/compile.js'
 import parse from './src/parse.js'
 

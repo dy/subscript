@@ -348,7 +348,7 @@ test.skip('ext: in operator', async t => {
 })
 
 test('array', async t => {
-  await import('../feature/array.js')
+  await import('../feature/collection.js')
   await import('../feature/spread.js')
 
   is(subscript('[]')(), [])
@@ -404,7 +404,7 @@ test('ternary', async t => {
 })
 
 test('object', async t => {
-  await import('../feature/object.js')
+  await import('../feature/collection.js')
   await import('../feature/ternary.js')
 
   sameAsJs('{}', {})

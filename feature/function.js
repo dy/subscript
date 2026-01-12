@@ -58,7 +58,7 @@ operator('function', (name, params, body) => {
       // Create scope that shadows params but writes through to parent
       const locals = {}
       params.forEach((p, i) => locals[p] = args[i])
-      
+
       const fnCtx = new Proxy(locals, {
         get(l, k) { return k in l ? l[k] : ctx[k] },
         set(l, k, v) {
@@ -70,7 +70,7 @@ operator('function', (name, params, body) => {
         },
         has(l, k) { return k in l || k in ctx }
       })
-      
+
       try { return body(fnCtx) }
       catch (e) {
         if (e instanceof Return) return e.value

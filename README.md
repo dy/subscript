@@ -121,11 +121,24 @@ fac({}) // 120
 
 + `/pattern/flags` — regex literals
 + `5px`, `10rem` — unit suffixes
++ ASI (Automatic Semicolon Insertion) — multiline code support
 
 ```js
 import subscript from 'subscript/justin.js'
 import 'subscript/feature/regex.js'
 import 'subscript/feature/unit.js'
+
+// ASI for multiline code
+import { withASI } from 'subscript/feature/asi.js'
+import { parse, compile } from 'subscript/jessie.js'
+
+const asiParse = withASI(parse)
+const tree = asiParse(`
+  x = 1
+  y = 2
+  x + y
+`)
+compile(tree)({}) // 3
 ```
 
 
@@ -229,8 +242,7 @@ Longer operators should be registered after shorter ones, eg. first `|`, then `|
 import script, { compile, operator, unary, binary, token } from './subscript.js'
 
 // enable objects/arrays syntax
-import 'subscript/feature/array.js';
-import 'subscript/feature/object.js';
+import 'subscript/feature/collection.js'
 
 // add identity operators (precedence of comparison)
 binary('===', 9), binary('!==', 9)
