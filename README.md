@@ -108,26 +108,27 @@ let fac = jessie(`
 fac({}) // 120
 ```
 
-<details>
-<summary>Not yet implemented</summary>
+#### Extras (via feature imports)
 
-+ `switch` statement
-+ `const {a, b} = x` — destructuring
-+ `(...args)` — rest parameters
-+ `{ get x() {} }` — getters/setters
-</details>
-
-### Extras
-
-+ `/pattern/flags` — regex literals
-+ `5px`, `10rem` — unit suffixes
-+ ASI (Automatic Semicolon Insertion) — multiline code support
++ `switch` statement — `feature/switch.js`
++ `const {a, b} = x` — destructuring — `feature/destruct.js`
++ `function f(...args) {}` — rest parameters — `feature/function.js`
++ `{ get x() {}, set y(v) {} }` — getters/setters — `feature/accessor.js`
++ `/pattern/flags` — regex literals — `feature/regex.js`
++ `5px`, `10rem` — unit suffixes — `feature/unit.js`
++ ASI (Automatic Semicolon Insertion) — `feature/asi.js`
 
 ```js
-import subscript from 'subscript/justin.js'
-import 'subscript/feature/regex.js'
-import 'subscript/feature/unit.js'
+import jessie from 'subscript/jessie.js'
+import 'subscript/feature/switch.js'     // switch statement
+import 'subscript/feature/destruct.js'   // destructuring
+import 'subscript/feature/function.js'   // functions with rest params
+import 'subscript/feature/accessor.js'   // getters/setters
+```
 
+### More Extensions
+
+```js
 // ASI for multiline code
 import { withASI } from 'subscript/feature/asi.js'
 import { parse, compile } from 'subscript/jessie.js'

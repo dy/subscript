@@ -2,17 +2,18 @@
  * Function declarations and expressions
  *
  * AST:
- *   function f(a,b) { body }  → ['function', 'f', ['a','b'], body]
- *   function(a,b) { body }    → ['function', null, ['a','b'], body]
- *   const f = function() {}   → ['const', 'f', ['function', null, [], body]]
+ *   function f(a,b) { body }      → ['function', 'f', ['a','b'], body]
+ *   function(a,b) { body }        → ['function', null, ['a','b'], body]
+ *   function f(a, ...rest) {}     → ['function', 'f', ['a', ['...', 'rest']], body]
+ *   const f = function() {}       → ['const', 'f', ['function', null, [], body]]
  */
 import * as P from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, PREC_TOKEN, OPAREN, CPAREN, OBRACE, CBRACE } from '../src/const.js'
+import { PREC_STATEMENT, PREC_TOKEN, PREC_PREFIX, OPAREN, CPAREN, OBRACE, CBRACE } from '../src/const.js'
 import { Return_ as Return } from './block.js'
 
 const { token, expr, skip, space, err, next, parse } = P
-const COMMA = 44
+const COMMA = 44, DOT = 46
 
 // function name?(params) { body }
 token('function', PREC_TOKEN, a => {
@@ -33,6 +34,13 @@ token('function', PREC_TOKEN, a => {
 
   const params = []
   while (space() !== CPAREN) {
+    // Rest param: ...args
+    if (P.cur.charCodeAt(P.idx) === DOT && P.cur.charCodeAt(P.idx + 1) === DOT && P.cur.charCodeAt(P.idx + 2) === DOT) {
+      const rest = expr(0) // parse '...id' with no precedence floor
+      params.push(rest)
+      space() !== CPAREN && err('Rest parameter must be last')
+      break
+    }
     const param = next(parse.id)
     if (!param) err('Expected parameter')
     params.push(param)
@@ -52,12 +60,22 @@ token('function', PREC_TOKEN, a => {
 operator('function', (name, params, body) => {
   body = body ? compile(body) : () => undefined
 
+  // Check for rest param (last element is ['...', id])
+  let restIdx = -1, restName = null
+  if (params.length && Array.isArray(params[params.length - 1]) && params[params.length - 1][0] === '...') {
+    restIdx = params.length - 1
+    restName = params[restIdx][1]
+    params = params.slice(0, -1)
+  }
+
   // Return a factory that creates the function in context
   return ctx => {
     const fn = (...args) => {
       // Create scope that shadows params but writes through to parent
       const locals = {}
       params.forEach((p, i) => locals[p] = args[i])
+      // Rest param gets remaining args
+      if (restName) locals[restName] = args.slice(restIdx)
 
       const fnCtx = new Proxy(locals, {
         get(l, k) { return k in l ? l[k] : ctx[k] },
