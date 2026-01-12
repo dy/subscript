@@ -6,24 +6,10 @@
  */
 import * as P from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, OPAREN, CPAREN, OBRACE, CBRACE } from '../src/const.js'
+import { PREC_STATEMENT, OPAREN, CPAREN } from '../src/const.js'
+import { parseBody } from './block.js'
 
 const { token, expr, skip, space, err, parse } = P
-
-// Block parsing helper
-const parseBody = () => {
-  if (space() === OBRACE) {
-    skip()
-    return ['block', expr(0, CBRACE)]
-  }
-  return expr(0)
-}
-
-operator('block', body => {
-  if (body === undefined) return () => {}
-  body = compile(body)
-  return ctx => body(Object.create(ctx))
-})
 
 // if (cond) body [else alt]
 token('if', PREC_STATEMENT, a => {

@@ -284,7 +284,7 @@ h1 span { color: var(--accent); }
 <script type="module">
 const featureOrder = ['number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add',
   'increment', 'bitwise', 'logic', 'compare', 'shift', 'pow', 'bool', 'array', 'object',
-  'ternary', 'arrow', 'optional', 'spread', 'comment', 'if', 'loop', 'var']
+  'ternary', 'arrow', 'optional', 'spread', 'comment', 'block', 'if', 'loop', 'var']
 
 const FEATURES = [
   { cat: 'Core', items: ['number', 'string', 'access', 'call', 'group'] },
@@ -532,7 +532,11 @@ var P = {
 `
 
   for (const f of featureOrder) {
-    if (selected.has(f)) {
+    // Auto-include block when if/loop is selected (it's a dependency, not user-selectable)
+    const shouldInclude = f === 'block' 
+      ? (selected.has('if') || selected.has('loop'))
+      : selected.has(f)
+    if (shouldInclude) {
       let code = featureSources[f]
         .replace(/^import\s+.*$/gm, '')
         .replace(/^export\s+/gm, '')
@@ -541,8 +545,13 @@ var P = {
           return vars.split(',').map(v => v.trim()).filter(Boolean)
             .map(v => `var ${v} = ${obj}.${v}`).join('\n')
         })
-      // Wrap in IIFE to avoid naming conflicts between features
-      src += `\n// feature: ${f}\n;(function(){\n${code}\n})();\n`
+      // Don't wrap block.js in IIFE - its exports need to be visible to if.js/loop.js
+      if (f === 'block') {
+        src += `\n// feature: ${f}\n${code}\n`
+      } else {
+        // Wrap in IIFE to avoid naming conflicts between features
+        src += `\n// feature: ${f}\n;(function(){\n${code}\n})();\n`
+      }
     }
   }
 

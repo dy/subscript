@@ -1,6 +1,7 @@
 import test, { is, throws } from 'tst'
 import { parse, compile } from '../subscript.js'
-import '../feature/control.js'
+import '../feature/if.js'
+import '../feature/loop.js'
 import '../feature/var.js'
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)

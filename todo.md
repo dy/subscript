@@ -523,7 +523,8 @@
 * [x] ~~compile groups/complex groups to wasm: a*x + b*y + c~~ - no use cases
 
 * [x] split loops feature from coditions
-* [ ] ASI injection
+* [x] ~~ASI injection~~ -> belong to jz
+* [x] optimize control
 
 * [x] add integration links to readme
 
@@ -539,9 +540,7 @@
   * [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
   * [ ] js-based glsl evaluator
 
-<!--
-## Ideas
-
+## Extra features
 
 * [ ] ideas snippets
   * [ ] !keyed arrays? [a:1, b:2, c:3]
@@ -551,22 +550,21 @@
   * [ ] [double.js](https://github.com/munrocket/double.js) scripting
   * [ ] language simulators
 
-* Keyed arrays <code>[a:1, b:2, c:3]</code>
-* 7!` (factorial)
-* `5s`, `5rem` (units)
-* `arrᵀ` - transpose
-* `int 5` (typecast)
-* `$a` (parameter expansion)
-* `1 to 10 by 2`
-* `a if b else c`
-* `a, b in c`
-* `a.xyz` swizzles
-* vector operators
-* set operators
-* polynomial operators
-* versions
-* hashes, urls
-* regexes
-* 2a as `2*a`
-* string interpolation ` ${} 1 ${} `
--->
+* [ ] Keyed arrays <code>[a:1, b:2, c:3]</code>
+* [ ] 7!` (factorial)
+* [ ] `5s`, `5rem` (units)
+* [ ] `arrᵀ` - transpose
+* [ ] `int 5` (typecast)
+* [ ] `$a` (parameter expansion)
+* [ ] `1 to 10 by 2`
+* [ ] `a if b else c`
+* [ ] `a, b in c`
+* [ ] `a.xyz` swizzles
+* [ ] vector operators
+* [ ] set operators
+* [ ] polynomial operators
+* [ ] versions
+* [ ] hashes, urls
+* [ ] regexes
+* [ ] 2a as `2*a`
+* [ ] string interpolation ` ${} 1 ${} `

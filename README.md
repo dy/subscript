@@ -69,9 +69,7 @@ let fn = justin('{ x: 1, "y": 2+2 }["x"]')
 fn()  // 1
 ```
 
-### Control Flow
-
-For statement syntax, import `subscript/feature/control.js`:
+### Extra
 
 + `if (c) a`, `if (c) a else b`
 + `while (c) body`
@@ -82,7 +80,7 @@ For statement syntax, import `subscript/feature/control.js`:
 
 ```js
 import subscript from 'subscript/justin'
-import 'subscript/feature/control.js'
+import 'subscript/feature/loop.js'
 
 let sum = subscript(`
   let sum = 0;

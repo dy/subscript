@@ -9,42 +9,12 @@
  */
 import * as P from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, OPAREN, CPAREN, OBRACE, CBRACE, PREC_SEQ, PREC_TOKEN } from '../src/const.js'
+import { PREC_STATEMENT, OPAREN, CPAREN, CBRACE, PREC_SEQ, PREC_TOKEN } from '../src/const.js'
+import { parseBody, loop, BREAK, CONTINUE, Return_ as Return } from './block.js'
+export { BREAK, CONTINUE } from './block.js'
 
 const { token, expr, skip, space, err } = P
 const SEMI = 59
-
-// Control signals
-class Break {}
-class Continue {}
-class Return { constructor(v) { this.value = v } }
-export const BREAK = new Break(), CONTINUE = new Continue()
-
-// Shared loop body executor
-const loop = (body, ctx) => {
-  try { return { val: body(ctx) } }
-  catch (e) {
-    if (e === BREAK) return { brk: 1 }
-    if (e === CONTINUE) return { cnt: 1 }
-    if (e instanceof Return) return { ret: 1, val: e.value }
-    throw e
-  }
-}
-
-// Block parsing helper
-const parseBody = () => {
-  if (space() === OBRACE) {
-    skip()
-    return ['block', expr(0, CBRACE)]
-  }
-  return expr(0)
-}
-
-operator('block', body => {
-  if (body === undefined) return () => {}
-  body = compile(body)
-  return ctx => body(Object.create(ctx))
-})
 
 // while (cond) body
 token('while', PREC_STATEMENT, a => {
