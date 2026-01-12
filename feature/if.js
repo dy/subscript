@@ -12,7 +12,7 @@ import { parseBody } from './block.js'
 const { token, expr, skip, space, err, parse } = P
 
 // if (cond) body [else alt]
-token('if', PREC_STATEMENT, a => {
+token('if', PREC_STATEMENT + 1, a => {
   if (a) return
   space() === OPAREN || err('Expected (')
   skip()

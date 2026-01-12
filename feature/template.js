@@ -1,6 +1,6 @@
 /**
  * Template literals and tagged templates
- * 
+ *
  * AST:
  *   `a ${x} b`      → ['`', [,'a '], 'x', [,' b']]
  *   tag`a ${x} b`   → ['``', 'tag', [,'a '], 'x', [,' b']]
@@ -18,11 +18,11 @@ const escape = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' }
 const parseTemplateBody = () => {
   const parts = []
   let str = ''
-  
+
   while (P.cur.charCodeAt(P.idx) !== BACKTICK) {
     const c = P.cur.charCodeAt(P.idx)
     if (!c) err('Unterminated template')
-    
+
     // Escape sequence
     if (c === BSLASH) {
       skip()
@@ -43,7 +43,7 @@ const parseTemplateBody = () => {
       skip()
     }
   }
-  
+
   skip() // consume closing `
   if (str) parts.push([, str])
   return parts
@@ -57,19 +57,19 @@ P.lookup[BACKTICK] = (a, prec) => {
     skip() // consume opening `
     return ['``', a, ...parseTemplateBody()]
   }
-  
+
   // Plain template literal (no tag)
   if (!a) {
     skip() // consume opening `
     const parts = parseTemplateBody()
-    
+
     // Optimize: if no interpolations, return plain string
     if (parts.length === 0) return [, '']
     if (parts.length === 1 && parts[0][0] === undefined) return parts[0]
-    
+
     return ['`', ...parts]
   }
-  
+
   return prev?.(a, prec)
 }
 

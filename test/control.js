@@ -60,10 +60,10 @@ test('control: block', t => {
   is(parse('if (1) { a }'), ['if', [, 1], ['block', 'a']])
   is(parse('if (1) { a; b }'), ['if', [, 1], ['block', [';', 'a', 'b']]])
   is(parse('while (x) { y }'), ['while', 'x', ['block', 'y']])
-  // block creates new scope
+  // blocks allow access to outer scope (like JS)
   let ctx = { x: 1 }
   run('if (1) { x = 2 }', ctx)
-  is(ctx.x, 1) // outer unchanged due to Object.create scope
+  is(ctx.x, 2) // outer modified (correct JS behavior)
 })
 
 test('control: let', t => {

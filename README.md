@@ -52,10 +52,11 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 * `"abc"`, `'abc'`
 * `0.1`, `1.2e+3`
 
+
 ### Justin
 
-[Justin](https://github.com/endojs/Jessie) is the expression layer of Jessie — a safe JavaScript subset for mobile code.<br/>
-_JSON_ superset with expressions: no keywords, no statements, no side-effects beyond assignment.
+_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ ([Jessie thread](https://github.com/endojs/Jessie/issues/66)).<br/>
+It extends _subscript_ with:
 
 + `a === b`, `a !== b`
 + `a ** b`, `a **= b`
@@ -78,30 +79,43 @@ let fn = justin('{ x: 1, "y": 2+2 }["x"]')
 fn()  // 1
 ```
 
-### Jessie (experimental)
+### Jessie
 
-[Jessie](https://github.com/endojs/Jessie) extends Justin with statements and declarations — a safe subset for executable code.
+Extends Justin with statements — practical JS subset inspired by [Jessie](https://github.com/endojs/Jessie).
 
 + `if (c) a`, `if (c) a else b`
 + `while (c) body`
-+ `for (init; cond; step) body`
++ `for (init; cond; step) body`, `for (x of iter) body`
 + `{ a; b }` — block scope
 + `let x`, `const x = 1`
 + `break`, `continue`, `return x`
++ `throw x`, `try { } catch (e) { } finally { }`
++ `function f(a, b) { }`, `function(x) { }`
 
 ```js
 import jessie from 'subscript/jessie.js'
+import 'subscript/feature/throw.js'
+import 'subscript/feature/try.js'
+import 'subscript/feature/function.js'
 
-let sum = jessie(`
-  let sum = 0;
-  for (let i = 0; i < 10; i += 1) sum += i;
-  sum
+let fac = jessie(`
+  function fac(n) {
+    if (n <= 1) return 1;
+    return n * fac(n - 1)
+  };
+  fac(5)
 `)
-sum() // 45
+fac({}) // 120
 ```
 
-Note: This provides Jessie's _syntax surface_. For full Jessie security guarantees,
-you need `harden()` and [SES](https://github.com/endojs/endo/tree/master/packages/ses) runtime.
+<details>
+<summary>Not yet implemented</summary>
+
++ `switch` statement
++ `const {a, b} = x` — destructuring
++ `(...args)` — rest parameters
++ `{ get x() {} }` — getters/setters
+</details>
 
 ### Extras
 
@@ -116,6 +130,7 @@ import 'subscript/feature/unit.js'
 
 
 ## Parse / Compile
+
 
 Subscript exposes `parse` to build AST and `compile` to create evaluators.
 

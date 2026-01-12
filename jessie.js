@@ -1,10 +1,9 @@
-// Jessie: Safe JavaScript subset for mobile code
-// Based on https://github.com/endojs/Jessie
+// Jessie: Practical JS subset — Justin + statements
+// Inspired by https://github.com/endojs/Jessie
 //
-// Jessie = Justin (expressions) + statements + declarations
-// 
-// Note: This is the parser/evaluator surface. For full Jessie security,
-// you need harden() and SES (Secure EcmaScript) runtime.
+// Not a strict Jessie reimplementation. Keeps useful features (like `in`),
+// allows flexible syntax (naked if-arms). Missing features can be added
+// via feature/*.js modules if needed.
 
 import subscript from './justin.js'
 

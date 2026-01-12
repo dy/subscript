@@ -39,18 +39,18 @@ test('template: nested', t => {
 test('template: tagged', t => {
   is(parse('tag`hello`'), ['``', 'tag', [, 'hello']])
   is(parse('tag`a ${x} b`'), ['``', 'tag', [, 'a '], 'x', [, ' b']])
-  
+
   // Test tagged template execution
-  const upper = (strings, ...values) => 
+  const upper = (strings, ...values) =>
     strings.reduce((acc, str, i) => acc + str + (values[i]?.toString().toUpperCase() || ''), '')
   is(run('tag`hello ${name}!`', { tag: upper, name: 'world' }), 'hello WORLD!')
 })
 
 test('template: tagged with member access', t => {
   is(parse('a.b`hello`'), ['``', ['.', 'a', 'b'], [, 'hello']])
-  
+
   // Test compile
-  const upper = (strings, ...values) => 
+  const upper = (strings, ...values) =>
     strings.reduce((acc, str, i) => acc + str + (values[i]?.toString().toUpperCase() || ''), '')
   is(run('obj.tag`hi ${x}!`', { obj: { tag: upper }, x: 'there' }), 'hi THERE!')
 })

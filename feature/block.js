@@ -8,9 +8,9 @@
  */
 import * as P from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { OBRACE, CBRACE } from '../src/const.js'
+import { OBRACE, CBRACE, PREC_STATEMENT, PREC_SEQ } from '../src/const.js'
 
-const { expr, skip, space } = P
+const { token, expr, skip, space } = P
 
 // Control signals for break/continue/return
 class Break {}
@@ -29,18 +29,21 @@ export const loop = (body, ctx) => {
   }
 }
 
-// Block parsing helper - parses { body } or single expression
+// Block parsing helper - parses { body } or single statement
+// Uses PREC_STATEMENT so ; doesn't match (stops at statement boundary)
+// Statement keywords (return/break/continue/if/while/for) use PREC_STATEMENT+1
 export const parseBody = () => {
   if (space() === OBRACE) {
     skip()
     return ['block', expr(0, CBRACE)]
   }
-  return expr(0)
+  return expr(PREC_STATEMENT)
 }
 
-// Block operator - creates new scope
+// Block operator - just executes body (no scope creation)
+// Scope is created by let/const declarations within
 operator('block', body => {
   if (body === undefined) return () => {}
   body = compile(body)
-  return ctx => body(Object.create(ctx))
+  return ctx => body(ctx)
 })

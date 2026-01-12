@@ -185,6 +185,8 @@ Template literals contain string parts (as literals) interleaved with expression
 ['if', cond, then, else]      if (cond) then else alt
 ['while', cond, body]         while (cond) body
 ['for', init, cond, step, body]  for (init; cond; step) body
+['for-of', 'x', iter, body]   for (x of iter) body
+['for-of', 'x', iter, body, 'const']  for (const x of iter) body
 ['block', body]               { body }
 ['let', 'x']                  let x
 ['let', 'x', val]             let x = val
@@ -193,6 +195,20 @@ Template literals contain string parts (as literals) interleaved with expression
 ['continue']                  continue
 ['return']                    return
 ['return', val]               return val
+```
+
+### Exceptions (feature/throw.js, feature/try.js)
+```
+['throw', val]                throw val
+['try', body, 'e', catch]     try { body } catch (e) { catch }
+['try', body, null, null, finally]  try { body } finally { finally }
+['try', body, 'e', catch, finally]  try { body } catch (e) { catch } finally { finally }
+```
+
+### Function Declarations (feature/function.js)
+```
+['function', 'name', ['a', 'b'], body]  function name(a, b) { body }
+['function', null, ['x'], body]         function(x) { body }
 ```
 
 ---
