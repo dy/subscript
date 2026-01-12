@@ -31,12 +31,7 @@
     "test": "test"
   },
   "scripts": {
-    "build": "npm run build-subscript && npm run build-justin",
-    "min": "npm run min-subscript && npm run min-justin",
-    "build-subscript": "rollup subscript.js --file subscript.min.js --format esm --name \"Subscript\"",
-    "min-subscript": "terser subscript.min.js -o subscript.min.js --module -c passes=3 -m",
-    "build-justin": "rollup justin.js --file justin.min.js --format esm --name \"Justin\"",
-    "min-justin": "terser justin.min.js -o justin.min.js --module -c passes=3 -m",
+    "build": "esbuild subscript.js --bundle --minify --format=esm --outfile=subscript.min.js && esbuild justin.js --bundle --minify --format=esm --outfile=justin.min.js",
     "test": "node test/test.js",
     "check-types": "tsc --noEmit subscript.d.ts"
   },
@@ -81,8 +76,7 @@
   },
   "homepage": "https://github.com/dy/subscript#readme",
   "devDependencies": {
-    "rollup": "^2.60.2",
-    "terser": "^5.10.0",
+    "esbuild": "^0.27.2",
     "tst": "^9.0.0"
   }
 }
