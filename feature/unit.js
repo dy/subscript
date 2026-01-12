@@ -1,13 +1,13 @@
 /**
  * Unit suffixes: 5px, 10rem, 2s, 500ms
- * 
+ *
  * AST:
  *   5px   → ['px', [,5]]
  *   2.5s  → ['s', [,2.5]]
- * 
+ *
  * Units are postfix operators — idiomatic to subscript's design.
  * Inspired by piezo: https://github.com/dy/piezo
- * 
+ *
  * Usage:
  *   import { unit } from 'subscript/feature/unit.js'
  *   unit('px', 'em', 'rem', 's', 'ms')
@@ -31,23 +31,23 @@ export const unit = (...names) => names.forEach(name => {
 const wrapHandler = (charCode) => {
   const original = lookup[charCode]
   if (!original) return
-  
+
   lookup[charCode] = (a, prec) => {
     const result = original(a, prec)
     if (!result) return result
-    
+
     // Only numeric literals (not identifiers)
     if (!Array.isArray(result) || result[0] !== undefined) return result
-    
+
     // Try to consume unit suffix
     const startIdx = P.idx
     const u = next(c => parse.id(c) && !(c >= 48 && c <= 57))
-    
+
     if (u && units.has(u)) return [u, result]
-    
+
     // Not a unit - backtrack
     if (u) P.idx = startIdx
-    
+
     return result
   }
 }

@@ -35,12 +35,12 @@ import { parse, compile } from '../subscript.js'
 
 t('asi: parse integration', () => {
   const asiParse = withASI(parse)
-  
+
   const run = (src) => {
     const tree = asiParse(src)
     return compile(tree)({})
   }
-  
+
   is(run('a = 1\nb = 2\na + b'), 3)
   is(run('x = 5\ny = x * 2\ny'), 10)
   is(run('sum = 0\nfor (i = 1; i <= 3; i++) sum = sum + i\nsum'), 6)

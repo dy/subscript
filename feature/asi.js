@@ -12,30 +12,30 @@ const INCOMPLETE = /[\+\-\*\/\%\&\|\^\~\?\:\,\=\<\>\(\{]$/
 export function asi(src, { keepNewlines = false } = {}) {
   const lines = src.split('\n')
   const result = []
-  
+
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim()
-    
-    // Skip empty lines  
+
+    // Skip empty lines
     if (!line) {
       if (keepNewlines) result.push(lines[i])
       continue
     }
-    
+
     // Skip comment lines
     if (line.startsWith('//') || line.startsWith('/*')) {
       if (keepNewlines) result.push(lines[i])
       continue
     }
-    
+
     result.push(lines[i])
-    
+
     // Already ends with semicolon, opening brace, comma, or closing brace - no insert
     if (line.endsWith(';') || line.endsWith('{') || line.endsWith(',') || line.endsWith('}')) continue
-    
+
     // Line is incomplete (ends with operator/opening paren) - no insert
     if (INCOMPLETE.test(line)) continue
-    
+
     // Find next non-empty, non-comment line
     let nextLine = ''
     for (let j = i + 1; j < lines.length; j++) {
@@ -45,18 +45,18 @@ export function asi(src, { keepNewlines = false } = {}) {
         break
       }
     }
-    
+
     // Next line starts with continuation token - no insert
     const nextToken = nextLine.match(/^[^\s\w]*|^\w+/)?.[0] || ''
     if (nextLine && CONT_STARTS.test(nextToken)) continue
-    
+
     // If this is NOT the last code line, add semicolon
     // (Don't add trailing semicolon - it makes result undefined)
     if (nextLine) {
       result[result.length - 1] = result[result.length - 1] + ';'
     }
   }
-  
+
   // Join with space instead of newline for parser compatibility
   return result.join(keepNewlines ? '\n' : ' ')
 }
