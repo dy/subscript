@@ -211,28 +211,6 @@ a + b + c  →  ['+', 'a', 'b', 'c']    // not ['+', ['+', 'a', 'b'], 'c']
 
 This reflects execution semantics and enables SIMD-style optimization.
 
----
-
-## Evaluation Model
-
-Evaluation requires a **context** — an object providing values for identifiers.
-
-```js
-evaluate(tree, context)
-```
-
-The evaluator resolves identifiers from context, applies operators to evaluated operands, and returns the result. Literals return their contained value.
-
-### Security
-
-The evaluator MUST block access to:
-- `constructor`
-- `__proto__`
-- `prototype`
-
-These properties enable sandbox escape via `obj.constructor.constructor('...')()`. A conforming implementation returns `undefined` for these accesses.
-
----
 
 ## Extension
 
@@ -263,6 +241,7 @@ JSON supports: number, string, boolean, null. Other values require representatio
 
 **Units, regex, BigInt** can be either operators or string literals — parser decides, evaluator must match.
 
+
 ### Operand Validity
 
 Operands must be valid tree nodes:
@@ -289,6 +268,8 @@ Implementations SHOULD accept both forms on input.
 
 ## Acknowledgments
 
+Inspiration:
+
 - **S-expressions** — McCarthy, 1960. Code as nested lists.
 - **[frisk](https://github.com/porsager/frisk)** — Porsager. Evaluable arrays as function calls.
 - **[nisp](https://github.com/aspect-build/aspect-cli/tree/develop/packages/nisp)** — Ysmood. JSON-compatible lisp.
@@ -304,7 +285,7 @@ Counter-examples:
 
 This specification is released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). It belongs to no one and everyone.
 
-Use it freely. Improve it openly. Pass it forward.
+Use it freely.
 
 ---
 
