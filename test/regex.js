@@ -32,7 +32,7 @@ test('regex: division disambiguation', t => {
   // Division when left operand exists
   is(run('4 / 2'), 2)
   is(run('a / b', { a: 10, b: 2 }), 5)
-  
+
   // Regex when no left operand
   is(run('/a/.test("a")'), true)
 })

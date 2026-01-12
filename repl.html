@@ -533,7 +533,7 @@ var P = {
 
   for (const f of featureOrder) {
     // Auto-include block when if/loop is selected (it's a dependency, not user-selectable)
-    const shouldInclude = f === 'block' 
+    const shouldInclude = f === 'block'
       ? (selected.has('if') || selected.has('loop'))
       : selected.has(f)
     if (shouldInclude) {
