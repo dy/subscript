@@ -522,7 +522,8 @@
 * [x] ~~complex groups detector: a*x + b*y + c~~ - no use cases
 * [x] ~~compile groups/complex groups to wasm: a*x + b*y + c~~ - no use cases
 
-* [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
+* [x] split loops feature from coditions
+* [ ] add integration links to readme
 
 
 ## [ ] Demo
@@ -533,6 +534,7 @@
 
 ## [ ] Integrations
 
+  * [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
   * [ ] js-based glsl evaluator
 
 <!--
