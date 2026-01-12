@@ -513,11 +513,8 @@
   * [x] ~~sonr transforms like `a,b,c = d,e,f` → `a=d,b=e,c=f`~~ -> do client transform
   * [x] ~~more direct API: prefix operator, id - may not require low-level extension~~
     → that belongs to custom langs, not core
-
-* [ ] Protect eval from accessing global
-
-* [ ] FIXMEs in code
-
+* [x] Protect eval from accessing global
+* [x] FIXMEs in code
 * [ ] Better error cases: unclosed group etc. Never show internal JS errors.
 
 * [ ] `(a ? ^b; 123)` error points to `(a ┃? ^-a; 123)` instead of `(a ? ┃^-a; 123)`

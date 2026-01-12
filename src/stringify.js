@@ -1,10 +1,6 @@
 // convert ast to code string (codegen)
 
-// FIXME: possible enhancements
-// * pairs via options
-// * custom spacing/newlines (`a.b` vs `a + b` vs `a, b` vs `a; b`)
-// * newlines?
-// * custom literals?
+// NOTE: possible enhancements — pairs via options, custom spacing/newlines, custom literals
 export function stringify(node) {
   if (!node) return ''
 

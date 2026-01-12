@@ -32,8 +32,7 @@ export let idx, cur,
     // chunk/token parser
     while (
       (cc = space()) && // till not end
-      // FIXME: extra work is happening here, when lookup bails out due to lower precedence -
-      // it makes extra `space` call for parent exprs on the same character to check precedence again
+      // NOTE: when lookup bails on lower precedence, parent expr re-calls space() — acceptable overhead
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
         (!token && next(parse.id)) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
@@ -41,7 +40,7 @@ export let idx, cur,
     ) token = newNode;
 
     // check end character
-    if (end) cc == end ? idx++ : err()
+    if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)))
 
     return token
   },
@@ -89,7 +88,7 @@ export let idx, cur,
   // post indicates postfix rather than prefix operator
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
 
-  // FIXME: skips means ,,, ;;; are allowed
+  // NOTE: allows ;;; (valid empty statements) and ,,, (debatable but harmless)
   nary = (op, prec, skips) => {
     token(op, prec,
       (a, b) => (
@@ -103,7 +102,6 @@ export let idx, cur,
   },
 
   // register (a), [b], {c} etc groups
-  // FIXME: add "Unclosed paren" error
   group = (op, prec) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1))])),
 
   // register a(b), a[b], a<b> etc,

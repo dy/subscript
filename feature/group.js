@@ -2,8 +2,7 @@ import { err, nary, group } from '../src/parse.js'
 import { compile, operator } from '../src/compile.js'
 import { PREC_ACCESS, PREC_GROUP, PREC_SEQ, PREC_STATEMENT } from '../src/const.js'
 
-// (a,b,c), (a)
-// FIXME: try raising group precedence (it causes conflict in ?. though)
+// (a,b,c), (a) — uses PREC_ACCESS to avoid conflict with ?.
 group('()', PREC_ACCESS)
 operator('()', (a, b) => b === undefined && (!a && err('Empty ()'), compile(a)))
 

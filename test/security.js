@@ -7,15 +7,15 @@ test('security: blocked properties', t => {
   is(subscript('a.constructor')({ a: {} }), undefined)
   is(subscript('a.__proto__')({ a: {} }), undefined)
   is(subscript('a.prototype')({ a: function(){} }), undefined)
-  
+
   // Dynamic property access attacks
   is(subscript('a[b]')({ a: {}, b: 'constructor' }), undefined)
   is(subscript('a[b]')({ a: {}, b: '__proto__' }), undefined)
-  
+
   // String/array constructor chain
   is(subscript('"".constructor')({ }), undefined)
   is(subscript('[].constructor')({ }), undefined)
-  
+
   // Normal access still works
   is(subscript('a.b')({ a: { b: 42 } }), 42)
   is(subscript('a[b]')({ a: { x: 1 }, b: 'x' }), 1)
@@ -25,7 +25,7 @@ test('security: optional chaining blocked', t => {
   is(justin('a?.constructor')({ a: {} }), undefined)
   is(justin('a?.__proto__')({ a: {} }), undefined)
   is(justin('a?.["constructor"]')({ a: {} }), undefined)
-  
+
   // Normal optional chaining works
   is(justin('a?.b')({ a: { b: 42 } }), 42)
   is(justin('a?.b')({ a: null }), undefined)

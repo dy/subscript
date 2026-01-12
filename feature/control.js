@@ -1,6 +1,6 @@
 /**
  * Control flow: if/else, while, for, break, continue, return, blocks
- * 
+ *
  * AST:
  *   if (c) a else b    → ['if', c, a, b?]
  *   while (c) a        → ['while', c, a]
