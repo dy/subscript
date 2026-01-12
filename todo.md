@@ -1,5 +1,34 @@
 # todo
 
+## Cleanup for Release
+
+### Delete
+- [ ] This file (todo.md) — 564 lines of done items, archive to docs/history.md if needed
+- [ ] test/lib/parser/* — competitor code living in repo
+- [ ] test/bench/* — internal experiments, not tests
+- [ ] README: commented-out "Used by" section — either fill or remove
+
+### Add
+- [ ] SPECIFICATION.md — formal AST spec (the hidden treasure)
+- [ ] CHANGELOG.md — 9 major versions, no migration history
+- [ ] Installation section before usage in README
+- [ ] "Add Your Own Operator" guide — current extension examples are cryptic
+- [ ] Real "Used by" with actual links if projects exist
+
+### Simplify README
+- [ ] Lead with "smallest safe sandbox / universal expression AST" not "fast/tiny"
+- [ ] Remove implementation details from extension examples
+- [ ] Highlight security model (blocked constructor/__proto__)
+- [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
+
+### Decide
+- [ ] feature/loop.js, feature/block.js, feature/var.js — promote to subscript/full or mark experimental
+- [ ] Integrations section — either commit or delete the dreams
+
+---
+
+## Archive (completed work below)
+
 * [x] store operators in precedence order
   + indicates unary, binary or ternary
   + directly map calltree nodes [op, ...args] (not reduce heuristic)
