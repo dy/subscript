@@ -4,7 +4,7 @@
  * Numbers: 1, 1.5, 1e3, 0b101, 0o17, 0xFF
  * Strings: "abc", 'xyz'
  */
-import { lookup, next, err, skip, cur, idx } from "../src/parse.js"
+import { lookup, next, err, skip, idx, cur } from '../src/parse.js'
 import { PERIOD, _0, _E, _e, _9, DQUOTE, QUOTE, BSLASH } from "../src/const.js"
 
 // === Numbers ===

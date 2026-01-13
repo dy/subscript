@@ -2,37 +2,37 @@
 
 ## Cleanup for Release
 
-### Delete
 - [x] This file (todo.md) — 564 lines of done items, archive to docs/history.md if needed
 - [x] test/lib/parser/* — competitor code moved to CDN (esm.sh)
 - [x] test/bench/* — internal experiments, not tests
 - [ ] README: commented-out "Used by" section — either fill or remove
-
-### Add
 - [x] SPECIFICATION.md — formal AST spec (the hidden treasure)
 - [ ] CHANGELOG.md — 9 major versions, no migration history
 - [ ] Installation section before usage in README
 - [ ] "Add Your Own Operator" guide — current extension examples are cryptic
 - [ ] Real "Used by" with actual links if projects exist
 
-### Simplify README
+- [x] Switch statement — feature/switch.js
+- [x] Destructuring — feature/destruct.js
+- [x] Rest parameters — feature/function.js, feature/arrow.js
+- [x] Getters/setters — feature/accessor.js (optimized with Symbol marker)
+- [x] REPL updated with new features and jessie preset
 - [ ] Add link to repl
 - [ ] Lead with "smallest safe sandbox / universal expression AST" not "fast/tiny"
 - [ ] Remove implementation details from extension examples
 - [ ] Highlight security model (blocked constructor/__proto__)
 - [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
 - [ ] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
-
-### Decide
 - [x] feature/loop.js, feature/block.js, feature/var.js — promoted to jessie.js
 - [ ] Integrations section — either commit or delete the dreams
-
 - [ ] "Parser/evaluator/microlanguage" — three nouns = unclear positioning
 - [ ] "fast, tiny" — every library claims this
 - [ ] First code example uses Math.sqrt — implies I need to pass globals. Red flag.
 - [ ] No installation instructions before usage code
 - [ ] The emoji badges compete for attention with no clear value hierarchy
-
+- [ ] Separate compile / parse, since we can reuse parse
+- [ ] Address deoptimizations caused by repl
+- [ ] Modules merger tool
 
 ## [ ] Integrations
 

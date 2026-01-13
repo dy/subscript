@@ -7,13 +7,10 @@
  *   function f(a, ...rest) {}     → ['function', 'f', ['a', ['...', 'rest']], body]
  *   const f = function() {}       → ['const', 'f', ['function', null, [], body]]
  */
-import * as P from '../src/parse.js'
+import { cur, idx, token, expr, skip, space, err, next, parse } from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, PREC_TOKEN, PREC_PREFIX, OPAREN, CPAREN, OBRACE, CBRACE } from '../src/const.js'
+import { PREC_STATEMENT, PREC_TOKEN, PREC_PREFIX, OPAREN, CPAREN, OBRACE, CBRACE, COMMA, PERIOD } from '../src/const.js'
 import { Return_ as Return } from './block.js'
-
-const { token, expr, skip, space, err, next, parse } = P
-const COMMA = 44, DOT = 46
 
 // function name?(params) { body }
 token('function', PREC_TOKEN, a => {
@@ -22,20 +19,20 @@ token('function', PREC_TOKEN, a => {
   // Optional function name
   space()
   let name = null
-  const cc = P.cur.charCodeAt(P.idx)
+  const cc = cur.charCodeAt(idx)
   if (cc !== OPAREN) {
     name = next(parse.id)
     space()
   }
 
   // (params)
-  P.cur.charCodeAt(P.idx) === OPAREN || err('Expected (')
+  cur.charCodeAt(idx) === OPAREN || err('Expected (')
   skip()
 
   const params = []
   while (space() !== CPAREN) {
     // Rest param: ...args
-    if (P.cur.charCodeAt(P.idx) === DOT && P.cur.charCodeAt(P.idx + 1) === DOT && P.cur.charCodeAt(P.idx + 2) === DOT) {
+    if (cur.charCodeAt(idx) === PERIOD && cur.charCodeAt(idx + 1) === PERIOD && cur.charCodeAt(idx + 2) === PERIOD) {
       const rest = expr(0) // parse '...id' with no precedence floor
       params.push(rest)
       space() !== CPAREN && err('Rest parameter must be last')
@@ -45,7 +42,7 @@ token('function', PREC_TOKEN, a => {
     if (!param) err('Expected parameter')
     params.push(param)
     if (space() === COMMA) skip()
-    else if (P.cur.charCodeAt(P.idx) !== CPAREN) err('Expected , or )')
+    else if (cur.charCodeAt(idx) !== CPAREN) err('Expected , or )')
   }
   skip() // )
 

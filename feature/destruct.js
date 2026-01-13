@@ -9,12 +9,10 @@
  *
  * Patterns can be nested: const {a: {b}} = x
  */
-import * as P from '../src/parse.js'
+import { token, expr, skip, space, err, parse, next, lookup, idx, cur } from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, PREC_ASSIGN, OBRACE, CBRACE, OBRACK, CBRACK } from '../src/const.js'
-
-const { token, expr, skip, space, err, parse, next, lookup } = P
-const COMMA = 44, COLON = 58, EQ = 61
+import { PREC_STATEMENT, PREC_ASSIGN, OBRACE, CBRACE, OBRACK, CBRACK, COLON, COMMA } from '../src/const.js'
+const EQ = 61
 
 // Parse destructuring pattern: identifier, {pattern}, or [pattern]
 function parsePattern() {
@@ -53,7 +51,7 @@ function parsePattern() {
     const items = []
     while (space() !== CBRACK) {
       // Handle holes: [,a,,b]
-      if (P.cur.charCodeAt(P.idx) === COMMA) {
+      if (cur.charCodeAt(idx) === COMMA) {
         items.push(null) // hole
         skip()
         continue
@@ -83,7 +81,7 @@ token('let', PREC_STATEMENT, a => {
   if (a) return
   const pattern = parsePattern()
   space()
-  if (P.cur.charCodeAt(P.idx) === EQ && P.cur.charCodeAt(P.idx + 1) !== EQ) {
+  if (cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ) {
     skip()
     return ['let', pattern, expr(PREC_STATEMENT)]
   }
@@ -97,7 +95,7 @@ token('const', PREC_STATEMENT, a => {
   if (a) return
   const pattern = parsePattern()
   space()
-  P.cur.charCodeAt(P.idx) === EQ && P.cur.charCodeAt(P.idx + 1) !== EQ || err('Expected =')
+  cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ || err('Expected =')
   skip()
   return ['const', pattern, expr(PREC_STATEMENT)]
 })

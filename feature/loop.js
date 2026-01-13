@@ -11,12 +11,12 @@
  */
 import * as P from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, OPAREN, CPAREN, CBRACE, PREC_SEQ, PREC_TOKEN } from '../src/const.js'
+import { PREC_STATEMENT, OPAREN, CPAREN, CBRACE, PREC_SEQ, PREC_TOKEN, SEMI } from '../src/const.js'
 import { parseBody, loop, BREAK, CONTINUE, Return_ as Return } from './block.js'
 export { BREAK, CONTINUE } from './block.js'
 
 const { token, expr, skip, space, err, next, parse } = P
-const SEMI = 59, OF = 111 // 'o'
+const OF = 111 // 'o'
 
 // while (cond) body
 token('while', PREC_STATEMENT + 1, a => {

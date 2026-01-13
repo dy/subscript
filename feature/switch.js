@@ -10,11 +10,10 @@
  */
 import * as P from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, PREC_ASSIGN, OPAREN, CPAREN, OBRACE, CBRACE } from '../src/const.js'
+import { PREC_STATEMENT, PREC_ASSIGN, OPAREN, CPAREN, OBRACE, CBRACE, COLON, SEMI } from '../src/const.js'
 import { BREAK } from './block.js'
 
 const { token, expr, skip, space, err, next, parse } = P
-const COLON = 58, SEMI = 59
 
 // Check if at case/default keyword
 const atCaseKeyword = () => {

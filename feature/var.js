@@ -1,16 +1,16 @@
 /**
  * Variable declarations: let, const
- * 
+ *
  * AST:
  *   let x       → ['let', 'x']
  *   let x = 1   → ['let', 'x', val]
  *   const x = 1 → ['const', 'x', val]
  */
-import * as P from '../src/parse.js'
+import { token, expr, skip, space, err, parse, next, idx, cur } from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
 import { PREC_STATEMENT } from '../src/const.js'
 
-const { token, expr, skip, space, err, parse, next } = P
+const EQ = 61
 
 // let x [= val]
 token('let', PREC_STATEMENT, a => {
@@ -19,7 +19,7 @@ token('let', PREC_STATEMENT, a => {
   const name = next(parse.id)
   if (!name) err('Expected identifier')
   space()
-  if (P.cur.charCodeAt(P.idx) === 61 && P.cur.charCodeAt(P.idx + 1) !== 61) {
+  if (cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ) {
     skip()
     return ['let', name, expr(PREC_STATEMENT)]
   }
@@ -38,7 +38,7 @@ token('const', PREC_STATEMENT, a => {
   const name = next(parse.id)
   if (!name) err('Expected identifier')
   space()
-  P.cur.charCodeAt(P.idx) === 61 && P.cur.charCodeAt(P.idx + 1) !== 61 || err('Expected =')
+  cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ || err('Expected =')
   skip()
   return ['const', name, expr(PREC_STATEMENT)]
 })

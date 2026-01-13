@@ -260,7 +260,8 @@ h1 span { color: var(--accent); }
       <select class="preset-select" id="presetSelect" data-testid="preset">
         <option value="minimal">Minimal</option>
         <option value="expr">Expressions</option>
-        <option value="justin" selected>Expr + JSON</option>
+        <option value="justin" selected>Justin (JSON+Expr)</option>
+        <option value="jessie">Jessie (statements)</option>
         <option value="full">Full</option>
         <option value="custom" disabled hidden>Custom</option>
       </select>
@@ -304,54 +305,60 @@ h1 span { color: var(--accent); }
 </div>
 
 <script type="module">
-const featureOrder = ['number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add',
-  'increment', 'bitwise', 'logic', 'compare', 'shift', 'pow', 'bool', 'array', 'object',
-  'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'regex', 'unit', 'block', 'if', 'loop', 'var']
+// Feature files in load order (matches actual file names in feature/*.js)
+const featureOrder = [
+  'literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow',
+  'bool', 'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'regex', 'unit',
+  'block', 'if', 'loop', 'var', 'switch', 'destruct', 'function', 'throw', 'try', 'accessor'
+]
 
 const FEATURES = [
-  { cat: 'Core', items: ['number', 'string', 'access', 'call', 'group'] },
-  { cat: 'Operators', items: ['assign', 'mult', 'add', 'increment', 'bitwise', 'shift', 'pow', 'compare', 'logic'] },
-  { cat: 'Literals', items: ['bool', 'array', 'object', 'template', 'regex'] },
-  { cat: 'Advanced', items: ['ternary', 'arrow', 'optional', 'spread', 'comment', 'unit'] },
-  { cat: 'Control', items: ['if', 'loop', 'var'] },
+  { cat: 'Core', items: ['literal', 'member', 'group'] },
+  { cat: 'Operators', items: ['assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow'] },
+  { cat: 'Literals', items: ['bool', 'collection', 'template', 'regex'] },
+  { cat: 'Advanced', items: ['ternary', 'arrow', 'optional', 'spread', 'comment', 'unit', 'accessor'] },
+  { cat: 'Control', items: ['if', 'loop', 'switch', 'var', 'destruct', 'throw', 'try'] },
+  { cat: 'Functions', items: ['function'] },
 ]
 
 const DESC = {
-  number: '1, .5', string: '"x"', access: 'a.b', call: 'f()', group: '()',
-  assign: '=', mult: '*/%', add: '+-', increment: '++', bitwise: '&|^', shift: '<<', pow: '**',
-  compare: '==<>', logic: '&&!', bool: 'true', array: '[]', object: '{}',
+  literal: '1, "x"', member: 'a.b, f()', group: '()',
+  assign: '=, +=', arithmetic: '+-*/%', bit: '&|^~', cmp: '==<>&&!', shift: '<<>>', pow: '**',
+  bool: 'true/false', collection: '[],{}',
   ternary: '?:', arrow: '=>', optional: '?.', spread: '...', comment: '//',
-  'if': 'if/else', loop: 'for/while', 'var': 'let/const',
-  template: '`${}`', regex: '/re/', unit: '5px'
+  template: '`${}`', regex: '/re/', unit: '5px',
+  'if': 'if/else', loop: 'for/while', 'var': 'let/const', 'switch': 'switch',
+  destruct: '{a,b}=', 'function': 'fn(){}', accessor: 'get/set',
+  'throw': 'throw', 'try': 'try/catch'
 }
 
 // Extended tooltips with syntax examples
 const TIPS = {
-  number: 'Numeric literals<br><code>42</code> <code>3.14</code> <code>1e-3</code> <code>0xFF</code> <code>0b1010</code> <code>0o755</code>',
-  string: 'String literals with escapes<br><code>"hello"</code> <code>\'world\'</code> <code>"line\\nbreak"</code>',
-  access: 'Property access<br><code>a.b</code> <code>obj.prop.nested</code>',
-  call: 'Function calls<br><code>fn()</code> <code>fn(a, b)</code> <code>obj.method()</code>',
+  literal: 'Numbers & strings<br><code>42</code> <code>3.14</code> <code>0xFF</code> <code>"hello"</code> <code>\'world\'</code>',
+  member: 'Property access & calls<br><code>a.b</code> <code>a[i]</code> <code>fn()</code> <code>obj.method()</code>',
   group: 'Grouping parentheses<br><code>(a + b) * c</code>',
-  assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code> <code>%=</code> <code>**=</code>',
-  mult: 'Multiplicative<br><code>*</code> <code>/</code> <code>%</code>',
-  add: 'Additive & unary<br><code>a + b</code> <code>a - b</code> <code>-x</code> <code>+x</code>',
-  increment: 'Increment/decrement<br><code>++x</code> <code>x++</code> <code>--x</code> <code>x--</code>',
-  bitwise: 'Bitwise operators<br><code>&</code> <code>|</code> <code>^</code> <code>~x</code>',
+  assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code> <code>%=</code>',
+  arithmetic: 'Math operators<br><code>+ - * / %</code> <code>++x</code> <code>x--</code> <code>-x</code>',
+  bit: 'Bitwise operators<br><code>&</code> <code>|</code> <code>^</code> <code>~x</code>',
+  cmp: 'Comparison & logic<br><code>== != < > <= >=</code> <code>&& || !</code>',
   shift: 'Bit shift<br><code>&lt;&lt;</code> <code>&gt;&gt;</code> <code>&gt;&gt;&gt;</code>',
   pow: 'Exponentiation<br><code>2 ** 10</code> → 1024',
-  compare: 'Comparison<br><code>==</code> <code>!=</code> <code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code> <code>===</code> <code>!==</code>',
-  logic: 'Logical operators<br><code>&&</code> <code>||</code> <code>!</code> <code>??</code>',
   bool: 'Boolean & nil literals<br><code>true</code> <code>false</code> <code>null</code> <code>undefined</code>',
-  array: 'Array literal & indexing<br><code>[1, 2, 3]</code> <code>arr[i]</code> <code>arr[0]</code>',
-  object: 'Object literal<br><code>{ a: 1, b: 2 }</code> <code>{ [key]: val }</code> <code>{ x }</code>',
+  collection: 'Arrays & objects<br><code>[1, 2, 3]</code> <code>{ a: 1, b: 2 }</code> <code>arr[i]</code>',
   ternary: 'Conditional expression<br><code>cond ? then : else</code>',
   arrow: 'Arrow functions<br><code>x => x * 2</code> <code>(a, b) => a + b</code> <code>() => 42</code>',
   optional: 'Optional chaining<br><code>a?.b</code> <code>a?.()</code> <code>a?.[i]</code>',
   spread: 'Spread operator<br><code>[...arr]</code> <code>{ ...obj }</code> <code>fn(...args)</code>',
   comment: 'Comments (ignored)<br><code>// line comment</code> <code>/* block */</code>',
   'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code> <code>if (c) { ... }</code>',
-  loop: 'Loops<br><code>while (c) body</code> <code>for (init; cond; step) body</code>',
+  loop: 'Loops<br><code>while (c) body</code> <code>for (init; cond; step) body</code> <code>for (x of arr)</code>',
+  'switch': 'Switch statement<br><code>switch (x) { case 1: ...; break }</code>',
   'var': 'Variable declaration<br><code>let x = 1</code> <code>const y = 2</code>',
+  destruct: 'Destructuring<br><code>const {a, b} = obj</code> <code>const [x, y] = arr</code>',
+  'function': 'Function declaration<br><code>function f(a, b) { return a + b }</code> <code>function sum(...args) {}</code>',
+  accessor: 'Getters/setters<br><code>{ get x() { val } }</code> <code>{ set x(v) { ... } }</code>',
+  'throw': 'Throw statement<br><code>throw "error"</code> <code>throw new Error()</code>',
+  'try': 'Try/catch/finally<br><code>try { ... } catch (e) { ... }</code>',
   template: 'Template literals<br><code>\`hello \${name}\`</code> <code>\`${a} + ${b} = ${a+b}\`</code>',
   regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code> <code>/^start/i</code>',
   unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code> <code>100ms</code> <code>90deg</code>'
@@ -360,22 +367,32 @@ const TIPS = {
 // Multiline example templates for different feature combinations
 const TEMPLATES = {
   full: {
-    code: `let sum = 0;
+    code: `// Fibonacci with memoization
+function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2)
+};
+fib(10)`,
+    ctx: {}
+  },
+
+  jessie: {
+    code: `// Sum 1..n with loop
+let sum = 0;
 for (let i = 1; i <= n; i++)
   sum = sum + i;
-Math.sqrt(sum)`,
+sum`,
     ctx: { n: 10 }
   },
 
   justin: {
-    code: `items
+    code: `// Functional pipeline
+items
   .filter(x => x.value > threshold)
   .map(x => ({
     ...x,
-    sqrt: Math.sqrt(x.value),
     label: x.active ? "on" : "off"
-  }))
-  .reduce((sum, x) => sum + x.sqrt, 0)`,
+  }))`,
     ctx: {
       items: [
         { value: 16, active: true },
@@ -412,18 +429,23 @@ function generateExample() {
   const has = f => selected.has(f)
   const all = f => f.every(has)
 
-  // Full subscript with control flow
-  if (all(['var', 'loop', 'if', 'arrow', 'spread', 'ternary', 'optional', 'object', 'array', 'compare', 'logic', 'comment'])) {
+  // Full subscript with functions
+  if (has('function') && all(['var', 'loop', 'if', 'cmp', 'arithmetic'])) {
     return TEMPLATES.full
   }
 
+  // Jessie preset - statements
+  if (all(['var', 'loop', 'cmp', 'arithmetic'])) {
+    return TEMPLATES.jessie
+  }
+
   // Justin preset - functional style
-  if (all(['arrow', 'call', 'access', 'spread', 'ternary', 'object', 'array', 'compare', 'mult', 'add', 'comment'])) {
+  if (all(['arrow', 'member', 'spread', 'ternary', 'collection', 'cmp'])) {
     return TEMPLATES.justin
   }
 
   // Has control flow - build multiline program
-  if (has('var') || has('loop') || has('if')) {
+  if (has('var') || has('loop') || has('if') || has('switch')) {
     const lines = []
     const ctx = {}
 
@@ -432,12 +454,12 @@ function generateExample() {
       lines.push('let y = 20;')
     }
 
-    if (has('array') && has('var')) {
+    if (has('collection') && has('var')) {
       lines.push('let nums = [1, 2, 3, 4, 5];')
       ctx.nums = [1, 2, 3, 4, 5]
     }
 
-    if (has('if') && has('compare')) {
+    if (has('if') && has('cmp')) {
       lines.push('')
       lines.push('if (x > 5) {')
       lines.push('  y = y + x;')
@@ -454,14 +476,14 @@ function generateExample() {
       ctx.flag = true
     }
 
-    if (has('loop') && has('compare') && has('increment')) {
+    if (has('loop') && has('cmp') && has('arithmetic')) {
       lines.push('')
       lines.push('let sum = 0;')
       lines.push('for (let i = 0; i < 5; i++)')
       lines.push('  sum = sum + i;')
     }
 
-    if (has('arrow') && has('call') && has('access') && has('array')) {
+    if (has('arrow') && has('member') && has('collection')) {
       lines.push('')
       lines.push('nums.map(n => n * 2)')
     } else if (lines.length > 0) {
@@ -475,8 +497,8 @@ function generateExample() {
   }
 
   // Expression-only (no control flow) - build compound expression
-  if (has('arrow') && has('call') && has('access') && has('array')) {
-    if (has('spread') && has('object') && has('ternary')) {
+  if (has('arrow') && has('member') && has('collection')) {
+    if (has('spread') && has('ternary')) {
       return {
         code: `items.map(x => ({
   ...x,
@@ -485,7 +507,7 @@ function generateExample() {
         ctx: { items: [{ value: 5 }, { value: 15 }, { value: 8 }] }
       }
     }
-    if (has('ternary') && has('compare')) {
+    if (has('ternary') && has('cmp')) {
       return {
         code: `data
   .filter(x => x.score > threshold)
@@ -499,7 +521,7 @@ function generateExample() {
     }
   }
 
-  if (has('ternary') && has('compare') && has('logic')) {
+  if (has('ternary') && has('cmp')) {
     return {
       code: `x > 0 && x < 100
   ? x * 2
@@ -508,32 +530,28 @@ function generateExample() {
     }
   }
 
-  if (has('ternary') && has('compare')) {
+  if (has('ternary') && has('cmp')) {
     return {
       code: `a > b ? a : b`,
       ctx: { a: 42, b: 17 }
     }
   }
 
-  if (has('mult') && has('add') && has('group')) {
+  if (has('arithmetic') && has('group')) {
     return {
       code: `(a + b) * (c - d)`,
       ctx: { a: 10, b: 5, c: 8, d: 3 }
     }
   }
 
-  if (has('mult') && has('add')) {
+  if (has('arithmetic')) {
     return {
       code: `a * b + c * d`,
       ctx: { a: 2, b: 3, c: 4, d: 5 }
     }
   }
 
-  if (has('add')) {
-    return { code: 'a + b + c', ctx: { a: 1, b: 2, c: 3 } }
-  }
-
-  if (has('number')) {
+  if (has('literal')) {
     return { code: '42', ctx: {} }
   }
 
@@ -541,9 +559,10 @@ function generateExample() {
 }
 
 const PRESETS = {
-  minimal: ['number', 'string', 'access', 'group', 'add', 'mult'],
-  expr: ['number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add', 'increment', 'bitwise', 'logic', 'compare', 'shift'],
-  justin: ['number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add', 'increment', 'bitwise', 'logic', 'compare', 'shift', 'pow', 'bool', 'array', 'object', 'ternary', 'arrow', 'optional', 'spread', 'comment'],
+  minimal: ['literal', 'group', 'arithmetic'],
+  expr: ['literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift'],
+  justin: ['literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow', 'bool', 'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template'],
+  jessie: ['literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow', 'bool', 'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'if', 'loop', 'var'],
   full: FEATURES.flatMap(c => c.items),
 }
 
@@ -637,10 +656,9 @@ var P = {
 `
 
   for (const f of featureOrder) {
-    // Auto-include block when if/loop is selected (it's a dependency, not user-selectable)
-    const shouldInclude = f === 'block'
-      ? (selected.has('if') || selected.has('loop'))
-      : selected.has(f)
+    // Auto-include block when control features are selected (it's a dependency)
+    const needsBlock = ['if', 'loop', 'switch', 'function', 'try'].some(x => selected.has(x))
+    const shouldInclude = f === 'block' ? needsBlock : selected.has(f)
     if (shouldInclude) {
       let code = featureSources[f]
         .replace(/^import\s+.*$/gm, '')
@@ -651,8 +669,8 @@ var P = {
           return vars.split(',').map(v => v.trim()).filter(Boolean)
             .map(v => `var ${v} = ${obj}.${v}`).join('\n')
         })
-      // Don't wrap block/if/loop/var in IIFE - they share exports between them
-      if (f === 'block' || f === 'if' || f === 'loop' || f === 'var') {
+      // Don't wrap control features in IIFE - they share exports between them
+      if (['block', 'if', 'loop', 'var', 'switch', 'function', 'throw', 'try', 'destruct'].includes(f)) {
         src += `\n// feature: ${f}\n${code}\n`
       } else if (f === 'unit') {
         // Unit needs `unit` function exposed globally, then register default units
@@ -986,7 +1004,7 @@ function updateExample() {
 // Render features
 let programmaticChange = false
 const featuresEl = document.getElementById('features')
-const DEPS = { 'if': ['block'], loop: ['block'] } // Hidden dependencies
+const DEPS = { 'if': ['block'], loop: ['block'], 'switch': ['block'], 'function': ['block'], 'try': ['block'], destruct: ['var'] } // Hidden dependencies
 
 // Tooltip element for features
 const featTip = document.createElement('div')
@@ -1118,9 +1136,8 @@ function generateSelfContainedBundle() {
 
   // 4. Features
   for (const f of featureOrder) {
-    const shouldInclude = f === 'block'
-      ? (selected.has('if') || selected.has('loop'))
-      : selected.has(f)
+    const needsBlock = ['if', 'loop', 'switch', 'function', 'try'].some(x => selected.has(x))
+    const shouldInclude = f === 'block' ? needsBlock : selected.has(f)
 
     if (shouldInclude) {
       bundle += `// === feature/${f}.js ===\n`

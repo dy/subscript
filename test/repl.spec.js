@@ -242,10 +242,9 @@ test.describe('Subscript REPL', () => {
   // Comprehensive feature toggle test - ensures each feature can be enabled without errors
   test.describe('Feature toggles', () => {
     const features = [
-      'number', 'string', 'access', 'call', 'group', 'assign', 'mult', 'add',
-      'increment', 'bitwise', 'logic', 'compare', 'shift', 'pow', 'bool',
-      'array', 'object', 'ternary', 'arrow', 'optional', 'spread', 'comment',
-      'template', 'regex', 'unit', 'if', 'loop', 'var'
+      'literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow', 'bool',
+      'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'regex', 'unit',
+      'if', 'loop', 'var', 'switch', 'destruct', 'function', 'throw', 'try', 'accessor'
     ]
 
     for (const feature of features) {
@@ -293,15 +292,16 @@ test.describe('Subscript REPL', () => {
 
       // Select full preset first (this triggers updateExample)
       await preset.selectOption('full')
-      await page.waitForTimeout(500)
+      // Wait for preset to compile and show AST
+      await expect(ast).not.toBeEmpty({ timeout: 5000 })
 
       // Then override with simple input that definitely works
       await input.fill('1 + 2 * 3')
-      await page.waitForTimeout(500)
+      // Wait for new compile
+      await expect(ast).not.toBeEmpty({ timeout: 5000 })
 
       const error = await errorEl.textContent()
       expect(error, `Full preset caused error: ${error}`).toBe('')
-      await expect(ast).not.toBeEmpty({ timeout: 5000 })
     })
 
     test('cycling through all presets produces no errors', async ({ page }) => {
@@ -310,20 +310,21 @@ test.describe('Subscript REPL', () => {
       const ast = page.locator('#ast')
       const input = page.locator('#input')
 
-      const presets = ['minimal', 'justin', 'full']
+      const presets = ['minimal', 'justin', 'jessie', 'full']
 
       for (const p of presets) {
         // Select preset first (this triggers updateExample)
         await preset.selectOption(p)
-        await page.waitForTimeout(300)
+        // Wait for preset example to compile
+        await expect(ast).not.toBeEmpty({ timeout: 5000 })
 
         // Then override with simple input
         await input.fill('1 + 2')
-        await page.waitForTimeout(300)
+        // Wait for AST to contain the parsed result (not empty, and contains binary)
+        await expect(ast).toContainText(/\[|binary|BinaryExpression/, { timeout: 5000 })
 
         const error = await errorEl.textContent()
         expect(error, `Preset ${p} caused error: ${error}`).toBe('')
-        await expect(ast).not.toBeEmpty({ timeout: 3000 })
       }
     })
   })

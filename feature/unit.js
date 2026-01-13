@@ -12,10 +12,8 @@
  *   import { unit } from 'subscript/feature/unit.js'
  *   unit('px', 'em', 'rem', 's', 'ms')
  */
-import * as P from '../src/parse.js'
+import { lookup, next, parse, idx, seek } from '../src/parse.js'
 import { operator, compile } from '../src/compile.js'
-
-const { lookup, next, parse } = P
 
 // Unit registry
 const units = new Set
@@ -34,20 +32,13 @@ const wrapHandler = (charCode) => {
 
   lookup[charCode] = (a, prec) => {
     const result = original(a, prec)
-    if (!result) return result
-
-    // Only numeric literals (not identifiers)
-    if (!Array.isArray(result) || result[0] !== undefined) return result
+    if (!result || !Array.isArray(result) || result[0] !== undefined) return result
 
     // Try to consume unit suffix
-    const startIdx = P.idx
+    const start = idx
     const u = next(c => parse.id(c) && !(c >= 48 && c <= 57))
-
     if (u && units.has(u)) return [u, result]
-
-    // Not a unit - backtrack
-    if (u) P.idx = startIdx
-
+    if (u) seek(start) // backtrack
     return result
   }
 }

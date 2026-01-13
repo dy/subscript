@@ -8,6 +8,8 @@ export const
   CBRACE = 125,
   SPACE = 32,
   COLON = 58,
+  SEMI = 59,
+  COMMA = 44,
   DQUOTE = 34,
   QUOTE = 39,
   _0 = 48,
