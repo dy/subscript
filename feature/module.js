@@ -30,7 +30,7 @@ const parseBindings = () => {
     space()
     // Check for 'as' alias
     if (cur.slice(idx, idx + 2) === AS && !parse.id(cur.charCodeAt(idx + 2))) {
-      skip(); skip() // 'as'
+      skip(2) // 'as'
       space()
       const alias = next(parse.id)
       if (!alias) err('Expected identifier after as')
@@ -64,7 +64,7 @@ const parseString = () => {
 const parseFrom = () => {
   space()
   if (cur.slice(idx, idx + 4) !== FROM) err("Expected 'from'")
-  skip(); skip(); skip(); skip() // 'from'
+  skip(4) // 'from'
   space()
   return parseString()
 }
@@ -82,7 +82,7 @@ token('import', PREC_STATEMENT, a => {
   if (c === STAR) {
     skip(); space()
     if (cur.slice(idx, idx + 2) !== AS) err("Expected 'as'")
-    skip(); skip(); space()
+    skip(2); space()
     const name = next(parse.id)
     if (!name) err('Expected identifier')
     return ['import', parseFrom(), ['*', name]]
@@ -130,7 +130,7 @@ token('export', PREC_STATEMENT, a => {
 
   // export default ...
   if (cur.slice(idx, idx + 7) === DEFAULT) {
-    skip(); skip(); skip(); skip(); skip(); skip(); skip(); space()
+    skip(7); space()
     return ['export', [DEFAULT, expr(PREC_STATEMENT)]]
   }
 

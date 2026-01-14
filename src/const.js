@@ -18,7 +18,7 @@ export const
   _e = 101,
   BSLASH = 92,
   SLASH = 47,
-  STAR = 42
+  STAR = 42;
 
 // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/Operator_precedence
 // we mult by 10 to leave space for extensions
@@ -41,7 +41,7 @@ export const
   PREC_POSTFIX = 150,
   PREC_ACCESS = 170,
   PREC_GROUP = 180,
-  PREC_TOKEN = 200
+  PREC_TOKEN = 200;
 
 // Block prototype chain attacks: constructor, prototype, __proto__, __defineGetter__, etc.
 export const unsafe = k => k?.[0] === '_' && k[1] === '_' || k === 'constructor' || k === 'prototype'

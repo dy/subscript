@@ -1,4 +1,4 @@
-import { asi, withASI } from '../feature/asi.js'
+import { asi, withASI } from '../util/asi.js'
 import t from 'tst'
 import { is } from 'tst'
 
@@ -24,6 +24,14 @@ t('asi: no trailing semicolon', () => {
 
 t('asi: keepNewlines option', () => {
   is(asi('a = 1\nb = 2', { keepNewlines: true }), 'a = 1;\nb = 2')
+})
+
+t('asi: inline comments', () => {
+  // Semicolon should be inserted BEFORE inline comment
+  is(asi("x = 1 // comment\ny = 2"), 'x = 1; // comment y = 2')
+  is(asi("x = 1 // comment\ny = 2", { keepNewlines: true }), 'x = 1; // comment\ny = 2')
+  // String containing // should not be treated as comment
+  is(asi('url = "http://x"\ny'), 'url = "http://x"; y')
 })
 
 // Integration with parser

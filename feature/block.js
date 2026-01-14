@@ -4,46 +4,50 @@
  * AST:
  *   { a; b }  → ['block', [';', a, b]]
  *
- * Shared by: if.js, loop.js, control.js
+ * Shared by: if.js, loop.js, switch.js, try.js, function.js
  */
-import * as P from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
-import { OBRACE, CBRACE, PREC_STATEMENT, PREC_SEQ } from '../src/const.js'
+import { token, expr, skip, space, lookup, err, parse, seek, cur, idx } from '../src/parse.js';
+import { operator, compile } from '../src/compile.js';
+import { OBRACE, CBRACE, PREC_STATEMENT, SEMI } from '../src/const.js';
 
-const { token, expr, skip, space } = P
+// prefix-only token - only matches when no left operand (for JS statement keywords)
+export const prefix = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c]) =>
+  lookup[c] = (a, curPrec, curOp, from = idx) =>
+    !a &&
+    (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
+    curPrec < prec &&
+    !parse.id(cur.charCodeAt(idx + l)) &&
+    (seek(idx + l), map() || (seek(from), !prev && err())) ||
+    prev?.(a, curPrec, curOp);
 
 // Control signals for break/continue/return
-class Break {}
-class Continue {}
-class Return { constructor(v) { this.value = v } }
-export const BREAK = new Break(), CONTINUE = new Continue(), Return_ = Return
+export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
 
-// Shared loop body executor - handles control flow signals
-export const loop = (body, ctx) => {
-  try { return { val: body(ctx) } }
-  catch (e) {
-    if (e === BREAK) return { brk: 1 }
-    if (e === CONTINUE) return { cnt: 1 }
-    if (e instanceof Return) return { ret: 1, val: e.value }
-    throw e
-  }
-}
+// Check if next word matches (for catch/finally/case/default etc)
+export const isWord = (w, l = w.length) => cur.substr(idx, l) === w && !parse.id(cur.charCodeAt(idx + l));
+
+// Parse { body } strictly (no single-statement shorthand)
+export const parseBlock = () => {
+  space() === OBRACE || err('Expected {');
+  skip();
+  const stmts = [];
+  while (space() !== CBRACE) (s => s && stmts.push(s))(expr(PREC_STATEMENT)), space() === SEMI && skip();
+  return skip(), stmts.length < 2 ? stmts[0] || null : [';', ...stmts];
+};
 
 // Block parsing helper - parses { body } or single statement
-// Uses PREC_STATEMENT so ; doesn't match (stops at statement boundary)
-// Statement keywords (return/break/continue/if/while/for) use PREC_STATEMENT+1
 export const parseBody = () => {
-  if (space() === OBRACE) {
-    skip()
-    return ['block', expr(0, CBRACE)]
-  }
-  return expr(PREC_STATEMENT)
-}
+  if (space() !== OBRACE) return (s => (space() === SEMI && skip(), s))(expr(PREC_STATEMENT + .5));
+  skip();
+  const stmts = [];
+  while (space() !== CBRACE) (s => s && stmts.push(s))(expr(PREC_STATEMENT)), space() === SEMI && skip();
+  skip();
+  return ['block', stmts.length < 2 ? stmts[0] || null : [';', ...stmts]];
+};
 
-// Block operator - just executes body (no scope creation)
-// Scope is created by let/const declarations within
+// Block operator - executes body
 operator('block', body => {
-  if (body === undefined) return () => {}
-  body = compile(body)
-  return ctx => body(ctx)
-})
+  if (body === undefined) return () => {};
+  body = compile(body);
+  return ctx => body(ctx);
+});

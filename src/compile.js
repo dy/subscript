@@ -1,4 +1,4 @@
-import { err } from "./parse.js"
+import { err } from "./parse.js";
 
 // build optimized evaluator for the tree
 export const compile = (node) => !Array.isArray(node) ? compile.id(node) : !node[0] ? () => node[1] : operators[node[0]].call(...node),
@@ -21,9 +21,9 @@ export const compile = (node) => !Array.isArray(node) ? compile.id(node) : !node
           a[0] === '[]' && a.length === 3 ? (obj = compile(a[1]), path = compile(a[2]), ctx => fn(obj(ctx), path(ctx), ctx)) :
             // (src, _, ctx) => src(ctx)
             generic ? (a = compile(a), ctx => fn([a(ctx)], 0, ctx)) : () => err('Bad left value')
-  )
+  );
 
 // compile id getter (assigned separately to avoid bundling conflicts)
-compile.id = name => ctx => ctx?.[name]
+compile.id = name => ctx => ctx?.[name];
 
-export default compile
+export default compile;

@@ -6,44 +6,21 @@
  *   let x = 1   → ['let', 'x', val]
  *   const x = 1 → ['const', 'x', val]
  */
-import { token, expr, skip, space, err, parse, next, idx, cur } from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT } from '../src/const.js'
+import { token, expr, err, parse, next, space } from '../src/parse.js';
+import { operator, compile } from '../src/compile.js';
+import { PREC_STATEMENT, PREC_ASSIGN } from '../src/const.js';
 
-const EQ = 61
+// Parse: name or name = value
+const decl = op => {
+  space();
+  const e = expr(PREC_ASSIGN);
+  return e?.[0] === '=' && typeof e[1] === 'string' ? [op, e[1], e[2]] :
+         typeof e === 'string' ? [op, e] :
+         err('Expected identifier');
+};
 
-// let x [= val]
-token('let', PREC_STATEMENT, a => {
-  if (a) return
-  space()
-  const name = next(parse.id)
-  if (!name) err('Expected identifier')
-  space()
-  if (cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ) {
-    skip()
-    return ['let', name, expr(PREC_STATEMENT)]
-  }
-  return ['let', name]
-})
+token('let', PREC_STATEMENT, a => !a && decl('let'));
+token('const', PREC_STATEMENT, a => !a && (a = decl('const'), a.length < 3 ? err('Expected =') : a));
 
-operator('let', (name, val) => {
-  val = val !== undefined ? compile(val) : null
-  return ctx => { ctx[name] = val ? val(ctx) : undefined }
-})
-
-// const x = val
-token('const', PREC_STATEMENT, a => {
-  if (a) return
-  space()
-  const name = next(parse.id)
-  if (!name) err('Expected identifier')
-  space()
-  cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ || err('Expected =')
-  skip()
-  return ['const', name, expr(PREC_STATEMENT)]
-})
-
-operator('const', (name, val) => {
-  val = compile(val)
-  return ctx => { ctx[name] = val(ctx) }
-})
+operator('let', (name, val) => (val = val !== undefined ? compile(val) : null, ctx => { ctx[name] = val?.(ctx); }));
+operator('const', (name, val) => (val = compile(val), ctx => { ctx[name] = val(ctx); }));

@@ -349,7 +349,7 @@ test.skip('ext: in operator', async t => {
 
 test('array', async t => {
   await import('../feature/collection.js')
-  await import('../feature/spread.js')
+  await import('../feature/js/spread.js')
 
   is(subscript('[]')(), [])
   is(subscript('[ 1 ]')(), [1])
@@ -427,7 +427,7 @@ test('object', async t => {
 })
 
 test('ext: arrow', async t => {
-  await import('../feature/arrow.js')
+  await import('../feature/js/arrow.js')
 
   is(subscript('() => 1')()(), 1)
   is(subscript('(a) => a+1')()(1), 2)

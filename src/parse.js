@@ -1,4 +1,4 @@
-import { SPACE } from "./const.js"
+import { SPACE } from "./const.js";
 
 // current string, index and collected ids
 export let idx, cur,
@@ -12,7 +12,7 @@ export let idx, cur,
     lines = cur.slice(0, idx).split('\n'),
     last = lines.pop(),
     before = cur.slice(Math.max(0, idx - 40), idx),
-    ptr = '\u030C\u032D',
+    ptr = '\u032D',//'\u030C\u032D',
     at = (cur[idx] || '∅') + ptr,
     after = cur.slice(idx + 1, idx + 20)
   ) => {
@@ -21,23 +21,23 @@ export let idx, cur,
 
   // advance until condition meets
   next = (is, from = idx, l) => {
-    while (l = is(cur.charCodeAt(idx))) idx += l
-    return cur.slice(from, idx)
+    while (l = is(cur.charCodeAt(idx))) idx += l;
+    return cur.slice(from, idx);
   },
 
   // advance n characters
-  skip = () => cur[idx++],
+  skip = (n=1) => cur[idx+=n],
 
   // set position (for backtracking)
   seek = n => idx = n,
 
   // a + b - c
   expr = (prec = 0, end) => {
-    let cc, token, newNode, fn
+    let cc, token, newNode, fn;
 
     // chunk/token parser
     while (
-      (cc = space()) && // till not end
+      (cc = parse.space()) && // till not end
       // NOTE: when lookup bails on lower precedence, parent expr re-calls space() — acceptable overhead
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
@@ -46,15 +46,15 @@ export let idx, cur,
     ) token = newNode;
 
     // check end character
-    if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)))
+    if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
 
-    return token
+    return token;
   },
 
-  // skip space chars, return first non-space character
-  space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
+  // skip space chars, return first non-space character (configurable via parse.space)
+  space = parse.space = cc => { while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++; return cc },
 
-  // parse identifier (configurable)
+  // parse identifier (configurable via parse.id)
   id = parse.id = c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
@@ -75,18 +75,19 @@ export let idx, cur,
     c = op.charCodeAt(0),
     l = op.length,
     prev = lookup[c],
-    word = op.toUpperCase() !== op // make sure word boundary comes after word operator
+    word = op.toUpperCase() !== op, // make sure word boundary comes after word operator
+    matched // track if we matched (for curOp propagation)
   ) => lookup[c] = (a, curPrec, curOp, from = idx) =>
     (
       (curOp ?
         op == curOp :
-        ((l < 2 || cur.substr(idx, l) == op) && (curOp = op)) // save matched op to avoid mismatches like `|` as part of `||`
+        ((l < 2 || cur.substr(idx, l) == op) && (matched = curOp = op)) // save matched op
       ) &&
       curPrec < prec && // matches precedence AFTER operator matched
       !(word && parse.id(cur.charCodeAt(idx + l))) && // finished word, not part of bigger word
-      (idx += l, map(a) || (idx = from, !prev && err())) // throw if operator didn't detect usage pattern: (a;^b) etc
+      (idx += l, map(a) || (idx = from, matched = 0, !word && !prev && err())) // symbols error, words fall through
     ) ||
-    prev?.(a, curPrec, curOp),
+    prev?.(a, curPrec, matched && curOp), // pass curOp only if matched (prevents re-matching same op)
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
   binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
@@ -113,6 +114,6 @@ export let idx, cur,
 
   // register a(b), a[b], a<b> etc,
   // NOTE: we make sure `null` indicates placeholder
-  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]))
+  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]));
 
-export default parse
+export default parse;

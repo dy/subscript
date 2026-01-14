@@ -42,6 +42,36 @@ test('throw: in loop', () => {
   throws(() => run('if (1) { for (let i = 0; i < 5; i++) if (i == 2) throw i }'), e => e === 2)
 })
 
+// typeof
+test('typeof: parse', () => {
+  is(parse('typeof x'), ['typeof', 'x'])
+  is(parse('typeof 42'), ['typeof', [, 42]])
+  is(parse('typeof "str"'), ['typeof', [, 'str']])
+  is(parse('typeof a.b'), ['typeof', ['.', 'a', 'b']])
+  is(parse('typeof f()'), ['typeof', ['()', 'f', null]])
+})
+
+test('typeof: compile', () => {
+  is(run('typeof x', { x: 42 }), 'number')
+  is(run('typeof x', { x: 'hello' }), 'string')
+  is(run('typeof x', { x: true }), 'boolean')
+  is(run('typeof x', { x: null }), 'object')
+  is(run('typeof x', { x: {} }), 'object')
+  is(run('typeof x', { x: [] }), 'object')
+  is(run('typeof x', { x: () => {} }), 'function')
+})
+
+test('typeof: in expression', () => {
+  is(run('typeof x == "number"', { x: 5 }), true)
+  is(run('typeof x == "string"', { x: 5 }), false)
+  is(run('typeof a + typeof b', { a: 1, b: 'x' }), 'numberstring')
+})
+
+test('typeof: with undefined', () => {
+  is(run('typeof x', {}), 'undefined')
+  is(run('typeof x == "undefined"', {}), true)
+})
+
 // try/catch/finally
 test('try/catch: parse', () => {
   is(parse('try { x } catch (e) { y }'), ['try', 'x', 'e', 'y'])

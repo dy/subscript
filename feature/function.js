@@ -5,95 +5,77 @@
  *   function f(a,b) { body }      → ['function', 'f', ['a','b'], body]
  *   function(a,b) { body }        → ['function', null, ['a','b'], body]
  *   function f(a, ...rest) {}     → ['function', 'f', ['a', ['...', 'rest']], body]
- *   const f = function() {}       → ['const', 'f', ['function', null, [], body]]
  */
-import { cur, idx, token, expr, skip, space, err, next, parse } from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, PREC_TOKEN, PREC_PREFIX, OPAREN, CPAREN, OBRACE, CBRACE, COMMA, PERIOD } from '../src/const.js'
-import { Return_ as Return } from './block.js'
+import { cur, idx, token, expr, skip, space, err, next, parse } from '../src/parse.js';
+import { operator, compile } from '../src/compile.js';
+import { PREC_STATEMENT, PREC_TOKEN, OPAREN, CPAREN, OBRACE, CBRACE, COMMA, PERIOD, SEMI } from '../src/const.js';
+import { RETURN } from './block.js';
 
-// function name?(params) { body }
-token('function', PREC_TOKEN, a => {
-  if (a) return // Not prefix position
-
-  // Optional function name
-  space()
-  let name = null
-  const cc = cur.charCodeAt(idx)
-  if (cc !== OPAREN) {
-    name = next(parse.id)
-    space()
-  }
-
-  // (params)
-  cur.charCodeAt(idx) === OPAREN || err('Expected (')
-  skip()
-
-  const params = []
-  while (space() !== CPAREN) {
-    // Rest param: ...args
-    if (cur.charCodeAt(idx) === PERIOD && cur.charCodeAt(idx + 1) === PERIOD && cur.charCodeAt(idx + 2) === PERIOD) {
-      const rest = expr(0) // parse '...id' with no precedence floor
-      params.push(rest)
-      space() !== CPAREN && err('Rest parameter must be last')
-      break
+// Parse comma-separated identifiers in parens, supports ...rest
+const parseParams = () => {
+  cur.charCodeAt(idx) === OPAREN || err('Expected (');
+  skip();
+  const params = [];
+  for (let cc; (cc = space()) !== CPAREN;) {
+    // ...rest
+    if (cc === PERIOD && cur.charCodeAt(idx + 1) === PERIOD && cur.charCodeAt(idx + 2) === PERIOD) {
+      params.push(expr(0));
+      space() !== CPAREN && err('Rest parameter must be last');
+      break;
     }
-    const param = next(parse.id)
-    if (!param) err('Expected parameter')
-    params.push(param)
-    if (space() === COMMA) skip()
-    else if (cur.charCodeAt(idx) !== CPAREN) err('Expected , or )')
+    const p = next(parse.id);
+    p || err('Expected parameter');
+    params.push(p);
+    space() === COMMA ? skip() : cur.charCodeAt(idx) !== CPAREN && err('Expected , or )');
   }
-  skip() // )
+  return skip(), params;
+};
 
-  // { body }
-  space() === OBRACE || err('Expected {')
-  skip()
-  const body = expr(0, CBRACE)
+// Parse { stmts } into single AST node
+const parseBlock = () => {
+  space() === OBRACE || err('Expected {');
+  skip();
+  const stmts = [];
+  while (space() !== CBRACE) (s => s && stmts.push(s))(expr(PREC_STATEMENT)), space() === SEMI && skip();
+  return skip(), stmts.length < 2 ? stmts[0] || null : [';', ...stmts];
+};
 
-  return ['function', name, params, body]
-})
+token('function', PREC_TOKEN, a => {
+  if (a) return;
+  space();
+  const name = cur.charCodeAt(idx) !== OPAREN ? next(parse.id) : null;
+  name && space();
+  return ['function', name, parseParams(), parseBlock()];
+});
+
+// Extract rest param from params array, returns [params, restName, restIdx]
+const extractRest = params => {
+  const last = params[params.length - 1];
+  return Array.isArray(last) && last[0] === '...'
+    ? [params.slice(0, -1), last[1], params.length - 1]
+    : [params, null, -1];
+};
 
 operator('function', (name, params, body) => {
-  body = body ? compile(body) : () => undefined
+  body = body ? compile(body) : () => undefined;
+  const [ps, restName, restIdx] = extractRest(params);
 
-  // Check for rest param (last element is ['...', id])
-  let restIdx = -1, restName = null
-  if (params.length && Array.isArray(params[params.length - 1]) && params[params.length - 1][0] === '...') {
-    restIdx = params.length - 1
-    restName = params[restIdx][1]
-    params = params.slice(0, -1)
-  }
-
-  // Return a factory that creates the function in context
   return ctx => {
     const fn = (...args) => {
-      // Create scope that shadows params but writes through to parent
-      const locals = {}
-      params.forEach((p, i) => locals[p] = args[i])
-      // Rest param gets remaining args
-      if (restName) locals[restName] = args.slice(restIdx)
+      const l = {};
+      ps.forEach((p, i) => l[p] = args[i]);
+      if (restName) l[restName] = args.slice(restIdx);
 
-      const fnCtx = new Proxy(locals, {
-        get(l, k) { return k in l ? l[k] : ctx[k] },
-        set(l, k, v) {
-          // If it's a local (param or declared in fn), set locally
-          if (k in l) { l[k] = v; return true }
-          // Otherwise set in parent scope
-          ctx[k] = v
-          return true
-        },
-        has(l, k) { return k in l || k in ctx }
-      })
+      const fnCtx = new Proxy(l, {
+        get: (l, k) => k in l ? l[k] : ctx[k],
+        set: (l, k, v) => ((k in l ? l : ctx)[k] = v, true),
+        has: (l, k) => k in l || k in ctx
+      });
 
-      try { return body(fnCtx) }
-      catch (e) {
-        if (e instanceof Return) return e.value
-        throw e
-      }
-    }
-    // If named, bind to context
-    if (name) ctx[name] = fn
-    return fn
-  }
-})
+      try { return body(fnCtx); }
+      catch (e) { if (e?.type === RETURN) return e.value; throw e; }
+    };
+    if (name) ctx[name] = fn;
+    return fn;
+  };
+});
