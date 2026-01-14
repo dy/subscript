@@ -102,6 +102,7 @@ test('bundle feature/c/try.js - valid JS', () => bundleAndVerifySyntax('feature/
 test('bundle feature/c/switch.js - valid JS', () => bundleAndVerifySyntax('feature/c/switch.js'))
 
 // JS-specific features
+test('bundle feature/js/op.js - valid JS', () => bundleAndVerifySyntax('feature/js/op.js'))
 test('bundle feature/js/arrow.js - valid JS', () => bundleAndVerifySyntax('feature/js/arrow.js'))
 test('bundle feature/js/optional.js - valid JS', () => bundleAndVerifySyntax('feature/js/optional.js'))
 test('bundle feature/js/spread.js - valid JS', () => bundleAndVerifySyntax('feature/js/spread.js'))

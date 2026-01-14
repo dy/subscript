@@ -18,6 +18,7 @@ export function binary(op: string, prec: number, right?: boolean | undefined): (
 export function access(op: string, prec: number): (a: any, curPrec: number, from?: any) => any;
 export function group(op: string, prec: number): (a: any, curPrec: number, from?: any) => any;
 export function unary(op: string, prec: number, post?: boolean | undefined): (a: any, curPrec: number, from?: any) => any;
+export function literal(op: string, val: any): (a: any, curPrec: number, from?: any) => any;
 export function nary(op: string, prec: number, skips?: boolean | undefined): (a: any, curPrec: number, from?: any) => any;
 export function expr(prec: number, end?: string | undefined): any;
 export function isId(c: number): boolean;

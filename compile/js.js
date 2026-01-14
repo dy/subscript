@@ -196,6 +196,25 @@ operators['?'] = (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), c
 // Typeof
 operators['typeof'] = a => (a = compile(a), ctx => typeof a(ctx));
 
+// Void - always returns undefined
+operators['void'] = a => (a = compile(a), ctx => (a(ctx), undefined));
+
+// Delete - removes property (needs special handling for member access)
+operators['delete'] = a => {
+  if (a[0] === '.') {
+    const obj = compile(a[1]), key = a[2];
+    return ctx => delete obj(ctx)[key];
+  }
+  if (a[0] === '[]') {
+    const obj = compile(a[1]), key = compile(a[2]);
+    return ctx => delete obj(ctx)[key(ctx)];
+  }
+  return () => true; // delete on non-reference returns true
+};
+
+// Instanceof - prototype chain check
+operators['instanceof'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) instanceof b(ctx));
+
 // Spread (for arrays/objects)
 operators['...'] = a => (a = compile(a), ctx => Object.entries(a(ctx)));
 

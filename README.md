@@ -76,8 +76,8 @@ It extends _subscript_ with:
 + `[a, b]`, `{a: b}`, `{a}`
 + `(a, b) => c`
 + `// foo`, `/* bar */`
-+ `true`, `false`, `null`, `NaN`, `undefined`
-+ `a in b`
++ `true`, `false`, `null`, `undefined`, `NaN`, `Infinity`
++ `a in b`, `a instanceof b`
 + `` `a ${x} b` ``, `` tag`...` ``
 
 ```js
@@ -99,7 +99,7 @@ Extends Justin with statements — practical JS subset inspired by [Jessie](http
 + `break`, `continue`, `return x`
 + `throw x`, `try { } catch (e) { } finally { }`
 + `function f(a, b) { }`, `function(x) { }`, `function f(...args) {}`
-+ `typeof x`
++ `typeof x`, `void x`, `delete x`, `x instanceof Y`
 + `import`, `export`
 + `switch (x) { case a: ...; default: ... }`
 + `{ get x() {}, set y(v) {} }`
@@ -173,6 +173,7 @@ feature/
 
   # JavaScript-specific
   js/
+    op.js         # === !== ?? in typeof void delete instanceof
     arrow.js      # () => x
     optional.js   # ?., ?.[], ?.()
     spread.js     # ...x
@@ -330,7 +331,8 @@ _Subscript_ provides premade language [features](./feature) and API to customize
 * `nary(str, precedence)` − register n-ary (sequence) operator like `a; b;` or `a, b`, allows missing args.
 * `group(str, precedence)` - register group, like `[a]`, `{a}`, `(a)` etc.
 * `access(str, precedence)` - register access operator, like `a[b]`, `a(b)` etc.
-* `token(str, precedence, lnode => node)` − register custom token or literal. Callback takes left-side node and returns complete expression node.
+* `literal(str, value)` − register keyword literal like `null`, `true`, `undefined`.
+* `token(str, precedence, lnode => node)` − register custom token. Callback takes left-side node and returns complete expression node. Use for complex patterns like `++`/`--`, `?:`, etc.
 
 Longer operators should be registered after shorter ones, eg. first `|`, then `||`, then `||=`.
 
@@ -340,20 +342,20 @@ Longer operators should be registered after shorter ones, eg. first `|`, then `|
 
 ```js
 import { compile, operator } from 'subscript/compile/js.js'
-import { binary } from 'subscript/parse/pratt.js'
+import { binary, literal } from 'subscript/parse/pratt.js'
 
 // add identity operators (precedence of comparison)
-binary('===', 9), binary('!==', 9)
+binary('===', 80), binary('!==', 80)
 operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx)))
 operator('!==', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx)))
 
 // add nullish coalescing (precedence of logical or)
-binary('??', 3)
+binary('??', 30)
 operator('??', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)))
 
 // add JS literals
-token('undefined', 20, a => a ? err() : [, undefined])
-token('NaN', 20, a => a ? err() : [, NaN])
+literal('undefined', undefined)
+literal('NaN', NaN)
 ```
 
 See [`./feature/*`](./feature) or [`./parse/justin.js`](./parse/justin.js) for examples.

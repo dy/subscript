@@ -102,6 +102,9 @@ export let idx, cur,
   // post indicates postfix rather than prefix operator
   unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
 
+  // literal keyword: null, undefined, true, false, NaN, Infinity
+  literal = (op, val) => token(op, 200, a => !a && [, val]),
+
   // NOTE: allows ;;; (valid empty statements) and ,,, (debatable but harmless)
   // right=true allows same-precedence tokens on RHS (like statements after semicolon)
   nary = (op, prec, right) => {

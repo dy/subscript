@@ -114,6 +114,12 @@ generator('return', a => a === undefined ? 'return' : `return ${codegen(a)}`);
 generator('break', () => 'break');
 generator('continue', () => 'continue');
 
+// Unary keyword operators
+generator('typeof', a => `(typeof ${codegen(a)})`);
+generator('void', a => `(void ${codegen(a)})`);
+generator('delete', a => `(delete ${codegen(a)})`);
+generator('instanceof', (a, b) => `(${codegen(a)} instanceof ${codegen(b)})`);
+
 // Function
 generator('function', (name, params, body) => {
   const args = !params ? '' : params[0] === ',' ? params.slice(1).join(', ') : params;

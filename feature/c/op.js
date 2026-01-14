@@ -3,7 +3,7 @@
  *
  * C-family operator extensions. Import after feature/op.js
  */
-import { binary, unary, token, expr, err, next } from '../../parse/pratt.js';
+import { binary, unary, token, expr, next, literal } from '../../parse/pratt.js';
 
 // Precedence levels (ref: MDN operator precedence)
 const ASSIGN = 20, LOR = 30, LAND = 40, OR = 50, XOR = 60, AND = 70;
@@ -31,8 +31,8 @@ token('--', POSTFIX, a => a ? ['--', a, null] : ['--', expr(POSTFIX - 1)]);
 token('?', ASSIGN, (a, b, c) => a && (b = expr(ASSIGN - 1)) && next(c => c === COLON) && (c = expr(ASSIGN - 1), ['?', a, b, c]));
 
 // Boolean literals (C has true/false in stdbool.h, most C-family has them)
-token('true', 200, a => a ? err() : [, true]);
-token('false', 200, a => a ? err() : [, false]);
+literal('true', true);
+literal('false', false);
 
 // Compound assignments
 binary('=', ASSIGN, true);

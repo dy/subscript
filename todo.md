@@ -46,13 +46,10 @@
 - [ ] call is different from member
 - [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
 
-- [ ] All C-like dialects
+- [ ] All C-like compiler targets
   - [ ] GLSL target
   - [ ] C target
-  - [ ] Python target
   - [ ] Wasm target
-  - [ ] Rust target
-
 
 - [ ] CHANGELOG.md — 9 major versions, no migration history
 - [ ] Installation section before usage in README
