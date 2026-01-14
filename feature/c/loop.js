@@ -71,7 +71,7 @@ prefix('for', STATEMENT + 1, () => {
 prefix('break', STATEMENT + 1, () => ['break']);
 prefix('continue', STATEMENT + 1, () => ['continue']);
 prefix('return', STATEMENT + 1, () => {
-  parse.asi && (parse.newline = false);  // reset to track newline AFTER return
+  parse.asi && (parse.newline = false);
   space();
   const c = cur.charCodeAt(idx);
   return !c || c === CBRACE || c === SEMI || parse.newline ? ['return'] : ['return', expr(STATEMENT)];

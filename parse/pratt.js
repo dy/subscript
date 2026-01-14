@@ -38,7 +38,7 @@ export let idx, cur,
   // a + b - c
   expr = (prec = 0, end) => {
     let cc, token, newNode, fn, prevEnd = endChar, nl;
-    if (end) endChar = end;
+    if (end) endChar = end, parse.asi && (parse.newline = false); // new scope resets newline
 
     // chunk/token parser
     while (

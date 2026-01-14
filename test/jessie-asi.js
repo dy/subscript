@@ -53,6 +53,8 @@ test('jessie-asi: return on its own line', () => {
   // JS ASI rule: return + newline inserts ; after return
   is(run('function f() {\n  return\n  42\n}\nf()'), undefined)
   is(run('function f() {\n  return 42\n}\nf()'), 42)
+  // Newline BEFORE return should not affect return's value
+  is(run('function f() {\n  x = 1\n  return x + 1\n}\nf()'), 2)
 })
 
 test('jessie-asi: break/continue', () => {

@@ -26,11 +26,11 @@ export const isWord = (w, l = w.length) => cur.substr(idx, l) === w && !parse.id
 
 // Expect opening char, parse content up to closing char
 export const expect = (open, close = open + 1, prec = STATEMENT, c = space()) =>
-  c === open ? (skip(), parse.asi && (parse.newline = false), expr(prec, close) || null) : err('Expected ' + String.fromCharCode(open));
+  c === open ? (skip(), expr(prec, close) || null) : err('Expected ' + String.fromCharCode(open));
 
 // Parse { body } - for functions, try/catch
 export const parseBlock = () => expect(OBRACE, CBRACE, STATEMENT - .5);
 
 // Parse { body } or single statement - for if/while/for
 export const parseBody = () =>
-  space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), parse.asi && (parse.newline = false), ['block', expr(STATEMENT - .5, CBRACE) || null]);
+  space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), ['block', expr(STATEMENT - .5, CBRACE) || null]);
