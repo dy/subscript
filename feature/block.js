@@ -37,7 +37,7 @@ export const parseBlock = () => {
 
 // Block parsing helper - parses { body } or single statement
 export const parseBody = () => {
-  if (space() !== OBRACE) return (s => (space() === SEMI && skip(), s))(expr(PREC_STATEMENT + .5));
+  if (space() !== OBRACE) return expr(PREC_STATEMENT + .5);
   skip();
   const stmts = [];
   while (space() !== CBRACE) (s => s && stmts.push(s))(expr(PREC_STATEMENT)), space() === SEMI && skip();

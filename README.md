@@ -1,14 +1,18 @@
-# sub*script* <a href="https://github.com/spectjs/subscript/actions/workflows/node.js.yml"><img src="https://github.com/spectjs/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
+# sub*script* <a href="https://github.com/dy/subscript/actions/workflows/node.js.yml"><img src="https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-> _Subscript_ is safe & tiny expression evaluator.
+> _Subscript_ is safe & tiny expression evaluator for building DSLs.
 
-* The smallest safe sandbox
-* The universal expression AST
-* 2x faster than popular alternative
-* Modular syntax extensions
+[**Try it →**](https://dy.github.io/subscript/repl.html)
+
+* **Generic** — not JS-specific, supports various language syntaxes
+* **Universal AST** — consistent tree structure
+* **Safe sandbox** — no access to globals
+* **Fastest in class** — minimal overhead
+* **Extensible** — pluggable operators and features
+* Homoiconic, metacircular – compiles itself
 
 <!--
-####  Used for:
+####  Useful for:
 
 * expressions evaluators, calculators
 * subsets of languages
@@ -17,6 +21,7 @@
 * preprocessors
 * templates
 -->
+
 
 <!--
 _Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint  (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_) , good [performance](#performance) and extensive test coverage.
@@ -36,7 +41,7 @@ fn({ a: { b:1 }, c: 5, Math })
 // 3
 ```
 
-## Operators
+### Core
 
 _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (_JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
 
@@ -55,7 +60,7 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 ### Justin
 
-_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ ([Jessie thread](https://github.com/endojs/Jessie/issues/66)).<br/>
+_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ (see [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
 It extends _subscript_ with:
 
 + `a === b`, `a !== b`
@@ -63,7 +68,7 @@ It extends _subscript_ with:
 + `a ?? b`, `a ??= b`
 + `a ||= b`, `a &&= b`
 + `a >>> b`, `a >>>= b`
-+ `a ? b : c`, `a?.b`
++ `a ? b : c`, `a?.b`, `a?.[b]`, `a?.(b)`
 + `...a`
 + `[a, b]`, `{a: b}`, `{a}`
 + `(a, b) => c`
@@ -87,16 +92,18 @@ Extends Justin with statements — practical JS subset inspired by [Jessie](http
 + `while (c) body`
 + `for (init; cond; step) body`, `for (x of iter) body`
 + `{ a; b }` — block scope
-+ `let x`, `const x = 1`
++ `let x`, `const x = 1`, `const {a, b} = x`
 + `break`, `continue`, `return x`
 + `throw x`, `try { } catch (e) { } finally { }`
-+ `function f(a, b) { }`, `function(x) { }`
++ `function f(a, b) { }`, `function(x) { }`, `function f(...args) {}`
++ `typeof x`
++ `import`, `export`
++ `switch (x) { case a: ...; default: ... }`
++ `{ get x() {}, set y(v) {} }`
++ `/pattern/flags`
 
 ```js
 import jessie from 'subscript/jessie.js'
-import 'subscript/feature/throw.js'
-import 'subscript/feature/try.js'
-import 'subscript/feature/function.js'
 
 let fac = jessie(`
   function fac(n) {
@@ -108,39 +115,9 @@ let fac = jessie(`
 fac({}) // 120
 ```
 
-#### Extras (via feature imports)
+#### Extras
 
-+ `switch` statement — `feature/switch.js`
-+ `const {a, b} = x` — destructuring — `feature/destruct.js`
-+ `function f(...args) {}` — rest parameters — `feature/function.js`
-+ `{ get x() {}, set y(v) {} }` — getters/setters — `feature/accessor.js`
-+ `/pattern/flags` — regex literals — `feature/regex.js`
 + `5px`, `10rem` — unit suffixes — `feature/unit.js`
-+ ASI (Automatic Semicolon Insertion) — `feature/asi.js`
-
-```js
-import jessie from 'subscript/jessie.js'
-import 'subscript/feature/switch.js'     // switch statement
-import 'subscript/feature/destruct.js'   // destructuring
-import 'subscript/feature/function.js'   // functions with rest params
-import 'subscript/feature/accessor.js'   // getters/setters
-```
-
-### More Extensions
-
-```js
-// ASI for multiline code
-import { withASI } from 'subscript/feature/asi.js'
-import { parse, compile } from 'subscript/jessie.js'
-
-const asiParse = withASI(parse)
-const tree = asiParse(`
-  x = 1
-  y = 2
-  x + y
-`)
-compile(tree)({}) // 3
-```
 
 
 ## Parse / Compile
@@ -159,6 +136,23 @@ tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
 fn = compile(tree)
 fn({ a: {b: 1}, c: 2 }) // 2
 ```
+
+## Util
+
+```js
+// ASI (Automatic Semicolon Insertion) for multiline code
+import { withASI } from 'subscript/util/asi.js'
+import { parse, compile } from 'subscript/jessie.js'
+
+const asiParse = withASI(parse)
+const tree = asiParse(`
+  x = 1
+  y = 2
+  x + y
+`)
+compile(tree)({}) // 3
+```
+
 
 ### Syntax Tree
 
@@ -277,8 +271,6 @@ Parse 30k times:
 subscript: ~150 ms 🥇
 jsep: ~270 ms 🥈
 jexpr: ~297 ms 🥉
-```
-<!--
 justin: ~183 ms
 mr-parser: ~420 ms
 expr-eval: ~480 ms
@@ -287,7 +279,7 @@ math-expression-evaluator: ~900ms
 jexl: ~1056 ms
 mathjs: ~1200 ms
 new Function: ~1154 ms
--->
+```
 
 Eval 30k times:
 
@@ -296,16 +288,12 @@ new Function: ~7 ms 🥇
 subscript: ~15 ms 🥈
 jexpr: ~23 ms 🥉
 jsep (expression-eval): ~30 ms
-```
-<!--
 justin: ~17 ms
 math-expression-evaluator: ~50ms
 expr-eval: ~72 ms
 jexl: ~110 ms
 mathjs: ~119 ms
-mr-parser: -
-math-parser: -
--->
+```
 
 
 ## Used by

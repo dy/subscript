@@ -7,13 +7,38 @@ t('asi: basic transform', () => {
   is(asi('x = 1 +\n2'), 'x = 1 + 2')  // continuation
   is(asi('a'), 'a')  // single
   is(asi('a\nb\nc'), 'a; b; c')
-  is(asi('for (i = 0; i < 5; i++) {\ni\n}'), 'for (i = 0; i < 5; i++) { i; }')
+  is(asi('for (i = 0; i < 5; i++) {\ni\n}'), 'for (i = 0; i < 5; i++) { i }')  // inside braces - no ;
 })
 
 t('asi: continuation detection', () => {
   is(asi('a = b\n.c'), 'a = b .c')  // . continues
   is(asi('a +\nb'), 'a + b')  // + continues
-  is(asi('a(\n1, 2\n)'), 'a( 1, 2; )')  // ( continues (note: inner ; is quirk)
+  is(asi('a(\n1, 2\n)'), 'a( 1, 2 )')  // inside parens - no ;
+})
+
+t('asi: multiline constructs', () => {
+  // Arrays - no ; inside
+  is(asi('x = [\n1,\n2\n]'), 'x = [ 1, 2 ]')
+  is(asi('x = [\n1,\n2\n]\ny'), 'x = [ 1, 2 ]; y')
+  // Objects - no ; inside
+  is(asi('x = {\na: 1,\nb: 2\n}'), 'x = { a: 1, b: 2 }')
+  // Nested
+  is(asi('f(\n{\na: 1\n}\n)'), 'f( { a: 1 } )')
+})
+
+t('asi: template literals', () => {
+  // Single line template
+  is(asi('x = `a`\ny'), 'x = `a`; y')
+  // Multiline template - no ; inside
+  is(asi('x = `a\nb`\ny'), 'x = `a b`; y')
+  // Template with expression
+  is(asi('x = `${v}`\ny'), 'x = `${v}`; y')
+})
+
+t('asi: return/break/continue', () => {
+  // JS ASI: newline after return inserts ;
+  is(asi('return\nx'), 'return; x')
+  is(asi('return x\ny'), 'return x; y')
 })
 
 t('asi: no trailing semicolon', () => {
