@@ -95,7 +95,7 @@ test('jessie-asi: complex program', () => {
       if (n <= 1) return n
       return fibonacci(n - 1) + fibonacci(n - 2)
     }
-    
+
     result = []
     for (i = 0; i < 10; i++) {
       result.push(fibonacci(i))
@@ -108,10 +108,10 @@ test('jessie-asi: complex program', () => {
 test('jessie-asi: edge cases', () => {
   // Empty lines should be handled
   is(run('x = 1\n\n\ny = 2\nx + y'), 3)
-  
+
   // Semicolons already present should work
   is(run('x = 1;\ny = 2;\nx + y'), 3)
-  
+
   // Mixed with and without semicolons
   is(run('x = 1;\ny = 2\nz = 3;\nx + y + z'), 6)
 })

@@ -67,12 +67,12 @@ prefix('for', STATEMENT + 1, () => {
   return ['for', init, cond, step, parseBody()];
 });
 
-// break / continue / return (check parse.newline for ASI)
+// break / continue / return
 prefix('break', STATEMENT + 1, () => ['break']);
 prefix('continue', STATEMENT + 1, () => ['continue']);
 prefix('return', STATEMENT + 1, () => {
+  parse.asi && (parse.newline = false);  // reset to track newline AFTER return
   space();
   const c = cur.charCodeAt(idx);
-  // ASI: return followed by newline returns undefined
   return !c || c === CBRACE || c === SEMI || parse.newline ? ['return'] : ['return', expr(STATEMENT)];
 });

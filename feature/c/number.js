@@ -16,8 +16,9 @@ const num = a => [, (
 ) != a ? err() : a];
 
 // Override 0 to handle prefixes: 0x, 0b, 0o, 0 (octal)
+// When there's already a token, return undefined (decline) to let outer loop handle via ASI or error
 lookup[_0] = a => {
-  if (a) return err();
+  if (a) return;
   const c = cur.charCodeAt(idx + 1);
   return c === _b || c === _B ? (skip(2), [, parseInt(next(c => c === 48 || c === 49), 2)]) :
          c === _o || c === _O ? (skip(2), [, parseInt(next(c => c >= 48 && c <= 55), 8)]) :

@@ -2,7 +2,7 @@
  * Template literals: `a ${x} b` → ['`', [,'a '], 'x', [,' b']]
  * Tagged templates:  tag`...`  → ['``', 'tag', ...]
  */
-import { skip, err, expr, lookup, cur, idx } from '../../parse/pratt.js';
+import { parse, skip, err, expr, lookup, cur, idx } from '../../parse/pratt.js';
 
 const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123, BSLASH = 92;
 const esc = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' };
@@ -19,7 +19,8 @@ const parseBody = () => {
 };
 
 const prev = lookup[BACKTICK];
+// Tagged templates: decline when ASI with newline (return undefined to let ASI handle)
 lookup[BACKTICK] = (a, prec) =>
-  a && prec < ACCESS ? (skip(), ['``', a, ...parseBody()]) : // tagged
+  a && prec < ACCESS ? (parse.asi && parse.newline ? void 0 : (skip(), ['``', a, ...parseBody()])) : // tagged
   !a ? (skip(), (p => p.length < 2 && p[0]?.[0] === undefined ? p[0] || [,''] : ['`', ...p])(parseBody())) : // plain
   prev?.(a, prec);

@@ -37,18 +37,18 @@ export let idx, cur,
 
   // a + b - c
   expr = (prec = 0, end) => {
-    let cc, token, newNode, fn, prevEnd = endChar, hadNewline;
+    let cc, token, newNode, fn, prevEnd = endChar, nl;
     if (end) endChar = end;
 
     // chunk/token parser
     while (
-      (cc = parse.space()) && // till not end
-      (hadNewline = parse.newline, true) && // save newline state before potential recursive calls
+      (cc = parse.space()) && // till not end (resets parse.newline, may set again)
+      (nl = parse.newline, 1) && // capture newline state AFTER space() scanned
       cc !== endChar &&  // stop at end char
       // NOTE: when lookup bails on lower precedence, parent expr re-calls space() — acceptable overhead
       (newNode =
-        ((fn = lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
-        (token && hadNewline && parse.asi?.(token, prec, expr)) ?? // ASI hook: language-defined newline handling
+        ((fn = lookup[cc]) && fn(token, prec)) ?? // operator with higher precedence
+        (parse.asi && token && nl && (newNode = parse.asi(token, prec, expr))) ?? // ASI hook
         (!token && next(parse.id)) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
       )
     ) token = newNode;
@@ -61,16 +61,14 @@ export let idx, cur,
   },
 
   // skip space chars, return first non-space character (configurable via parse.space)
-  // Sets parse.newline = true if newline was crossed (for ASI support)
-  // Preserves newline flag if no whitespace was consumed (for nested expr returns)
-  space = parse.space = (cc, from = idx) => { 
-    while ((cc = cur.charCodeAt(idx)) <= SPACE) { 
-      if (cc === 10) parse.newline = true
-      idx++ 
+  // Sets parse.newline = true if newline crossed (only when parse.asi is set)
+  // Flag accumulates until explicitly reset
+  space = parse.space = (cc, from = idx) => {
+    while ((cc = cur.charCodeAt(idx)) <= SPACE) {
+      if (parse.asi && cc === 10) parse.newline = true
+      idx++
     }
-    if (idx === from) return cc // no whitespace consumed, preserve newline state
-    if (!parse.newline) parse.newline = false // only reset if we consumed whitespace without newline
-    return cc 
+    return cc
   },
 
   // parse identifier (configurable via parse.id)

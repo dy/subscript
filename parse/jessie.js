@@ -3,7 +3,7 @@
  *
  * Builds on justin with statements: blocks, variables, if/else,
  * loops, functions, try/catch, switch, throw.
- * 
+ *
  * ASI (Automatic Semicolon Insertion) configured via parse.asi hook.
  */
 import './justin.js';
@@ -24,24 +24,16 @@ import '../feature/js/destruct.js';
 import '../feature/js/module.js';
 import '../feature/js/accessor.js';
 
-import { parse as baseParse } from './pratt.js';
+import { parse } from './pratt.js';
 
 // JS ASI handler: insert virtual ; when newline precedes illegal token at statement level
 const STATEMENT = 5;
-const jsASI = (token, prec, expr) => {
+parse.asi = (token, prec, expr) => {
   if (prec >= STATEMENT) return; // only at statement level
   const next = expr(STATEMENT - .5);
   if (!next) return;
   return token?.[0] !== ';' ? [';', token, next] : (token.push(next), token);
 };
 
-// Wrap parse to enable ASI for jessie
-export const parse = (s, ...args) => {
-  const prevASI = baseParse.asi;
-  baseParse.asi = jsASI;
-  try { return baseParse(s, ...args); }
-  finally { baseParse.asi = prevASI; }
-};
-
-export { token, binary, unary, nary, group, access, literal, expr, err, skip, next, space, seek, lookup, idx, cur } from './pratt.js';
+export * from './pratt.js';
 export default parse;
