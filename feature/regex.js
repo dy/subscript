@@ -12,36 +12,20 @@ import { token, skip, err, next, idx, cur } from '../parse/pratt.js';
 
 const PREFIX = 140, SLASH = 47, BSLASH = 92;
 
-const regexFlags = c => c === 103 || c === 105 || c === 109 || c === 115 || c === 117 || c === 121; // g i m s u y
+const regexChar = c => c === BSLASH ? 2 : c && c !== SLASH;  // \x = 2 chars, else 1 until /
+const regexFlag = c => c === 103 || c === 105 || c === 109 || c === 115 || c === 117 || c === 121; // g i m s u y
 
-// Register / as prefix operator for regex
 token('/', PREFIX, a => {
-  if (a) return; // has left operand = not regex, fall through
+  if (a) return; // has left operand = division, fall through
 
-  // Invalid regex start (quantifiers) or /= operator - fall through
+  // Invalid regex start (quantifiers) or /= - fall through
   const first = cur.charCodeAt(idx);
   if (first === SLASH || first === 42 || first === 43 || first === 63 || first === 61) return;
 
-  // Parse regex pattern
-  let pattern = '', c;
-  while ((c = cur.charCodeAt(idx)) && c !== SLASH) {
-    if (c === BSLASH) {
-      pattern += cur[idx]; skip();
-      if (!cur[idx]) err('Unterminated regex');
-      pattern += cur[idx]; skip();
-    } else {
-      pattern += cur[idx]; skip();
-    }
-  }
-
-  if (!cur[idx]) err('Unterminated regex');
+  const pattern = next(regexChar);
+  cur.charCodeAt(idx) === SLASH || err('Unterminated regex');
   skip(); // consume closing /
 
-  const flags = next(regexFlags);
-
-  try {
-    return [, new RegExp(pattern, flags)];
-  } catch (e) {
-    err('Invalid regex: ' + e.message);
-  }
+  try { return [, new RegExp(pattern, next(regexFlag))]; }
+  catch (e) { err('Invalid regex: ' + e.message); }
 });

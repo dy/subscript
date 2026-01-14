@@ -9,8 +9,8 @@
  *   break/continue           → ['break'] / ['continue']
  *   return x                 → ['return', x?]
  */
-import { token, expr, skip, space, err, next, parse, cur, idx } from '../parse/pratt.js';
-import { parseBody, prefix, isWord } from './block.js';
+import { token, expr, skip, space, err, next, parse, cur, idx } from '../../parse/pratt.js';
+import { parseBody, prefix, isWord } from '../block.js';
 
 const STATEMENT = 5, SEQ = 10;
 const OPAREN = 40, CPAREN = 41, CBRACE = 125, SEMI = 59;

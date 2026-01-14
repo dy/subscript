@@ -62,7 +62,7 @@ t('asi: inline comments', () => {
 // Integration with parser
 import '../subscript.js'
 import '../feature/var.js'
-import '../feature/loop.js'
+import '../feature/c/loop.js'
 import '../feature/collection.js'
 import { parse, compile } from '../subscript.js'
 

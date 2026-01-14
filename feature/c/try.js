@@ -1,17 +1,19 @@
 /**
- * try/catch/finally statements
+ * try/catch/finally/throw statements (C-family)
  *
  * AST:
  *   try { a } catch (e) { b }             → ['try', a, 'e', b]
  *   try { a } finally { c }               → ['try', a, null, null, c]
  *   try { a } catch (e) { b } finally { c } → ['try', a, 'e', b, c]
+ *   throw x                               → ['throw', x]
  */
-import { token, skip, space, err, next, parse } from '../parse/pratt.js';
-import { parseBlock, isWord } from './block.js';
+import { token, skip, space, err, next, parse, expr } from '../../parse/pratt.js';
+import { parseBlock, isWord } from '../block.js';
 
 const STATEMENT = 5;
 const OPAREN = 40, CPAREN = 41;
 
+// try/catch/finally
 token('try', STATEMENT + 1, a => {
   if (a) return;
   const tryBody = parseBlock();
@@ -35,4 +37,11 @@ token('try', STATEMENT + 1, a => {
 
   catchName || finallyBody || err('Expected catch or finally');
   return finallyBody ? ['try', tryBody, catchName, catchBody, finallyBody] : ['try', tryBody, catchName, catchBody];
+});
+
+// throw
+token('throw', STATEMENT + 1, a => {
+  if (a) return;
+  space() || err('Expected expression');
+  return ['throw', expr(STATEMENT)];
 });

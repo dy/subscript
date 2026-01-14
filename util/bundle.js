@@ -1,241 +1,369 @@
 /**
- * Minimal ESM bundler - merges modules into single scope
+ * ESM Bundler using subscript's own parser (dogfooding)
  *
- * Handles:
- *   import { a, b } from './x'
- *   import * as X from './x'
- *   export const/let/function/class
- *   export { a, b }
- *
- * Does NOT handle:
- *   export default, dynamic import(), re-exports, circular deps
+ * Thin layer: scope analysis + tree transform
+ * Parser comes from the dialect (jessie by default)
  */
+import { parse } from '../parse/jessie.js';
+import { codegen } from '../compile/js-emit.js';
 
-const IMPORT_RE = /import\s*(?:{([^}]+)}|\*\s*as\s+(\w+))?\s*from\s*['"]([^'"]+)['"]/g
-const IMPORT_SIDE_EFFECT_RE = /import\s*['"][^'"]+['"]/g
-const EXPORT_DECL_RE = /export\s+(const|let|var|function|class)\s+(\w+)/g
-const EXPORT_LIST_RE = /export\s*{([^}]+)}/g
-const TOP_DECL_RE = /^(const|let|var)\s+(?:{([^}]+)}|(\w+))/gm
-const FUNC_DECL_RE = /^(function|class)\s+(\w+)/gm
+// === AST Utilities ===
 
-// Parse imports from code
-const parseImports = code => [...code.matchAll(IMPORT_RE)].map(m => ({
-  named: m[1]?.split(',').map(s => {
-    const [name, alias] = s.split(/\s+as\s+/).map(x => x.trim())
-    return { name, alias: alias || name }
-  }).filter(x => x.name),
-  namespace: m[2],
-  path: m[3],
-  full: m[0]
-}))
+/** Walk AST, call fn(node, parent, key) for each node */
+const walk = (node, fn, parent = null, key = null) => {
+  if (!node || typeof node !== 'object') return;
+  fn(node, parent, key);
+  if (Array.isArray(node)) {
+    for (let i = 0; i < node.length; i++) walk(node[i], fn, node, i);
+  }
+};
 
-// Parse exports from code
-const parseExports = code => {
-  const exports = {}
-  for (const m of code.matchAll(EXPORT_DECL_RE)) exports[m[2]] = m[2]
-  for (const m of code.matchAll(EXPORT_LIST_RE)) {
-    for (const s of m[1].split(',')) {
-      const [name, alias] = s.split(/\s+as\s+/).map(x => x.trim())
-      exports[alias || name] = name
+/** Deep clone AST */
+const clone = node =>
+  !node ? node :
+  Array.isArray(node) ? node.map(clone) :
+  typeof node === 'object' ? Object.fromEntries(Object.entries(node).map(([k,v]) => [k, clone(v)])) :
+  node;
+
+/** Rename identifier in AST */
+const renameId = (ast, old, neu) => {
+  walk(ast, node => {
+    if (Array.isArray(node)) {
+      for (let i = 0; i < node.length; i++) {
+        if (node[i] === old) node[i] = neu;
+      }
     }
-  }
-  return exports
-}
+  });
+  return ast;
+};
 
-// Parse top-level declarations (non-exported)
-const parseDecls = code => {
-  const decls = new Set()
-  // Remove exports first to avoid double-counting
-  const noExports = code.replace(/^export\s+/gm, '')
-  for (const m of noExports.matchAll(TOP_DECL_RE)) {
-    if (m[2]) m[2].split(',').forEach(s => {
-      const name = s.split(':')[0].trim()
-      if (name) decls.add(name)
-    })
-    if (m[3]) decls.add(m[3])
-  }
-  for (const m of noExports.matchAll(FUNC_DECL_RE)) decls.add(m[2])
-  return decls
-}
+// === Module Analysis ===
 
-// Rename identifier throughout code (word boundary aware)
-const rename = (code, oldName, newName) =>
-  code.replace(new RegExp(`\\b${oldName}\\b`, 'g'), newName)
+/** Extract imports from AST */
+const getImports = ast => {
+  const imports = [];
+  walk(ast, node => {
+    if (!Array.isArray(node) || node[0] !== 'import') return;
+    const imp = { path: node[1], node };
 
-// Resolve relative path from base
+    if (node[2]) {
+      const spec = node[2];
+      if (spec[0] === '{}') {
+        imp.named = spec.slice(1).map(s =>
+          Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
+        );
+      } else if (spec[0] === '*') {
+        imp.namespace = spec[1];
+      } else if (spec[0] === 'default') {
+        imp.default_ = spec[1];
+      }
+      if (node[3]) {
+        const spec2 = node[3];
+        if (spec2[0] === '{}') {
+          imp.named = spec2.slice(1).map(s =>
+            Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
+          );
+        }
+      }
+    }
+    imports.push(imp);
+  });
+  return imports;
+};
+
+/** Extract exports from AST */
+const getExports = ast => {
+  const exports = { named: {}, reexports: [], default_: null };
+
+  walk(ast, node => {
+    if (!Array.isArray(node) || node[0] !== 'export') return;
+    const spec = node[1];
+    const path = node[2];
+
+    if (spec[0] === '{}') {
+      const names = spec.slice(1).map(s =>
+        Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
+      );
+      if (path) {
+        exports.reexports.push({ names, path });
+      } else {
+        for (const { name, alias } of names) exports.named[alias] = name;
+      }
+    } else if (spec[0] === '*') {
+      exports.reexports.push({ star: true, path });
+    } else if (spec[0] === 'default') {
+      exports.default_ = spec[1];
+    } else if (spec[0] === 'const' || spec[0] === 'let' || spec[0] === 'var') {
+      exports.named[spec[1]] = spec[1];
+    } else if (spec[0] === 'function' || spec[0] === 'class') {
+      exports.named[spec[1]] = spec[1];
+    }
+  });
+
+  return exports;
+};
+
+/** Get all declared names in AST */
+const getDecls = ast => {
+  const decls = new Set();
+
+  walk(ast, node => {
+    if (!Array.isArray(node)) return;
+    const op = node[0];
+
+    if (op === 'const' || op === 'let' || op === 'var') {
+      if (typeof node[1] === 'string') decls.add(node[1]);
+    }
+    if (op === 'function' || op === 'class') {
+      if (typeof node[1] === 'string') decls.add(node[1]);
+    }
+    if (op === 'export') {
+      const spec = node[1];
+      if ((spec[0] === 'const' || spec[0] === 'let' || spec[0] === 'var' ||
+           spec[0] === 'function' || spec[0] === 'class') && typeof spec[1] === 'string') {
+        decls.add(spec[1]);
+      }
+    }
+  });
+
+  return decls;
+};
+
+// === AST Transforms ===
+
+/** Remove import/export nodes, extract declarations */
+const stripModuleSyntax = ast => {
+  const defaultExpr = { value: null };
+
+  const process = node => {
+    if (!Array.isArray(node)) return node;
+    const op = node[0];
+
+    if (op === 'import') return null;
+
+    if (op === 'export') {
+      const spec = node[1];
+      if (spec[0] === '{}' || spec[0] === '*') return null;
+      if (spec[0] === 'default') {
+        defaultExpr.value = spec[1];
+        if (typeof spec[1] === 'string') return null;
+        return ['const', '__default', spec[1]];
+      }
+      return spec;
+    }
+
+    if (op === ';') {
+      const parts = node.slice(1).map(process).filter(Boolean);
+      if (parts.length === 0) return null;
+      if (parts.length === 1) return parts[0];
+      return [';', ...parts];
+    }
+
+    return node;
+  };
+
+  return { ast: process(ast), defaultExpr: defaultExpr.value };
+};
+
+// === Path Resolution ===
+
 const resolvePath = (from, to) => {
-  if (!to.startsWith('.')) return to
-  const base = from.split('/').slice(0, -1)
+  if (!to.startsWith('.')) return to;
+  const base = from.split('/').slice(0, -1);
   for (const part of to.split('/')) {
-    if (part === '..') base.pop()
-    else if (part !== '.') base.push(part)
+    if (part === '..') base.pop();
+    else if (part !== '.') base.push(part);
   }
-  let path = base.join('/')
-  if (!path.endsWith('.js')) path += '.js'
-  return path
-}
+  let path = base.join('/');
+  if (!path.endsWith('.js')) path += '.js';
+  return path;
+};
+
+// === Bundler ===
 
 /**
  * Bundle ES modules into single file
  * @param {string} entry - Entry file path
  * @param {(path: string) => string|Promise<string>} read - File reader
- * @returns {Promise<string>} Bundled code
  */
 export async function bundle(entry, read) {
-  const modules = new Map()  // path → { code, imports, exports, decls }
-  const order = []           // topological order
+  const modules = new Map();
+  const order = [];
 
-  // Load module and dependencies recursively
   async function load(path) {
-    if (modules.has(path)) return
-    modules.set(path, null) // mark loading
+    if (modules.has(path)) return;
+    modules.set(path, null);
 
-    const code = await read(path)
-    const imports = parseImports(code)
-    const exports = parseExports(code)
-    const decls = parseDecls(code)
+    const code = await read(path);
+    const ast = parse(code);
+    const imports = getImports(ast);
+    const exports = getExports(ast);
+    const decls = getDecls(ast);
 
-    // Load dependencies first
     for (const imp of imports) {
-      const depPath = resolvePath(path, imp.path)
-      imp.resolved = depPath
-      await load(depPath)
+      imp.resolved = resolvePath(path, imp.path);
+      await load(imp.resolved);
+    }
+    for (const re of exports.reexports) {
+      re.resolved = resolvePath(path, re.path);
+      await load(re.resolved);
     }
 
-    modules.set(path, { code, imports, exports, decls })
-    order.push(path)
+    modules.set(path, { ast: clone(ast), imports, exports, decls });
+    order.push(path);
   }
 
-  await load(entry)
+  await load(entry);
 
-  // Collect all declarations, detect conflicts
-  const allDecls = new Map()  // name → [paths]
+  // Detect conflicts
+  const allDecls = new Map();
   for (const [path, mod] of modules) {
-    for (const name of [...Object.values(mod.exports), ...mod.decls]) {
-      if (!allDecls.has(name)) allDecls.set(name, [])
-      allDecls.get(name).push(path)
+    const importAliases = new Set();
+    for (const imp of mod.imports) {
+      if (imp.default_) importAliases.add(imp.default_);
+      if (imp.namespace) importAliases.add(imp.namespace);
+      if (imp.named) for (const { alias } of imp.named) importAliases.add(alias);
+    }
+
+    for (const name of mod.decls) {
+      if (importAliases.has(name)) continue;
+      if (!allDecls.has(name)) allDecls.set(name, []);
+      allDecls.get(name).push(path);
     }
   }
 
-  // Generate rename map for conflicts
-  const renames = new Map()  // path → { oldName → newName }
+  // Build rename maps
+  const renames = new Map();
   for (const [name, paths] of allDecls) {
     if (paths.length > 1) {
       for (const path of paths) {
-        if (!renames.has(path)) renames.set(path, {})
-        // Use filename as prefix: feature/literal.js → literal_
-        const prefix = path.split('/').pop().replace('.js', '_')
-        renames.get(path)[name] = prefix + name
+        if (!renames.has(path)) renames.set(path, {});
+        const prefix = path.split('/').pop().replace('.js', '_');
+        renames.get(path)[name] = prefix + name;
       }
     }
   }
 
-  // Build import resolution map: what name to use for imported symbol
-  const resolveImport = (fromPath, depPath, name) => {
-    const depRenames = renames.get(depPath)
-    return depRenames?.[name] || name
-  }
+  const traceDefault = path => {
+    const mod = modules.get(path);
+    if (!mod) return null;
+    const def = mod.exports.default_;
+    if (!def) return null;
+    if (typeof def === 'string') {
+      const pathRenames = renames.get(path) || {};
+      if (pathRenames[def]) return pathRenames[def];
+      const defImp = mod.imports.find(i => i.default_ === def);
+      if (defImp) return traceDefault(defImp.resolved);
+      return def;
+    }
+    return '__default';
+  };
 
   // Transform each module
-  const chunks = []
+  const chunks = [];
   for (const path of order) {
-    const mod = modules.get(path)
-    let code = mod.code
+    const mod = modules.get(path);
+    const pathRenames = renames.get(path) || {};
 
-    // Apply local renames
-    const localRenames = renames.get(path) || {}
-    for (const [old, neu] of Object.entries(localRenames)) {
-      code = rename(code, old, neu)
+    let ast = clone(mod.ast);
+    for (const [old, neu] of Object.entries(pathRenames)) {
+      renameId(ast, old, neu);
     }
 
-    // Replace namespace imports: import * as P from './x' → nothing (use P.x directly)
-    // But we need to resolve P.foo to actual names
     for (const imp of mod.imports) {
-      if (imp.namespace) {
-        const dep = modules.get(imp.resolved)
-        // Replace P.exportedName with resolved name
-        for (const [exported, local] of Object.entries(dep.exports)) {
-          const resolved = resolveImport(path, imp.resolved, local)
-          code = code.replace(
-            new RegExp(`\\b${imp.namespace}\\.${exported}\\b`, 'g'),
-            resolved
-          )
-        }
-      }
+      const dep = modules.get(imp.resolved);
+      if (!dep) continue;
+      const depRenames = renames.get(imp.resolved) || {};
 
-      // Replace named imports with resolved names
       if (imp.named) {
         for (const { name, alias } of imp.named) {
-          const resolved = resolveImport(path, imp.resolved, name)
-          if (alias !== resolved) {
-            code = rename(code, alias, resolved)
-          }
+          const resolved = depRenames[name] || name;
+          if (alias !== resolved) renameId(ast, alias, resolved);
         }
+      }
+
+      if (imp.default_) {
+        const resolved = traceDefault(imp.resolved);
+        if (resolved && imp.default_ !== resolved) {
+          renameId(ast, imp.default_, resolved);
+        }
+      }
+
+      if (imp.namespace) {
+        walk(ast, node => {
+          if (Array.isArray(node) && node[0] === '.' && node[1] === imp.namespace) {
+            const prop = node[2];
+            if (typeof prop === 'string' && dep.exports.named[prop]) {
+              const resolved = depRenames[dep.exports.named[prop]] || dep.exports.named[prop];
+              node.length = 0;
+              node.push(resolved);
+            }
+          }
+        });
       }
     }
 
-    // Strip imports
-    code = code.replace(IMPORT_RE, '')
-    code = code.replace(IMPORT_SIDE_EFFECT_RE, '')
+    const { ast: stripped } = stripModuleSyntax(ast);
 
-    // Strip export keywords (keep declarations)
-    code = code.replace(/^export\s+(?=const|let|var|function|class)/gm, '')
-    code = code.replace(EXPORT_LIST_RE, '')
-
-    // Clean empty lines
-    code = code.replace(/^\s*\n/gm, '')
-
-    if (code.trim()) {
-      chunks.push(`// === ${path} ===\n${code.trim()}`)
+    if (stripped) {
+      const code = codegen(stripped);
+      if (code.trim()) {
+        chunks.push(`// === ${path} ===\n${code}`);
+      }
     }
   }
 
-  // Entry exports become bundle exports
-  const entryMod = modules.get(entry)
-  const entryRenames = renames.get(entry) || {}
-  const exportLines = Object.entries(entryMod.exports)
-    .map(([exported, local]) => {
-      const resolved = entryRenames[local] || local
-      return exported === resolved ? exported : `${resolved} as ${exported}`
-    })
-    .join(', ')
+  // Generate exports
+  const entryMod = modules.get(entry);
+  const entryRenames = renames.get(entry) || {};
+  const exportLines = [];
 
-  let result = chunks.join('\n\n')
-  if (exportLines) {
-    result += `\n\nexport { ${exportLines} }`
+  for (const [exp, local] of Object.entries(entryMod.exports.named)) {
+    const resolved = entryRenames[local] || local;
+    exportLines.push(exp === resolved ? exp : `${resolved} as ${exp}`);
   }
 
-  return result
+  for (const re of entryMod.exports.reexports) {
+    if (re.star) continue;
+    const depRenames = renames.get(re.resolved) || {};
+    for (const { name, alias } of re.names) {
+      const resolved = depRenames[name] || name;
+      exportLines.push(alias === resolved ? alias : `${resolved} as ${alias}`);
+    }
+  }
+
+  if (entryMod.exports.default_) {
+    const resolved = traceDefault(entry) || '__default';
+    exportLines.push(`${resolved} as default`);
+  }
+
+  let result = chunks.join('\n\n');
+  if (exportLines.length) {
+    result += `\n\nexport { ${exportLines.join(', ')} }`;
+  }
+
+  return result;
 }
 
-/**
- * Bundle with Node.js fs
- * @param {string} entry - Entry file path
- * @returns {Promise<string>}
- */
+/** Bundle with Node.js fs */
 export async function bundleFile(entry) {
-  const { readFile } = await import('fs/promises')
-  const { resolve, dirname } = await import('path')
-  const base = dirname(resolve(entry))
-  return bundle(
-    resolve(entry),
-    path => readFile(path, 'utf-8')
-  )
+  const { readFile } = await import('fs/promises');
+  const { resolve } = await import('path');
+  return bundle(resolve(entry), path => readFile(path, 'utf-8'));
 }
 
-/**
- * Bundle with fetch (browser)
- * @param {string} entry - Entry URL
- * @returns {Promise<string>}
- */
-export async function bundleFetch(entry) {
-  const base = new URL(entry, location.href)
-  return bundle(
-    base.href,
-    async path => {
-      const res = await fetch(path)
-      if (!res.ok) throw new Error(`Failed to fetch ${path}`)
-      return res.text()
-    }
-  )
+// CLI
+if (typeof process !== 'undefined' && process.argv[1]?.includes('bundle')) {
+  const entry = process.argv[2];
+  if (!entry) {
+    console.error('Usage: node bundle.js <entry>');
+    process.exit(1);
+  }
+  try {
+    console.log(await bundleFile(entry));
+  } catch (e) {
+    console.error('Error:', e.message);
+    console.error(e.stack);
+    process.exit(1);
+  }
 }

@@ -1,5 +1,5 @@
 Avoid writing in `lookup`, use token instead.
-Avoid ad-hocs - that signals inconsistency of design.
+Avoid ad-hocs - that signals inconsistency of design. We created hi-level APIs for a reason, we need to use them and if they don't fit, we need to improve them.
 `/features` represent generic language features, not only JS: avoid js-specific checks.
 For features you implement, please add tests, update SPECIFICATION.md and README.md if relevant, as well as REPL and other relevant files. Make sure tests pass. Make sure it doesn't degrade performance or bloats the code.
 Make sure API and feature code is intuitive and user-friendly: prefer `unary`/`binary`/`nary`/`group`/`token` calls in the right order ( eg. first `|`, then `||`, then `||=` ) rather than low-level parsing. Normally feature should not use `cur`, `idx` features of parser and use `skip` instead.

@@ -1,6 +1,6 @@
 # todo
 
-## Cleanup for Release
+## v10
 
 - [x] This file (todo.md) — 564 lines of done items, archive to docs/history.md if needed
 - [x] test/lib/parser/* — competitor code moved to CDN (esm.sh)
@@ -8,7 +8,37 @@
 - [x] README: commented-out "Used by" section — either fill or remove
 - [x] SPECIFICATION.md — formal AST spec (the hidden treasure)
 - [x] Rectify project structure
-- [ ] Rectify even more: /parse, /compile
+- [x] Rectify even more: /parse, /compile
+- [x] Migration
+  - [x] Create feature/number.js (minimal: decimal only)
+  - [x] Create feature/string.js (minimal: double-quote only)
+  - [x] Update imports in parse/expr.js
+  - [x] feature/c/number.js (hex 0x, binary 0b, octal 0o)
+  - [x] feature/c/string.js (single quotes)
+  - [x] feature/c/op.js (merge: bool.js && ||, bit.js & | ^ ~, shift.js << >>, assign.js compound, ternary.js ?:, true/false)
+  - [x] feature/c/comment.js (move from feature/comment.js)
+  - [x] feature/c/block.js (move from feature/block.js)
+  - [x] feature/c/if.js (move from feature/if.js)
+  - [x] feature/c/loop.js (move from feature/loop.js)
+  - [x] feature/c/switch.js (move from feature/switch.js)
+  - [x] feature/c/try.js (merge feature/try.js + feature/throw.js)
+  - [x] feature/op.js (truly universal: + - * / % < > <= >= == != !)
+  - [x] Simplified feature/number.js (decimal only)
+  - [x] Simplified feature/string.js (double-quote only)
+  - [x] parse/expr.js - import root features (number, string, op, group, member)
+  - [x] parse/justin.js - import root + c/ + js/ expression features
+  - [x] parse/jessie.js - import justin + c/block, c/if, c/loop, c/try, c/switch
+  - [x] Updated test/compile/subscript.js to remove old imports
+  - [x] Updated test/feature/control.js to remove old imports
+  - [x] Updated test/bundle.js to test new file structure
+  - [x] Updated test/parse/core.js to use @ instead of & in nary test
+  - [x] Removed: literal.js, arithmetic.js, cmp.js, bool.js, bit.js, shift.js
+  - [x] Removed: assign.js, ternary.js, comment.js, throw.js
+  - [x] Removed: if.js, loop.js, switch.js, try.js
+- [x] Reorganize features by languages
+  - [x] Factor out common vs specific language features
+  - [x] Implement a few unique to each language features
+  - [ ] Cover all common languages (know the list _JavaScript_, _C_, _Python_, _Java_, _Swift_, _Kotlin_, _Go_, _Rust_, _Nim?_, _??_):
 - [ ] Make jessie parse fully itself with all deps
 - [ ] Add util/bundle
 - [ ] Add util/asi
@@ -16,11 +46,12 @@
 - [ ] call is different from member
 - [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
 
-- [ ] GLSL target
-- [ ] C target
-- [ ] Python target
-- [ ] Wasm target
-- [ ] Rust target
+- [ ] All C-like dialects
+  - [ ] GLSL target
+  - [ ] C target
+  - [ ] Python target
+  - [ ] Wasm target
+  - [ ] Rust target
 
 
 - [ ] CHANGELOG.md — 9 major versions, no migration history

@@ -252,10 +252,10 @@ test('parse: nary', t => {
   is(parse('a;;b;c'), [';', 'a', null, 'b', 'c'])
   is(parse(';a;;;c;'), [';', null, 'a', null, null, 'c', null,])
 
-  // special error case
-  throws(() => parse('&a;'), /Unexpected/)
-  throws(() => parse(';&b'), /Unexpected/)
-  throws(() => parse('a;&b'), /Unexpected/)
+  // special error case (@ isn't a registered operator)
+  throws(() => parse('@a;'), /Unexpected/)
+  throws(() => parse(';@b'), /Unexpected/)
+  throws(() => parse('a;@b'), /Unexpected/)
 })
 
 test('parse: justin', async t => {

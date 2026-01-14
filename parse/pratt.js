@@ -1,7 +1,7 @@
 // Character codes
 const SPACE = 32;
 
-// current string, index and collected ids
+// current string, index
 export let idx, cur,
 
   // no handling tagged literals since easily done on user side with cache, if needed
@@ -32,13 +32,18 @@ export let idx, cur,
   // set position (for backtracking)
   seek = n => idx = n,
 
+  // end character for current expr scope (propagated through nested calls)
+  endChar = 0,
+
   // a + b - c
   expr = (prec = 0, end) => {
-    let cc, token, newNode, fn;
+    let cc, token, newNode, fn, prevEnd = endChar;
+    if (end) endChar = end;
 
     // chunk/token parser
     while (
       (cc = parse.space()) && // till not end
+      cc !== endChar &&  // stop at end char
       // NOTE: when lookup bails on lower precedence, parent expr re-calls space() — acceptable overhead
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ?? // if operator with higher precedence isn't found
@@ -46,8 +51,9 @@ export let idx, cur,
       )
     ) token = newNode;
 
-    // check end character
+    // check end character - only if we set it (not inherited)
     if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
+    endChar = prevEnd;
 
     return token;
   },
@@ -101,7 +107,7 @@ export let idx, cur,
   nary = (op, prec, right) => {
     token(op, prec,
       (a, b) => (
-        b = expr(prec - (right ? .5 : 0)),
+        b = expr(prec - (right ? .5 : 0)),  // endChar is already set, just stop at it
         (
           (a?.[0] !== op) && (a = [op, a || null]), // if beginning of sequence - init node
           b?.[0] === op ? a.push(...b.slice(1)) : a.push(b || null), // comments can return same-token expr
@@ -111,7 +117,7 @@ export let idx, cur,
   },
 
   // register (a), [b], {c} etc groups
-  group = (op, prec) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1))])),
+  group = (op, prec) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
 
   // register a(b), a[b], a<b> etc,
   // NOTE: we make sure `null` indicates placeholder

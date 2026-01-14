@@ -338,12 +338,15 @@ operators['throw'] = val => (val = compile(val), ctx => { throw val(ctx); });
 // Functions
 operators['function'] = (name, params, body) => {
   body = body ? compile(body) : () => undefined;
-  let ps = params, restName = null, restIdx = -1;
-  const last = params[params.length - 1];
+  // Normalize params: null → [], 'x' → ['x'], [',', 'a', 'b'] → ['a', 'b']
+  const ps = !params ? [] : params[0] === ',' ? params.slice(1) : [params];
+  // Check for rest param
+  let restName = null, restIdx = -1;
+  const last = ps[ps.length - 1];
   if (Array.isArray(last) && last[0] === '...') {
-    restIdx = params.length - 1;
+    restIdx = ps.length - 1;
     restName = last[1];
-    ps = params.slice(0, -1);
+    ps.length--;
   }
   return ctx => {
     const fn = (...args) => {

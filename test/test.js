@@ -7,7 +7,6 @@ import './parse/jessie.js'
 // Compile tests
 import './compile/js.js'
 import './compile/js-emit.js'
-import './compile/subscript.js'
 import './compile/security.js'
 
 // Feature tests
@@ -15,4 +14,7 @@ import './feature/control.js'
 import './feature/regex.js'
 import './feature/template.js'
 import './feature/unit.js'
+
+// Integration tests
+import './subscript.js'
 // import './perf.js'

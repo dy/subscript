@@ -9,7 +9,7 @@
 import { token, expr, skip, space, lookup, err, parse, seek, cur, idx } from '../parse/pratt.js';
 
 const STATEMENT = 5;
-const OBRACE = 123, CBRACE = 125, SEMI = 59;
+const OBRACE = 123, CBRACE = 125;
 
 // prefix-only token - only matches when no left operand (for JS statement keywords)
 export const prefix = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c]) =>
@@ -24,21 +24,13 @@ export const prefix = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev 
 // Check if next word matches (for catch/finally/case/default etc)
 export const isWord = (w, l = w.length) => cur.substr(idx, l) === w && !parse.id(cur.charCodeAt(idx + l));
 
-// Parse { body } strictly (no single-statement shorthand)
-export const parseBlock = () => {
-  space() === OBRACE || err('Expected {');
-  skip();
-  const stmts = [];
-  while (space() !== CBRACE) (s => s && stmts.push(s))(expr(STATEMENT)), space() === SEMI && skip();
-  return skip(), stmts.length < 2 ? stmts[0] || null : [';', ...stmts];
-};
+// Expect opening char, parse content up to closing char
+export const expect = (open, close = open + 1, prec = STATEMENT, c = space()) =>
+  c === open ? (skip(), expr(prec, close) || null) : err('Expected ' + String.fromCharCode(open));
 
-// Block parsing helper - parses { body } or single statement
-export const parseBody = () => {
-  if (space() !== OBRACE) return expr(STATEMENT + .5);
-  skip();
-  const stmts = [];
-  while (space() !== CBRACE) (s => s && stmts.push(s))(expr(STATEMENT)), space() === SEMI && skip();
-  skip();
-  return ['block', stmts.length < 2 ? stmts[0] || null : [';', ...stmts]];
-};
+// Parse { body } - for functions, try/catch
+export const parseBlock = () => expect(OBRACE, CBRACE, STATEMENT - .5);
+
+// Parse { body } or single statement - for if/while/for
+export const parseBody = () =>
+  space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), ['block', expr(STATEMENT - .5, CBRACE) || null]);

@@ -10,15 +10,15 @@ import { token, expr } from './pratt.js';
 
 const PREFIX = 140;
 
-// Statement features
-import '../feature/block.js';
+// C-family statement features
+import '../feature/c/if.js';
+import '../feature/c/loop.js';
+import '../feature/c/try.js';    // try/catch/finally/throw
+import '../feature/c/switch.js';
+
+// Universal statement features
 import '../feature/var.js';
-import '../feature/if.js';
-import '../feature/loop.js';
-import '../feature/throw.js';
-import '../feature/try.js';
 import '../feature/function.js';
-import '../feature/switch.js';
 import '../feature/regex.js';
 
 // JS-specific statement features

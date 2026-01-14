@@ -9,9 +9,10 @@
 * **Portable** — parser separate from compiler, targets JS/C/WASM
 * **Safe sandbox** — no access to globals
 * **Fastest in class** — minimal overhead
-* **Extensible** — pluggable sytax subsets: operators and features
+* **Extensible** — pluggable/composable sytax subsets: operators and features
 * Homoiconic, metacircular – compiles itself
 * Turbo Pratt parser engine (make a pun here)
+* Language design tool
 
 <!--
 ####  Useful for:
@@ -138,9 +139,50 @@ compile/                # compiling axis
   js-emit.js            # AST → JS source
 
 feature/                # atomic syntax modules
+  (root)                # universal/portable features
+  c/                    # C-family extensions
+  js/                   # JavaScript-specific features
 
 subscript.js            # main bundle: jessie + js compiler
 ```
+
+### Feature Organization
+
+Features are organized by language family for portability:
+
+```
+feature/
+  # Universal (portable to ANY language target)
+  number.js       # decimal numbers: 123, 1.5, 1e3
+  string.js       # double-quoted strings with escapes
+  op.js           # + - * / % < > <= >= == != !
+  group.js        # ( ) grouping and calls
+  member.js       # a.b, a[b] property access
+
+  # C-family extensions (C, JS, Java, Go, Rust, Swift...)
+  c/
+    number.js     # 0x hex, 0b binary, 0o octal
+    string.js     # 'single quotes'
+    op.js         # && || & | ^ ~ << >> ?: ++ -- compound assigns
+    comment.js    # // and /* */
+    block.js      # { } statement blocks
+    if.js         # if/else
+    loop.js       # for, while, do-while
+    try.js        # try/catch/finally/throw
+    switch.js     # switch/case
+
+  # JavaScript-specific
+  js/
+    arrow.js      # () => x
+    optional.js   # ?., ?.[], ?.()
+    spread.js     # ...x
+    template.js   # `${expr}`, tag``
+    destruct.js   # [a, b] = x, {a, b} = x
+    module.js     # import/export
+    accessor.js   # get/set
+```
+
+This enables targeting different languages — root features work everywhere, c/ for C-like targets, js/ for JavaScript only.
 
 ### Parser Presets
 

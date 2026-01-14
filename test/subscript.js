@@ -1,9 +1,9 @@
 // Tests for subscript.js - combined jessie parser + JS compiler pipeline
 
 import test, { is, throws, same } from 'tst'
-import parse, { err, unary, lookup } from '../../parse/pratt.js'
-import subscript, { binary, operator, compile, token } from '../../subscript.js'
-import { operators } from '../../compile/js.js'
+import parse, { err, unary, lookup } from '../parse/pratt.js'
+import subscript, { binary, operator, compile, token } from '../subscript.js'
+import { operators } from '../compile/js.js'
 
 const MULT = 120;
 
@@ -87,7 +87,7 @@ test('basic', t => {
 })
 
 test('right-assoc', async t => {
-  await import('../../feature/pow.js');
+  await import('../feature/pow.js');
 
   sameAsJs('1 + 2 * 3 ** 4 + 5', {})
   sameAsJs(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
@@ -294,7 +294,7 @@ test('chains', t => {
 })
 
 test.skip('ext: in operator', async t => {
-  await import('../../feature/in.js')
+  await import('../feature/in.js')
 
   sameAsJs('inc in bin', { bin: { inc: 1 }, inc: 'inc' })
   sameAsJs('bin in inc', { inc: { bin: 1 }, bin: 'bin' })
@@ -303,8 +303,8 @@ test.skip('ext: in operator', async t => {
 })
 
 test('array', async t => {
-  await import('../../feature/collection.js')
-  await import('../../feature/js/spread.js')
+  await import('../feature/collection.js')
+  await import('../feature/js/spread.js')
 
   is(subscript('[]')(), [])
   is(subscript('[ 1 ]')(), [1])
@@ -333,7 +333,7 @@ test('array', async t => {
 })
 
 test('ternary', async t => {
-  await import('../../feature/ternary.js')
+  // Ternary already included via c/op.js through jessie preset
 
   sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
   sameAsJs('a?b:c', { a: false, b: 1, c: 2 })
@@ -352,8 +352,7 @@ test('ternary', async t => {
 })
 
 test('object', async t => {
-  await import('../../feature/collection.js')
-  await import('../../feature/ternary.js')
+  // collection.js and ternary already included via jessie preset
 
   sameAsJs('{}', {})
   sameAsJs('{x: 1}', {})
@@ -375,7 +374,7 @@ test('object', async t => {
 })
 
 test('ext: arrow', async t => {
-  await import('../../feature/js/arrow.js')
+  await import('../feature/js/arrow.js')
 
   is(subscript('() => 1')()(), 1)
   is(subscript('(a) => a+1')()(1), 2)
@@ -386,7 +385,7 @@ test('ext: arrow', async t => {
 })
 
 test('ext: justin', async t => {
-  await import('../../parse/justin.js')
+  await import('../parse/justin.js')
   sameAsJs(`"abcd" + 'efgh'`)
   is(subscript('a;b')({ a: 1, b: 2 }), 2)
 
@@ -455,7 +454,7 @@ test('assignment', async t => {
 })
 
 test('comments', async t => {
-  await import('../../feature/comment.js')
+  // Comments already included via c/comment.js through jessie preset
   is(subscript('/* x */1/* y */+/* z */2')({}), 3)
   is(subscript(`a /
     // abc
