@@ -72,8 +72,8 @@ test('bundle src/parse.js - exports functions', async () => {
   })
 })
 
-test('bundle src/compile.js - exports functions', async () => {
-  await bundleAndRun('src/compile.js', async (mod) => {
+test('bundle compile/js.js - exports functions', async () => {
+  await bundleAndRun('compile/js.js', async (mod) => {
     if (typeof mod.default !== 'function') throw new Error('default export not a function')
     if (typeof mod.operator !== 'function') throw new Error('operator not exported')
     if (typeof mod.compile !== 'function') throw new Error('compile not exported')

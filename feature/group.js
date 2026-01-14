@@ -1,11 +1,10 @@
-import { err, nary, group } from '../src/parse.js';
-import { compile, operator } from '../src/compile.js';
-import { PREC_ACCESS, PREC_GROUP, PREC_SEQ, PREC_STATEMENT } from '../src/const.js';
+import { nary, group } from '../src/parse.js';
 
-// (a,b,c), (a) — uses PREC_ACCESS to avoid conflict with ?.
-group('()', PREC_ACCESS);
-operator('()', (a, b) => b === undefined && (!a && err('Empty ()'), compile(a)));
+const STATEMENT = 5, SEQ = 10, ACCESS = 170;
 
-const last = (...args) => (args = args.map(compile), ctx => args.map(arg => arg(ctx)).pop());
-nary(',', PREC_SEQ), operator(',', last);
-nary(';', PREC_STATEMENT, true), operator(';', last);
+// (a,b,c), (a) — uses ACCESS to avoid conflict with ?.
+group('()', ACCESS);
+
+// Sequences
+nary(',', SEQ);
+nary(';', STATEMENT, true);

@@ -9,10 +9,10 @@
  *
  * Patterns can be nested: const {a: {b}} = x
  */
-import { token, expr, skip, space, err, parse, next, lookup, idx, cur } from '../../src/parse.js';
-import { operator, compile } from '../../src/compile.js';
-import { PREC_STATEMENT, PREC_ASSIGN, OBRACE, CBRACE, OBRACK, CBRACK, COLON, COMMA } from '../../src/const.js';
-const EQ = 61;
+import { token, expr, skip, space, err, parse, next, idx, cur } from '../../src/parse.js';
+
+const STATEMENT = 5, ASSIGN = 20, EQ = 61;
+const OBRACE = 123, CBRACE = 125, OBRACK = 91, CBRACK = 93, COLON = 58, COMMA = 44;
 
 // Parse destructuring pattern: identifier, {pattern}, or [pattern]
 function parsePattern() {
@@ -36,7 +36,7 @@ function parsePattern() {
       let def;
       if (space() === EQ) {
         skip();
-        def = expr(PREC_ASSIGN);
+        def = expr(ASSIGN);
       }
       props.push(def ? ['=', [':', key, binding], def] : [':', key, binding]);
       if (space() === COMMA) skip();
@@ -69,7 +69,7 @@ function parsePattern() {
       // Default: [a = 1]
       if (space() === EQ) {
         skip();
-        const def = expr(PREC_ASSIGN);
+        const def = expr(ASSIGN);
         binding = ['=', binding, def];
       }
       items.push(binding);
@@ -91,7 +91,7 @@ function parseDecl(keyword, requireInit) {
   space();
   if (cur.charCodeAt(idx) === EQ && cur.charCodeAt(idx + 1) !== EQ) {
     skip();
-    return [keyword, pattern, expr(PREC_ASSIGN)];  // Stop at comma level
+    return [keyword, pattern, expr(ASSIGN)];  // Stop at comma level
   }
   if (requireInit && typeof pattern !== 'string') err('Destructuring requires initializer');
   if (requireInit) err('Expected =');
@@ -131,87 +131,15 @@ function parseDecls(keyword, requireInit) {
 }
 
 // Override let to support patterns and multi-declaration
-// PREC_STATEMENT + 1 so expr(PREC_STATEMENT) can parse them (5 < 6)
-// but semicolon at PREC_STATEMENT won't consume them
-token('let', PREC_STATEMENT + 1, a => {
+// STATEMENT + 1 so expr(STATEMENT) can parse them (5 < 6)
+// but semicolon at STATEMENT won't consume them
+token('let', STATEMENT + 1, a => {
   if (a) return;
   return parseDecls('let', false);
 });
 
 // Override const to support patterns and multi-declaration
-token('const', PREC_STATEMENT + 1, a => {
+token('const', STATEMENT + 1, a => {
   if (a) return;
   return parseDecls('const', true);
-});
-
-// Destructure value into context
-function destructure(pattern, value, ctx) {
-  // Simple binding
-  if (typeof pattern === 'string') {
-    ctx[pattern] = value;
-    return;
-  }
-
-  const [op, ...items] = pattern;
-
-  // Object destructuring
-  if (op === '{}') {
-    for (const item of items) {
-      // item is [':', key, binding] or ['=', [':', key, binding], default]
-      let key, binding, def;
-      if (item[0] === '=') {
-        [, [, key, binding], def] = item;
-      } else {
-        [, key, binding] = item;
-      }
-      let val = value[key];
-      if (val === undefined && def) val = compile(def)(ctx);
-      destructure(binding, val, ctx);
-    }
-    return;
-  }
-
-  // Array destructuring
-  if (op === '[]') {
-    let i = 0;
-    for (const item of items.slice(0)) { // items after op
-      if (item === null) { i++; continue; } // hole
-      // Rest pattern: [...rest]
-      if (Array.isArray(item) && item[0] === '...') {
-        ctx[item[1]] = value.slice(i);
-        break;
-      }
-      let binding = item, def;
-      // Default value
-      if (Array.isArray(item) && item[0] === '=') {
-        [, binding, def] = item;
-      }
-      let val = value[i++];
-      if (val === undefined && def) val = compile(def)(ctx);
-      destructure(binding, val, ctx);
-    }
-    return;
-  }
-}
-
-// Override let operator
-operator('let', (pattern, val) => {
-  if (typeof pattern === 'string') {
-    // Simple binding
-    val = val !== undefined ? compile(val) : null;
-    return ctx => { ctx[pattern] = val ? val(ctx) : undefined; };
-  }
-  // Destructuring
-  val = compile(val);
-  return ctx => destructure(pattern, val(ctx), ctx);
-});
-
-// Override const operator
-operator('const', (pattern, val) => {
-  val = compile(val);
-  if (typeof pattern === 'string') {
-    return ctx => { ctx[pattern] = val(ctx); };
-  }
-  // Destructuring
-  return ctx => destructure(pattern, val(ctx), ctx);
 });

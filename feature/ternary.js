@@ -1,10 +1,6 @@
 import { token, expr, next } from '../src/parse.js';
-import { operator, compile } from '../src/compile.js';
-import { PREC_ASSIGN, COLON } from '../src/const.js';
 
-// ?:
-// token('?', PREC_ASSIGN, (a, b, c) => a && (b = expr(PREC_ASSIGN - 1, COLON)) && (c = expr(PREC_ASSIGN - 1), ['?', a, b, c]))
-// ALT: not throwing
-token('?', PREC_ASSIGN, (a, b, c) => a && (b = expr(PREC_ASSIGN - 1)) && next(c => c === COLON) && (c = expr(PREC_ASSIGN - 1), ['?', a, b, c]));
+const ASSIGN = 20, COLON = 58;
 
-operator('?', (a, b, c) => (a = compile(a), b = compile(b), c = compile(c), ctx => a(ctx) ? b(ctx) : c(ctx)));
+// ?: ternary operator
+token('?', ASSIGN, (a, b, c) => a && (b = expr(ASSIGN - 1)) && next(c => c === COLON) && (c = expr(ASSIGN - 1), ['?', a, b, c]));

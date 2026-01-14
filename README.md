@@ -6,6 +6,7 @@
 
 * **Generic** — not JS-specific, supports various language syntaxes
 * **Universal AST** — consistent tree structure
+* **Portable** — parser separate from compiler, targets JS/C/WASM
 * **Safe sandbox** — no access to globals
 * **Fastest in class** — minimal overhead
 * **Extensible** — pluggable operators and features
@@ -120,10 +121,29 @@ fac({}) // 120
 + `5px`, `10rem` — unit suffixes — `feature/unit.js`
 
 
-## Parse / Compile
+## Architecture
 
+Subscript separates **parsing** (syntax → AST) from **compilation** (AST → target).
 
-Subscript exposes `parse` to build AST and `compile` to create evaluators.
+### Parser Presets
+
+```
+expr.js      → justin.js      → jessie.js
+(minimal)      (JSON+expr)      (JS subset)
+```
+
+Presets are parse-only — import a compiler separately or use the default bundle.
+
+### Compilers
+
+```
+compile/js.js       — AST → closures (direct eval)
+compile/js-emit.js  — AST → JS source string
+```
+
+Future: `c-emit.js`, `wat-emit.js`, `wasm.js`
+
+### Usage
 
 ```js
 import { parse, compile } from 'subscript'
@@ -135,6 +155,17 @@ tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
 // compile tree to evaluable function
 fn = compile(tree)
 fn({ a: {b: 1}, c: 2 }) // 2
+```
+
+### Parser-only
+
+```js
+import './justin.js'  // just the parser preset
+import { parse } from './src/parse.js'
+import { compile } from './compile/js.js'  // pick your compiler
+
+const tree = parse('a + b')
+const fn = compile(tree)
 ```
 
 ## Util
@@ -208,20 +239,22 @@ fn({min: 5}) // min*60 + "sec" == "300sec"
 ['px', [,5]]       // 5px (unit suffix)
 ```
 
-### Stringify
+### Codegen
 
-To convert tree back to code, there's codegenerator function:
+To convert tree back to JS source:
 
 ```js
-import { stringify } from 'subscript.js'
+import { codegen } from 'subscript.js'
 
-stringify(['+', ['*', 'min', [,60]], [,'sec']])
-// 'min * 60 + "sec"'
+codegen(['+', ['*', 'min', [,60]], [,'sec']])
+// '(min * 60) + "sec"'
 ```
 
 ## Extending
 
-_Subscript_ provides premade language [features](./feature) and API to customize syntax:
+_Subscript_ provides premade language [features](./feature) and API to customize syntax.
+
+### Parser API
 
 * `unary(str, precedence, postfix=false)` − register unary operator, either prefix `⚬a` or postfix `a⚬`.
 * `binary(str, precedence, rassoc=false)` − register binary operator `a ⚬ b`, optionally right-associative.
@@ -229,15 +262,16 @@ _Subscript_ provides premade language [features](./feature) and API to customize
 * `group(str, precedence)` - register group, like `[a]`, `{a}`, `(a)` etc.
 * `access(str, precedence)` - register access operator, like `a[b]`, `a(b)` etc.
 * `token(str, precedence, lnode => node)` − register custom token or literal. Callback takes left-side node and returns complete expression node.
-* `operator(str, (a, b) => ctx => value)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
 
 Longer operators should be registered after shorter ones, eg. first `|`, then `||`, then `||=`.
 
-```js
-import script, { compile, operator, unary, binary, token } from './subscript.js'
+### Compiler API
 
-// enable objects/arrays syntax
-import 'subscript/feature/collection.js'
+* `operator(str, (a, b) => ctx => value)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
+
+```js
+import { compile, operator } from './compile/js.js'
+import { binary } from './src/parse.js'
 
 // add identity operators (precedence of comparison)
 binary('===', 9), binary('!==', 9)

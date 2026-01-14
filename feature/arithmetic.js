@@ -2,41 +2,30 @@
  * Arithmetic operators: + - * / % ++ --
  */
 import { binary, unary, token, expr } from '../src/parse.js';
-import { PREC_ADD, PREC_MULT, PREC_PREFIX, PREC_POSTFIX, PREC_ASSIGN } from '../src/const.js';
-import { compile, prop, operator } from '../src/compile.js';
+
+// Precedence levels (ref: MDN operator precedence)
+const ASSIGN = 20, ADD = 110, MULT = 120, PREFIX = 140, POSTFIX = 150;
 
 // Addition / subtraction
-binary('+', PREC_ADD), operator('+', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) + b(ctx)));
-binary('-', PREC_ADD), operator('-', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) - b(ctx)));
+binary('+', ADD);
+binary('-', ADD);
 
 // Unary + -
-unary('+', PREC_PREFIX), operator('+', (a, b) => !b && (a = compile(a), ctx => +a(ctx)));
-unary('-', PREC_PREFIX), operator('-', (a, b) => !b && (a = compile(a), ctx => -a(ctx)));
+unary('+', PREFIX);
+unary('-', PREFIX);
 
 // Multiplication / division / modulo
-binary('*', PREC_MULT), operator('*', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) * b(ctx)));
-binary('/', PREC_MULT), operator('/', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) / b(ctx)));
-binary('%', PREC_MULT), operator('%', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) % b(ctx)));
+binary('*', MULT);
+binary('/', MULT);
+binary('%', MULT);
 
-// Increment / decrement
-token('++', PREC_POSTFIX, a => a ? ['++', a, null] : ['++', expr(PREC_POSTFIX - 1)]);
-operator('++', (a, b) => prop(a, b === null ? (obj, path) => obj[path]++ : (obj, path) => ++obj[path]));
-
-token('--', PREC_POSTFIX, a => a ? ['--', a, null] : ['--', expr(PREC_POSTFIX - 1)]);
-operator('--', (a, b) => prop(a, b === null ? (obj, path) => obj[path]-- : (obj, path) => --obj[path]));
+// Increment / decrement (postfix if has left operand, prefix otherwise)
+token('++', POSTFIX, a => a ? ['++', a, null] : ['++', expr(POSTFIX - 1)]);
+token('--', POSTFIX, a => a ? ['--', a, null] : ['--', expr(POSTFIX - 1)]);
 
 // Compound assignments
-binary('+=', PREC_ASSIGN, true);
-operator('+=', (a, b) => (b = compile(b), prop(a, (container, path, ctx) => container[path] += b(ctx))));
-
-binary('-=', PREC_ASSIGN, true);
-operator('-=', (a, b) => (b = compile(b), prop(a, (container, path, ctx) => container[path] -= b(ctx))));
-
-binary('*=', PREC_ASSIGN, true);
-operator('*=', (a, b) => (b = compile(b), prop(a, (container, path, ctx) => container[path] *= b(ctx))));
-
-binary('/=', PREC_ASSIGN, true);
-operator('/=', (a, b) => (b = compile(b), prop(a, (container, path, ctx) => container[path] /= b(ctx))));
-
-binary('%=', PREC_ASSIGN, true);
-operator('%=', (a, b) => (b = compile(b), prop(a, (container, path, ctx) => container[path] %= b(ctx))));
+binary('+=', ASSIGN, true);
+binary('-=', ASSIGN, true);
+binary('*=', ASSIGN, true);
+binary('/=', ASSIGN, true);
+binary('%=', ASSIGN, true);

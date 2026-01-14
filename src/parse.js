@@ -1,4 +1,5 @@
-import { SPACE } from "./const.js";
+// Character codes
+const SPACE = 32;
 
 // current string, index and collected ids
 export let idx, cur,
@@ -78,7 +79,7 @@ export let idx, cur,
     word = op.toUpperCase() !== op, // make sure word boundary comes after word operator
     matched // track if we matched (for curOp propagation)
   ) => lookup[c] = (a, curPrec, curOp, from = idx) =>
-    (
+    (matched = curOp, // reset matched to curOp at start (prevents closure leak)
       (curOp ?
         op == curOp :
         ((l < 2 || cur.substr(idx, l) == op) && (matched = curOp = op)) // save matched op
@@ -87,7 +88,7 @@ export let idx, cur,
       !(word && parse.id(cur.charCodeAt(idx + l))) && // finished word, not part of bigger word
       (idx += l, map(a) || (idx = from, matched = 0, !word && !prev && err())) // symbols error, words fall through
     ) ||
-    prev?.(a, curPrec, matched && curOp), // pass curOp only if matched (prevents re-matching same op)
+    prev?.(a, curPrec, matched), // pass matched through chain
 
   // right assoc is indicated by negative precedence (meaning go from right to left)
   binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),

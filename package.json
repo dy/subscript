@@ -9,7 +9,8 @@
   "exports": {
     ".": "./subscript.js",
     "./parse": "./src/parse.js",
-    "./compile": "./src/compile.js",
+    "./compile": "./compile/js.js",
+    "./compile/*": "./compile/*",
     "./const": "./src/const.js",
     "./justin": "./justin.js",
     "./jessie": "./jessie.js",
@@ -19,13 +20,15 @@
   "type": "module",
   "files": [
     "src",
+    "compile",
     "feature",
     "subscript.js",
     "subscript.min.js",
     "subscript.d.ts",
     "justin.js",
     "justin.min.js",
-    "jessie.js"
+    "jessie.js",
+    "expr.js"
   ],
   "directories": {
     "lib": "lib",

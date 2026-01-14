@@ -2,8 +2,9 @@
  * Comments: block and line
  * Extends parse.space to skip comments as whitespace
  */
-import { SPACE } from "../src/const.js";
 import { parse, cur, idx, seek } from '../src/parse.js';
+
+const SPACE = 32;
 
 const prevSpace = parse.space;
 parse.space = () => {

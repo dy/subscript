@@ -1,7 +1,9 @@
 import test, { is, throws, same } from 'tst'
-import parse, { err, unary } from '../src/parse.js'
+import parse, { err, unary, lookup } from '../src/parse.js'
 import subscript, { binary, operator, compile, token } from '../subscript.js'
-import { PREC_MULT } from '../src/const.js'
+import { operators } from '../compile/js.js'
+
+const MULT = 120;
 
 // test result to be same as js
 const sameAsJs = (str, ctx = {}) => {
@@ -580,9 +582,18 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  unary('&', PREC_MULT - 0.5), operator('&', (a) => (a = compile(a), ctx => ~a(ctx)))
+  // Save original state
+  const ampCode = '&'.charCodeAt(0)
+  const origLookup = lookup[ampCode]
+  const origOp = operators['&']
+
+  unary('&', MULT - 0.5), operator('&', (a) => (a = compile(a), ctx => ~a(ctx)))
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
+
+  // Restore original state
+  lookup[ampCode] = origLookup
+  operators['&'] = origOp
 })
 
 test('stdlib cases', t => {

@@ -9,14 +9,13 @@
  *   - `/` at start or after operator = regex
  */
 import { token, skip, err, next, idx, cur } from '../src/parse.js';
-import { PREC_PREFIX } from '../src/const.js';
 
-const SLASH = 47, BSLASH = 92;
+const PREFIX = 140, SLASH = 47, BSLASH = 92;
 
 const regexFlags = c => c === 103 || c === 105 || c === 109 || c === 115 || c === 117 || c === 121; // g i m s u y
 
 // Register / as prefix operator for regex
-token('/', PREC_PREFIX, a => {
+token('/', PREFIX, a => {
   if (a) return; // has left operand = not regex, fall through
 
   // Invalid regex start (quantifiers) or /= operator - fall through

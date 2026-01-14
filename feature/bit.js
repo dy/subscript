@@ -1,11 +1,15 @@
 /**
- * Bitwise operators: ~ | & ^
+ * Bitwise operators: ~ | & ^ with assignments
  */
-import { PREC_OR, PREC_AND, PREC_XOR, PREC_PREFIX } from "../src/const.js";
 import { unary, binary } from "../src/parse.js";
-import { operator, compile } from "../src/compile.js";
 
-unary('~', PREC_PREFIX), operator('~', (a, b) => !b && (a = compile(a), ctx => ~a(ctx)));
-binary('|', PREC_OR), operator('|', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) | b(ctx)));
-binary('&', PREC_AND), operator('&', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) & b(ctx)));
-binary('^', PREC_XOR), operator('^', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ^ b(ctx)));
+// Precedence levels
+const ASSIGN = 20, OR = 50, XOR = 60, AND = 70, PREFIX = 140;
+
+unary('~', PREFIX);
+binary('|', OR);
+binary('&', AND);
+binary('^', XOR);
+binary('|=', ASSIGN, true);
+binary('&=', ASSIGN, true);
+binary('^=', ASSIGN, true);

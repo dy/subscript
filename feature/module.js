@@ -17,8 +17,8 @@
  *   export * from './x.js'             → ['export', ['*'], path]
  */
 import { token, expr, skip, space, err, next, parse, idx, cur } from '../src/parse.js'
-import { PREC_STATEMENT, OBRACE, CBRACE, COMMA } from '../src/const.js'
-const STAR = 42, AS = 'as', FROM = 'from', DEFAULT = 'default'
+const STATEMENT = 5, STAR = 42, AS = 'as', FROM = 'from', DEFAULT = 'default'
+const OBRACE = 123, CBRACE = 125, COMMA = 44;
 
 // Parse: { a, b, c as d }
 const parseBindings = () => {
@@ -70,7 +70,7 @@ const parseFrom = () => {
 }
 
 // import ...
-token('import', PREC_STATEMENT, a => {
+token('import', STATEMENT, a => {
   if (a) return
   space()
   const c = cur.charCodeAt(idx)
@@ -113,7 +113,7 @@ token('import', PREC_STATEMENT, a => {
 })
 
 // export ...
-token('export', PREC_STATEMENT, a => {
+token('export', STATEMENT, a => {
   if (a) return
   space()
   const c = cur.charCodeAt(idx)
@@ -131,11 +131,11 @@ token('export', PREC_STATEMENT, a => {
   // export default ...
   if (cur.slice(idx, idx + 7) === DEFAULT) {
     skip(7); space()
-    return ['export', [DEFAULT, expr(PREC_STATEMENT)]]
+    return ['export', [DEFAULT, expr(STATEMENT)]]
   }
 
   // export const/let/function/class
-  const decl = expr(PREC_STATEMENT - 1)
+  const decl = expr(STATEMENT - 1)
   if (!decl) err('Expected declaration after export')
   return ['export', decl]
 })

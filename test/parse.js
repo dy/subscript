@@ -4,7 +4,8 @@
 import test, { is, any, throws } from 'tst'
 import { binary, nary, unary, token } from '../subscript.js'
 import parse from '../src/parse.js'
-import { PREC_MULT } from '../src/const.js'
+
+const MULT = 120;
 
 
 test('parse: basic', t => {
@@ -312,7 +313,7 @@ test('parse: error messages', t => {
 })
 
 test('parse: low-precedence unary', t => {
-  unary('#', PREC_MULT - 0.5)
+  unary('#', MULT - 0.5)
   is(parse('#a+b*c'), ['+', ['#', 'a'], ['*', 'b', 'c']])
   is(parse('#a*b+c'), ['+', ['#', ['*', 'a', 'b']], 'c'])
 })

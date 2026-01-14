@@ -7,11 +7,12 @@
  *   try { a } catch (e) { b } finally { c } → ['try', a, 'e', b, c]
  */
 import { token, skip, space, err, next, parse } from '../src/parse.js';
-import { operator, compile } from '../src/compile.js';
-import { PREC_STATEMENT, OPAREN, CPAREN } from '../src/const.js';
-import { BREAK, CONTINUE, RETURN, parseBlock, isWord } from './block.js';
+import { parseBlock, isWord } from './block.js';
 
-token('try', PREC_STATEMENT + 1, a => {
+const STATEMENT = 5;
+const OPAREN = 40, CPAREN = 41;
+
+token('try', STATEMENT + 1, a => {
   if (a) return;
   const tryBody = parseBlock();
   let catchName = null, catchBody = null, finallyBody = null;
@@ -34,28 +35,4 @@ token('try', PREC_STATEMENT + 1, a => {
 
   catchName || finallyBody || err('Expected catch or finally');
   return finallyBody ? ['try', tryBody, catchName, catchBody, finallyBody] : ['try', tryBody, catchName, catchBody];
-});
-
-operator('try', (tryBody, catchName, catchBody, finallyBody) => {
-  tryBody = tryBody ? compile(tryBody) : null;
-  catchBody = catchBody ? compile(catchBody) : null;
-  finallyBody = finallyBody ? compile(finallyBody) : null;
-
-  return ctx => {
-    let result;
-    try {
-      result = tryBody?.(ctx);
-    } catch (e) {
-      if (e === BREAK || e === CONTINUE || e?.type === RETURN) throw e;
-      if (catchName !== null && catchBody) {
-        const had = catchName in ctx, orig = ctx[catchName];
-        ctx[catchName] = e;
-        try { result = catchBody(ctx); }
-        finally { had ? ctx[catchName] = orig : delete ctx[catchName]; }
-      } else if (catchName === null) throw e;
-    } finally {
-      finallyBody?.(ctx);
-    }
-    return result;
-  };
 });

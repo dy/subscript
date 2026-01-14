@@ -357,3 +357,244 @@ test('integration: recursive with exception', () => {
     try { countdown(3) } catch (e) { e }
   }`), 'done')
 })
+
+// === Switch ===
+test('switch: parse basic', () => {
+  is(parse('switch (x) { case 1: a }'), ['switch', 'x', [[[, 1], 'a']]])
+  is(parse('switch (x) { case 1: a; case 2: b }'), ['switch', 'x', [[[, 1], 'a'], [[, 2], 'b']]])
+  is(parse('switch (x) { default: z }'), ['switch', 'x', [[null, 'z']]])
+})
+
+test('switch: parse with default', () => {
+  is(parse('switch (x) { case 1: a; default: b }'), ['switch', 'x', [[[, 1], 'a'], [null, 'b']]])
+})
+
+test('switch: basic match', () => {
+  is(run('switch (x) { case 1: "one" }', { x: 1 }), 'one')
+  is(run('switch (x) { case 1: "one" }', { x: 2 }), undefined)
+})
+
+test('switch: multiple cases', () => {
+  is(run('switch (x) { case 1: "one"; case 2: "two" }', { x: 2 }), 'two')
+})
+
+test('switch: default', () => {
+  is(run('switch (x) { case 1: "one"; default: "other" }', { x: 99 }), 'other')
+})
+
+test('switch: fallthrough', () => {
+  // Without break, falls through
+  is(run('switch (x) { case 1: a = 1; case 2: a = 2 }', { x: 1, a: 0 }), 2)
+})
+
+test('switch: break stops fallthrough', () => {
+  let ctx = { x: 1, a: 0 }
+  run('switch (x) { case 1: a = 1; break; case 2: a = 2 }', ctx)
+  is(ctx.a, 1)
+})
+
+test('switch: expression matching', () => {
+  is(run('switch (a + b) { case 3: "yes"; break; default: "no" }', { a: 1, b: 2 }), 'yes')
+})
+
+// === Destructuring ===
+test('destruct: array basic', () => {
+  let ctx = {}
+  run('const [a, b] = x', { ...ctx, x: [1, 2] })
+  // The context is passed, we need to check the values were set
+  ctx = { x: [1, 2] }
+  run('const [a, b] = x; y = a + b', ctx)
+  is(ctx.y, 3)
+})
+
+test('destruct: array with let', () => {
+  is(run('if (1) { let [a, b] = [1, 2]; a + b }'), 3)
+})
+
+test('destruct: array skip elements', () => {
+  is(run('if (1) { const [a, , c] = [1, 2, 3]; a + c }'), 4)
+})
+
+test('destruct: array with rest', () => {
+  is(run('if (1) { const [first, ...rest] = [1, 2, 3, 4]; rest[0] + rest[2] }'), 6)
+})
+
+test('destruct: array with defaults', () => {
+  is(run('if (1) { const [a, b = 10] = [1]; a + b }'), 11)
+})
+
+test('destruct: object basic', () => {
+  is(run('if (1) { const {a, b} = x; a + b }', { x: { a: 1, b: 2 } }), 3)
+})
+
+test('destruct: object with rename', () => {
+  is(run('if (1) { const {a: x, b: y} = obj; x + y }', { obj: { a: 10, b: 20 } }), 30)
+})
+
+test('destruct: object with defaults', () => {
+  is(run('if (1) { const {a, b = 5} = x; a + b }', { x: { a: 1 } }), 6)
+})
+
+test('destruct: nested array', () => {
+  is(run('if (1) { const [[a, b], c] = [[1, 2], 3]; a + b + c }'), 6)
+})
+
+test('destruct: nested object', () => {
+  is(run('if (1) { const {a: {x, y}} = obj; x + y }', { obj: { a: { x: 1, y: 2 } } }), 3)
+})
+
+// === Accessor (get/set) ===
+test('accessor: get parse', () => {
+  is(parse('{ get x() { y } }'), ['{}', ['get', 'x', 'y']])
+})
+
+test('accessor: set parse', () => {
+  is(parse('{ set x(v) { y } }'), ['{}', ['set', 'x', 'v', 'y']])
+})
+
+test('accessor: get compile', () => {
+  const obj = run('({ get x() { 42 } })')
+  is(obj.x, 42)
+})
+
+test('accessor: set compile', () => {
+  const obj = run('({ _val: 0, set val(v) { this._val = v } })')
+  obj.val = 99
+  is(obj._val, 99)
+})
+
+test('accessor: get with this', () => {
+  const obj = run('({ value: 10, get doubled() { this.value * 2 } })')
+  is(obj.doubled, 20)
+})
+
+test('accessor: set with this', () => {
+  const obj = run('({ _x: 0, set x(v) { this._x = v * 2 } })')
+  obj.x = 5
+  is(obj._x, 10)
+})
+
+test('accessor: both get and set', () => {
+  const obj = run('({ _n: 0, get n() { this._n }, set n(v) { this._n = v } })')
+  is(obj.n, 0)
+  obj.n = 42
+  is(obj.n, 42)
+})
+
+// === Spread ===
+test('spread: array literal', () => {
+  is(run('[1, ...x, 4]', { x: [2, 3] }), [1, 2, 3, 4])
+})
+
+test('spread: array at start', () => {
+  is(run('[...x, 3]', { x: [1, 2] }), [1, 2, 3])
+})
+
+test('spread: array at end', () => {
+  is(run('[1, ...x]', { x: [2, 3] }), [1, 2, 3])
+})
+
+test('spread: multiple spreads', () => {
+  is(run('[...a, ...b]', { a: [1, 2], b: [3, 4] }), [1, 2, 3, 4])
+})
+
+test('spread: object literal', () => {
+  const result = run('{a: 1, ...x}', { x: { b: 2, c: 3 } })
+  is(result.a, 1)
+  is(result.b, 2)
+  is(result.c, 3)
+})
+
+test('spread: object override', () => {
+  const result = run('{a: 1, ...x}', { x: { a: 99 } })
+  is(result.a, 99)
+})
+
+// === Pow (**) ===
+test('pow: parse', () => {
+  is(parse('a ** b'), ['**', 'a', 'b'])
+  is(parse('2 ** 3'), ['**', [, 2], [, 3]])
+})
+
+test('pow: compile', () => {
+  is(run('2 ** 3'), 8)
+  is(run('x ** y', { x: 2, y: 10 }), 1024)
+})
+
+test('pow: right associative', () => {
+  // 2 ** 3 ** 2 = 2 ** 9 = 512 (right assoc)
+  is(run('2 ** 3 ** 2'), 512)
+})
+
+test('pow: assignment', () => {
+  let ctx = { x: 2 }
+  run('x **= 3', ctx)
+  is(ctx.x, 8)
+})
+
+test('pow: with other ops', () => {
+  is(run('1 + 2 ** 3'), 9)  // ** has higher precedence
+  is(run('2 ** 3 * 2'), 16)
+})
+
+// === Bit ===
+test('bit: not (~)', () => {
+  is(run('~0'), -1)
+  is(run('~x', { x: 5 }), -6)
+})
+
+test('bit: or (|)', () => {
+  is(run('5 | 3'), 7)
+  is(run('a | b', { a: 0b1100, b: 0b0011 }), 0b1111)
+})
+
+test('bit: and (&)', () => {
+  is(run('7 & 3'), 3)
+  is(run('a & b', { a: 12, b: 10 }), 8)  // 0b1100 & 0b1010 = 0b1000
+})
+
+test('bit: xor (^)', () => {
+  is(run('5 ^ 3'), 6)
+  is(run('a ^ b', { a: 0b1100, b: 0b1010 }), 0b0110)
+})
+
+test('bit: assignments', () => {
+  let ctx = { x: 12 }  // 0b1100
+  run('x |= 3', ctx); is(ctx.x, 15)  // 0b1111
+  ctx.x = 15  // 0b1111
+  run('x &= 3', ctx); is(ctx.x, 3)   // 0b0011
+  ctx.x = 12  // 0b1100
+  run('x ^= 3', ctx); is(ctx.x, 15)  // 0b1111
+})
+
+// === Shift ===
+test('shift: left (<<)', () => {
+  is(run('1 << 4'), 16)
+  is(run('x << y', { x: 1, y: 8 }), 256)
+})
+
+test('shift: right (>>)', () => {
+  is(run('16 >> 2'), 4)
+  is(run('-8 >> 2'), -2)  // sign-preserving
+})
+
+test('shift: unsigned right (>>>)', () => {
+  is(run('16 >>> 2'), 4)
+  // -1 >>> 0 gives max uint32
+  is(run('-1 >>> 0'), 4294967295)
+})
+
+test('shift: assignments', () => {
+  let ctx = { x: 1 }
+  run('x <<= 4', ctx); is(ctx.x, 16)
+  ctx.x = 16
+  run('x >>= 2', ctx); is(ctx.x, 4)
+  ctx.x = -1
+  run('x >>>= 0', ctx); is(ctx.x, 4294967295)
+})
+
+test('shift: precedence', () => {
+  // shift has lower precedence than add
+  is(run('1 + 1 << 2'), 8)  // (1+1) << 2
+  is(run('4 >> 1 + 1'), 1)  // 4 >> (1+1)
+})

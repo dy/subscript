@@ -5,7 +5,8 @@
  * Strings: "abc", 'xyz'
  */
 import { lookup, next, err, skip, idx, cur } from '../src/parse.js';
-import { PERIOD, _0, _E, _e, _9, DQUOTE, QUOTE, BSLASH } from "../src/const.js";
+
+const PERIOD = 46, _0 = 48, _E = 69, _e = 101, _9 = 57, DQUOTE = 34, QUOTE = 39, BSLASH = 92;
 
 // === Numbers ===
 

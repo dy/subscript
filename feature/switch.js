@@ -6,19 +6,20 @@
  *   → ['switch', val, [[x, body], ..., [null, body]]]
  */
 import { token, expr, skip, space, err } from '../src/parse.js';
-import { operator, compile } from '../src/compile.js';
-import { PREC_STATEMENT, PREC_ASSIGN, OPAREN, CPAREN, OBRACE, CBRACE, COLON, SEMI } from '../src/const.js';
-import { BREAK, isWord } from './block.js';
+import { isWord } from './block.js';
+
+const STATEMENT = 5, ASSIGN = 20;
+const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125, COLON = 58, SEMI = 59;
 
 // Parse case body until next case/default/}
 const parseCaseBody = () => {
   const stmts = [];
   while (space() !== CBRACE && !isWord('case') && !isWord('default'))
-    (s => s && stmts.push(s))(expr(PREC_STATEMENT)), space() === SEMI && skip();
+    (s => s && stmts.push(s))(expr(STATEMENT)), space() === SEMI && skip();
   return stmts.length < 2 ? stmts[0] || null : [';', ...stmts];
 };
 
-token('switch', PREC_STATEMENT + 1, a => {
+token('switch', STATEMENT + 1, a => {
   if (a) return;
   space() === OPAREN || err('Expected (');
   skip();
@@ -32,7 +33,7 @@ token('switch', PREC_STATEMENT + 1, a => {
   while (space() !== CBRACE) {
     if (isWord('case')) {
       skip(4); space();
-      const test = expr(PREC_ASSIGN);
+      const test = expr(ASSIGN);
       space() === COLON ? skip() : err('Expected :');
       cases.push([test, parseCaseBody()]);
     } else if (isWord('default')) {
@@ -44,22 +45,4 @@ token('switch', PREC_STATEMENT + 1, a => {
     } else err('Expected case or default');
   }
   return skip(), ['switch', val, cases];
-});
-
-operator('switch', (val, cases) => {
-  val = compile(val);
-  cases = cases.map(([t, b]) => [t && compile(t), b ? compile(b) : () => {}]);
-
-  return ctx => {
-    const v = val(ctx);
-    let matched = false, result;
-    for (const [test, body] of cases) {
-      if (matched || test === null || test(ctx) === v) {
-        matched = true;
-        try { result = body(ctx); }
-        catch (e) { if (e === BREAK) return result; throw e; }
-      }
-    }
-    return result;
-  };
 });

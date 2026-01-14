@@ -1,24 +1,15 @@
 /**
- * Subscript: safe expression evaluator (base dialect)
+ * subscript: Default bundle (jessie parser + JS compiler)
  *
- * Literals: numbers, strings
- * Operators: arithmetic, bitwise, logical, comparison, shift
- * Access: member, index, call
- * Assignment: =, +=, etc.
+ * For parser-only presets, import expr.js, justin.js, or jessie.js directly.
+ * For a different compiler, import from compile/
  */
-import './feature/literal.js';
-import './feature/member.js';
-import './feature/group.js';
-import './feature/assign.js';
-import './feature/arithmetic.js';
-import './feature/bit.js';
-import './feature/cmp.js';
-import './feature/shift.js';  // Must come AFTER cmp.js (>> chains after >)
-import compile from './src/compile.js';
-import parse from './src/parse.js';
+import './jessie.js';
+import { compile, operator, operators, prop, BREAK, CONTINUE, RETURN } from './compile/js.js';
+import { parse } from './src/parse.js';
 
-export { parse, access, binary, unary, nary, group, token } from './src/parse.js';
-export { compile, operator } from './src/compile.js';
-export { stringify } from './src/stringify.js';
+export { parse, token, binary, unary, nary, group, access } from './src/parse.js';
+export { compile, operator, operators, prop, BREAK, CONTINUE, RETURN } from './compile/js.js';
+export { codegen } from './compile/js-emit.js';
 
 export default s => compile(parse(s));
