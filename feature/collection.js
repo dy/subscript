@@ -5,10 +5,9 @@
  * {a: 1, b: 2}
  * {a, b} (shorthand)
  */
-import * as P from '../src/parse.js';
+import { group, binary, skip, space, expr, token } from '../src/parse.js';
 import { operator, compile } from '../src/compile.js';
 import { PREC_ASSIGN, PREC_TOKEN, PREC_STATEMENT, CBRACE, SEMI } from '../src/const.js';
-const { group, binary, skip, space, expr, token } = P;
 
 // [a,b,c]
 group('[]', PREC_TOKEN);
