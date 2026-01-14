@@ -5,12 +5,30 @@
 - [x] This file (todo.md) — 564 lines of done items, archive to docs/history.md if needed
 - [x] test/lib/parser/* — competitor code moved to CDN (esm.sh)
 - [x] test/bench/* — internal experiments, not tests
-- [ ] README: commented-out "Used by" section — either fill or remove
+- [x] README: commented-out "Used by" section — either fill or remove
 - [x] SPECIFICATION.md — formal AST spec (the hidden treasure)
+- [x] Rectify project structure
+- [ ] Rectify even more: /parse, /compile
+- [ ] Make jessie parse fully itself with all deps
+- [ ] Add util/bundle
+- [ ] Add util/asi
+- [ ] Split compiler declarations
+- [ ] call is different from member
+- [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
+
+- [ ] GLSL target
+- [ ] C target
+- [ ] Python target
+- [ ] Wasm target
+- [ ] Rust target
+
+
 - [ ] CHANGELOG.md — 9 major versions, no migration history
 - [ ] Installation section before usage in README
 - [ ] "Add Your Own Operator" guide — current extension examples are cryptic
 - [ ] Real "Used by" with actual links if projects exist
+- [x] typeof is part of jessie (many features are part of it)
+- [x] ~~justin should not have custom decls: these are features~~
 
 - [x] Switch statement — feature/switch.js
 - [x] Destructuring — feature/destruct.js
@@ -18,7 +36,6 @@
 - [x] Getters/setters — feature/accessor.js (optimized with Symbol marker)
 - [x] REPL updated with new features and jessie preset
 - [ ] Add link to repl
-- [ ] Lead with "smallest safe sandbox / universal expression AST" not "fast/tiny"
 - [ ] Remove implementation details from extension examples
 - [ ] Highlight security model (blocked constructor/__proto__)
 - [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
@@ -32,7 +49,9 @@
 - [ ] The emoji badges compete for attention with no clear value hierarchy
 - [ ] Separate compile / parse, since we can reuse parse
 - [ ] Address deoptimizations caused by repl
-- [ ] Modules merger tool
+
+
+- [ ] Is it worthy having a template tag? sub`export x = () => {}`
 
 ## [ ] Integrations
 
