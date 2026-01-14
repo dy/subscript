@@ -1,7 +1,7 @@
 /**
  * Logical and comparison operators: ! || && == != < > <= >=
  */
-import { unary, binary } from "../src/parse.js";
+import { unary, binary } from "../parse/pratt.js";
 
 // Precedence levels
 const LOR = 30, LAND = 40, EQ = 80, COMP = 90, PREFIX = 140;

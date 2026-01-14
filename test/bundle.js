@@ -63,8 +63,8 @@ async function bundleAndVerifySyntax(entry) {
 // === Tests ===
 
 // Test core modules bundle and export correctly
-test('bundle src/parse.js - exports functions', async () => {
-  await bundleAndRun('src/parse.js', async (mod) => {
+test('bundle parse/pratt.js - exports functions', async () => {
+  await bundleAndRun('parse/pratt.js', async (mod) => {
     if (typeof mod.default !== 'function') throw new Error('default export not a function')
     if (typeof mod.token !== 'function') throw new Error('token not exported')
     if (typeof mod.binary !== 'function') throw new Error('binary not exported')

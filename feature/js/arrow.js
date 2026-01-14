@@ -1,4 +1,4 @@
-import { binary } from "../../src/parse.js";
+import { binary } from "../../parse/pratt.js";
 
 const ASSIGN = 20;
 

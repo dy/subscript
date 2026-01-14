@@ -1,7 +1,7 @@
 /**
  * Property access and function calls: a.b, a[b], a(b)
  */
-import { access, binary } from '../src/parse.js';
+import { access, binary } from '../parse/pratt.js';
 
 const ACCESS = 170;
 

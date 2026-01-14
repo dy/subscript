@@ -6,7 +6,7 @@
  *   try { a } finally { c }               → ['try', a, null, null, c]
  *   try { a } catch (e) { b } finally { c } → ['try', a, 'e', b, c]
  */
-import { token, skip, space, err, next, parse } from '../src/parse.js';
+import { token, skip, space, err, next, parse } from '../parse/pratt.js';
 import { parseBlock, isWord } from './block.js';
 
 const STATEMENT = 5;

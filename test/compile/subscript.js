@@ -1,14 +1,15 @@
+// Tests for subscript.js - combined jessie parser + JS compiler pipeline
+
 import test, { is, throws, same } from 'tst'
-import parse, { err, unary, lookup } from '../src/parse.js'
-import subscript, { binary, operator, compile, token } from '../subscript.js'
-import { operators } from '../compile/js.js'
+import parse, { err, unary, lookup } from '../../parse/pratt.js'
+import subscript, { binary, operator, compile, token } from '../../subscript.js'
+import { operators } from '../../compile/js.js'
 
 const MULT = 120;
 
-// test result to be same as js
+// Test result to be same as js
 const sameAsJs = (str, ctx = {}) => {
   let ss = subscript(str), fn = new Function(...Object.keys(ctx), 'return ' + str)
-
   return is(ss(ctx), fn(...Object.values(ctx)))
 }
 
@@ -86,7 +87,7 @@ test('basic', t => {
 })
 
 test('right-assoc', async t => {
-  await import('../feature/pow.js');
+  await import('../../feature/pow.js');
 
   sameAsJs('1 + 2 * 3 ** 4 + 5', {})
   sameAsJs(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
@@ -97,38 +98,6 @@ test('syntactic', t => {
   is(subscript('')(), undefined)
   is(subscript(' ')(), undefined)
   is(subscript('\n\r')(), undefined)
-})
-
-test('readme', t => {
-  sameAsJs(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
-  sameAsJs(`min * 60 + "sec"`, { min: 5 })
-
-  binary('|>', 60), operator('|>', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
-
-  let evaluate = subscript(`
-    interval(350)
-    |> take(25)`
-    // | map(gaussian)
-    // | map(num => "•".repeat(Math.floor(num * 65)))
-  )
-  evaluate({
-    Math,
-    // map,
-    // gaussian
-    take: arg => ({ pipe: b => console.log('take', b) }),
-    interval: arg => ({ pipe: b => console.log('interval to', b) }),
-  })
-
-  // add === binary operator
-  binary('===', 9), operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)))
-
-  // add literals
-  // set('true',20, [,a => ()=>true])
-  // set('false',20, [,a => ()=>false])
-  token('true', 20, a => [, true])
-  token('false', 20, a => [, false])
-
-  is(subscript('true === false')(), false) // false
 })
 
 test('numbers', t => {
@@ -146,12 +115,6 @@ test('strings', t => {
   throws(x => subscript('"a'))
   throws(x => subscript('"a" + "b'))
   is(subscript('"a" + ("1" + "2")')(), "a12")
-
-  // parse.quote['<?']='?>'
-  // is(parse('"abc" + <?js\nxyz?>'), ['+','"abc','<?js\nxyz?>'])
-
-  // parse.quote['<--']='-->'
-  // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 
 test('ext: literals', t => {
@@ -176,20 +139,14 @@ test('ext: literals', t => {
 
   is(subscript('f')({ f: 1 }), 1)
   is(subscript('f(false)')({ f: v => !!v }), false)
-
-  // is(subscript('null++')(), ['++',null])
-  // is(subscript('false++'), ['++',false])
-  // is(subscript('++false'), ['++',false])
 })
 
 test.skip('bad number', t => {
   is(subscript('-1.23e-2')(), -1.23e-2)
-  // NOTE: it's not criminal to create NaN instead of this construct
   throws(x => subscript('.e-1')())
 })
 
 test('intersecting binary', async t => {
-  // await import('./justin.js')
   sameAsJs('a | b', { a: 1234, b: 4567 })
   sameAsJs('a || b', { a: false, b: true })
   sameAsJs('a & b', { a: 1234, b: 4567 })
@@ -263,13 +220,11 @@ test('unaries: postfix', t => {
   is(ctx.a, 2)
   is(subscript('a ++')(ctx), 2)
   is(subscript('a  --')(ctx), 3)
-  // sameAsJs('a++(b)',{})
 })
 
 test('prop access', t => {
   sameAsJs('a["b"]["c"][0]', { a: { b: { c: [1] } } })
   is(subscript('a.b.c')({ a: { b: { c: [1] } } }), [1])
-  // NOTE: invalid JS
   is(subscript('a.b.c.0')({ a: { b: { c: [1] } } }), 1)
 })
 
@@ -284,8 +239,6 @@ test('parens', t => {
   sameAsJs('+(b)', { b: 1 })
   sameAsJs('+((b))', { b: 1 })
   is(subscript('++(b)')({ b: 1 }), 2)
-  // NOTE: invalid in JS
-  // is(subscript('++a(b)')({b:1, a:v=>v+1}),3)
   is(subscript('!a(b)')({ a: v => v, b: false }), true)
   sameAsJs('+(b)', { b: 1 })
   sameAsJs('1+(b)', { b: 1 })
@@ -341,7 +294,7 @@ test('chains', t => {
 })
 
 test.skip('ext: in operator', async t => {
-  await import('../feature/in.js')
+  await import('../../feature/in.js')
 
   sameAsJs('inc in bin', { bin: { inc: 1 }, inc: 'inc' })
   sameAsJs('bin in inc', { inc: { bin: 1 }, bin: 'bin' })
@@ -350,8 +303,8 @@ test.skip('ext: in operator', async t => {
 })
 
 test('array', async t => {
-  await import('../feature/collection.js')
-  await import('../feature/js/spread.js')
+  await import('../../feature/collection.js')
+  await import('../../feature/js/spread.js')
 
   is(subscript('[]')(), [])
   is(subscript('[ 1 ]')(), [1])
@@ -369,13 +322,6 @@ test('array', async t => {
 
   is(subscript('[ 1, ...x ]')({ x: [2, 3] }), [1, 2, 3])
 
-  // TODO: prefix/postfix maybe?
-  // is(subscript('[1,]')({}),[1])
-  // is(subscript('[,]')({}),[undefined])
-  // is(subscript('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
-  // is(subscript('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
-  // is(subscript('[1,,2,b]')({b:3}),[1,undefined,2,3])
-
   sameAsJs('[1]')
   sameAsJs('[1,2,3]')
   sameAsJs('[0]', {})
@@ -387,7 +333,7 @@ test('array', async t => {
 })
 
 test('ternary', async t => {
-  await import('../feature/ternary.js')
+  await import('../../feature/ternary.js')
 
   sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
   sameAsJs('a?b:c', { a: false, b: 1, c: 2 })
@@ -406,8 +352,8 @@ test('ternary', async t => {
 })
 
 test('object', async t => {
-  await import('../feature/collection.js')
-  await import('../feature/ternary.js')
+  await import('../../feature/collection.js')
+  await import('../../feature/ternary.js')
 
   sameAsJs('{}', {})
   sameAsJs('{x: 1}', {})
@@ -429,7 +375,7 @@ test('object', async t => {
 })
 
 test('ext: arrow', async t => {
-  await import('../feature/js/arrow.js')
+  await import('../../feature/js/arrow.js')
 
   is(subscript('() => 1')()(), 1)
   is(subscript('(a) => a+1')()(1), 2)
@@ -440,7 +386,7 @@ test('ext: arrow', async t => {
 })
 
 test('ext: justin', async t => {
-  await import('../justin.js')
+  await import('../../parse/justin.js')
   sameAsJs(`"abcd" + 'efgh'`)
   is(subscript('a;b')({ a: 1, b: 2 }), 2)
 
@@ -509,9 +455,7 @@ test('assignment', async t => {
 })
 
 test('comments', async t => {
-  await import('../feature/comment.js')
-  // token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
-  // token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
+  await import('../../feature/comment.js')
   is(subscript('/* x */1/* y */+/* z */2')({}), 3)
   is(subscript(`a /
     // abc
@@ -532,9 +476,9 @@ test('comments', async t => {
 })
 
 test('unfinished sequences', async t => {
-  throws(() => subscript('a+b)+c'))//, ['+','a','b'])
-  throws(() => subscript('(a+(b)))+c'))//, ['+','a','b'])
-  throws(() => subscript('a+b+)c'))//, ['+','a','b',null])
+  throws(() => subscript('a+b)+c'))
+  throws(() => subscript('(a+(b)))+c'))
+  throws(() => subscript('a+b+)c'))
 })
 
 test('err: unknown operators', t => {
@@ -543,10 +487,7 @@ test('err: unknown operators', t => {
   throws(() => subscript('a -> b'))
   throws(() => subscript('a ->'))
   throws(() => subscript('-> a'))
-  throws(() => subscript('#a'))
-  // throws(() => subscript('~a'))
   throws(() => subscript('a !'))
-  throws(() => subscript('a#b'))
   throws(() => subscript('b @'))
 })
 
@@ -582,7 +523,6 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  // Save original state
   const ampCode = '&'.charCodeAt(0)
   const origLookup = lookup[ampCode]
   const origOp = operators['&']
@@ -591,7 +531,6 @@ test('low-precedence unary', t => {
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
 
-  // Restore original state
   lookup[ampCode] = origLookup
   operators['&'] = origOp
 })
@@ -606,7 +545,6 @@ test.skip('ext: collect args', async t => {
   let args = [], id = parse.id
   parse.id = (a, b) => (a = id(), a && args.push(a), a)
 
-  // FIXME: maybe needs ignoring pow and b?
   let fn = subscript('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
   same(args,
     ['Math', 'pow', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']

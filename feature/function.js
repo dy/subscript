@@ -6,7 +6,7 @@
  *   function(a,b) { body }        → ['function', null, ['a','b'], body]
  *   function f(a, ...rest) {}     → ['function', 'f', ['a', ['...', 'rest']], body]
  */
-import { cur, idx, token, expr, skip, space, err, next, parse } from '../src/parse.js';
+import { cur, idx, token, expr, skip, space, err, next, parse } from '../parse/pratt.js';
 
 const STATEMENT = 5, TOKEN = 200;
 const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125, COMMA = 44, PERIOD = 46, SEMI = 59;

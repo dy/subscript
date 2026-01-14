@@ -6,7 +6,7 @@
  *
  * Shared by: if.js, loop.js, switch.js, try.js, function.js
  */
-import { token, expr, skip, space, lookup, err, parse, seek, cur, idx } from '../src/parse.js';
+import { token, expr, skip, space, lookup, err, parse, seek, cur, idx } from '../parse/pratt.js';
 
 const STATEMENT = 5;
 const OBRACE = 123, CBRACE = 125, SEMI = 59;

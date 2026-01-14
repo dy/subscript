@@ -1,7 +1,7 @@
 /**
  * Bitwise operators: ~ | & ^ with assignments
  */
-import { unary, binary } from "../src/parse.js";
+import { unary, binary } from "../parse/pratt.js";
 
 // Precedence levels
 const ASSIGN = 20, OR = 50, XOR = 60, AND = 70, PREFIX = 140;

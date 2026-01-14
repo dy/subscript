@@ -7,7 +7,7 @@
  * `else` is an infix operator - takes if result as left operand.
  * This lets expr loop handle comments between } and else naturally.
  */
-import { token, space, skip, expr, err } from '../src/parse.js';
+import { token, space, skip, expr, err } from '../parse/pratt.js';
 import { parseBody, prefix } from './block.js';
 
 const STATEMENT = 5;

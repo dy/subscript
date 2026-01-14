@@ -6,7 +6,7 @@
  *   let x = 1   → ['let', 'x', val]
  *   const x = 1 → ['const', 'x', val]
  */
-import { token, expr, err, space } from '../src/parse.js';
+import { token, expr, err, space } from '../parse/pratt.js';
 
 const STATEMENT = 5, ASSIGN = 20;
 

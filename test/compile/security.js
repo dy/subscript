@@ -1,7 +1,7 @@
 import test, { is } from 'tst'
-import subscript from '../subscript.js'
-import { parse } from '../parse/justin.js'
-import { compile } from '../compile/js.js'
+import subscript from '../../subscript.js'
+import { parse } from '../../parse/justin.js'
+import { compile } from '../../compile/js.js'
 
 const justin = s => compile(parse(s))
 

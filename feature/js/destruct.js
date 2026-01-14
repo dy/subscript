@@ -9,7 +9,7 @@
  *
  * Patterns can be nested: const {a: {b}} = x
  */
-import { token, expr, skip, space, err, parse, next, idx, cur } from '../../src/parse.js';
+import { token, expr, skip, space, err, parse, next, idx, cur } from '../../parse/pratt.js';
 
 const STATEMENT = 5, ASSIGN = 20, EQ = 61;
 const OBRACE = 123, CBRACE = 125, OBRACK = 91, CBRACK = 93, COLON = 58, COMMA = 44;

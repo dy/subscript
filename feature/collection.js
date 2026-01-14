@@ -5,7 +5,7 @@
  * {a: 1, b: 2}
  * {a, b} (shorthand)
  */
-import { group, binary, skip, space, expr, token } from '../src/parse.js';
+import { group, binary, skip, space, expr, token } from '../parse/pratt.js';
 
 const STATEMENT = 5, ASSIGN = 20, TOKEN = 200;
 const CBRACE = 125, SEMI = 59;

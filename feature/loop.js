@@ -9,7 +9,7 @@
  *   break/continue           → ['break'] / ['continue']
  *   return x                 → ['return', x?]
  */
-import { token, expr, skip, space, err, next, parse, cur, idx } from '../src/parse.js';
+import { token, expr, skip, space, err, next, parse, cur, idx } from '../parse/pratt.js';
 import { parseBody, prefix, isWord } from './block.js';
 
 const STATEMENT = 5, SEQ = 10;

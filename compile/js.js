@@ -2,14 +2,13 @@
  * JS Compiler: AST → Evaluator
  * Monolithic compiler with all JS semantics
  */
-import { err } from '../src/parse.js';
+const err = (msg = 'Compile error') => { throw Error(msg) };
 
 // Block prototype chain attacks
 const unsafe = k => k?.[0] === '_' && k[1] === '_' || k === 'constructor' || k === 'prototype';
 
 // Control flow (type identifies the control flow, value carries result)
-const mkCtrl = type => () => ({ type, value: undefined });
-export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
+const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
 
 // Accessor marker
 const ACC = Symbol('accessor');
@@ -413,8 +412,9 @@ operators['set'] = (name, param, body) => {
   }]];
 };
 
-// Unit suffixes (extensible)
-export const unit = (name, fn = (v, ctx) => ({ value: v, unit: name })) =>
+// Unit suffixes (extensible) - register a unit suffix compiler
+// Example: unit('px', (v, ctx) => ({ value: v, unit: 'px' }))
+const unit = (name, fn = (v, ctx) => ({ value: v, unit: name })) =>
   operators[name] = val => (val = compile(val), ctx => fn(val(ctx), ctx));
 
 export default compile;

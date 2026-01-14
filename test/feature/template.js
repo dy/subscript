@@ -1,7 +1,6 @@
 import test, { is, throws } from 'tst'
-import { parse, compile } from '../subscript.js'
-import '../feature/ternary.js'
-import '../feature/js/template.js'
+import { parse, compile } from '../../subscript.js'
+// Template is already loaded via subscript → jessie → justin
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)
 

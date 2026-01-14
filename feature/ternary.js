@@ -1,4 +1,4 @@
-import { token, expr, next } from '../src/parse.js';
+import { token, expr, next } from '../parse/pratt.js';
 
 const ASSIGN = 20, COLON = 58;
 

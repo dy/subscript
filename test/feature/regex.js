@@ -1,6 +1,6 @@
 import test, { is, throws } from 'tst'
-import { parse, compile } from '../subscript.js'
-import '../feature/regex.js'
+import { parse, compile } from '../../subscript.js'
+import '../../feature/regex.js'
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)
 

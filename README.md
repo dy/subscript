@@ -9,8 +9,9 @@
 * **Portable** — parser separate from compiler, targets JS/C/WASM
 * **Safe sandbox** — no access to globals
 * **Fastest in class** — minimal overhead
-* **Extensible** — pluggable operators and features
+* **Extensible** — pluggable sytax subsets: operators and features
 * Homoiconic, metacircular – compiles itself
+* Turbo Pratt parser engine (make a pun here)
 
 <!--
 ####  Useful for:
@@ -79,7 +80,7 @@ It extends _subscript_ with:
 + `` `a ${x} b` ``, `` tag`...` ``
 
 ```js
-import justin from 'subscript/justin.js'
+import justin from 'subscript/parse/justin.js'
 
 let fn = justin('{ x: 1, "y": 2+2 }["x"]')
 fn()  // 1
@@ -104,7 +105,7 @@ Extends Justin with statements — practical JS subset inspired by [Jessie](http
 + `/pattern/flags`
 
 ```js
-import jessie from 'subscript/jessie.js'
+import jessie from 'subscript/parse/jessie.js'
 
 let fac = jessie(`
   function fac(n) {
@@ -125,6 +126,22 @@ fac({}) // 120
 
 Subscript separates **parsing** (syntax → AST) from **compilation** (AST → target).
 
+```
+parse/                  # parsing axis
+  pratt.js              # core Pratt parser engine
+  expr.js               # preset: minimal expressions
+  justin.js             # preset: JSON + operators
+  jessie.js             # preset: Justin + control flow
+
+compile/                # compiling axis
+  js.js                 # AST → JS evaluator
+  js-emit.js            # AST → JS source
+
+feature/                # atomic syntax modules
+
+subscript.js            # main bundle: jessie + js compiler
+```
+
 ### Parser Presets
 
 ```
@@ -132,7 +149,7 @@ expr.js      → justin.js      → jessie.js
 (minimal)      (JSON+expr)      (JS subset)
 ```
 
-Presets are parse-only — import a compiler separately or use the default bundle.
+Each preset configures the Pratt engine with features and re-exports `parse`.
 
 ### Compilers
 
@@ -160,12 +177,22 @@ fn({ a: {b: 1}, c: 2 }) // 2
 ### Parser-only
 
 ```js
-import './justin.js'  // just the parser preset
-import { parse } from './src/parse.js'
-import { compile } from './compile/js.js'  // pick your compiler
+// Import a preset (configures parser + re-exports parse)
+import { parse } from 'subscript/parse/justin.js'
 
 const tree = parse('a + b')
+// ['+', 'a', 'b']
+```
+
+### With custom compiler
+
+```js
+import { parse } from 'subscript/parse/jessie.js'
+import { compile } from 'subscript/compile/js.js'
+
+const tree = parse('x + 1')
 const fn = compile(tree)
+fn({ x: 2 }) // 3
 ```
 
 ## Util
@@ -173,7 +200,7 @@ const fn = compile(tree)
 ```js
 // ASI (Automatic Semicolon Insertion) for multiline code
 import { withASI } from 'subscript/util/asi.js'
-import { parse, compile } from 'subscript/jessie.js'
+import jessie, { parse, compile } from 'subscript/parse/jessie.js'
 
 const asiParse = withASI(parse)
 const tree = asiParse(`
@@ -270,8 +297,8 @@ Longer operators should be registered after shorter ones, eg. first `|`, then `|
 * `operator(str, (a, b) => ctx => value)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
 
 ```js
-import { compile, operator } from './compile/js.js'
-import { binary } from './src/parse.js'
+import { compile, operator } from 'subscript/compile/js.js'
+import { binary } from 'subscript/parse/pratt.js'
 
 // add identity operators (precedence of comparison)
 binary('===', 9), binary('!==', 9)
@@ -287,7 +314,7 @@ token('undefined', 20, a => a ? err() : [, undefined])
 token('NaN', 20, a => a ? err() : [, NaN])
 ```
 
-See [`./feature/*`](./feature) or [`./justin.js`](./justin.js) for examples.
+See [`./feature/*`](./feature) or [`./parse/justin.js`](./parse/justin.js) for examples.
 
 
 

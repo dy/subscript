@@ -5,7 +5,7 @@
  *   { get x() { body } }         → ['{}', ['get', 'x', body]]
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
  */
-import { token, expr, skip, space, err, next, parse, cur, idx } from '../../src/parse.js';
+import { token, expr, skip, space, err, next, parse, cur, idx } from '../../parse/pratt.js';
 
 const ASSIGN = 20;
 const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;

@@ -9,15 +9,19 @@
  *   import { unit } from 'subscript/feature/unit.js'
  *   unit('px', 'em', 'rem', 's', 'ms')
  */
-import { lookup, next, parse, idx, seek } from '../src/parse.js';
+import { lookup, next, parse, idx, seek } from '../parse/pratt.js';
+import { operators, compile as jsCompile } from '../compile/js.js';
 
 const PERIOD = 46, _0 = 48, _9 = 57;
 
 // Unit registry (object keys as set)
 const units = {};
 
-// Register units (parse-only, compilation handled by compile/js.js)
-export const unit = (...names) => names.forEach(name => units[name] = 1);
+// Register units (both parse and compile handlers)
+export const unit = (...names) => names.forEach(name => {
+  units[name] = 1;
+  operators[name] = val => (val = jsCompile(val), ctx => ({ value: val(ctx), unit: name }));
+});
 
 // Wrap number handler to check for unit suffix
 const wrap = (cc, orig = lookup[cc]) => orig && (lookup[cc] = (a, prec, r, start, u) =>

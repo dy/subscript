@@ -1,15 +1,15 @@
 /**
  * subscript: Default bundle (jessie parser + JS compiler)
  *
- * For parser-only presets, import expr.js, justin.js, or jessie.js directly.
+ * For parser-only presets, import from parse/expr.js, parse/justin.js, or parse/jessie.js
  * For a different compiler, import from compile/
  */
-import './jessie.js';
-import { compile, operator, operators, prop, BREAK, CONTINUE, RETURN } from './compile/js.js';
-import { parse } from './src/parse.js';
+import './parse/jessie.js';
+import { compile, operator, operators, prop } from './compile/js.js';
+import { parse } from './parse/pratt.js';
 
-export { parse, token, binary, unary, nary, group, access } from './src/parse.js';
-export { compile, operator, operators, prop, BREAK, CONTINUE, RETURN } from './compile/js.js';
+export { parse, token, binary, unary, nary, group, access } from './parse/pratt.js';
+export { compile, operator, operators, prop } from './compile/js.js';
 export { codegen } from './compile/js-emit.js';
 
 export default s => compile(parse(s));

@@ -1,4 +1,4 @@
-import { nary, group } from '../src/parse.js';
+import { nary, group } from '../parse/pratt.js';
 
 const STATEMENT = 5, SEQ = 10, ACCESS = 170;
 

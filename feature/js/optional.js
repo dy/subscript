@@ -1,4 +1,4 @@
-import { token, expr } from '../../src/parse.js';
+import { token, expr } from '../../parse/pratt.js';
 
 const ACCESS = 170;
 

@@ -1,26 +1,26 @@
 /**
- * justin: JSON superset expression language (parser preset)
+ * justin: JSON superset expression language
  *
  * Builds on expr with: comments, ternary, collections, optional chaining,
  * arrow functions, spread, templates, and JS-specific operators.
  */
 import './expr.js';
 
-import { token, binary } from './src/parse.js';
+import { token, binary } from './pratt.js';
 
 const ASSIGN = 20, LOR = 30, EQ = 80, COMP = 90, SHIFT = 100, TOKEN = 200;
 
 // Universal features
-import './feature/comment.js';  // //, /* */
-import './feature/pow.js';      // **
-import './feature/ternary.js';  // ?:
-import './feature/collection.js'; // [], {}
+import '../feature/comment.js';    // //, /* */
+import '../feature/pow.js';        // **
+import '../feature/ternary.js';    // ?:
+import '../feature/collection.js'; // [], {}
 
 // JS-specific expression features
-import './feature/js/arrow.js';    // =>
-import './feature/js/optional.js'; // ?., ?.[]
-import './feature/js/spread.js';   // ...
-import './feature/js/template.js'; // `${}`, tag``
+import '../feature/js/arrow.js';    // =>
+import '../feature/js/optional.js'; // ?., ?.[]
+import '../feature/js/spread.js';   // ...
+import '../feature/js/template.js'; // `${}`, tag``
 
 // Additional operators
 binary('in', COMP);
@@ -39,10 +39,4 @@ token('false', TOKEN, a => !a && [, false]);
 token('null', TOKEN, a => !a && [, null]);
 token('undefined', TOKEN, a => !a && [, undefined]);
 
-export * from './src/parse.js';
-export { compile, operator, operators, prop } from './compile/js.js';
-
-// Default: parse + compile
-import { parse } from './src/parse.js';
-import { compile } from './compile/js.js';
-export default s => compile(parse(s));
+export * from './pratt.js';

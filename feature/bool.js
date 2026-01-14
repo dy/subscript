@@ -1,4 +1,4 @@
-import { token, err } from "../src/parse.js";
+import { token, err } from "../parse/pratt.js";
 
 const TOKEN = 200;
 

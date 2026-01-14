@@ -2,7 +2,7 @@
  * Comments: block and line
  * Extends parse.space to skip comments as whitespace
  */
-import { parse, cur, idx, seek } from '../src/parse.js';
+import { parse, cur, idx, seek } from '../parse/pratt.js';
 
 const SPACE = 32;
 

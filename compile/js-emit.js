@@ -8,7 +8,6 @@
  * Naming: {target}-emit.js for source generators
  * e.g. js-emit.js, c-emit.js, wat-emit.js
  */
-import { err } from '../src/parse.js';
 
 // Code generator registry
 export const generators = {};
@@ -25,6 +24,8 @@ export const codegen = node =>
   !Array.isArray(node) ? (node === undefined ? 'undefined' : node) : // identifier
   node[0] === undefined ? (typeof node[1] === 'string' ? JSON.stringify(node[1]) : String(node[1])) : // literal
   generators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`);
+
+const err = (msg = 'Compile error') => { throw Error(msg) };
 
 // --- Basic operators ---
 

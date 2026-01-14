@@ -1,6 +1,6 @@
 import test, { is, throws } from 'tst'
-import { parse, compile } from '../subscript.js'
-import { unit } from '../feature/unit.js'
+import { parse, compile } from '../../subscript.js'
+import { unit } from '../../feature/unit.js'
 
 // Register units for tests
 unit('px', 'em', 'rem', 'vh', 'vw', 'pt', 's', 'ms', 'deg', 'rad')

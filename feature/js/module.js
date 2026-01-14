@@ -16,7 +16,7 @@
  *   export { a } from './x.js'         → ['export', ['{}', 'a'], path]
  *   export * from './x.js'             → ['export', ['*'], path]
  */
-import { token, expr, skip, space, err, next, parse, idx, cur } from '../../src/parse.js';
+import { token, expr, skip, space, err, next, parse, idx, cur } from '../../parse/pratt.js';
 const STATEMENT = 5, STAR = 42, AS = 'as', FROM = 'from', DEFAULT = 'default';
 const OBRACE = 123, CBRACE = 125, COMMA = 44;
 

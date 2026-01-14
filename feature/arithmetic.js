@@ -1,7 +1,7 @@
 /**
  * Arithmetic operators: + - * / % ++ --
  */
-import { binary, unary, token, expr } from '../src/parse.js';
+import { binary, unary, token, expr } from '../parse/pratt.js';
 
 // Precedence levels (ref: MDN operator precedence)
 const ASSIGN = 20, ADD = 110, MULT = 120, PREFIX = 140, POSTFIX = 150;

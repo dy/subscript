@@ -2,7 +2,7 @@
  * Template literals: `a ${x} b` → ['`', [,'a '], 'x', [,' b']]
  * Tagged templates:  tag`...`  → ['``', 'tag', ...]
  */
-import { skip, err, expr, lookup, cur, idx } from '../../src/parse.js';
+import { skip, err, expr, lookup, cur, idx } from '../../parse/pratt.js';
 
 const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123, BSLASH = 92;
 const esc = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' };
@@ -14,7 +14,7 @@ const parseBody = () => {
     !c ? err('Unterminated template') :
     c === BSLASH ? (skip(), s += esc[cur[idx]] || cur[idx], skip()) :
     c === DOLLAR && cur.charCodeAt(idx + 1) === OBRACE ? (s && parts.push([, s]), s = '', skip(2), parts.push(expr(0, 125))) :
-    (s += cur[idx], skip());
+    (s += cur[idx], skip(), c = cur.charCodeAt(idx), c === BACKTICK && s && parts.push([, s]));
   return skip(), parts;
 };
 

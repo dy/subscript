@@ -5,7 +5,7 @@
  *   switch (val) { case x: a; break; default: b }
  *   → ['switch', val, [[x, body], ..., [null, body]]]
  */
-import { token, expr, skip, space, err } from '../src/parse.js';
+import { token, expr, skip, space, err } from '../parse/pratt.js';
 import { isWord } from './block.js';
 
 const STATEMENT = 5, ASSIGN = 20;
