@@ -39,9 +39,10 @@ token('try', STATEMENT + 1, a => {
   return finallyBody ? ['try', tryBody, catchName, catchBody, finallyBody] : ['try', tryBody, catchName, catchBody];
 });
 
-// throw
+// throw (newline after throw is illegal per JS ASI rules)
 token('throw', STATEMENT + 1, a => {
   if (a) return;
-  space() || err('Expected expression');
+  space();
+  if (parse.newline) err('Unexpected newline after throw');
   return ['throw', expr(STATEMENT)];
 });

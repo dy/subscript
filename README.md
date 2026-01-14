@@ -13,6 +13,7 @@
 * Homoiconic, metacircular – compiles itself
 * Turbo Pratt parser engine (make a pun here)
 * Language design tool
+* Cross-compilation
 
 <!--
 ####  Useful for:

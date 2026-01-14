@@ -52,8 +52,8 @@ t('asi: keepNewlines option', () => {
 })
 
 t('asi: inline comments', () => {
-  // Semicolon should be inserted BEFORE inline comment
-  is(asi("x = 1 // comment\ny = 2"), 'x = 1; // comment y = 2')
+  // Inline comments are stripped when joining (would swallow next code otherwise)
+  is(asi("x = 1 // comment\ny = 2"), 'x = 1; y = 2')
   is(asi("x = 1 // comment\ny = 2", { keepNewlines: true }), 'x = 1; // comment\ny = 2')
   // String containing // should not be treated as comment
   is(asi('url = "http://x"\ny'), 'url = "http://x"; y')
