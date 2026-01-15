@@ -1,32 +1,17 @@
-/**
- * Comments with configurable delimiters
- * parse.comment: { line: '//', block: ['/ *', '* /'] }
- */
+// Slash comments: // line and /* block */
 import { parse, cur, idx, seek } from '../parse/pratt.js';
 
-const SPACE = 32;
-
-// Default config - cache first char codes for fast-path
-parse.comment = { line: '//', block: ['/*', '*/'] };
+const SPACE = 32, SLASH = 47, STAR = 42;
 
 const space = parse.space;
 parse.space = () => {
-  const { line, block } = parse.comment;
-  // Cache first chars for fast-path check
-  const lc = line?.charCodeAt(0), bc = block?.[0].charCodeAt(0);
-  for (var cc; (cc = space()); ) {
-    // Fast-path: check first char before string compare
-    if (cc === lc && cur.substr(idx, line.length) === line) {
-      for (var i = idx + line.length; cur.charCodeAt(i) >= SPACE; i++);
+  for (var cc, c2; (cc = space()) === SLASH; )
+    if ((c2 = cur.charCodeAt(idx + 1)) === SLASH) {
+      for (var i = idx + 2; cur.charCodeAt(i) >= SPACE; i++);
       seek(i);
-      continue;
-    }
-    if (cc === bc && cur.substr(idx, block[0].length) === block[0]) {
-      for (var i = idx + block[0].length; cur[i] && cur.substr(i, block[1].length) !== block[1]; i++);
-      seek(cur[i] ? i + block[1].length : i);
-      continue;
-    }
-    return cc;
-  }
+    } else if (c2 === STAR) {
+      for (var i = idx + 2; cur[i] && !(cur.charCodeAt(i) === STAR && cur.charCodeAt(i + 1) === SLASH); i++);
+      seek(cur[i] ? i + 2 : i);
+    } else return cc;
   return cc;
 };

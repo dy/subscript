@@ -40,8 +40,8 @@
   - [x] Implement a few unique to each language features
   - [ ] Cover all common languages (know the list _JavaScript_, _C_, _Python_, _Java_, _Swift_, _Kotlin_, _Go_, _Rust_, _Nim?_, _??_):
 - [x] Make jessie parse fully itself with all deps
-- [ ] Add util/bundle
-  - [ ] Make jessie eval itself
+- [x] Add util/bundle
+  - [x] Make jessie eval itself
 - [x] Add util/asi
 - [x] Split compiler declarations
 - [x] call is different from member
