@@ -84,9 +84,8 @@
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "esbuild": "^0.27.2",
-    "expression-eval": "^5.0.1",
     "jsep": "^1.4.0",
     "terser": "^5.44.1",
-    "tst": "^9.0.0"
+    "tst": "^9.2.0"
   }
 }

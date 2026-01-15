@@ -22,4 +22,4 @@ import './subscript.js'
 
 // Bundler tests (dogfooding)
 import './bundle.js'
-// import './perf.js'
+import './perf.js'

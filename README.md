@@ -8,7 +8,7 @@
 * **Universal AST** — consistent tree structure
 * **Portable** — parser separate from compiler, targets JS/C/WASM
 * **Safe sandbox** — no access to globals
-* **Fastest in class** — minimal overhead
+* **Fast** — best in class parsing, minimal overhead
 * **Extensible** — pluggable/composable sytax subsets: operators and features
 * Homoiconic, metacircular – compiles itself
 * Turbo Pratt parser engine (make a pun here)
@@ -366,41 +366,31 @@ See [`./feature/*`](./feature) or [`./parse/justin.js`](./parse/justin.js) for e
 
 ## Performance
 
-Subscript shows good performance within other evaluators. Example expression:
+Parse 30k expressions (lower is better):
 
-```
-1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
-```
-
-Parse 30k times:
-
-```
-subscript: ~150 ms 🥇
-jsep: ~270 ms 🥈
-jexpr: ~297 ms 🥉
-justin: ~183 ms
-mr-parser: ~420 ms
-expr-eval: ~480 ms
-math-parser: ~570 ms
-math-expression-evaluator: ~900ms
-jexl: ~1056 ms
-mathjs: ~1200 ms
-new Function: ~1154 ms
-```
+| Parser | Time | Notes |
+|--------|------|-------|
+| new Function | ~5ms | native JS |
+| angular-expr | ~19ms | |
+| expr | ~25ms | core |
+| justin | ~37ms | + comments, templates |
+| jsep | ~39ms | |
+| jessie | ~50ms | + statements, functions |
+| expr-eval | ~57ms | |
+| mathjs | ~133ms | |
+| jexl | ~276ms | |
 
 Eval 30k times:
 
-```
-new Function: ~7 ms 🥇
-subscript: ~15 ms 🥈
-jexpr: ~23 ms 🥉
-jsep (expression-eval): ~30 ms
-justin: ~17 ms
-math-expression-evaluator: ~50ms
-expr-eval: ~72 ms
-jexl: ~110 ms
-mathjs: ~119 ms
-```
+| Evaluator | Time |
+|-----------|------|
+| new Function | ~3ms |
+| compile (js) | ~2ms |
+| expression-eval | ~10ms |
+| mathjs | ~17ms |
+| angular-expr | ~92ms |
+
+> Run `node --import ./test/https-loader.js test/benchmark.js` for full benchmarks
 
 
 ## Used by
