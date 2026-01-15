@@ -1,10 +1,23 @@
-// Async/await: async function, async arrow, await expression
+// Async/await/yield: async function, async arrow, await, yield expressions
 import { token, unary, expr, skip, space, next, parse, cur, idx } from '../parse/pratt.js';
 
 const PREFIX = 140, ASSIGN = 20;
 
 // await expr → ['await', expr]
 unary('await', PREFIX);
+
+// yield expr → ['yield', expr]
+// yield* expr → ['yield*', expr]
+token('yield', PREFIX, a => {
+  if (a) return;
+  space();
+  if (cur[idx] === '*') {
+    skip();
+    space();
+    return ['yield*', expr(ASSIGN)];
+  }
+  return ['yield', expr(ASSIGN)];
+});
 
 // async function name() {} → ['async', ['function', name, params, body]]
 // async () => {} → ['async', ['=>', params, body]]

@@ -501,6 +501,33 @@ operators['async'] = fn => {
 // Await: ['await', expr]
 operators['await'] = a => (a = compile(a), async ctx => await a(ctx));
 
+// Yield: ['yield', expr] - must be called inside generator
+operators['yield'] = a => (a = a ? compile(a) : null, ctx => { throw { __yield__: a ? a(ctx) : undefined }; });
+operators['yield*'] = a => (a = compile(a), ctx => { throw { __yield_all__: a(ctx) }; });
+
+// Static: ['static', member] - handled in class body context
+operators['static'] = a => (a = compile(a), ctx => [[STATIC, a(ctx)]]);
+const STATIC = Symbol('static');
+
+// Defer: ['defer', expr] - registers cleanup to run at scope exit
+operators['defer'] = a => (a = compile(a), ctx => { ctx.__deferred__ = ctx.__deferred__ || []; ctx.__deferred__.push(a); });
+
+// Range operators
+operators['..'] = (a, b) => (a = compile(a), b = compile(b), ctx => {
+  const start = a(ctx), end = b(ctx), arr = [];
+  for (let i = start; i <= end; i++) arr.push(i);
+  return arr;
+});
+operators['..<'] = (a, b) => (a = compile(a), b = compile(b), ctx => {
+  const start = a(ctx), end = b(ctx), arr = [];
+  for (let i = start; i < end; i++) arr.push(i);
+  return arr;
+});
+
+// Type operators - identity in JS (duck typing)
+operators['as'] = (a, b) => (a = compile(a), ctx => a(ctx));
+operators['is'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) instanceof b(ctx));
+
 // Class: ['class', name, base, body]
 operators['class'] = (name, base, body) => {
   base = base ? compile(base) : null;
@@ -509,8 +536,8 @@ operators['class'] = (name, base, body) => {
     const Parent = base ? base(ctx) : Object;
     // Build class via Function constructor for proper inheritance
     const cls = function(...args) {
-      if (new.target === undefined) return err('Class constructor must be called with new');
-      const instance = base ? Reflect.construct(Parent, args, new.target) : Object.create(cls.prototype);
+      if (!(this instanceof cls)) return err('Class constructor must be called with new');
+      const instance = base ? Reflect.construct(Parent, args, cls) : this;
       // Run constructor if defined
       if (cls.prototype.__constructor__) cls.prototype.__constructor__.apply(instance, args);
       return instance;
@@ -522,7 +549,8 @@ operators['class'] = (name, base, body) => {
       const methods = Object.create(ctx);
       methods['super'] = Parent;
       const entries = body(methods);
-      if (entries) for (const [k, v] of Array.isArray(entries) && typeof entries[0]?.[0] === 'string' ? entries : []) {
+      const items = Array.isArray(entries) && typeof entries[0]?.[0] === 'string' ? entries : [];
+      for (const [k, v] of items) {
         if (k === 'constructor') cls.prototype.__constructor__ = v;
         else cls.prototype[k] = v;
       }

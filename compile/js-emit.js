@@ -239,6 +239,33 @@ generator('async', fn => `async ${codegen(fn)}`);
 // Await: ['await', expr]
 generator('await', a => `await ${codegen(a)}`);
 
+// Yield: ['yield', expr]
+generator('yield', a => a !== undefined ? `yield ${codegen(a)}` : 'yield');
+generator('yield*', a => `yield* ${codegen(a)}`);
+
+// Static: ['static', member]
+generator('static', a => `static ${codegen(a)}`);
+
+// Defer: ['defer', expr] - not native JS, emit comment
+generator('defer', a => `/* defer */ ${codegen(a)}`);
+
+// Range operators - not native JS, emit as helper call
+generator('..', (a, b) => `range(${codegen(a)}, ${codegen(b)})`);
+generator('..<', (a, b) => `range(${codegen(a)}, ${codegen(b)}, true)`);
+
+// Type operators
+generator('as', (a, b) => codegen(a)); // JS has no type cast, identity
+generator('is', (a, b) => `(${codegen(a)} instanceof ${codegen(b)})`);
+
+// For await
+generator('for await', (head, body) => {
+  if (Array.isArray(head) && head[0] === 'of') {
+    const [, lhs, rhs] = head;
+    return `for await (${codegen(lhs)} of ${codegen(rhs)}) ${wrapStmt(body)}`;
+  }
+  return `for await (${codegen(head)}) ${wrapStmt(body)}`;
+});
+
 // Class: ['class', name, base, body]
 generator('class', (name, base, body) => {
   let result = 'class';

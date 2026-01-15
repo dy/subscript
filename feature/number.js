@@ -8,9 +8,14 @@ import { parse, lookup, next, err, skip, idx, cur } from '../parse/pratt.js';
 const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45;
 const _a = 97, _f = 102, _A = 65, _F = 70;
 
-// Decimal number
+// Decimal number - check for .. range operator (don't consume . if followed by .)
 const num = a => [, (
-  a = +next(c => c === PERIOD || (c >= _0 && c <= _9) || ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0))
+  a = +next(c =>
+    // . is decimal only if NOT followed by another . (range operator)
+    (c === PERIOD && cur.charCodeAt(idx + 1) !== PERIOD) ||
+    (c >= _0 && c <= _9) ||
+    ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)
+  )
 ) != a ? err() : a];
 
 // Char test for prefix base
@@ -23,8 +28,8 @@ const charTest = {
 // Default: no prefixes
 parse.number = null;
 
-// .1
-lookup[PERIOD] = a => !a && num();
+// .1 (but not .. range)
+lookup[PERIOD] = a => !a && cur.charCodeAt(idx + 1) !== PERIOD && num();
 
 // 0-9: check parse.number for prefix config
 for (let i = _0; i <= _9; i++) lookup[i] = a => a ? void 0 : num();

@@ -6,16 +6,17 @@
  */
 import './expr.js';
 import { parse } from './pratt.js';
-import { string } from '../feature/string.js';
 
 // Add single quotes
-string("'");
+parse.string["'"] = true;
 
 // Add hex, binary, octal prefixes
 parse.number = { '0x': 16, '0b': 2, '0o': 8 };
 
-// Add C-style comments (default: //, /**/)
 import '../feature/comment.js';
+
+// JS-specific operators (ternary, arrow, spread, optional chaining, typeof/void/delete/new)
+import '../feature/op-js.js';
 
 import '../feature/collection.js';
 import '../feature/template.js';
