@@ -215,6 +215,15 @@ operators['delete'] = a => {
 // Instanceof - prototype chain check
 operators['instanceof'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) instanceof b(ctx));
 
+// new - constructor call: new X(), new X(a,b)
+operators['new'] = (target, args) => {
+  target = compile(target);
+  const argList = !args ? () => [] :
+    args[0] === ',' ? (args = args.slice(1).map(a => compile(a)), ctx => args.map(a => a(ctx))) :
+    (args = compile(args), ctx => [args(ctx)]);
+  return ctx => new (target(ctx))(...argList(ctx));
+};
+
 // Spread (for arrays/objects)
 operators['...'] = a => (a = compile(a), ctx => Object.entries(a(ctx)));
 
@@ -258,6 +267,8 @@ operators['const'] = (pattern, val) => {
   return ctx => destructure(pattern, val(ctx), ctx);
 };
 
+operators['var'] = operators['let'];
+
 // Conditionals
 operators['if'] = (cond, body, alt) => {
   cond = compile(cond); body = compile(body); alt = alt !== undefined ? compile(alt) : null;
@@ -270,6 +281,15 @@ operators['while'] = (cond, body) => {
   return ctx => {
     let r, res;
     while (cond(ctx)) if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+    return res;
+  };
+};
+
+operators['do'] = (body, cond) => {
+  body = compile(body); cond = compile(cond);
+  return ctx => {
+    let r, res;
+    do { if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v; } while (cond(ctx));
     return res;
   };
 };
@@ -289,14 +309,30 @@ operators['for'] = (init, cond, step, body) => {
 
 operators['for-of'] = (name, iterable, body) => {
   iterable = compile(iterable); body = compile(body);
+  const isPattern = Array.isArray(name);
   return ctx => {
     let r, res;
-    const prev = ctx[name];
+    const prev = isPattern ? null : ctx[name];
     for (const val of iterable(ctx)) {
-      ctx[name] = val;
+      if (isPattern) destructure(name, val, ctx); else ctx[name] = val;
       if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
     }
-    ctx[name] = prev;
+    if (!isPattern) ctx[name] = prev;
+    return res;
+  };
+};
+
+operators['for-in'] = (name, obj, body) => {
+  obj = compile(obj); body = compile(body);
+  const isPattern = Array.isArray(name);
+  return ctx => {
+    let r, res;
+    const prev = isPattern ? null : ctx[name];
+    for (const key in obj(ctx)) {
+      if (isPattern) destructure(name, key, ctx); else ctx[name] = key;
+      if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+    }
+    if (!isPattern) ctx[name] = prev;
     return res;
   };
 };
@@ -423,14 +459,14 @@ operators['``'] = (tag, ...parts) => {
 operators['get'] = (name, body) => {
   body = body ? compile(body) : () => {};
   return ctx => [[ACC, name, {
-    get() { const s = Object.create(ctx || {}); s.this = this; return body(s); }
+    get: function() { const s = Object.create(ctx || {}); s.this = this; return body(s); }
   }]];
 };
 
 operators['set'] = (name, param, body) => {
   body = body ? compile(body) : () => {};
   return ctx => [[ACC, name, {
-    set(v) { const s = Object.create(ctx || {}); s.this = this; s[param] = v; body(s); }
+    set: function(v) { const s = Object.create(ctx || {}); s.this = this; s[param] = v; body(s); }
   }]];
 };
 

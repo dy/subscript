@@ -15,6 +15,8 @@ import './feature/regex.js'
 import './feature/template.js'
 import './feature/unit.js'
 
+import './meta.js'
+
 // Integration tests
 import './subscript.js'
 // import './perf.js'

@@ -79,3 +79,38 @@ test('control: const', t => {
   is(ctx.x, 42)
   throws(() => parse('const x')) // requires initializer
 })
+
+test('control: var', t => {
+  is(parse('var x')[0], 'var')
+  // var x = 5 becomes assignment to var declaration (different from let/const)
+  is(parse('var x = 5')[0], '=')
+  is(parse('var x = 5')[1][0], 'var')
+})
+
+test('control: do-while', t => {
+  const ast = parse('do { x } while (c)')
+  is(ast[0], 'do')
+  is(ast[2], 'c', 'condition')
+  let ctx = { i: 0 }
+  run('do { i += 1 } while (i < 3)', ctx)
+  is(ctx.i, 3)
+  // do-while runs at least once
+  ctx = { i: 10 }
+  run('do { i += 1 } while (i < 3)', ctx)
+  is(ctx.i, 11)
+})
+
+test('control: for-in', t => {
+  is(parse('for (x in obj) y')[0], 'for-in')
+  is(parse('for (const x in obj) y')[4], 'const')
+  let ctx = { keys: [], obj: { a: 1, b: 2 } }
+  run('for (k in obj) keys.push(k)', ctx)
+  is(ctx.keys.sort().join(','), 'a,b')
+})
+
+test('control: for with var multi-decl', t => {
+  is(parse('for (var i = 0; i < 3; i++) {}')[1][0], 'var')
+  const ast = parse('for (var i = 0, j = 1; i < 3; i++) {}')
+  is(ast[0], 'for')
+  is(ast[1][0], ';', 'multi-var becomes sequence')
+})

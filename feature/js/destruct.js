@@ -15,7 +15,8 @@ const STATEMENT = 5, ASSIGN = 20, EQ = 61;
 const OBRACE = 123, CBRACE = 125, OBRACK = 91, CBRACK = 93, COLON = 58, COMMA = 44;
 
 // Parse destructuring pattern: identifier, {pattern}, or [pattern]
-function parsePattern() {
+// Exported for use in for-of/for-in
+export function parsePattern() {
   const cc = space();
 
   // Object pattern {a, b, c: d}

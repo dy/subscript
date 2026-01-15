@@ -184,17 +184,24 @@ Template literals contain string parts (as literals) interleaved with expression
 ['if', cond, then]            if (cond) then
 ['if', cond, then, else]      if (cond) then else alt
 ['while', cond, body]         while (cond) body
+['do', body, cond]            do { body } while (cond)
 ['for', init, cond, step, body]  for (init; cond; step) body
 ['for-of', 'x', iter, body]   for (x of iter) body
 ['for-of', 'x', iter, body, 'const']  for (const x of iter) body
+['for-in', 'x', obj, body]    for (x in obj) body
+['for-in', 'x', obj, body, 'const']  for (const x in obj) body
 ['block', body]               { body }
 ['let', 'x']                  let x
 ['let', 'x', val]             let x = val
 ['const', 'x', val]           const x = val
+['var', 'x']                  var x
+['var', 'x', val]             var x = val
 ['break']                     break
 ['continue']                  continue
 ['return']                    return
 ['return', val]               return val
+['new', 'Ctor', args]         new Ctor(args)
+['new', 'Ctor']               new Ctor
 ```
 
 ### Exceptions (feature/throw.js, feature/try.js)

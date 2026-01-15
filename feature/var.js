@@ -1,10 +1,11 @@
 /**
- * Variable declarations: let, const
+ * Variable declarations: let, const, var
  *
  * AST:
  *   let x       → ['let', 'x']
  *   let x = 1   → ['let', 'x', val]
  *   const x = 1 → ['const', 'x', val]
+ *   var x = 1   → ['var', 'x', val]
  */
 import { token, expr, err, space } from '../parse/pratt.js';
 
@@ -21,3 +22,4 @@ const decl = op => {
 
 token('let', STATEMENT, a => !a && decl('let'));
 token('const', STATEMENT, a => !a && (a = decl('const'), a.length < 3 ? err('Expected =') : a));
+token('var', STATEMENT, a => !a && decl('var'));

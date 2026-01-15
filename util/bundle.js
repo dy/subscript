@@ -6,6 +6,8 @@
  */
 import { parse } from '../parse/jessie.js';
 import { codegen } from '../compile/js-emit.js';
+import { readFile } from 'fs/promises';
+import { resolve } from 'path';
 
 // === AST Utilities ===
 
@@ -346,11 +348,7 @@ export async function bundle(entry, read) {
 }
 
 /** Bundle with Node.js fs */
-export async function bundleFile(entry) {
-  const { readFile } = await import('fs/promises');
-  const { resolve } = await import('path');
-  return bundle(resolve(entry), path => readFile(path, 'utf-8'));
-}
+export const bundleFile = (entry) => bundle(resolve(entry), path => readFile(path, 'utf-8'));
 
 // CLI
 if (typeof process !== 'undefined' && process.argv[1]?.includes('bundle')) {
@@ -359,11 +357,11 @@ if (typeof process !== 'undefined' && process.argv[1]?.includes('bundle')) {
     console.error('Usage: node bundle.js <entry>');
     process.exit(1);
   }
-  try {
-    console.log(await bundleFile(entry));
-  } catch (e) {
-    console.error('Error:', e.message);
-    console.error(e.stack);
-    process.exit(1);
-  }
+  bundleFile(entry)
+    .then(result => console.log(result))
+    .catch(e => {
+      console.error('Error:', e.message);
+      console.error(e.stack);
+      process.exit(1);
+    });
 }

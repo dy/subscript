@@ -93,14 +93,15 @@ fn()  // 1
 Extends Justin with statements — practical JS subset inspired by [Jessie](https://github.com/endojs/Jessie).
 
 + `if (c) a`, `if (c) a else b`
-+ `while (c) body`
-+ `for (init; cond; step) body`, `for (x of iter) body`
++ `while (c) body`, `do { body } while (c)`
++ `for (init; cond; step) body`, `for (x of iter) body`, `for (x in obj) body`
 + `{ a; b }` — block scope
-+ `let x`, `const x = 1`, `const {a, b} = x`
++ `let x`, `const x = 1`, `var x = 1`, `const {a, b} = x`
 + `break`, `continue`, `return x`
 + `throw x`, `try { } catch (e) { } finally { }`
 + `function f(a, b) { }`, `function(x) { }`, `function f(...args) {}`
 + `typeof x`, `void x`, `delete x`, `x instanceof Y`
++ `new X()`, `new X(a, b)`
 + `import`, `export`
 + `switch (x) { case a: ...; default: ... }`
 + `{ get x() {}, set y(v) {} }`

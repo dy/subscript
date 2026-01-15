@@ -21,11 +21,25 @@ prefix('if', STATEMENT + 1, () => {
 });
 
 // else as infix - extends ['if', cond, body] with alt branch
-// Lower precedence than if (5.5 vs 6) so it binds after if returns
+// Precedence 5.7: higher than parseBody's 5.5 so else can attach inside while/for
+// Lower than if (6) so it binds after if returns
 // Attaches to innermost if without alt (dangling else problem)
+// Also handles: a = [';', [while, [if, c, body]], ...] where else should attach to inner if
 const innerIf = n => n?.[0] !== 'if' ? null : n.length === 3 ? innerIf(n[2]) || n : innerIf(n[3]);
-token('else', STATEMENT + 0.5, a => {
-  const target = innerIf(a);
+// Find innermost incomplete if in control structures
+const findIf = n => {
+  if (!Array.isArray(n)) return null;
+  const op = n[0];
+  // Direct if
+  if (op === 'if') return n.length === 3 ? innerIf(n[2]) || n : innerIf(n[3]);
+  // Sequence: check first element (most recent statement)
+  if (op === ';') return findIf(n[1]);
+  // Control structures with body as last element: while, for, for-of, for-in
+  if (op === 'while' || op === 'for' || op === 'for-of' || op === 'for-in') return findIf(n[n.length - 1]);
+  return null;
+};
+token('else', STATEMENT + 0.7, a => {
+  const target = findIf(a);
   if (!target) return;
   target.push(parseBody());
   return a;

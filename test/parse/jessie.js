@@ -51,6 +51,12 @@ test('jessie: typeof', () => {
   is(run('typeof x', { x: 42 }), 'number')
 })
 
+test('jessie: new', () => {
+  is(parse('new X()')[0], 'new')
+  is(parse('new X(a, b)')[1], 'X')
+  is(parse('new a.b.C()')[0], 'new')
+})
+
 test('jessie: compile integration', () => {
   is(run('1 + 2', {}), 3)
   is(run('let x = 5; x * 2', {}), 10)

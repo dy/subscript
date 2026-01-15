@@ -129,6 +129,14 @@ test('compile: typeof', t => {
   is(compile(['typeof', 'x'])({ x: {} }), 'object')
 })
 
+test('compile: new', t => {
+  is(compile(['new', 'Array', [, 3]])({ Array }).length, 3)
+  is(compile(['new', 'Date'])({ Date }) instanceof Date, true)
+  // new with member access
+  const ctx = { Math: { Random: class { constructor() { this.val = 42 } } } }
+  is(compile(['new', ['.', 'Math', 'Random']])(ctx).val, 42)
+})
+
 test('compile: unknown operator throws', t => {
   throws(() => compile(['$$$', 'a', 'b']), /Unknown operator/)
 })
