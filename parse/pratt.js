@@ -101,10 +101,9 @@ export let idx, cur,
     (matched = curOp, // reset matched to curOp at start (prevents closure leak)
       (curOp ?
         op == curOp :
-        ((l < 2 || cur.substr(idx, l) == op) && (matched = curOp = op)) // save matched op
+        (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op) // save matched only after boundary check
       ) &&
       curPrec < prec && // matches precedence AFTER operator matched
-      !(word && parse.id(cur.charCodeAt(idx + l))) && // finished word, not part of bigger word
       (idx += l, (r = map(a)) || (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r) // false = fall through without reserved
     ) ||
     prev?.(a, curPrec, matched), // pass matched through chain

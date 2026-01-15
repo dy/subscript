@@ -233,6 +233,22 @@ generator('=>', (params, body) => {
   return `${args} => ${bod}`;
 });
 
+// Async: ['async', fn] wraps fn as async
+generator('async', fn => `async ${codegen(fn)}`);
+
+// Await: ['await', expr]
+generator('await', a => `await ${codegen(a)}`);
+
+// Class: ['class', name, base, body]
+generator('class', (name, base, body) => {
+  let result = 'class';
+  if (name) result += ` ${name}`;
+  if (base) result += ` extends ${codegen(base)}`;
+  result += ' { ';
+  if (body) result += codegen(body);
+  return result + ' }';
+});
+
 // Template literals
 generator('`', (...parts) => {
   let result = '`';

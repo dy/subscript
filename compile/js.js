@@ -489,6 +489,49 @@ operators['=>'] = (a, b) => {
   };
 };
 
+// Async: ['async', fn] wraps function to return async version
+operators['async'] = fn => {
+  const inner = compile(fn);
+  return ctx => {
+    const f = inner(ctx);
+    return async function(...args) { return f(...args); };
+  };
+};
+
+// Await: ['await', expr]
+operators['await'] = a => (a = compile(a), async ctx => await a(ctx));
+
+// Class: ['class', name, base, body]
+operators['class'] = (name, base, body) => {
+  base = base ? compile(base) : null;
+  body = body ? compile(body) : null;
+  return ctx => {
+    const Parent = base ? base(ctx) : Object;
+    // Build class via Function constructor for proper inheritance
+    const cls = function(...args) {
+      if (new.target === undefined) return err('Class constructor must be called with new');
+      const instance = base ? Reflect.construct(Parent, args, new.target) : Object.create(cls.prototype);
+      // Run constructor if defined
+      if (cls.prototype.__constructor__) cls.prototype.__constructor__.apply(instance, args);
+      return instance;
+    };
+    Object.setPrototypeOf(cls.prototype, Parent.prototype);
+    Object.setPrototypeOf(cls, Parent);
+    // Populate methods from body
+    if (body) {
+      const methods = Object.create(ctx);
+      methods['super'] = Parent;
+      const entries = body(methods);
+      if (entries) for (const [k, v] of Array.isArray(entries) && typeof entries[0]?.[0] === 'string' ? entries : []) {
+        if (k === 'constructor') cls.prototype.__constructor__ = v;
+        else cls.prototype[k] = v;
+      }
+    }
+    if (name) ctx[name] = cls;
+    return cls;
+  };
+};
+
 // Template literals
 operators['`'] = (...parts) => (parts = parts.map(compile), ctx => parts.map(p => p(ctx)).join(''));
 operators['``'] = (tag, ...parts) => {

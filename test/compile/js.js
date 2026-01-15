@@ -108,6 +108,38 @@ test('compile: arrow function', t => {
   is(fn2(3, 4), 7)
 })
 
+test('compile: async/await', async t => {
+  // async wraps function
+  const asyncFn = compile(['async', ['=>', 'x', 'x']])()
+  const result = asyncFn(42)
+  is(result instanceof Promise, true)
+  is(await result, 42)
+
+  // await expr
+  const awaiter = compile(['await', 'p'])
+  const p = Promise.resolve(99)
+  is(await awaiter({ p }), 99)
+})
+
+test('compile: class basic', t => {
+  // ['class', name, base, body]
+  const ctx = {}
+  const A = compile(['class', 'A', null, null])(ctx)
+  is(typeof A, 'function')
+  is(ctx.A, A)
+  const a = new A()
+  is(a instanceof A, true)
+})
+
+test('compile: class extends', t => {
+  class Base { foo() { return 1 } }
+  const ctx = { Base }
+  const Child = compile(['class', 'Child', 'Base', null])(ctx)
+  const c = new Child()
+  is(c instanceof Base, true)
+  is(c.foo(), 1)
+})
+
 test('compile: increment/decrement', t => {
   let ctx = { x: 5 }
   is(compile(['++', 'x'])(ctx), 6)

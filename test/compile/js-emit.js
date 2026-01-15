@@ -157,6 +157,26 @@ test('codegen: arrow functions', t => {
   is(codegen(['=>', [',', 'a', 'b'], ['+', 'a', 'b']]), '(a, b) => (a + b)')
 })
 
+test('codegen: async/await', t => {
+  // async function
+  is(codegen(['async', ['function', 'f', null, ['block', ['return', [, 1]]]]]), 'async function f() { return 1 }')
+  // async arrow
+  is(codegen(['async', ['=>', null, [, 1]]]), 'async () => 1')
+  // await
+  is(codegen(['await', 'x']), 'await x')
+})
+
+test('codegen: class', t => {
+  // Basic class
+  is(codegen(['class', 'A', null, null]), 'class A {  }')
+  // Class with extends
+  is(codegen(['class', 'B', 'A', null]), 'class B extends A {  }')
+  // Anonymous class
+  is(codegen(['class', null, null, null]), 'class {  }')
+  // Anonymous with extends
+  is(codegen(['class', null, 'Base', null]), 'class extends Base {  }')
+})
+
 test('codegen: sequence', t => {
   is(codegen([',', 'a', 'b']), 'a, b')
   is(codegen([',', 'a', 'b', 'c']), 'a, b, c')
