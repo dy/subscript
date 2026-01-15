@@ -53,7 +53,7 @@ test('subscript', async t => {
 })
 
 test('jsep', async t => {
-  const jsep = await import('expression-eval@5.0.1');
+  const jsep = await import('expression-eval');
 
   let ast = jsep.parse(src(0))
   // console.log(ast);
