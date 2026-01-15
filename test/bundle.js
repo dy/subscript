@@ -1,6 +1,7 @@
 /**
  * Test bundler by bundling feature files and verifying runtime works
  */
+import test, { is } from 'tst'
 import { bundleFile } from '../util/bundle.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -8,32 +9,6 @@ import { writeFile, unlink } from 'fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
-
-// Test helper
-const tests = []
-let passed = 0, failed = 0
-
-function test(name, fn) {
-  tests.push({ name, fn })
-}
-
-async function runTests() {
-  console.log('=== Bundler Runtime Tests ===\n')
-  for (const { name, fn } of tests) {
-    try {
-      await fn()
-      console.log(`✓ ${name}`)
-      passed++
-    } catch (e) {
-      console.log(`✗ ${name}`)
-      console.log(`  Error: ${e.message}`)
-      if (process.env.DEBUG) console.log(e.stack)
-      failed++
-    }
-  }
-  console.log(`\n${passed} passed, ${failed} failed`)
-  process.exit(failed > 0 ? 1 : 0)
-}
 
 // Bundle, write temp file, import, verify
 async function bundleAndRun(entry, verify) {
@@ -62,47 +37,132 @@ async function bundleAndVerifySyntax(entry) {
 
 // === Tests ===
 
-// Test core modules bundle and export correctly
-test('bundle parse/pratt.js - exports functions', async () => {
+test('bundle: parse/pratt.js exports', async () => {
   await bundleAndRun('parse/pratt.js', async (mod) => {
-    if (typeof mod.default !== 'function') throw new Error('default export not a function')
-    if (typeof mod.token !== 'function') throw new Error('token not exported')
-    if (typeof mod.binary !== 'function') throw new Error('binary not exported')
-    if (typeof mod.expr !== 'function') throw new Error('expr not exported')
+    is(typeof mod.default, 'function')
+    is(typeof mod.token, 'function')
+    is(typeof mod.binary, 'function')
+    is(typeof mod.expr, 'function')
   })
 })
 
-test('bundle compile/js.js - exports functions', async () => {
+test('bundle: compile/js.js exports', async () => {
   await bundleAndRun('compile/js.js', async (mod) => {
-    if (typeof mod.default !== 'function') throw new Error('default export not a function')
-    if (typeof mod.operator !== 'function') throw new Error('operator not exported')
-    if (typeof mod.compile !== 'function') throw new Error('compile not exported')
+    is(typeof mod.default, 'function')
+    is(typeof mod.operator, 'function')
+    is(typeof mod.compile, 'function')
   })
 })
 
-// Test feature files produce valid JS (no syntax/runtime errors on import)
-// Core features
-test('bundle feature/number.js - valid JS', () => bundleAndVerifySyntax('feature/number.js'))
-test('bundle feature/string.js - valid JS', () => bundleAndVerifySyntax('feature/string.js'))
-test('bundle feature/op.js - valid JS', () => bundleAndVerifySyntax('feature/op.js'))
-test('bundle feature/member.js - valid JS', () => bundleAndVerifySyntax('feature/member.js'))
-test('bundle feature/group.js - valid JS', () => bundleAndVerifySyntax('feature/group.js'))
-test('bundle feature/collection.js - valid JS', () => bundleAndVerifySyntax('feature/collection.js'))
-test('bundle feature/comment.js - valid JS', () => bundleAndVerifySyntax('feature/comment.js'))
-test('bundle feature/block.js - valid JS', () => bundleAndVerifySyntax('feature/block.js'))
+test('bundle: feature/number.js', () => bundleAndVerifySyntax('feature/number.js'))
+test('bundle: feature/string.js', () => bundleAndVerifySyntax('feature/string.js'))
+test('bundle: feature/op.js', () => bundleAndVerifySyntax('feature/op.js'))
+test('bundle: feature/member.js', () => bundleAndVerifySyntax('feature/member.js'))
+test('bundle: feature/group.js', () => bundleAndVerifySyntax('feature/group.js'))
+test('bundle: feature/collection.js', () => bundleAndVerifySyntax('feature/collection.js'))
+test('bundle: feature/comment.js', () => bundleAndVerifySyntax('feature/comment.js'))
+test('bundle: feature/block.js', () => bundleAndVerifySyntax('feature/block.js'))
+test('bundle: feature/if.js', () => bundleAndVerifySyntax('feature/if.js'))
+test('bundle: feature/loop.js', () => bundleAndVerifySyntax('feature/loop.js'))
+test('bundle: feature/try.js', () => bundleAndVerifySyntax('feature/try.js'))
+test('bundle: feature/switch.js', () => bundleAndVerifySyntax('feature/switch.js'))
+test('bundle: feature/function.js', () => bundleAndVerifySyntax('feature/function.js'))
+test('bundle: feature/var.js', () => bundleAndVerifySyntax('feature/var.js'))
+test('bundle: feature/destruct.js', () => bundleAndVerifySyntax('feature/destruct.js'))
+test('bundle: feature/module.js', () => bundleAndVerifySyntax('feature/module.js'))
+test('bundle: feature/accessor.js', () => bundleAndVerifySyntax('feature/accessor.js'))
+test('bundle: feature/template.js', () => bundleAndVerifySyntax('feature/template.js'))
+test('bundle: feature/regex.js', () => bundleAndVerifySyntax('feature/regex.js'))
 
-// Statement features
-test('bundle feature/if.js - valid JS', () => bundleAndVerifySyntax('feature/if.js'))
-test('bundle feature/loop.js - valid JS', () => bundleAndVerifySyntax('feature/loop.js'))
-test('bundle feature/try.js - valid JS', () => bundleAndVerifySyntax('feature/try.js'))
-test('bundle feature/switch.js - valid JS', () => bundleAndVerifySyntax('feature/switch.js'))
-test('bundle feature/function.js - valid JS', () => bundleAndVerifySyntax('feature/function.js'))
-test('bundle feature/var.js - valid JS', () => bundleAndVerifySyntax('feature/var.js'))
-test('bundle feature/destruct.js - valid JS', () => bundleAndVerifySyntax('feature/destruct.js'))
-test('bundle feature/module.js - valid JS', () => bundleAndVerifySyntax('feature/module.js'))
-test('bundle feature/accessor.js - valid JS', () => bundleAndVerifySyntax('feature/accessor.js'))
-test('bundle feature/template.js - valid JS', () => bundleAndVerifySyntax('feature/template.js'))
-test('bundle feature/regex.js - valid JS', () => bundleAndVerifySyntax('feature/regex.js'))
+// === Dogfooding: Bundle subscript.js and verify parse + compile + eval ===
 
-// Run all tests
-runTests()
+test('dogfood: subscript.js exports', async () => {
+  await bundleAndRun('subscript.js', async (mod) => {
+    is(typeof mod.default, 'function')
+    is(typeof mod.parse, 'function')
+    is(typeof mod.compile, 'function')
+  })
+})
+
+test('dogfood: parse', async () => {
+  await bundleAndRun('subscript.js', async ({ parse }) => {
+    is(parse('1 + 2')[0], '+')
+    is(parse('x => x * 2')[0], '=>')
+    is(parse('{a: 1, b: 2}')[0], '{}')
+    is(parse('[1, 2, 3]')[0], '[]')
+    is(parse('let x = 1')[0], 'let')
+  })
+})
+
+test('dogfood: compile arithmetic', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    is(compile(parse('1 + 2'))(), 3)
+    is(compile(parse('10 - 3'))(), 7)
+    is(compile(parse('4 * 5'))(), 20)
+    is(compile(parse('15 / 3'))(), 5)
+    is(compile(parse('7 % 4'))(), 3)
+    is(compile(parse('2 ** 3'))(), 8)
+    is(compile(parse('1 + 2 * 3'))(), 7)
+    is(compile(parse('(1 + 2) * 3'))(), 9)
+  })
+})
+
+test('dogfood: compile arrows', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    is(compile(parse('x => x * 2'))()(21), 42)
+    is(compile(parse('(a, b) => a + b'))()(10, 5), 15)
+    is(compile(parse('() => 42'))()(), 42)
+    is(compile(parse('a => b => a + b'))()(10)(5), 15)
+  })
+})
+
+test('dogfood: compile context', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    is(compile(parse('x + y'))({ x: 100, y: 50 }), 150)
+    is(compile(parse('fn(x)'))({ fn: v => v * 2, x: 21 }), 42)
+    is(compile(parse('obj.a + obj.b'))({ obj: { a: 10, b: 20 } }), 30)
+  })
+})
+
+test('dogfood: compile ternary', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    is(compile(parse('x > 0 ? 1 : -1'))({ x: 5 }), 1)
+    is(compile(parse('x > 0 ? 1 : -1'))({ x: -5 }), -1)
+  })
+})
+
+test('dogfood: compile logical', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    is(compile(parse('true && true'))(), true)
+    is(compile(parse('true && false'))(), false)
+    is(compile(parse('false || true'))(), true)
+    is(compile(parse('false || false'))(), false)
+    is(compile(parse('null ?? 42'))(), 42)
+    is(compile(parse('0 ?? 42'))(), 0)
+  })
+})
+
+test('dogfood: compile literals', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    const arr = compile(parse('[1, 2, 3]'))()
+    is(arr.length, 3)
+    is(arr[0], 1)
+    const obj = compile(parse('{a: 1, b: 2}'))()
+    is(obj.a, 1)
+    is(obj.b, 2)
+  })
+})
+
+test('dogfood: compile IIFE', async () => {
+  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
+    is(compile(parse('((x) => x + 1)(10)'))(), 11)
+  })
+})
+
+test('dogfood: subscript()', async () => {
+  await bundleAndRun('subscript.js', async (mod) => {
+    const subscript = mod.default
+    is(subscript('1 + 2')(), 3)
+    is(subscript('x * 2')({ x: 21 }), 42)
+  })
+})

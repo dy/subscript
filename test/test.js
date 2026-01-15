@@ -19,4 +19,7 @@ import './meta.js'
 
 // Integration tests
 import './subscript.js'
+
+// Bundler tests (dogfooding)
+import './bundle.js'
 // import './perf.js'

@@ -39,11 +39,12 @@
   - [x] Factor out common vs specific language features
   - [x] Implement a few unique to each language features
   - [ ] Cover all common languages (know the list _JavaScript_, _C_, _Python_, _Java_, _Swift_, _Kotlin_, _Go_, _Rust_, _Nim?_, _??_):
-- [ ] Make jessie parse fully itself with all deps
+- [x] Make jessie parse fully itself with all deps
 - [ ] Add util/bundle
-- [ ] Add util/asi
-- [ ] Split compiler declarations
-- [ ] call is different from member
+  - [ ] Make jessie eval itself
+- [x] Add util/asi
+- [x] Split compiler declarations
+- [x] call is different from member
 - [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
 
 - [ ] All C-like compiler targets
@@ -76,10 +77,8 @@
 - [ ] No installation instructions before usage code
 - [ ] The emoji badges compete for attention with no clear value hierarchy
 - [ ] Separate compile / parse, since we can reuse parse
-- [ ] Address deoptimizations caused by repl
 
-
-- [ ] Is it worthy having a template tag? sub`export x = () => {}`
+- [ ] Subscript template tag? sub`export x = () => {}`
 
 ## [ ] Integrations
 

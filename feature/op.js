@@ -45,30 +45,35 @@ binary('>>', SHIFT);    // after >
 binary('<<', SHIFT);    // after <
 binary('>>>', SHIFT);   // after >>
 
-// --- Compound Assignment (after base ops) ---
-binary('+=', ASSIGN, true);
-binary('-=', ASSIGN, true);
-binary('*=', ASSIGN, true);
+// --- Arithmetic ---
+// NOTE: Register base operators FIRST (tried last), longer variants AFTER (tried first)
+// Lookup chain is LIFO: last registered = tried first
+binary('+', ADD);       // 1-char, tried last
+binary('-', ADD);       // 1-char, tried last
+binary('*', MULT);      // 1-char, tried last
+binary('/', MULT);
+binary('%', MULT);
+
+// --- Compound Assignment (longer operators, tried earlier) ---
+binary('+=', ASSIGN, true);  // 2-char
+binary('-=', ASSIGN, true);  // 2-char
+binary('*=', ASSIGN, true);  // 2-char
 binary('/=', ASSIGN, true);
 binary('%=', ASSIGN, true);
-binary('**=', ASSIGN, true);
 binary('|=', ASSIGN, true);
 binary('&=', ASSIGN, true);
 binary('^=', ASSIGN, true);
-binary('>>=', ASSIGN, true);
-binary('<<=', ASSIGN, true);
-binary('>>>=', ASSIGN, true);
-binary('||=', ASSIGN, true);
-binary('&&=', ASSIGN, true);
-binary('??=', ASSIGN, true);
+binary('>>=', ASSIGN, true);  // 3-char
+binary('<<=', ASSIGN, true);  // 3-char
+binary('>>>=', ASSIGN, true); // 4-char
+binary('||=', ASSIGN, true);  // 3-char
+binary('&&=', ASSIGN, true);  // 3-char
+binary('??=', ASSIGN, true);  // 3-char
 
-// --- Arithmetic ---
-binary('+', ADD);       // before +=, ++
-binary('-', ADD);       // before -=, --
-binary('*', MULT);      // before *=, **, **=
-binary('/', MULT);
-binary('%', MULT);
-binary('**', EXP, true);
+// Exponentiation (after *)
+binary('**', EXP, true);      // 2-char, after *
+binary('**=', ASSIGN, true);  // 3-char, after ** and *
+
 unary('+', PREFIX);
 unary('-', PREFIX);
 unary('~', PREFIX);

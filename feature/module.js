@@ -1,142 +1,33 @@
 /**
- * Import/Export statements
+ * Import/Export with contextual 'from' operator
  *
  * AST:
- *   import './x.js'                    → ['import', path]
- *   import { a, b } from './x.js'      → ['import', path, ['{}', 'a', 'b']]
- *   import { a as b } from './x.js'    → ['import', path, ['{}', ['as', 'a', 'b']]]
- *   import * as X from './x.js'        → ['import', path, ['*', 'X']]
- *   import X from './x.js'             → ['import', path, ['default', 'X']]
- *
- *   export const x = 1                 → ['export', ['const', 'x', val]]
- *   export function x() {}             → ['export', ['function', 'x', ...]]
- *   export { a, b }                    → ['export', ['{}', 'a', 'b']]
- *   export { a as b }                  → ['export', ['{}', ['as', 'a', 'b']]]
- *   export default x                   → ['export', ['default', val]]
- *   export { a } from './x.js'         → ['export', ['{}', 'a'], path]
- *   export * from './x.js'             → ['export', ['*'], path]
+ *   import './x.js'              → ['import', path]
+ *   import X from './x.js'       → ['import', ['from', 'X', path]]
+ *   import { a, b } from './x'   → ['import', ['from', ['{}', ...], path]]
+ *   import * as X from './x.js'  → ['import', ['from', ['as', '*', X], path]]
+ *   export { a } from './x'      → ['export', ['from', ['{}', ...], path]]
+ *   export const x = 1           → ['export', decl]
  */
-import { token, expr, skip, space, err, next, parse, idx, cur } from '../parse/pratt.js';
-const STATEMENT = 5, STAR = 42, AS = 'as', FROM = 'from', DEFAULT = 'default';
-const OBRACE = 123, CBRACE = 125, COMMA = 44;
+import { token, expr, space, lookup, skip } from '../parse/pratt.js';
 
-// Parse: { a, b, c as d }
-const parseBindings = () => {
-  const bindings = [];
-  skip(); // {
-  while (space() !== CBRACE) {
-    const name = next(parse.id);
-    if (!name) err('Expected identifier');
-    space();
-    // Check for 'as' alias
-    if (cur.slice(idx, idx + 2) === AS && !parse.id(cur.charCodeAt(idx + 2))) {
-      skip(2); // 'as'
-      space();
-      const alias = next(parse.id);
-      if (!alias) err('Expected identifier after as');
-      bindings.push([AS, name, alias]);
-    } else {
-      bindings.push(name);
-    }
-    space();
-    if (cur.charCodeAt(idx) === COMMA) skip();
-  }
-  skip(); // }
-  return ['{}', ...bindings];
-};
+const STATEMENT = 5, SEQ = 10, STAR = 42;
 
-// Parse string literal (path)
-const parseString = () => {
-  const q = cur.charCodeAt(idx);
-  if (q !== 34 && q !== 39) err('Expected string');
-  skip();
-  let str = '';
-  while (cur.charCodeAt(idx) !== q) {
-    if (!cur[idx]) err('Unterminated string');
-    str += cur[idx];
-    skip();
-  }
-  skip();
-  return str;
-};
+// * as prefix in import context (import * as X)
+const prevStar = lookup[STAR];
+lookup[STAR] = (a, prec) => !a ? (skip(), '*') : prevStar?.(a, prec);
 
-// Parse 'from' keyword and path
-const parseFrom = () => {
-  space();
-  if (cur.slice(idx, idx + 4) !== FROM) err("Expected 'from'");
-  skip(4); // 'from'
-  space();
-  return parseString();
-};
+// 'from' as contextual binary - only after import-like LHS (not = or ,), false in prefix for identifier fallback
+token('from', SEQ + 1, a => !a ? false : a[0] !== '=' && a[0] !== ',' && (space(), ['from', a, expr(SEQ + 1)]));
 
-// import ...
-token('import', STATEMENT, a => {
-  if (a) return;
-  space();
-  const c = cur.charCodeAt(idx);
+// 'as' for aliasing: * as X, { a as b }. False in prefix for identifier fallback
+token('as', SEQ + 2, a => !a ? false : (space(), ['as', a, expr(SEQ + 2)]));
 
-  // import './path.js'
-  if (c === 34 || c === 39) return ['import', parseString()];
+// import: prefix that parses specifiers + from + path
+token('import', STATEMENT, a => !a && (space(), ['import', expr(SEQ)]));
 
-  // import * as X from './path.js';
-  if (c === STAR) {
-    skip(); space();
-    if (cur.slice(idx, idx + 2) !== AS) err("Expected 'as'");
-    skip(2); space();
-    const name = next(parse.id);
-    if (!name) err('Expected identifier');
-    return ['import', parseFrom(), ['*', name]];
-  }
+// export: prefix for declarations or re-exports (use STATEMENT to capture const/let/function)
+token('export', STATEMENT, a => !a && (space(), ['export', expr(STATEMENT)]));
 
-  // import { a, b } from './path.js';
-  if (c === OBRACE) {
-    const bindings = parseBindings();
-    return ['import', parseFrom(), bindings];
-  }
-
-  // import X from './path.js';
-  const name = next(parse.id);
-  if (!name) err('Expected identifier or {');
-  space();
-
-  // import X, { a, b } from './path.js';
-  if (cur.charCodeAt(idx) === COMMA) {
-    skip(); space();
-    if (cur.charCodeAt(idx) === OBRACE) {
-      const bindings = parseBindings();
-      return ['import', parseFrom(), [DEFAULT, name], bindings];
-    }
-    err('Expected {');
-  }
-
-  return ['import', parseFrom(), [DEFAULT, name]];
-});
-
-// export ...
-token('export', STATEMENT, a => {
-  if (a) return;
-  space();
-  const c = cur.charCodeAt(idx);
-
-  // export * from './path.js';
-  if (c === STAR) { skip(); return ['export', ['*'], parseFrom()]; }
-
-  // export { a, b } [from './path.js']
-  if (c === OBRACE) {
-    const bindings = parseBindings();
-    space();
-    return cur.slice(idx, idx + 4) === FROM ? ['export', bindings, parseFrom()] : ['export', bindings];
-  }
-
-  // export default ...
-  if (cur.slice(idx, idx + 7) === DEFAULT) {
-    skip(7); space();
-    // Parse single expression, stop at statement boundaries
-    return ['export', [DEFAULT, expr(STATEMENT)]];
-  }
-
-  // export const/let/var/function/class - parse the declaration
-  const decl = expr(STATEMENT);
-  if (!decl) err('Expected declaration after export');
-  return ['export', decl];
-});
+// default: prefix for export default
+token('default', SEQ + 1, a => !a && (space(), ['default', expr(SEQ)]));

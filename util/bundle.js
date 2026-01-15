@@ -24,105 +24,200 @@ const walk = (node, fn, parent = null, key = null) => {
 const clone = node =>
   !node ? node :
   Array.isArray(node) ? node.map(clone) :
+  node instanceof RegExp ? new RegExp(node.source, node.flags) :
   typeof node === 'object' ? Object.fromEntries(Object.entries(node).map(([k,v]) => [k, clone(v)])) :
   node;
 
-/** Rename identifier in AST */
+/** Rename identifier in AST - skip property access positions */
 const renameId = (ast, old, neu) => {
-  walk(ast, node => {
+  walk(ast, (node, parent, key) => {
     if (Array.isArray(node)) {
       for (let i = 0; i < node.length; i++) {
-        if (node[i] === old) node[i] = neu;
+        if (node[i] === old) {
+          // Don't rename if this is a property name in a '.' or '?.' access
+          if ((node[0] === '.' || node[0] === '?.') && i === 2) continue;
+          // Don't rename if this is a property name in object literal {a: b} or shorthand {a}
+          if (node[0] === ':' && i === 1 && typeof node[1] === 'string') continue;
+          node[i] = neu;
+        }
       }
     }
   });
   return ast;
 };
 
+/** Flatten comma nodes into array: [',', 'a', 'b'] → ['a', 'b'], 'x' → ['x'] */
+const flattenComma = node =>
+  Array.isArray(node) && node[0] === ',' ? node.slice(1) :
+  node ? [node] : [];
+
 // === Module Analysis ===
 
-/** Extract imports from AST */
+/** Extract string from path node [null, 'path'] (string literal) */
+const getPath = node => Array.isArray(node) && (node[0] === undefined || node[0] === null) ? node[1] : node;
+
+/** Extract imports from AST
+ * New AST shapes:
+ *   import './x.js'           → ['import', [null, path]]
+ *   import X from './x.js'    → ['import', ['from', 'X', [null, path]]]
+ *   import {a,b} from './x'   → ['import', ['from', ['{}', ...], [null, path]]]
+ *   import * as X from './x'  → ['import', ['from', ['as', '*', 'X'], [null, path]]]
+ */
 const getImports = ast => {
   const imports = [];
   walk(ast, node => {
     if (!Array.isArray(node) || node[0] !== 'import') return;
-    const imp = { path: node[1], node };
+    const body = node[1];
+    const imp = { node };
 
-    if (node[2]) {
-      const spec = node[2];
-      if (spec[0] === '{}') {
-        imp.named = spec.slice(1).map(s =>
-          Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
-        );
-      } else if (spec[0] === '*') {
-        imp.namespace = spec[1];
-      } else if (spec[0] === 'default') {
-        imp.default_ = spec[1];
-      }
-      if (node[3]) {
-        const spec2 = node[3];
-        if (spec2[0] === '{}') {
-          imp.named = spec2.slice(1).map(s =>
+    // import './x.js' - bare import: [, 'path'] sparse array with undefined at index 0
+    if (Array.isArray(body) && (body[0] === undefined || body[0] === null)) {
+      imp.path = body[1];
+      imports.push(imp);
+      return;
+    }
+
+    // import X from './x.js' or import {...} from './x.js'
+    if (Array.isArray(body) && body[0] === 'from') {
+      const spec = body[1];
+      const pathNode = body[2];
+      imp.path = getPath(pathNode);
+
+      if (typeof spec === 'string') {
+        // import X from - default import
+        imp.default_ = spec;
+      } else if (Array.isArray(spec)) {
+        if (spec[0] === '{}') {
+          // import { a, b, c as d }
+          const items = spec.slice(1).flatMap(flattenComma);
+          imp.named = items.map(s =>
             Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
           );
+        } else if (spec[0] === 'as' && spec[1] === '*') {
+          // import * as X
+          imp.namespace = spec[2];
+        } else if (spec[0] === '*') {
+          // import * as X (alternate shape)
+          imp.namespace = spec[1];
         }
       }
+      imports.push(imp);
     }
-    imports.push(imp);
   });
   return imports;
 };
 
-/** Extract exports from AST */
+/** Extract exports from AST
+ * New AST shapes:
+ *   export const x = 1        → ['export', ['const', ['=', 'x', val]]]
+ *   export default x          → ['export', ['default', 'x']]
+ *   export { a }              → ['export', ['{}', 'a']]
+ *   export { a } from './x'   → ['export', ['from', ['{}', 'a'], [null, path]]]
+ *   export * from './x'       → ['export', ['from', '*', [null, path]]]
+ */
 const getExports = ast => {
   const exports = { named: {}, reexports: [], default_: null };
 
   walk(ast, node => {
     if (!Array.isArray(node) || node[0] !== 'export') return;
     const spec = node[1];
-    const path = node[2];
 
-    if (spec[0] === '{}') {
-      const names = spec.slice(1).map(s =>
+    // export { a } from './x' or export * from './x'
+    if (Array.isArray(spec) && spec[0] === 'from') {
+      const what = spec[1];
+      const pathNode = spec[2];
+      const path = getPath(pathNode);
+
+      if (what === '*') {
+        exports.reexports.push({ star: true, path });
+      } else if (Array.isArray(what) && what[0] === '{}') {
+        const items = what.slice(1).flatMap(flattenComma);
+        const names = items.map(s =>
+          Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
+        );
+        exports.reexports.push({ names, path });
+      }
+      return;
+    }
+
+    // export { a, b }
+    if (Array.isArray(spec) && spec[0] === '{}') {
+      const items = spec.slice(1).flatMap(flattenComma);
+      const names = items.map(s =>
         Array.isArray(s) && s[0] === 'as' ? { name: s[1], alias: s[2] } : { name: s, alias: s }
       );
-      if (path) {
-        exports.reexports.push({ names, path });
-      } else {
-        for (const { name, alias } of names) exports.named[alias] = name;
-      }
-    } else if (spec[0] === '*') {
-      exports.reexports.push({ star: true, path });
-    } else if (spec[0] === 'default') {
+      for (const { name, alias } of names) exports.named[alias] = name;
+      return;
+    }
+
+    // export default x
+    if (Array.isArray(spec) && spec[0] === 'default') {
       exports.default_ = spec[1];
-    } else if (spec[0] === 'const' || spec[0] === 'let' || spec[0] === 'var') {
-      exports.named[spec[1]] = spec[1];
-    } else if (spec[0] === 'function' || spec[0] === 'class') {
-      exports.named[spec[1]] = spec[1];
+      return;
+    }
+
+    // export const/let/var x = ... - varargs: ['let', decl1, decl2, ...]
+    if (Array.isArray(spec) && (spec[0] === 'const' || spec[0] === 'let' || spec[0] === 'var')) {
+      for (let i = 1; i < spec.length; i++) {
+        const decl = spec[i];
+        if (typeof decl === 'string') {
+          exports.named[decl] = decl;
+        } else if (Array.isArray(decl) && decl[0] === '=') {
+          const name = decl[1];
+          if (typeof name === 'string') exports.named[name] = name;
+        }
+      }
+      return;
+    }
+
+    // export function x() {} or export class x {}
+    if (Array.isArray(spec) && (spec[0] === 'function' || spec[0] === 'class')) {
+      if (typeof spec[1] === 'string') exports.named[spec[1]] = spec[1];
     }
   });
 
   return exports;
 };
 
-/** Get all declared names in AST */
+/** Get all declared names in AST
+ * New AST shapes:
+ *   const x = 1   → ['const', ['=', 'x', val]]
+ *   let x         → ['let', 'x']
+ *   function f()  → ['function', 'f', ...]
+ *   const a = 1, b = 2 → ['const', ['=', 'a', ...], ['=', 'b', ...]] (varargs)
+ */
 const getDecls = ast => {
   const decls = new Set();
+
+  const addDecl = node => {
+    if (typeof node === 'string') decls.add(node);
+    else if (Array.isArray(node)) {
+      if (node[0] === '=') {
+        if (typeof node[1] === 'string') decls.add(node[1]);
+      } else if (node[0] === ',') {
+        // Multiple declarations: const a = 1, b = 2 (older AST shape)
+        for (let i = 1; i < node.length; i++) addDecl(node[i]);
+      }
+    }
+  };
 
   walk(ast, node => {
     if (!Array.isArray(node)) return;
     const op = node[0];
 
     if (op === 'const' || op === 'let' || op === 'var') {
-      if (typeof node[1] === 'string') decls.add(node[1]);
+      // Handle varargs: ['const', decl1, decl2, ...] for multiple declarations
+      for (let i = 1; i < node.length; i++) addDecl(node[i]);
     }
     if (op === 'function' || op === 'class') {
       if (typeof node[1] === 'string') decls.add(node[1]);
     }
     if (op === 'export') {
       const spec = node[1];
-      if ((spec[0] === 'const' || spec[0] === 'let' || spec[0] === 'var' ||
-           spec[0] === 'function' || spec[0] === 'class') && typeof spec[1] === 'string') {
+      if (Array.isArray(spec) && (spec[0] === 'const' || spec[0] === 'let' || spec[0] === 'var')) {
+        addDecl(spec[1]);
+      }
+      if (Array.isArray(spec) && (spec[0] === 'function' || spec[0] === 'class') && typeof spec[1] === 'string') {
         decls.add(spec[1]);
       }
     }
@@ -134,6 +229,14 @@ const getDecls = ast => {
 // === AST Transforms ===
 
 /** Remove import/export nodes, extract declarations */
+/** Remove import/export nodes, extract declarations
+ * New AST shapes for export:
+ *   export const x = 1      → ['export', ['const', ...]] → keep ['const', ...]
+ *   export default x        → ['export', ['default', x]] → keep, or convert to __default
+ *   export { a }            → ['export', ['{}', ...]] → remove
+ *   export { a } from './x' → ['export', ['from', ['{}', ...], path]] → remove
+ *   export * from './x'     → ['export', ['from', '*', path]] → remove
+ */
 const stripModuleSyntax = ast => {
   const defaultExpr = { value: null };
 
@@ -145,12 +248,17 @@ const stripModuleSyntax = ast => {
 
     if (op === 'export') {
       const spec = node[1];
-      if (spec[0] === '{}' || spec[0] === '*') return null;
-      if (spec[0] === 'default') {
+      // Re-exports: export { a } from './x' or export * from './x'
+      if (Array.isArray(spec) && spec[0] === 'from') return null;
+      // Named exports: export { a, b }
+      if (Array.isArray(spec) && spec[0] === '{}') return null;
+      // Default export
+      if (Array.isArray(spec) && spec[0] === 'default') {
         defaultExpr.value = spec[1];
         if (typeof spec[1] === 'string') return null;
-        return ['const', '__default', spec[1]];
+        return ['const', ['=', '__default', spec[1]]];
       }
+      // Declaration export: export const x = 1
       return spec;
     }
 
@@ -240,7 +348,8 @@ export async function bundle(entry, read) {
     if (paths.length > 1) {
       for (const path of paths) {
         if (!renames.has(path)) renames.set(path, {});
-        const prefix = path.split('/').pop().replace('.js', '_');
+        // Make valid JS identifier: replace non-alphanumeric with underscore
+        const prefix = path.split('/').pop().replace('.js', '').replace(/[^a-zA-Z0-9]/g, '_') + '_';
         renames.get(path)[name] = prefix + name;
       }
     }
@@ -279,7 +388,10 @@ export async function bundle(entry, read) {
 
       if (imp.named) {
         for (const { name, alias } of imp.named) {
-          const resolved = depRenames[name] || name;
+          // `name` is the exported name, look up what local name it maps to in the dep
+          const localName = dep.exports.named[name] || name;
+          // Check if that local name was renamed in the dep
+          const resolved = depRenames[localName] || localName;
           if (alias !== resolved) renameId(ast, alias, resolved);
         }
       }

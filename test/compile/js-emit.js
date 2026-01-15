@@ -117,10 +117,10 @@ test('codegen: assignment', t => {
 })
 
 test('codegen: variables', t => {
-  is(codegen(['let', 'x', [, 1]]), 'let x = 1')
+  is(codegen(['let', ['=', 'x', [, 1]]]), 'let x = 1')
   is(codegen(['let', 'x']), 'let x')
-  is(codegen(['const', 'x', [, 1]]), 'const x = 1')
-  is(codegen(['var', 'x', [, 1]]), 'var x = 1')
+  is(codegen(['const', ['=', 'x', [, 1]]]), 'const x = 1')
+  is(codegen(['var', ['=', 'x', [, 1]]]), 'var x = 1')
 })
 
 test('codegen: if', t => {
@@ -130,7 +130,7 @@ test('codegen: if', t => {
 
 test('codegen: loops', t => {
   is(codegen(['while', 'x', ['block', 'y']]), 'while (x) { y }')
-  is(codegen(['for', [';', ['let', 'i', [, 0]], ['<', 'i', [, 10]], ['=', 'i', ['+', 'i', [, 1]]]], ['block', 'x']]),
+  is(codegen(['for', [';', ['let', ['=', 'i', [, 0]]], ['<', 'i', [, 10]], ['=', 'i', ['+', 'i', [, 1]]]], ['block', 'x']]),
     'for (let i = 0; (i < 10); i = (i + 1)) { x }')
 })
 
