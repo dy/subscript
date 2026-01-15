@@ -5,8 +5,8 @@
  *   switch (val) { case x: a; break; default: b }
  *   → ['switch', val, [[x, body], ..., [null, body]]]
  */
-import { token, expr, skip, space, err } from '../../parse/pratt.js';
-import { isWord } from '../block.js';
+import { token, expr, skip, space, err } from '../parse/pratt.js';
+import { isWord } from './block.js';
 
 const STATEMENT = 5, ASSIGN = 20;
 const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125, COLON = 58, SEMI = 59;

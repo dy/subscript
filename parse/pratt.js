@@ -37,8 +37,9 @@ export let idx, cur,
 
   // a + b - c
   expr = (prec = 0, end) => {
-    let cc, token, newNode, fn, prevEnd = endChar, nl;
+    let cc, token, newNode, fn, prevEnd = endChar, prevReserved = parse.reserved, nl;
     if (end) endChar = end, parse.asi && (parse.newline = false); // new scope resets newline
+    parse.reserved = 0;
 
     // chunk/token parser
     while (
@@ -49,9 +50,10 @@ export let idx, cur,
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ?? // operator with higher precedence
         (parse.asi && token && nl && (newNode = parse.asi(token, prec, expr))) ?? // ASI hook
-        (!token && next(parse.id)) // parse literal or quit. token seqs are forbidden: `a b`, `a "b"`, `1.32 a`
+        (!token && !parse.reserved && next(parse.id)) // parse literal or quit (skip reserved words)
       )
-    ) token = newNode;
+    ) token = newNode, parse.reserved = 0;
+    parse.reserved = prevReserved;
 
     // check end character - only if we set it (not inherited)
     if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
@@ -85,6 +87,7 @@ export let idx, cur,
 
 
   // create operator checker/mapper (see examples)
+  // map returns: truthy = result, undefined = reserved word, false = fall through (not reserved)
   token = (
     op,
     prec = SPACE,
@@ -93,7 +96,7 @@ export let idx, cur,
     l = op.length,
     prev = lookup[c],
     word = op.toUpperCase() !== op, // make sure word boundary comes after word operator
-    matched // track if we matched (for curOp propagation)
+    matched, r // track if we matched (for curOp propagation)
   ) => lookup[c] = (a, curPrec, curOp, from = idx) =>
     (matched = curOp, // reset matched to curOp at start (prevents closure leak)
       (curOp ?
@@ -102,7 +105,7 @@ export let idx, cur,
       ) &&
       curPrec < prec && // matches precedence AFTER operator matched
       !(word && parse.id(cur.charCodeAt(idx + l))) && // finished word, not part of bigger word
-      (idx += l, map(a) || (idx = from, matched = 0, !word && !prev && err())) // symbols error, words fall through
+      (idx += l, (r = map(a)) || (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r) // false = fall through without reserved
     ) ||
     prev?.(a, curPrec, matched), // pass matched through chain
 

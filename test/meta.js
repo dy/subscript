@@ -19,8 +19,6 @@ const files = [
   'compile/js.js', 'compile/js-emit.js',
   'util/bundle.js',
   ...fs.readdirSync('feature').filter(f => f.endsWith('.js')).map(f => 'feature/' + f),
-  ...fs.readdirSync('feature/c').filter(f => f.endsWith('.js')).map(f => 'feature/c/' + f),
-  ...fs.readdirSync('feature/js').filter(f => f.endsWith('.js')).map(f => 'feature/js/' + f),
 ];
 
 // Test that all source files parse

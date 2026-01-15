@@ -24,8 +24,8 @@ test('control: while', t => {
 })
 
 test('control: for', t => {
-  is(parse('for (i = 0; i < 3; i += 1) x'), ['for', ['=', 'i', [, 0]], ['<', 'i', [, 3]], ['+=', 'i', [, 1]], 'x'])
-  is(parse('for (;;) x'), ['for', null, null, null, 'x'])
+  is(parse('for (i = 0; i < 3; i += 1) x'), ['for', [';', ['=', 'i', [, 0]], ['<', 'i', [, 3]], ['+=', 'i', [, 1]]], 'x'])
+  is(parse('for (;;) x'), ['for', [';', null, null, null], 'x'])
   let ctx = { sum: 0 }
   run('for (i = 0; i < 5; i += 1) sum += i', ctx)
   is(ctx.sum, 10)
@@ -66,18 +66,18 @@ test('control: block', t => {
 
 test('control: let', t => {
   is(parse('let x'), ['let', 'x'])
-  is(parse('let x = 1'), ['let', 'x', [, 1]])
+  is(parse('let x = 1'), ['let', ['=', 'x', [, 1]]])
   let ctx = {}
   run('let x = 5', ctx)
   is(ctx.x, 5)
 })
 
 test('control: const', t => {
-  is(parse('const x = 1'), ['const', 'x', [, 1]])
+  is(parse('const x = 1'), ['const', ['=', 'x', [, 1]]])
+  is(parse('const x'), ['const', 'x']) // no init - validation deferred to compile
   let ctx = {}
   run('const x = 42', ctx)
   is(ctx.x, 42)
-  throws(() => parse('const x')) // requires initializer
 })
 
 test('control: var', t => {
@@ -101,16 +101,21 @@ test('control: do-while', t => {
 })
 
 test('control: for-in', t => {
-  is(parse('for (x in obj) y')[0], 'for-in')
-  is(parse('for (const x in obj) y')[4], 'const')
+  const ast = parse('for (let x in obj) y')
+  is(ast[0], 'for')
+  is(ast[1][0], 'in')
+  is(ast[1][1][0], 'let')
+  is(ast[1][1][1], 'x')
+  is(ast[1][2], 'obj')
+  is(ast[2], 'y')
   let ctx = { keys: [], obj: { a: 1, b: 2 } }
-  run('for (k in obj) keys.push(k)', ctx)
+  run('for (let k in obj) keys.push(k)', ctx)
   is(ctx.keys.sort().join(','), 'a,b')
 })
 
 test('control: for with var multi-decl', t => {
-  is(parse('for (var i = 0; i < 3; i++) {}')[1][0], 'var')
   const ast = parse('for (var i = 0, j = 1; i < 3; i++) {}')
   is(ast[0], 'for')
-  is(ast[1][0], ';', 'multi-var becomes sequence')
+  is(ast[1][0], ';')
+  is(ast[1][1][0], ',', 'multi-var uses comma operator')
 })

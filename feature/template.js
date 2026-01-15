@@ -2,7 +2,7 @@
  * Template literals: `a ${x} b` → ['`', [,'a '], 'x', [,' b']]
  * Tagged templates:  tag`...`  → ['``', 'tag', ...]
  */
-import { parse, skip, err, expr, lookup, cur, idx } from '../../parse/pratt.js';
+import { parse, skip, err, expr, lookup, cur, idx } from '../parse/pratt.js';
 
 const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123, BSLASH = 92;
 const esc = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' };

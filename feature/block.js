@@ -11,8 +11,8 @@ import { token, expr, skip, space, lookup, err, parse, seek, cur, idx } from '..
 const STATEMENT = 5;
 const OBRACE = 123, CBRACE = 125;
 
-// prefix-only token - only matches when no left operand (for JS statement keywords)
-export const prefix = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c]) =>
+// keyword - only matches when no left operand (statement keywords like if/while/for)
+export const keyword = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c]) =>
   lookup[c] = (a, curPrec, curOp, from = idx) =>
     !a &&
     (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&

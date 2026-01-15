@@ -7,8 +7,8 @@
  *   try { a } catch (e) { b } finally { c } → ['try', a, 'e', b, c]
  *   throw x                               → ['throw', x]
  */
-import { token, skip, space, err, next, parse, expr } from '../../parse/pratt.js';
-import { parseBlock, isWord } from '../block.js';
+import { token, skip, space, err, next, parse, expr } from '../parse/pratt.js';
+import { parseBlock, isWord } from './block.js';
 
 const STATEMENT = 5;
 const OPAREN = 40, CPAREN = 41;

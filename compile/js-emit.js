@@ -107,8 +107,19 @@ generator('if', (cond, then, els) => els
 
 generator('while', (cond, body) => `while (${codegen(cond)}) ${codegen(body)}`);
 
-generator('for', (init, cond, update, body) =>
-  `for (${init ? codegen(init) : ''}; ${cond ? codegen(cond) : ''}; ${update ? codegen(update) : ''}) ${codegen(body)}`);
+generator('for', (head, body) => {
+  // Normalize head: [';', init, cond, step] or single expr (for-in/of)
+  if (Array.isArray(head) && head[0] === ';') {
+    const [, init, cond, step] = head;
+    return `for (${init ? codegen(init) : ''}; ${cond ? codegen(cond) : ''}; ${step ? codegen(step) : ''}) ${codegen(body)}`;
+  }
+  // For-in/of: head is ['in', lhs, rhs] or ['of', lhs, rhs]
+  if (Array.isArray(head) && (head[0] === 'in' || head[0] === 'of')) {
+    const [op, lhs, rhs] = head;
+    return `for (${codegen(lhs)} ${op} ${codegen(rhs)}) ${codegen(body)}`;
+  }
+  return `for (${codegen(head)}) ${codegen(body)}`;
+});
 
 generator('return', a => a === undefined ? 'return' : `return ${codegen(a)}`);
 generator('break', () => 'break');

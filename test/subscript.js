@@ -87,8 +87,7 @@ test('basic', t => {
 })
 
 test('right-assoc', async t => {
-  await import('../feature/pow.js');
-
+  // ** is now in consolidated op.js (imported via expr.js)
   sameAsJs('1 + 2 * 3 ** 4 + 5', {})
   sameAsJs(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
 })
@@ -304,7 +303,7 @@ test.skip('ext: in operator', async t => {
 
 test('array', async t => {
   await import('../feature/collection.js')
-  await import('../feature/js/spread.js')
+  // spread is now in consolidated op.js
 
   is(subscript('[]')(), [])
   is(subscript('[ 1 ]')(), [1])
@@ -374,7 +373,7 @@ test('object', async t => {
 })
 
 test('ext: arrow', async t => {
-  await import('../feature/js/arrow.js')
+  // arrow is now in consolidated op.js
 
   is(subscript('() => 1')()(), 1)
   is(subscript('(a) => a+1')()(1), 2)

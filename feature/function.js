@@ -15,7 +15,7 @@ const TOKEN = 200, OPAREN = 40;
 token('function', TOKEN, a => {
   if (a) return;
   space();
-  const name = cur.charCodeAt(idx) !== OPAREN ? next(parse.id) : null;
+  const name = next(parse.id)
   name && space();
   const params = expect(OPAREN, OPAREN + 1, 0);
   return ['function', name, params, parseBlock()];

@@ -91,7 +91,16 @@ operators['++'] = (a, b) => prop(a, b === null ? (obj, path) => obj[path]++ : (o
 operators['--'] = (a, b) => prop(a, b === null ? (obj, path) => obj[path]-- : (obj, path) => --obj[path]);
 
 // Assignment
-operators['='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] = b(ctx)));
+operators['='] = (a, b) => {
+  // Handle let/const/var declarations: ['=', ['let', pattern], value]
+  if (Array.isArray(a) && (a[0] === 'let' || a[0] === 'const' || a[0] === 'var')) {
+    const pattern = a[1];
+    b = compile(b);
+    if (typeof pattern === 'string') return ctx => { ctx[pattern] = b(ctx); };
+    return ctx => destructure(pattern, b(ctx), ctx);
+  }
+  return (b = compile(b), prop(a, (obj, path, ctx) => obj[path] = b(ctx)));
+};
 operators['+='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] += b(ctx)));
 operators['-='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] -= b(ctx)));
 operators['*='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] *= b(ctx)));
@@ -149,9 +158,28 @@ operators['[]'] = (a, b) => {
   return ctx => { const k = b(ctx); return unsafe(k) ? undefined : a(ctx)[k]; };
 };
 operators['.'] = (a, b) => (a = compile(a), b = !b[0] ? b[1] : b, unsafe(b) ? () => undefined : ctx => a(ctx)[b]);
-operators['?.'] = (a, b) => b !== undefined ?
-  (a = compile(a), unsafe(b) ? () => undefined : ctx => a(ctx)?.[b]) :
-  (a = compile(a), ctx => a(ctx) || (() => {}));
+operators['?.'] = (a, b) => (a = compile(a), unsafe(b) ? () => undefined : ctx => a(ctx)?.[b]);
+operators['?.[]'] = (a, b) => (a = compile(a), b = compile(b), ctx => { const k = b(ctx); return unsafe(k) ? undefined : a(ctx)?.[k]; });
+operators['?.()'] = (a, b) => {
+  const args = !b ? () => [] :
+    b[0] === ',' ? (b = b.slice(1).map(b => !b ? err() : compile(b)), ctx => b.map(arg => arg(ctx))) :
+    (b = compile(b), ctx => [b(ctx)]);
+
+  // Handle nested optional chain: a?.method?.() or a?.["method"]?.()
+  if (a[0] === '?.') {
+    const container = compile(a[1]);
+    const prop = a[2];
+    return unsafe(prop) ? () => undefined :
+      ctx => { const c = container(ctx); return c?.[prop]?.(...args(ctx)); };
+  }
+  if (a[0] === '?.[]') {
+    const container = compile(a[1]);
+    const prop = compile(a[2]);
+    return ctx => { const c = container(ctx); const p = prop(ctx); return unsafe(p) ? undefined : c?.[p]?.(...args(ctx)); };
+  }
+  const fn = compile(a);
+  return ctx => fn(ctx)?.(...args(ctx));
+};
 
 // Call - handles both regular calls and groups
 operators['()'] = (a, b) => {
@@ -162,15 +190,17 @@ operators['()'] = (a, b) => {
     b[0] === ',' ? (b = b.slice(1).map(b => !b ? err() : compile(b)), ctx => b.map(arg => arg(ctx))) :
     (b = compile(b), ctx => [b(ctx)]);
 
-  // Optional chain call: a?.()
-  if (a[0] === '?.' && (a[2] || Array.isArray(a[1]))) {
-    let container, path, optional = false;
-    if (!a[2]) { optional = true; a = a[1]; }
-    if (a[0] === '[]' && a.length === 3) path = compile(a[2]); else path = () => a[2];
-    container = compile(a[1]);
-    return optional ?
-      ctx => { const p = path(ctx); return unsafe(p) ? undefined : container(ctx)?.[p]?.(...args(ctx)); } :
-      ctx => { const p = path(ctx); return unsafe(p) ? undefined : container(ctx)?.[p](...args(ctx)); };
+  // Optional chain method call: a?.method() or a?.["method"]()
+  if (a[0] === '?.') {
+    const container = compile(a[1]);
+    const prop = a[2];
+    return unsafe(prop) ? () => undefined :
+      ctx => { const c = container(ctx); return c?.[prop]?.(...args(ctx)); };
+  }
+  if (a[0] === '?.[]') {
+    const container = compile(a[1]);
+    const prop = compile(a[2]);
+    return ctx => { const c = container(ctx); const p = prop(ctx); return unsafe(p) ? undefined : c?.[p]?.(...args(ctx)); };
   }
 
   return prop(a, (obj, path, ctx) => obj[path](...args(ctx)), true);
@@ -251,22 +281,23 @@ operators[':'] = (a, b) => (b = compile(b), Array.isArray(a) ?
 // Block
 operators['block'] = body => body === undefined ? () => {} : (body = compile(body), ctx => body(ctx));
 
-// Variables
-operators['let'] = (pattern, val) => {
-  if (typeof pattern === 'string') {
-    val = val !== undefined ? compile(val) : null;
-    return ctx => { ctx[pattern] = val?.(ctx); };
+// Variables: let/const wrap their body expression
+// ['let', 'x'] - declare undefined
+// ['let', ['=', 'x', val]] - declare with value
+// ['let', [',', ...]] - multiple (compiler handles in comma context)
+operators['let'] = body => {
+  if (typeof body === 'string') return ctx => { ctx[body] = undefined; };
+  if (body[0] === '=') {
+    // ['=', pattern, value] - handle destructuring
+    const [, pattern, val] = body;
+    const v = compile(val);
+    if (typeof pattern === 'string') return ctx => { ctx[pattern] = v(ctx); };
+    return ctx => destructure(pattern, v(ctx), ctx);
   }
-  val = compile(val);
-  return ctx => destructure(pattern, val(ctx), ctx);
+  // Other expressions (comma, etc) - just compile
+  return compile(body);
 };
-
-operators['const'] = (pattern, val) => {
-  val = compile(val);
-  if (typeof pattern === 'string') return ctx => { ctx[pattern] = val(ctx); };
-  return ctx => destructure(pattern, val(ctx), ctx);
-};
-
+operators['const'] = operators['let'];
 operators['var'] = operators['let'];
 
 // Conditionals
@@ -294,17 +325,30 @@ operators['do'] = (body, cond) => {
   };
 };
 
-operators['for'] = (init, cond, step, body) => {
-  init = init ? compile(init) : null;
-  cond = cond ? compile(cond) : () => true;
-  step = step ? compile(step) : null;
-  body = compile(body);
-  return ctx => {
-    let r, res;
-    for (init?.(ctx); cond(ctx); step?.(ctx))
-      if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
-    return res;
-  };
+operators['for'] = (head, body) => {
+  // Normalize head: [';', init, cond, step] or single expr (for-in/of)
+  if (Array.isArray(head) && head[0] === ';') {
+    let [, init, cond, step] = head;
+    init = init ? compile(init) : null;
+    cond = cond ? compile(cond) : () => true;
+    step = step ? compile(step) : null;
+    body = compile(body);
+    return ctx => {
+      let r, res;
+      for (init?.(ctx); cond(ctx); step?.(ctx))
+        if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+      return res;
+    };
+  }
+  // For-in/of: head is ['in', lhs, rhs] or ['of', lhs, rhs]
+  if (Array.isArray(head) && (head[0] === 'in' || head[0] === 'of')) {
+    let [op, lhs, rhs] = head;
+    // Extract name from declaration: ['let', 'x'] → 'x'
+    if (Array.isArray(lhs) && (lhs[0] === 'let' || lhs[0] === 'const' || lhs[0] === 'var')) lhs = lhs[1];
+    if (op === 'in') return operators['for-in'](lhs, rhs, body);
+    if (op === 'of') return operators['for-of'](lhs, rhs, body);
+  }
+  err('Invalid for loop');
 };
 
 operators['for-of'] = (name, iterable, body) => {

@@ -25,15 +25,15 @@ test('jessie: inherits justin', () => {
 })
 
 test('jessie: variables', () => {
-  is(parse('let x = 1'), ['let', 'x', [, 1]])
-  is(parse('const y = 2'), ['const', 'y', [, 2]])
+  is(parse('let x = 1'), ['let', ['=', 'x', [, 1]]])
+  is(parse('const y = 2'), ['const', ['=', 'y', [, 2]]])
   is(run('let x = 5; x * 2', {}), 10)
 })
 
 test('jessie: control flow', () => {
   is(parse('if (x) y'), ['if', 'x', 'y'])
   is(parse('while (x) y'), ['while', 'x', 'y'])
-  is(parse('for (;;) x'), ['for', null, null, null, 'x'])
+  is(parse('for (;;) x'), ['for', [';', null, null, null], 'x'])
 })
 
 test('jessie: blocks', () => {

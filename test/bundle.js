@@ -81,32 +81,27 @@ test('bundle compile/js.js - exports functions', async () => {
 })
 
 // Test feature files produce valid JS (no syntax/runtime errors on import)
-// Universal features
+// Core features
 test('bundle feature/number.js - valid JS', () => bundleAndVerifySyntax('feature/number.js'))
 test('bundle feature/string.js - valid JS', () => bundleAndVerifySyntax('feature/string.js'))
 test('bundle feature/op.js - valid JS', () => bundleAndVerifySyntax('feature/op.js'))
 test('bundle feature/member.js - valid JS', () => bundleAndVerifySyntax('feature/member.js'))
 test('bundle feature/group.js - valid JS', () => bundleAndVerifySyntax('feature/group.js'))
 test('bundle feature/collection.js - valid JS', () => bundleAndVerifySyntax('feature/collection.js'))
-test('bundle feature/pow.js - valid JS', () => bundleAndVerifySyntax('feature/pow.js'))
-
-// C-family features
-test('bundle feature/c/number.js - valid JS', () => bundleAndVerifySyntax('feature/c/number.js'))
-test('bundle feature/c/string.js - valid JS', () => bundleAndVerifySyntax('feature/c/string.js'))
-test('bundle feature/c/op.js - valid JS', () => bundleAndVerifySyntax('feature/c/op.js'))
-test('bundle feature/c/comment.js - valid JS', () => bundleAndVerifySyntax('feature/c/comment.js'))
+test('bundle feature/comment.js - valid JS', () => bundleAndVerifySyntax('feature/comment.js'))
 test('bundle feature/block.js - valid JS', () => bundleAndVerifySyntax('feature/block.js'))
-test('bundle feature/c/if.js - valid JS', () => bundleAndVerifySyntax('feature/c/if.js'))
-test('bundle feature/c/loop.js - valid JS', () => bundleAndVerifySyntax('feature/c/loop.js'))
-test('bundle feature/c/try.js - valid JS', () => bundleAndVerifySyntax('feature/c/try.js'))
-test('bundle feature/c/switch.js - valid JS', () => bundleAndVerifySyntax('feature/c/switch.js'))
 
-// JS-specific features
-test('bundle feature/js/op.js - valid JS', () => bundleAndVerifySyntax('feature/js/op.js'))
-test('bundle feature/js/arrow.js - valid JS', () => bundleAndVerifySyntax('feature/js/arrow.js'))
-test('bundle feature/js/optional.js - valid JS', () => bundleAndVerifySyntax('feature/js/optional.js'))
-test('bundle feature/js/spread.js - valid JS', () => bundleAndVerifySyntax('feature/js/spread.js'))
-test('bundle feature/js/template.js - valid JS', () => bundleAndVerifySyntax('feature/js/template.js'))
+// Statement features
+test('bundle feature/if.js - valid JS', () => bundleAndVerifySyntax('feature/if.js'))
+test('bundle feature/loop.js - valid JS', () => bundleAndVerifySyntax('feature/loop.js'))
+test('bundle feature/try.js - valid JS', () => bundleAndVerifySyntax('feature/try.js'))
+test('bundle feature/switch.js - valid JS', () => bundleAndVerifySyntax('feature/switch.js'))
+test('bundle feature/function.js - valid JS', () => bundleAndVerifySyntax('feature/function.js'))
+test('bundle feature/var.js - valid JS', () => bundleAndVerifySyntax('feature/var.js'))
+test('bundle feature/destruct.js - valid JS', () => bundleAndVerifySyntax('feature/destruct.js'))
+test('bundle feature/module.js - valid JS', () => bundleAndVerifySyntax('feature/module.js'))
+test('bundle feature/accessor.js - valid JS', () => bundleAndVerifySyntax('feature/accessor.js'))
+test('bundle feature/template.js - valid JS', () => bundleAndVerifySyntax('feature/template.js'))
 test('bundle feature/regex.js - valid JS', () => bundleAndVerifySyntax('feature/regex.js'))
 
 // Run all tests

@@ -8,23 +8,21 @@
  */
 import './justin.js';
 
-// Universal statement features (var.js must come before destruct.js)
+// Statement features (var.js must come before destruct.js)
 import '../feature/var.js';
 import '../feature/function.js';
 import '../feature/regex.js';
+import '../feature/destruct.js';
 
-// JS-specific statement features (destruct must be before loop for for-of destructuring)
-import '../feature/js/destruct.js';
+// Control flow
+import '../feature/if.js';
+import '../feature/loop.js';
+import '../feature/try.js';
+import '../feature/switch.js';
 
-// C-family statement features
-import '../feature/c/if.js';
-import '../feature/c/loop.js';
-import '../feature/c/try.js';    // try/catch/finally/throw
-import '../feature/c/switch.js';
-
-// JS-specific statement features
-import '../feature/js/module.js';
-import '../feature/js/accessor.js';
+// Module system
+import '../feature/module.js';
+import '../feature/accessor.js';
 
 import { parse } from './pratt.js';
 

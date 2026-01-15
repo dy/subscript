@@ -11,15 +11,15 @@ import { token, expr, err, space } from '../parse/pratt.js';
 
 const STATEMENT = 5, ASSIGN = 20;
 
-// Parse: name or name = value
+// Parse: name or name = value (no validation - defer to compile)
 const decl = op => {
   space();
   const e = expr(ASSIGN);
   return e?.[0] === '=' && typeof e[1] === 'string' ? [op, e[1], e[2]] :
          typeof e === 'string' ? [op, e] :
-         err('Expected identifier');
+         Array.isArray(e) ? [op, e] : [op];
 };
 
 token('let', STATEMENT, a => !a && decl('let'));
-token('const', STATEMENT, a => !a && (a = decl('const'), a.length < 3 ? err('Expected =') : a));
+token('const', STATEMENT, a => !a && decl('const'));
 token('var', STATEMENT, a => !a && decl('var'));
