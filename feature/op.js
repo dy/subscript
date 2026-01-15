@@ -109,25 +109,7 @@ token('?.', ACCESS, (a, b) => {
 unary('typeof', PREFIX);
 unary('void', PREFIX);
 unary('delete', PREFIX);
-
-// --- new ---
-token('new', PREFIX, a => {
-  if (a) return;
-  space();
-  let target;
-  if (cur.charCodeAt(idx) === 40) {
-    skip();
-    target = expr(0, 41);
-    if (!target) return;
-  } else {
-    target = next(parse.id);
-    if (!target) return;
-    while (space() === 46) { skip(); const p = next(parse.id); if (!p) return; target = ['.', target, p]; }
-    while (space() === 91) { skip(); target = ['[]', target, expr(0, 93)]; }
-  }
-  const args = space() === 40 ? (skip(), expr(0, 41) || null) : null;
-  return ['new', target, args];
-});
+unary('new', PREFIX);
 
 // --- Literals ---
 literal('true', true);

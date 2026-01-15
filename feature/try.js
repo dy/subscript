@@ -1,45 +1,14 @@
-/**
- * try/catch/finally/throw statements (C-family)
- *
- * AST:
- *   try { a } catch (e) { b }             → ['try', a, 'e', b]
- *   try { a } finally { c }               → ['try', a, null, null, c]
- *   try { a } catch (e) { b } finally { c } → ['try', a, 'e', b, c]
- *   throw x                               → ['throw', x]
- */
-import { token, skip, space, err, next, parse, expr } from '../parse/pratt.js';
-import { parseBlock, isWord } from './block.js';
+// try/catch/finally/throw statements
+// AST: ['finally', ['catch', ['try', body], param, body], body]
+import { token, skip, space, err, parse, expr } from '../parse/pratt.js';
 
-const STATEMENT = 5;
-const OPAREN = 40, CPAREN = 41;
+const STATEMENT = 5, OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;
+const block = () => (space() === OBRACE || err('Expected {'), skip(), expr(STATEMENT - .5, CBRACE) || null);
 
-// try/catch/finally
-token('try', STATEMENT + 1, a => {
-  if (a) return;
-  const tryBody = parseBlock();
-  let catchName = null, catchBody = null, finallyBody = null;
+token('try', STATEMENT + 1, a => !a && ['try', block()]);
+token('catch', STATEMENT + 1, a => a && (space() === OPAREN || err('Expected ('), skip(), ['catch', a, expr(0, CPAREN), block()]));
+token('finally', STATEMENT + 1, a => a && ['finally', a, block()]);
 
-  if (space() === 99 && isWord('catch')) {
-    skip(5);
-    space() === OPAREN || err('Expected (');
-    skip();
-    catchName = next(parse.id);
-    catchName || err('Expected identifier');
-    space() === CPAREN || err('Expected )');
-    skip();
-    catchBody = parseBlock();
-  }
-
-  if (space() === 102 && isWord('finally')) {
-    skip(7);
-    finallyBody = parseBlock();
-  }
-
-  catchName || finallyBody || err('Expected catch or finally');
-  return finallyBody ? ['try', tryBody, catchName, catchBody, finallyBody] : ['try', tryBody, catchName, catchBody];
-});
-
-// throw
 token('throw', STATEMENT + 1, a => {
   if (a) return;
   parse.asi && (parse.newline = false);

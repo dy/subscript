@@ -7,13 +7,4 @@ group('()', ACCESS);
 
 // Sequences
 nary(',', SEQ);
-
-// Statement sequence - yields when next token needs left operand (else, catch, etc)
-token(';', STATEMENT, (a, curPrec) => {
-  if (curPrec >= STATEMENT) return;
-  if (a?.[0] !== ';') a = [';', a || null];
-  const b = expr(STATEMENT - .5);
-  // If RHS parsed something, merge; else add null for empty statement
-  b?.[0] === ';' ? a.push(...b.slice(1)) : a.push(b || null);
-  return a;
-});
+nary(';', STATEMENT, true);  // right-assoc to allow same-prec statements

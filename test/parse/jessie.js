@@ -53,7 +53,7 @@ test('jessie: typeof', () => {
 
 test('jessie: new', () => {
   is(parse('new X()')[0], 'new')
-  is(parse('new X(a, b)')[1], 'X')
+  is(parse('new X(a, b)')[1][0], '()')  // ['new', ['()', 'X', ...]]
   is(parse('new a.b.C()')[0], 'new')
 })
 

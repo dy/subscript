@@ -245,12 +245,15 @@ operators['delete'] = a => {
 // Instanceof - prototype chain check
 operators['instanceof'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) instanceof b(ctx));
 
-// new - constructor call: new X(), new X(a,b)
-operators['new'] = (target, args) => {
-  target = compile(target);
+// new - constructor call: ['new', ['()', target, args]] or ['new', target]
+operators['new'] = (call) => {
+  // new Foo() → ['new', ['()', 'Foo', args]]
+  // new Foo → ['new', 'Foo']
+  const target = compile(call?.[0] === '()' ? call[1] : call);
+  const args = call?.[0] === '()' ? call[2] : null;
   const argList = !args ? () => [] :
-    args[0] === ',' ? (args = args.slice(1).map(a => compile(a)), ctx => args.map(a => a(ctx))) :
-    (args = compile(args), ctx => [args(ctx)]);
+    args[0] === ',' ? (a => ctx => a.map(f => f(ctx)))(args.slice(1).map(compile)) :
+    (a => ctx => [a(ctx)])(compile(args));
   return ctx => new (target(ctx))(...argList(ctx));
 };
 

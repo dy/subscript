@@ -32,7 +32,6 @@ lookup[_0] = a => {
   if (a) return;
   const cfg = parse.number;
   if (cfg) {
-    const c = cur.charCodeAt(idx + 1);
     for (const [pre, base] of Object.entries(cfg)) {
       if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
         skip(2);

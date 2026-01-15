@@ -1,22 +1,15 @@
-/**
- * Function declarations and expressions
- *
- * AST:
- *   function f(a,b) { body }      → ['function', 'f', [',', 'a', 'b'], body]
- *   function f(a) { body }        → ['function', 'f', 'a', body]
- *   function f() { body }         → ['function', 'f', null, body]
- *   function f(a, ...rest) {}     → ['function', 'f', [',', 'a', ['...', 'rest']], body]
- */
-import { cur, idx, token, skip, space, next, parse } from '../parse/pratt.js';
-import { parseBlock, expect } from './block.js';
+// Function declarations and expressions
+import { token, skip, space, next, parse, expr } from '../parse/pratt.js';
 
-const TOKEN = 200, OPAREN = 40;
+const TOKEN = 200, CPAREN = 41, CBRACE = 125, STATEMENT = 5;
 
 token('function', TOKEN, a => {
   if (a) return;
   space();
-  const name = next(parse.id)
+  const name = next(parse.id);
   name && space();
-  const params = expect(OPAREN, OPAREN + 1, 0);
-  return ['function', name, params, parseBlock()];
+  skip();
+  const params = expr(0, CPAREN) || null;
+  space(); skip();
+  return ['function', name, params, expr(STATEMENT - .5, CBRACE) || null];
 });

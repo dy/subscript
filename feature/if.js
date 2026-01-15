@@ -1,17 +1,9 @@
-/**
- * Conditionals: if/else
- *
- * AST:
- *   if (c) a else b    → ['if', c, a, b?]
- *
- * `if` consumes its own `else` branch - making it self-contained.
- * Note: `else` always binds regardless of newlines - ASI doesn't apply between if-body and else.
- */
-import { space, skip, expr, err, parse, idx, seek } from '../parse/pratt.js';
-import { parseBody, keyword, isWord } from './block.js';
+// If/else statement - else consumed internally
+import { space, skip, expr, err, parse, idx, seek, cur } from '../parse/pratt.js';
+import { parseBody, keyword } from './block.js';
 
-const STATEMENT = 5;
-const OPAREN = 40, CPAREN = 41, SEMI = 59;
+const STATEMENT = 5, OPAREN = 40, CPAREN = 41, SEMI = 59;
+const isWord = (w, l = w.length) => cur.substr(idx, l) === w && !parse.id(cur.charCodeAt(idx + l));
 
 // Check for `else` after optional semicolon
 const checkElse = () => {

@@ -184,21 +184,10 @@ generator('continue', () => 'continue');
 generator('throw', a => `throw ${codegen(a)}`);
 
 // Try/Catch/Finally
-// AST: ['try', tryBody, catchName, catchBody, finallyBody]
-// catchName === null means no catch block (try-finally only)
-generator('try', (tryBody, catchName, catchBody, finallyBody) => {
-  let result = `try { ${codegen(tryBody)} }`;
-  // Only emit catch if catchName is a string (actual catch variable name)
-  if (catchName !== undefined && catchName !== null && catchBody !== undefined) {
-    result += ` catch (${catchName}) { ${codegen(catchBody)} }`;
-  }
-  if (finallyBody !== undefined) {
-    result += ` finally { ${codegen(finallyBody)} }`;
-  }
-  return result;
-});
-generator('catch', (param, body) => param ? `catch (${param}) ${codegen(body)}` : `catch ${codegen(body)}`);
-generator('finally', body => `finally ${codegen(body)}`);
+// AST: ['finally', ['catch', ['try', body], param, catchBody], finallyBody]
+generator('try', body => `try { ${codegen(body)} }`);
+generator('catch', (tryExpr, param, body) => `${codegen(tryExpr)} catch (${codegen(param)}) { ${codegen(body)} }`);
+generator('finally', (expr, body) => `${codegen(expr)} finally { ${codegen(body)} }`);
 
 // Switch
 generator('switch', (expr, body) => `switch (${codegen(expr)}) ${codegen(body)}`);
