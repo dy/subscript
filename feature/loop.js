@@ -1,5 +1,5 @@
 // Loops: while, do-while, for, for await, break, continue, return
-import { expr, skip, space, parse, cur, idx } from '../parse/pratt.js';
+import { expr, skip, space, parse, cur, idx, err } from '../parse/pratt.js';
 import { parseBody, keyword } from './block.js';
 
 const STATEMENT = 5, OPAREN = 40, CPAREN = 41, CBRACE = 125, SEMI = 59;

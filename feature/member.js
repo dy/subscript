@@ -1,7 +1,7 @@
 /**
  * Property access and function calls: a.b, a[b], a(b), #private
  */
-import { access, binary, token, next, parse, lookup, idx, skip } from '../parse/pratt.js';
+import { access, binary, token, next, parse } from '../parse/pratt.js';
 
 const ACCESS = 170, TOKEN = 200;
 

@@ -46,7 +46,7 @@
 - [x] Split compiler declarations
 - [x] call is different from member
 
-- [ ] Add validation logic
+- [x] ~~Add validation logic~~ -> leave to implementors
 
 - [ ] All C-like compiler targets
   - [ ] GLSL target

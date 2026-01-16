@@ -1,7 +1,7 @@
 // Core Pratt parser tests
 
 import test, { is, any, throws } from 'tst'
-import { binary, nary, unary, token } from '../../subscript.js'
+import { binary, nary, unary, token, compile } from '../../subscript.js'
 import parse from '../../parse/pratt.js'
 
 const MULT = 120;
@@ -189,7 +189,7 @@ test('parse: parens', t => {
   is(parse('+(b)'), ['+', ['()', 'b']])
   is(parse('+((b))'), ['+', ['()', ['()', 'b']]])
   is(parse('++(b)'), ['++', ['()', 'b']])
-  is(parse('++a(b)'), ['++', ['()', 'a', 'b']])
+  throws(() => compile(parse('++a(b)')), 'prefix increment on call is invalid')
   is(parse('+(b)'), ['+', ['()', 'b']])
   is(parse('x+(b)'), ['+', 'x', ['()', 'b']])
   is(parse('(x)+-b'), ['+', ['()', 'x'], ['-', 'b']])

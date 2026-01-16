@@ -8,7 +8,7 @@ import { binary } from '../../parse/pratt.js';
 
 const ASSIGN = 20;
 
-// Base assignment (must be first)
+// Base assignment
 binary('=', ASSIGN, true);
 
 // Compound arithmetic

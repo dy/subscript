@@ -136,20 +136,6 @@ export let idx, cur,
 
   // register a(b), a[b], a<b> etc,
   // NOTE: we make sure `null` indicates placeholder
-  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null])),
-
-  // Normalizer registry (validation, optimization, desugaring)
-  norms = {},
-
-  // Register normalizer (chains: transform pipes through, validate runs all)
-  norm = (op, fn, prev = norms[op]) =>
-    fn ? (norms[op] = (n, c) => (n = fn(n, c) ?? n, prev ? prev(n, c) ?? n : n)) : delete norms[op],
-
-  // Normalize AST (recursive, bottom-up: children first)
-  normalize = (node, ctx) => {
-    if (!node?.[0] || typeof node[0] !== 'string') return node
-    for (let i = 1; i < node.length; i++) node[i] = normalize(node[i], ctx)
-    return norms[node[0]]?.(node, ctx) ?? node
-  };
+  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]));
 
 export default parse;

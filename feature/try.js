@@ -1,5 +1,5 @@
 // try/catch/finally/throw statements
-// AST: ['finally', ['catch', ['try', body], param, body], body]
+// AST: ['catch', ['try', body], param, catchBody] or ['finally', inner, body]
 import { token, skip, space, err, parse, expr } from '../parse/pratt.js';
 
 const STATEMENT = 5, OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;

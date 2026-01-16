@@ -548,3 +548,27 @@ test.skip('ext: collect args', async t => {
     ['Math', 'pow', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
   )
 })
+
+test('err: invalid assignment target', t => {
+  throws(() => subscript('1 = 2'), 'number literal')
+  throws(() => subscript('"a" = b'), 'string literal')
+  throws(() => subscript('true = 1'), 'boolean literal')
+  throws(() => subscript('(a + b) = c'), 'expression')
+  throws(() => subscript('a() = b'), 'function call')
+  throws(() => subscript('1 += 2'), 'compound assignment to number')
+  throws(() => subscript('"a" -= 1'), 'compound assignment to string')
+  throws(() => subscript('a() *= 2'), 'compound assignment to call')
+})
+
+test('err: invalid increment target', t => {
+  throws(() => subscript('1++'), 'postfix number')
+  throws(() => subscript('++1'), 'prefix number')
+  throws(() => subscript('"a"++'), 'postfix string')
+  throws(() => subscript('++"a"'), 'prefix string')
+  throws(() => subscript('(a+b)++'), 'postfix expression')
+  throws(() => subscript('++(a+b)'), 'prefix expression')
+  throws(() => subscript('a()++'), 'postfix call')
+  throws(() => subscript('++a()'), 'prefix call')
+  throws(() => subscript('1--'), 'decrement number')
+  throws(() => subscript('--1'), 'decrement prefix number')
+})

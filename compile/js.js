@@ -4,6 +4,16 @@
  */
 const err = (msg = 'Compile error') => { throw Error(msg) };
 
+// Left-value check: identifier, member access, destructure pattern
+const isLval = n =>
+  typeof n === 'string' ||
+  (Array.isArray(n) && (
+    n[0] === '.' || n[0] === '?.' ||
+    (n[0] === '[]' && n.length === 3) || n[0] === '?.[]' ||
+    (n[0] === '()' && n.length === 2 && isLval(n[1])) ||
+    n[0] === '{}' // destructure
+  ));
+
 // Block prototype chain attacks
 const unsafe = k => k?.[0] === '_' && k[1] === '_' || k === 'constructor' || k === 'prototype';
 
@@ -27,11 +37,12 @@ export const compile = node =>
 
 // Takes node and returns evaluator for prop access (container, path, ctx)
 export const prop = (a, fn, generic, obj, path) => (
+  a == null ? err('Empty ()') :
   a[0] === '()' && a.length == 2 ? prop(a[1], fn, generic) :
   typeof a === 'string' ? ctx => fn(ctx, a, ctx) :
   a[0] === '.' ? (obj = compile(a[1]), path = a[2], ctx => fn(obj(ctx), path, ctx)) :
   a[0] === '[]' && a.length === 3 ? (obj = compile(a[1]), path = compile(a[2]), ctx => fn(obj(ctx), path(ctx), ctx)) :
-  generic ? (a = compile(a), ctx => fn([a(ctx)], 0, ctx)) : () => err('Bad left value')
+  (a = compile(a), ctx => fn([a(ctx)], 0, ctx))  // generic fallback (assumes normalized)
 );
 
 // Loop body executor - handles control signals
@@ -87,8 +98,8 @@ operators['%'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) % b(ct
 operators['**'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) ** b(ctx));
 
 // Increment/decrement
-operators['++'] = (a, b) => prop(a, b === null ? (obj, path) => obj[path]++ : (obj, path) => ++obj[path]);
-operators['--'] = (a, b) => prop(a, b === null ? (obj, path) => obj[path]-- : (obj, path) => --obj[path]);
+operators['++'] = (a, b) => (isLval(a) || err('Invalid increment target'), prop(a, b === null ? (obj, path) => obj[path]++ : (obj, path) => ++obj[path]));
+operators['--'] = (a, b) => (isLval(a) || err('Invalid decrement target'), prop(a, b === null ? (obj, path) => obj[path]-- : (obj, path) => --obj[path]));
 
 // Assignment
 operators['='] = (a, b) => {
@@ -99,40 +110,41 @@ operators['='] = (a, b) => {
     if (typeof pattern === 'string') return ctx => { ctx[pattern] = b(ctx); };
     return ctx => destructure(pattern, b(ctx), ctx);
   }
+  isLval(a) || err('Invalid assignment target');
   return (b = compile(b), prop(a, (obj, path, ctx) => obj[path] = b(ctx)));
 };
-operators['+='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] += b(ctx)));
-operators['-='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] -= b(ctx)));
-operators['*='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] *= b(ctx)));
-operators['/='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] /= b(ctx)));
-operators['%='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] %= b(ctx)));
-operators['**='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] **= b(ctx)));
+operators['+='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] += b(ctx)));
+operators['-='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] -= b(ctx)));
+operators['*='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] *= b(ctx)));
+operators['/='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] /= b(ctx)));
+operators['%='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] %= b(ctx)));
+operators['**='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] **= b(ctx)));
 
 // Bitwise
 operators['~'] = a => (a = compile(a), ctx => ~a(ctx));
 operators['|'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) | b(ctx));
 operators['&'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) & b(ctx));
 operators['^'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) ^ b(ctx));
-operators['|='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] |= b(ctx)));
-operators['&='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] &= b(ctx)));
-operators['^='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] ^= b(ctx)));
+operators['|='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] |= b(ctx)));
+operators['&='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] &= b(ctx)));
+operators['^='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] ^= b(ctx)));
 
 // Shift
 operators['>>'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) >> b(ctx));
 operators['<<'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) << b(ctx));
 operators['>>>'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) >>> b(ctx));
-operators['>>='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] >>= b(ctx)));
-operators['<<='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] <<= b(ctx)));
-operators['>>>='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] >>>= b(ctx)));
+operators['>>='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] >>= b(ctx)));
+operators['<<='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] <<= b(ctx)));
+operators['>>>='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] >>>= b(ctx)));
 
 // Comparison
 operators['!'] = a => (a = compile(a), ctx => !a(ctx));
 operators['||'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) || b(ctx));
 operators['&&'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) && b(ctx));
 operators['??'] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx));
-operators['||='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] ||= b(ctx)));
-operators['&&='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] &&= b(ctx)));
-operators['??='] = (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => obj[path] ??= b(ctx)));
+operators['||='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] ||= b(ctx)));
+operators['&&='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] &&= b(ctx)));
+operators['??='] = (a, b) => (isLval(a) || err('Invalid assignment target'), b = compile(b), prop(a, (obj, path, ctx) => obj[path] ??= b(ctx)));
 
 operators['=='] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) == b(ctx));
 operators['!='] = (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) != b(ctx));
@@ -152,8 +164,8 @@ operators['[]'] = (a, b) => {
     a = a.map(a => a[0] === '...' ? (a = compile(a[1]), ctx => a(ctx)) : (a = compile(a), ctx => [a(ctx)]));
     return ctx => a.flatMap(a => a(ctx));
   }
-  // Member access: a[b] - b could be null (empty) or expression
-  if (!b) err('Missing index');
+  // Member access: a[b] - b must not be null/undefined
+  if (b == null) err('Missing index');
   a = compile(a); b = compile(b);
   return ctx => { const k = b(ctx); return unsafe(k) ? undefined : a(ctx)[k]; };
 };
@@ -162,7 +174,7 @@ operators['?.'] = (a, b) => (a = compile(a), unsafe(b) ? () => undefined : ctx =
 operators['?.[]'] = (a, b) => (a = compile(a), b = compile(b), ctx => { const k = b(ctx); return unsafe(k) ? undefined : a(ctx)?.[k]; });
 operators['?.()'] = (a, b) => {
   const args = !b ? () => [] :
-    b[0] === ',' ? (b = b.slice(1).map(b => !b ? err() : compile(b)), ctx => b.map(arg => arg(ctx))) :
+    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) :
     (b = compile(b), ctx => [b(ctx)]);
 
   // Handle nested optional chain: a?.method?.() or a?.["method"]?.()
@@ -184,10 +196,15 @@ operators['?.()'] = (a, b) => {
 // Call - handles both regular calls and groups
 operators['()'] = (a, b) => {
   // Group: (expr) - no second argument means grouping, not call
-  if (b === undefined) return !a ? err('Empty ()') : compile(a);
+  // Empty () is invalid as standalone expression (but valid as arrow params - handled in => operator)
+  if (b === undefined) return a == null ? err('Empty ()') : compile(a);
+
+  // Validate: no sparse arguments in calls - check(,) is invalid
+  const hasSparse = n => n?.[0] === ',' && n.slice(1).some(a => a == null || hasSparse(a));
+  if (hasSparse(b)) err('Empty argument');
 
   const args = !b ? () => [] :
-    b[0] === ',' ? (b = b.slice(1).map(b => !b ? err() : compile(b)), ctx => b.map(arg => arg(ctx))) :
+    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) :
     (b = compile(b), ctx => [b(ctx)]);
 
   // Optional chain method call: a?.method() or a?.["method"]()
@@ -351,7 +368,6 @@ operators['for'] = (head, body) => {
     if (op === 'in') return operators['for-in'](lhs, rhs, body);
     if (op === 'of') return operators['for-of'](lhs, rhs, body);
   }
-  err('Invalid for loop');
 };
 
 operators['for-of'] = (name, iterable, body) => {
