@@ -38,33 +38,34 @@
 - [x] Reorganize features by languages
   - [x] Factor out common vs specific language features
   - [x] Implement a few unique to each language features
-  - [ ] Cover all common languages (know the list _JavaScript_, _C_, _Python_, _Java_, _Swift_, _Kotlin_, _Go_, _Rust_, _Nim?_, _??_):
+  - [x] Cover main common languages (know the list _JavaScript_, _C_, _Python_, _Java_, _Swift_, _Kotlin_, _Go_, _Rust_, _Nim?_, _??_):
 - [x] Make jessie parse fully itself with all deps
 - [x] Add util/bundle
   - [x] Make jessie eval itself
 - [x] Add util/asi
 - [x] Split compiler declarations
 - [x] call is different from member
-- [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
+
+- [ ] Add validation logic
 
 - [ ] All C-like compiler targets
   - [ ] GLSL target
   - [ ] C target
   - [ ] Wasm target
 
+- [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
+  - [ ] Add link to repl
 - [ ] CHANGELOG.md — 9 major versions, no migration history
 - [ ] Installation section before usage in README
 - [ ] "Add Your Own Operator" guide — current extension examples are cryptic
 - [ ] Real "Used by" with actual links if projects exist
 - [x] typeof is part of jessie (many features are part of it)
 - [x] ~~justin should not have custom decls: these are features~~
-
 - [x] Switch statement — feature/switch.js
 - [x] Destructuring — feature/destruct.js
 - [x] Rest parameters — feature/function.js, feature/arrow.js
 - [x] Getters/setters — feature/accessor.js (optimized with Symbol marker)
 - [x] REPL updated with new features and jessie preset
-- [ ] Add link to repl
 - [ ] Remove implementation details from extension examples
 - [ ] Highlight security model (blocked constructor/__proto__)
 - [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"

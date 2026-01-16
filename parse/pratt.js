@@ -136,6 +136,21 @@ export let idx, cur,
 
   // register a(b), a[b], a<b> etc,
   // NOTE: we make sure `null` indicates placeholder
-  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]));
+  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null])),
+
+  // Validator registry
+  validators = {},
+
+  // Register validator (chains with previous)
+  validator = (op, fn, prev = validators[op]) =>
+    fn ? (validators[op] = (n, c) => { fn(n, c); prev?.(n, c) }) : delete validators[op],
+
+  // Validate AST (recursive, bottom-up)
+  validate = (node, ctx) => {
+    if (!node?.[0] || typeof node[0] !== 'string') return node
+    for (let i = 1; i < node.length; i++) validate(node[i], ctx)
+    validators[node[0]]?.(node, ctx)
+    return node
+  };
 
 export default parse;

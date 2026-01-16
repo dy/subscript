@@ -24,4 +24,14 @@ export function expr(prec: number, end?: string | undefined): any;
 export function isId(c: number): boolean;
 export function space(): number;
 export function id(): string;
+
+/** Validator registry - keyed by operator */
+export const validators: Record<string, (node: any[], ctx?: any) => void>;
+
+/** Register a validator (chains with previous). Pass null to remove. */
+export function validator(op: string, fn: ((node: any[], ctx?: any) => void) | null): void;
+
+/** Validate AST recursively (bottom-up). Returns node for chaining. */
+export function validate(node: any, ctx?: any): any;
+
 export default parse;
