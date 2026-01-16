@@ -9,16 +9,19 @@ export let idx, cur,
 
   // display error with context
   // err.ptr: string suffix (combining diacritics) or [before, after] wrapper
-  err = (msg = 'Unexpected token',
-    lines = cur.slice(0, idx).split('\n'),
+  err = (msg = 'Unexpected token', at = idx,
+    lines = cur.slice(0, at).split('\n'),
     last = lines.pop(),
-    before = cur.slice(Math.max(0, idx - 40), idx),
+    before = cur.slice(Math.max(0, at - 40), at),
     ptr = '\u032D',//'\u030C\u032D',
-    at = (cur[idx] || '∅') + ptr,
-    after = cur.slice(idx + 1, idx + 20)
+    chr = (cur[at] || '∅') + ptr,
+    after = cur.slice(at + 1, at + 20)
   ) => {
-    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1} — ${before}${at}${after}`)
+    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1} — ${before}${chr}${after}`)
   },
+
+  // attach location to node (returns node for chaining)
+  loc = (node, at = idx) => (Array.isArray(node) && (node.loc = at), node),
 
   // advance until condition meets
   next = (is, from = idx, l) => {
@@ -94,6 +97,7 @@ export let idx, cur,
 
   // create operator checker/mapper (see examples)
   // map returns: truthy = result, undefined = reserved word, false = fall through (not reserved)
+  // attaches .loc to array results for source mapping
   token = (
     op,
     prec = SPACE,
@@ -110,7 +114,7 @@ export let idx, cur,
         (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op) // save matched only after boundary check
       ) &&
       curPrec < prec && // matches precedence AFTER operator matched
-      (idx += l, (r = map(a)) || (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r) // false = fall through without reserved
+      (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r) // false = fall through without reserved
     ) ||
     prev?.(a, curPrec, matched), // pass matched through chain
 

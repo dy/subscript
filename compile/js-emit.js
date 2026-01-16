@@ -23,9 +23,14 @@ export const generator = (op, fn, prev = generators[op]) =>
 export const codegen = node =>
   !Array.isArray(node) ? (node === undefined ? 'undefined' : node) : // identifier
   node[0] === undefined ? (typeof node[1] === 'string' ? JSON.stringify(node[1]) : String(node[1])) : // literal
-  generators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`);
+  generators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`, node);
 
-const err = (msg = 'Compile error') => { throw Error(msg) };
+// Error with optional source location from node.loc
+const err = (msg = 'Codegen error', node) => {
+  const e = Error(msg);
+  if (node?.loc != null) e.loc = node.loc;
+  throw e;
+};
 
 // --- Basic operators ---
 

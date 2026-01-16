@@ -2,7 +2,16 @@
  * JS Compiler: AST → Evaluator
  * Monolithic compiler with all JS semantics
  */
-const err = (msg = 'Compile error') => { throw Error(msg) };
+
+// Current node being compiled (for error location)
+let curNode;
+
+// Error with optional source location from node.loc
+const err = (msg = 'Compile error', node = curNode) => {
+  const e = Error(msg);
+  if (node?.loc != null) e.loc = node.loc;
+  throw e;
+};
 
 // Left-value check: identifier, member access, destructure pattern
 const isLval = n =>
@@ -30,10 +39,12 @@ export const operator = (op, fn, prev = operators[op]) =>
   (operators[op] = (...args) => fn(...args) || prev?.(...args));
 
 // Compile AST to evaluator function
-export const compile = node =>
+export const compile = node => (
+  curNode = node,
   !Array.isArray(node) ? (node === undefined ? () => undefined : ctx => ctx?.[node]) :
   node[0] === undefined ? (v => () => v)(node[1]) :
-  operators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`);
+  operators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`)
+);
 
 // Takes node and returns evaluator for prop access (container, path, ctx)
 export const prop = (a, fn, generic, obj, path) => (
