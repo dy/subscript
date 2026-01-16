@@ -572,3 +572,59 @@ test('err: invalid increment target', t => {
   throws(() => subscript('1--'), 'decrement number')
   throws(() => subscript('--1'), 'decrement prefix number')
 })
+
+test('template tag', t => {
+  // Basic template tag
+  is(subscript`1 + 2`(), 3)
+  is(subscript`a + b`({ a: 1, b: 2 }), 3)
+
+  // Interpolation - primitives become literals
+  const x = 10
+  is(subscript`a + ${x}`({ a: 5 }), 15)
+  is(subscript`${x} + ${20}`(), 30)
+
+  // Interpolation - functions become callable literals
+  const double = n => n * 2
+  is(subscript`${double}(x)`({ x: 5 }), 10)
+
+  // Interpolation - objects become literals
+  const obj = { a: 1 }
+  is(subscript`${obj}.a`(), 1)
+
+  // AST injection - compose expressions
+  const inner = ['+', 'b', 'c']  // b + c as AST
+  is(subscript`a * ${inner}`({ a: 2, b: 3, c: 4 }), 14)  // 2 * (3 + 4)
+
+  // AST injection via parse
+  const sum = subscript.parse('x + y')
+  is(subscript`${sum} * 2`({ x: 3, y: 4 }), 14)  // (3 + 4) * 2
+
+  // AST injection - literal node
+  const lit = [, 100]
+  is(subscript`a + ${lit}`({ a: 5 }), 105)
+
+  // AST injection - identifier
+  is(subscript`a + ${'b'}`({ a: 1, b: 2 }), 3)
+
+  // Regular arrays stay as literals (first element not string/undefined)
+  const arr = [1, 2, 3]
+  is(subscript`${arr}[1]`(), 2)
+
+  // Caching - same template literal in loop reuses compiled fn
+  const compile = () => subscript`a + 1`
+  const fn1 = compile()
+  const fn2 = compile()
+  is(fn1, fn2) // same template strings array = cached
+
+  // Direct string call (no caching)
+  is(subscript('1 + 2')(), 3)
+  is(subscript('1 + 2')(), 3)
+
+  // Configurable parser/compile
+  const origParse = subscript.parse
+  const origCompile = subscript.compile
+  subscript.parse = s => [, 42] // always return literal 42
+  is(subscript('anything')(), 42)
+  subscript.parse = origParse
+  subscript.compile = origCompile
+})

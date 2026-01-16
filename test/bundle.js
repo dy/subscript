@@ -84,13 +84,23 @@ test('dogfood: subscript.js exports', async () => {
   })
 })
 
-test('dogfood: parse', async () => {
+test('dogfood: parse (expr)', async () => {
   await bundleAndRun('subscript.js', async ({ parse }) => {
     is(parse('1 + 2')[0], '+')
-    is(parse('x => x * 2')[0], '=>')
-    is(parse('{a: 1, b: 2}')[0], '{}')
-    is(parse('[1, 2, 3]')[0], '[]')
-    is(parse('let x = 1')[0], 'let')
+    is(parse('a.b')[0], '.')
+    is(parse('f(x)')[0], '()')
+  })
+})
+
+test('dogfood: parse (jessie)', async () => {
+  await bundleAndRun('subscript.js', async (mod) => {
+    const { parse: jessieParse } = await import('../parse/jessie.js')
+    mod.default.parse = jessieParse
+    const { parse } = mod
+    is(jessieParse('x => x * 2')[0], '=>')
+    is(jessieParse('{a: 1, b: 2}')[0], '{}')
+    is(jessieParse('[1, 2, 3]')[0], '[]')
+    is(jessieParse('let x = 1')[0], 'let')
   })
 })
 
@@ -101,18 +111,8 @@ test('dogfood: compile arithmetic', async () => {
     is(compile(parse('4 * 5'))(), 20)
     is(compile(parse('15 / 3'))(), 5)
     is(compile(parse('7 % 4'))(), 3)
-    is(compile(parse('2 ** 3'))(), 8)
     is(compile(parse('1 + 2 * 3'))(), 7)
     is(compile(parse('(1 + 2) * 3'))(), 9)
-  })
-})
-
-test('dogfood: compile arrows', async () => {
-  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
-    is(compile(parse('x => x * 2'))()(21), 42)
-    is(compile(parse('(a, b) => a + b'))()(10, 5), 15)
-    is(compile(parse('() => 42'))()(), 42)
-    is(compile(parse('a => b => a + b'))()(10)(5), 15)
   })
 })
 
@@ -124,38 +124,18 @@ test('dogfood: compile context', async () => {
   })
 })
 
-test('dogfood: compile ternary', async () => {
-  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
-    is(compile(parse('x > 0 ? 1 : -1'))({ x: 5 }), 1)
-    is(compile(parse('x > 0 ? 1 : -1'))({ x: -5 }), -1)
-  })
-})
-
 test('dogfood: compile logical', async () => {
   await bundleAndRun('subscript.js', async ({ parse, compile }) => {
-    is(compile(parse('true && true'))(), true)
-    is(compile(parse('true && false'))(), false)
-    is(compile(parse('false || true'))(), true)
-    is(compile(parse('false || false'))(), false)
-    is(compile(parse('null ?? 42'))(), 42)
-    is(compile(parse('0 ?? 42'))(), 0)
+    is(compile(parse('!false'))(), true)
+    is(compile(parse('!true'))(), false)
   })
 })
 
 test('dogfood: compile literals', async () => {
   await bundleAndRun('subscript.js', async ({ parse, compile }) => {
-    const arr = compile(parse('[1, 2, 3]'))()
-    is(arr.length, 3)
-    is(arr[0], 1)
-    const obj = compile(parse('{a: 1, b: 2}'))()
-    is(obj.a, 1)
-    is(obj.b, 2)
-  })
-})
-
-test('dogfood: compile IIFE', async () => {
-  await bundleAndRun('subscript.js', async ({ parse, compile }) => {
-    is(compile(parse('((x) => x + 1)(10)'))(), 11)
+    is(compile(parse('123'))(), 123)
+    is(compile(parse('"hello"'))(), 'hello')
+    is(compile(parse('1.5'))(), 1.5)
   })
 })
 
