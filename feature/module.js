@@ -10,6 +10,7 @@
  *   export const x = 1           → ['export', decl]
  */
 import { token, expr, space, lookup, skip } from '../parse/pratt.js';
+import { keyword } from './block.js';
 
 const STATEMENT = 5, SEQ = 10, STAR = 42;
 
@@ -24,10 +25,10 @@ token('from', SEQ + 1, a => !a ? false : a[0] !== '=' && a[0] !== ',' && (space(
 token('as', SEQ + 2, a => !a ? false : (space(), ['as', a, expr(SEQ + 2)]));
 
 // import: prefix that parses specifiers + from + path
-token('import', STATEMENT, a => !a && (space(), ['import', expr(SEQ)]));
+keyword('import', STATEMENT, () => (space(), ['import', expr(SEQ)]));
 
 // export: prefix for declarations or re-exports (use STATEMENT to capture const/let/function)
-token('export', STATEMENT, a => !a && (space(), ['export', expr(STATEMENT)]));
+keyword('export', STATEMENT, () => (space(), ['export', expr(STATEMENT)]));
 
 // default: prefix for export default
-token('default', SEQ + 1, a => !a && (space(), ['default', expr(SEQ)]));
+keyword('default', SEQ + 1, () => (space(), ['default', expr(SEQ)]));

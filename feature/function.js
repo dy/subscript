@@ -1,15 +1,12 @@
 // Function declarations and expressions
-import { token, skip, space, next, parse, expr } from '../parse/pratt.js';
+import { space, next, parse, parens, expr } from '../parse/pratt.js';
+import { keyword, block } from './block.js';
 
-const TOKEN = 200, CPAREN = 41, CBRACE = 125, STATEMENT = 5;
+const TOKEN = 200;
 
-token('function', TOKEN, a => {
-  if (a) return;
+keyword('function', TOKEN, () => {
   space();
   const name = next(parse.id);
   name && space();
-  skip();
-  const params = expr(0, CPAREN) || null;
-  space(); skip();
-  return ['function', name, params, expr(STATEMENT - .5, CBRACE) || null];
+  return ['function', name, parens() || null, block()];
 });

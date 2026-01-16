@@ -7,7 +7,8 @@
  *   const x = 1 → ['const', 'x', val]
  *   var x = 1   → ['var', 'x', val]
  */
-import { token, expr, err, space } from '../parse/pratt.js';
+import { expr, space } from '../parse/pratt.js';
+import { keyword } from './block.js';
 
 const STATEMENT = 5, ASSIGN = 20;
 
@@ -20,6 +21,6 @@ const decl = op => {
          Array.isArray(e) ? [op, e] : [op];
 };
 
-token('let', STATEMENT, a => !a && decl('let'));
-token('const', STATEMENT, a => !a && decl('const'));
-token('var', STATEMENT, a => !a && decl('var'));
+keyword('let', STATEMENT, () => decl('let'));
+keyword('const', STATEMENT, () => decl('const'));
+keyword('var', STATEMENT, () => decl('var'));

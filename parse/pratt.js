@@ -73,13 +73,19 @@ export let idx, cur,
     return cc
   },
 
-  // parse identifier (configurable via parse.id)
+  // is char an id? (configurable via parse.id)
   id = parse.id = c =>
     (c >= 48 && c <= 57) || // 0..9
     (c >= 65 && c <= 90) || // A...Z
     (c >= 97 && c <= 122) || // a...z
     c == 36 || c == 95 || // $, _,
     (c >= 192 && c != 215 && c != 247), // any non-ASCII
+
+  // check if word matches at current position (word boundary enforced)
+  word = (w, l = w.length) => cur.substr(idx, l) === w && !parse.id(cur.charCodeAt(idx + l)),
+
+  // parse (...) group - assumes ( is current char
+  parens = () => (skip(), expr(0, 41)),
 
   // operator/token lookup table
   // lookup[0] is id parser to let configs redefine it

@@ -1,24 +1,22 @@
 // Loops: while, do-while, for, for await, break, continue, return
-import { expr, skip, space, parse, cur, idx, err } from '../parse/pratt.js';
-import { parseBody, keyword } from './block.js';
+import { expr, skip, space, parse, word, parens, cur, idx } from '../parse/pratt.js';
+import { body, keyword } from './block.js';
 
-const STATEMENT = 5, OPAREN = 40, CPAREN = 41, CBRACE = 125, SEMI = 59;
+const STATEMENT = 5, CBRACE = 125, SEMI = 59;
 
-keyword('while', STATEMENT + 1, () => (space(), skip(), ['while', expr(0, CPAREN), parseBody()]));
-keyword('do', STATEMENT + 1, () => (b => (space(), skip(5), space(), skip(), ['do', b, expr(0, CPAREN)]))(parseBody()));
+keyword('while', STATEMENT + 1, () => (space(), ['while', parens(), body()]));
+keyword('do', STATEMENT + 1, () => (b => (space(), skip(5), space(), ['do', b, parens()]))(body()));
 
 // for / for await
 keyword('for', STATEMENT + 1, () => {
   space();
   // for await (x of y)
-  if (cur.substr(idx, 5) === 'await' && !parse.id(cur.charCodeAt(idx + 5))) {
+  if (word('await')) {
     skip(5);
     space();
-    skip(); // (
-    return ['for await', expr(0, CPAREN), parseBody()];
+    return ['for await', parens(), body()];
   }
-  skip(); // (
-  return ['for', expr(0, CPAREN), parseBody()];
+  return ['for', parens(), body()];
 });
 
 keyword('break', STATEMENT + 1, () => ['break']);

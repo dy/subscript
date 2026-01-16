@@ -1,8 +1,9 @@
 // Class declarations and expressions
 // class A extends B { ... }
-import { token, unary, expr, skip, space, next, parse, literal, cur, idx } from '../parse/pratt.js';
+import { unary, expr, space, next, parse, literal, word } from '../parse/pratt.js';
+import { keyword, block } from './block.js';
 
-const TOKEN = 200, PREFIX = 140, STATEMENT = 5, CBRACE = 125;
+const TOKEN = 200, PREFIX = 140;
 
 // super → literal
 literal('super', Symbol.for('super'));
@@ -11,24 +12,15 @@ literal('super', Symbol.for('super'));
 unary('static', PREFIX);
 
 // class [Name] [extends Base] { body }
-token('class', TOKEN, a => {
-  if (a) return;
+keyword('class', TOKEN, () => {
   space();
   let name = next(parse.id) || null;
   // 'extends' parsed as name? → anonymous class
   if (name === 'extends') name = null;
   else {
     space();
-    // extends keyword?
-    if (cur.substr(idx, 7) !== 'extends' || parse.id(cur.charCodeAt(idx + 7))) {
-      skip(); // {
-      return ['class', name, null, expr(STATEMENT - .5, CBRACE) || null];
-    }
-    skip(7);
+    if (!word('extends')) return ['class', name, null, block()];
   }
   space();
-  const base = expr(TOKEN);
-  space();
-  skip(); // {
-  return ['class', name, base, expr(STATEMENT - .5, CBRACE) || null];
+  return ['class', name, expr(TOKEN), block()];
 });

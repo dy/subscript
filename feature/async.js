@@ -1,5 +1,6 @@
 // Async/await/yield: async function, async arrow, await, yield expressions
-import { token, unary, expr, skip, space, next, parse, cur, idx } from '../parse/pratt.js';
+import { unary, expr, skip, space, cur, idx, word } from '../parse/pratt.js';
+import { keyword } from './block.js';
 
 const PREFIX = 140, ASSIGN = 20;
 
@@ -8,8 +9,7 @@ unary('await', PREFIX);
 
 // yield expr → ['yield', expr]
 // yield* expr → ['yield*', expr]
-token('yield', PREFIX, a => {
-  if (a) return;
+keyword('yield', PREFIX, () => {
   space();
   if (cur[idx] === '*') {
     skip();
@@ -22,13 +22,10 @@ token('yield', PREFIX, a => {
 // async function name() {} → ['async', ['function', name, params, body]]
 // async () => {} → ['async', ['=>', params, body]]
 // async x => {} → ['async', ['=>', x, body]]
-token('async', PREFIX, a => {
-  if (a) return;
+keyword('async', PREFIX, () => {
   space();
   // async function - check for 'function' word
-  if (cur.substr(idx, 8) === 'function' && !parse.id(cur.charCodeAt(idx + 8))) {
-    return ['async', expr(PREFIX)];
-  }
+  if (word('function')) return ['async', expr(PREFIX)];
   // async arrow: async () => or async x =>
   // Parse at assign precedence to catch => operator
   const params = expr(ASSIGN - .5);
