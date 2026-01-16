@@ -25,13 +25,13 @@ export function isId(c: number): boolean;
 export function space(): number;
 export function id(): string;
 
-/** Validator registry - keyed by operator */
-export const validators: Record<string, (node: any[], ctx?: any) => void>;
+/** Normalizer registry - keyed by operator */
+export const norms: Record<string, (node: any[], ctx?: any) => any>;
 
-/** Register a validator (chains with previous). Pass null to remove. */
-export function validator(op: string, fn: ((node: any[], ctx?: any) => void) | null): void;
+/** Register normalizer (chains: transforms pipe through). Pass null to remove. */
+export function norm(op: string, fn: ((node: any[], ctx?: any) => any) | null): void;
 
-/** Validate AST recursively (bottom-up). Returns node for chaining. */
-export function validate(node: any, ctx?: any): any;
+/** Normalize AST recursively (bottom-up). Returns node. */
+export function normalize(node: any, ctx?: any): any;
 
 export default parse;

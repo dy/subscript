@@ -138,19 +138,18 @@ export let idx, cur,
   // NOTE: we make sure `null` indicates placeholder
   access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null])),
 
-  // Validator registry
-  validators = {},
+  // Normalizer registry (validation, optimization, desugaring)
+  norms = {},
 
-  // Register validator (chains with previous)
-  validator = (op, fn, prev = validators[op]) =>
-    fn ? (validators[op] = (n, c) => { fn(n, c); prev?.(n, c) }) : delete validators[op],
+  // Register normalizer (chains: transform pipes through, validate runs all)
+  norm = (op, fn, prev = norms[op]) =>
+    fn ? (norms[op] = (n, c) => (n = fn(n, c) ?? n, prev ? prev(n, c) ?? n : n)) : delete norms[op],
 
-  // Validate AST (recursive, bottom-up)
-  validate = (node, ctx) => {
+  // Normalize AST (recursive, bottom-up: children first)
+  normalize = (node, ctx) => {
     if (!node?.[0] || typeof node[0] !== 'string') return node
-    for (let i = 1; i < node.length; i++) validate(node[i], ctx)
-    validators[node[0]]?.(node, ctx)
-    return node
+    for (let i = 1; i < node.length; i++) node[i] = normalize(node[i], ctx)
+    return norms[node[0]]?.(node, ctx) ?? node
   };
 
 export default parse;
