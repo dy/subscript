@@ -2,8 +2,10 @@ import test from 'tst'
 
 const RUNS = 3e4
 const src = c => `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(${c})`
+const subscriptUrl = new URL('../subscript.js', import.meta.url).href
+const justinUrl = new URL('../justin.js', import.meta.url).href
 
-test.fork('perf: expr < jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) => {
+test.fork('perf: expr < jsep', {data: {RUNS, src, subscriptUrl}}, async ({ ok }, {RUNS, src, subscriptUrl}) => {
   const bench = (fn) => {
     let best = Infinity
     for (let r = 0; r < 3; r++) {
@@ -14,7 +16,7 @@ test.fork('perf: expr < jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) 
     return best
   }
 
-  const { parse } = await import('file:///Users/div/projects/subscript/subscript.js')
+  const { parse } = await import(subscriptUrl)
   const jsep = (await import('jsep')).default
 
   for (let w = 0; w < RUNS; w++) { parse(src(w)); jsep(src(w)) }
@@ -25,7 +27,7 @@ test.fork('perf: expr < jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) 
   ok(time < baseline, `expr (${time.toFixed(0)}ms) should be < jsep (${baseline.toFixed(0)}ms)`)
 })
 
-test.fork('perf: justin <= jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) => {
+test.fork('perf: justin <= jsep', {data: {RUNS, src, justinUrl}}, async ({ ok }, {RUNS, src, justinUrl}) => {
   const bench = (fn) => {
     let best = Infinity
     for (let r = 0; r < 3; r++) {
@@ -36,7 +38,7 @@ test.fork('perf: justin <= jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src
     return best
   }
 
-  const { parse } = await import('file:///Users/div/projects/subscript/justin.js')
+  const { parse } = await import(justinUrl)
   const jsep = (await import('jsep')).default
 
   for (let w = 0; w < RUNS; w++) { parse(src(w)); jsep(src(w)) }
