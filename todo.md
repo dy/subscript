@@ -1,5 +1,103 @@
 # todo
 
+## v10
+
+- [x] This file (todo.md) — 564 lines of done items, archive to docs/history.md if needed
+- [x] test/lib/parser/* — competitor code moved to CDN (esm.sh)
+- [x] test/bench/* — internal experiments, not tests
+- [x] README: commented-out "Used by" section — either fill or remove
+- [x] SPECIFICATION.md — formal AST spec (the hidden treasure)
+- [x] Rectify project structure
+- [x] Rectify even more: /parse, /compile
+- [x] Migration
+  - [x] Create feature/number.js (minimal: decimal only)
+  - [x] Create feature/string.js (minimal: double-quote only)
+  - [x] Update imports in parse/expr.js
+  - [x] feature/c/number.js (hex 0x, binary 0b, octal 0o)
+  - [x] feature/c/string.js (single quotes)
+  - [x] feature/c/op.js (merge: bool.js && ||, bit.js & | ^ ~, shift.js << >>, assign.js compound, ternary.js ?:, true/false)
+  - [x] feature/c/comment.js (move from feature/comment.js)
+  - [x] feature/c/block.js (move from feature/block.js)
+  - [x] feature/c/if.js (move from feature/if.js)
+  - [x] feature/c/loop.js (move from feature/loop.js)
+  - [x] feature/c/switch.js (move from feature/switch.js)
+  - [x] feature/c/try.js (merge feature/try.js + feature/throw.js)
+  - [x] feature/op.js (truly universal: + - * / % < > <= >= == != !)
+  - [x] Simplified feature/number.js (decimal only)
+  - [x] Simplified feature/string.js (double-quote only)
+  - [x] parse/expr.js - import root features (number, string, op, group, member)
+  - [x] parse/justin.js - import root + c/ + js/ expression features
+  - [x] parse/jessie.js - import justin + c/block, c/if, c/loop, c/try, c/switch
+  - [x] Updated test/compile/subscript.js to remove old imports
+  - [x] Updated test/feature/control.js to remove old imports
+  - [x] Updated test/bundle.js to test new file structure
+  - [x] Updated test/parse/core.js to use @ instead of & in nary test
+  - [x] Removed: literal.js, arithmetic.js, cmp.js, bool.js, bit.js, shift.js
+  - [x] Removed: assign.js, ternary.js, comment.js, throw.js
+  - [x] Removed: if.js, loop.js, switch.js, try.js
+- [x] Reorganize features by languages
+  - [x] Factor out common vs specific language features
+  - [x] Implement a few unique to each language features
+  - [x] Cover main common languages (know the list _JavaScript_, _C_, _Python_, _Java_, _Swift_, _Kotlin_, _Go_, _Rust_, _Nim?_, _??_):
+- [x] Make jessie parse fully itself with all deps
+- [x] Add util/bundle
+  - [x] Make jessie eval itself
+- [x] Add util/asi
+- [x] Split compiler declarations
+- [x] call is different from member
+
+- [x] ~~Add validation logic~~ -> leave to implementors
+
+- [x] typeof is part of jessie (many features are part of it)
+- [x] ~~justin should not have custom decls: these are features~~
+- [x] Switch statement — feature/switch.js
+- [x] Destructuring — feature/destruct.js
+- [x] Rest parameters — feature/function.js, feature/arrow.js
+- [x] Getters/setters — feature/accessor.js (optimized with Symbol marker)
+- [x] REPL updated with new features and jessie preset
+- [x] feature/loop.js, feature/block.js, feature/var.js — promoted to jessie.js
+
+- [x] Subscript template tag? sub`export x = () => {}`
+  - [x] customizable parse, compile
+  - [x] interpolations
+  - [x] caching strings
+  - [x] composability
+
+- [x] `for|if|while|with|switch (...) {...}`, `else|try|catch {...}`, `function|class N? (...)? {...}`
+  - Added `word(w)` and `parens()` helpers to pratt.js
+  - Refactored if.js, loop.js, try.js, function.js, switch.js to use them
+
+- [x] A note to ast.md about .loc
+  - [x] A note to ast about statement convention
+
+- [x] Readme & values
+  - [x] (Readme slogan: bad phrasing. Distill core value and use-cases)
+  - [x] Add link to repl
+  - [x] ~~Installation section before usage in README~~
+  - [x] "Add Your Own Operator" guide — current extension examples are cryptic
+  - [x] Real "Used by" with actual links if projects exist
+  - [x] Remove implementation details from extension examples
+  - [x] Highlight security model (blocked constructor/__proto__)
+  - [x] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
+  - [x] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
+
+- [x] Fix repl
+  - [x] Improve design
+  - [x] Update docs
+  - [x] Bundle itself
+
+- [x] ~~C-like compiler targets: GLSL, C, Wasm~~ -> dedicated projects
+
+
+## [ ] Integrations
+
+  * [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
+  * [ ] js-based glsl evaluator
+
+---
+
+## Archive (completed work below)
+
 * [x] store operators in precedence order
   + indicates unary, binary or ternary
   + directly map calltree nodes [op, ...args] (not reduce heuristic)
@@ -534,11 +632,6 @@
 * [x] REPL
 * [x] language building tool: create own language with a set of features
   * [x] Make operator groups, importable; build subscript by including op groups.
-
-## [ ] Integrations
-
-  * [ ] implement via JZ https://youtu.be/awe7swqFOOw?t=778
-  * [ ] js-based glsl evaluator
 
 ## Extra features
 

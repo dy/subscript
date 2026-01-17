@@ -1,0 +1,1548 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Subscript REPL</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; }
+:root {
+  --bg: #0d1117; --bg2: #161b22; --fg: #e6edf3; --accent: #58a6ff;
+  --err: #f85149; --ok: #3fb950; --muted: #8b949e; --border: #30363d;
+  --ln: #484f58;
+}
+body { font: 1rem/1.5 ui-monospace, SFMono-Regular, Menlo, Monaco, monospace; background: var(--bg); color: var(--fg); min-height: 100vh; display: flex; }
+.wrap { display: flex; flex-direction: row; flex: 1; min-height: 0; }
+
+/* Dark scrollbars */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--muted); }
+
+/* Main */
+main { flex: 1; padding: 1rem; display: flex; flex-direction: column; gap: 0.5rem; min-width: 0; margin-right: 16.25rem; transition: margin-right .2s ease; }
+main.sidebar-collapsed { margin-right: 0; }
+
+/* Header */
+header { display: flex; align-items: center; gap: 0.625rem; }
+h1 { font-size: 1rem; font-weight: 600; }
+h1 span { color: var(--accent); }
+.toggle-sidebar { margin-left: auto; background: none; border: none; color: var(--muted); padding: 0.25rem 0.5rem; cursor: pointer; font: inherit; font-size: 0.875rem; display: flex; align-items: center; gap: 0.25rem; }
+.toggle-sidebar:hover { color: var(--fg); }
+.toggle-sidebar svg { width: 0.875rem; height: 0.875rem; }
+
+/* Code area - editor only */
+.code-area { display: flex; gap: 1rem; align-items: flex-start; margin-top: 1rem; }
+
+/* Editor with line numbers */
+.editor { display: flex; position: relative; overflow: auto; max-height: 50vh; min-width: 200px; flex: 1; }
+.line-nums {
+  padding: 0.5rem; color: var(--ln); font-size: 0.875rem; line-height: 1.6;
+  text-align: right; user-select: none; white-space: pre; min-width: 1.75rem;
+  position: sticky; left: 0; background: var(--bg);
+}
+#input {
+  flex: 1; background: transparent; border: none; color: var(--fg);
+  padding: 0.5rem 0.5rem 0.5rem 0.25rem; font: inherit; font-size: 0.875rem; outline: none; tab-size: 2; line-height: 1.6;
+  resize: none; overflow: hidden; min-height: 1.6em;
+  white-space: pre-wrap; word-wrap: break-word; overflow-wrap: break-word;
+}
+#input::placeholder { color: var(--muted); }
+.eval-panel .eval-time { color: var(--muted); font-size: 0.75rem; }
+
+/* Info bar - errors only */
+.info-bar { display: flex; align-items: center; padding: 0.25rem 0 0.25rem 2.25rem; font-size: 0.875rem; min-height: 1.25rem; max-width: 80ch; }
+.info-bar .error { color: var(--err); flex: 1; }
+
+/* Output section - tabs */
+.output-section { display: flex; flex-direction: column; }
+.output-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
+.output-tab { background: none; border: none; color: var(--muted); padding: 0.375rem 0.75rem; font: 0.875rem inherit; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.output-tab:hover { color: var(--fg); }
+.output-tab.active { color: var(--fg); border-bottom-color: var(--accent); }
+.output-panel { display: none; padding: 0.5rem 0; }
+.output-panel.active { display: block; }
+#ast { font-size: 0.875rem; color: var(--muted); white-space: pre; line-height: 1.5; }
+
+/* Eval section */
+.eval-content { padding: 0.5rem 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem; }
+.eval-field { display: flex; flex-direction: column; gap: 0.25rem; }
+.eval-content .label { color: var(--muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: .03em; }
+.eval-content textarea {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  color: var(--fg); font: inherit; outline: none; padding: 0.25rem 0.5rem;
+  resize: none; overflow: hidden; width: 100%;
+  white-space: pre; font-size: 0.875rem; min-height: 2em;
+}
+.eval-content textarea:focus { border-color: var(--accent); }
+.eval-content textarea::placeholder { color: var(--border); }
+#result {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.25rem 0.5rem; min-height: 1.5rem; color: var(--ok); font-weight: 500;
+  word-break: break-all; white-space: pre-wrap; font-size: 0.875rem;
+}
+#result.err { color: var(--err); }
+.run-row { display: flex; align-items: center; gap: 0.625rem; }
+.eval-content .run-btn {
+  background: var(--accent); color: #000; border: none; border-radius: 4px;
+  padding: 0.25rem 0.625rem; font: 0.875rem inherit; cursor: pointer; display: flex; align-items: center; gap: 0.25rem;
+}
+.eval-content .run-btn:hover { filter: brightness(1.1); }
+.eval-content .run-btn svg { width: 0.75rem; height: 0.75rem; }
+
+/* Sidebar */
+.sidebar {
+  width: 16.25rem; background: var(--bg2); display: flex; flex-direction: column; flex-shrink: 0;
+  transition: width .2s ease, opacity .15s;
+  position: fixed; right: 0; top: 0; height: 100vh; z-index: 10;
+}
+.sidebar.collapsed { width: 0; opacity: 0; overflow: hidden; }
+
+/* Sidebar header */
+.sidebar-head { padding: 0.75rem 0.875rem; border-bottom: 1px solid var(--border); }
+.preset-select {
+  width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 4px;
+  padding: 0.375rem 1.75rem 0.375rem 0.5rem; font: 0.875rem inherit; color: var(--fg); cursor: pointer;
+  appearance: none; -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%238b949e' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.5rem center;
+}
+.preset-select:focus { outline: none; border-color: var(--accent); }
+
+/* Features list */
+.features { flex: 1; overflow: auto; padding: 0.625rem 0.875rem; }
+.cat-head { font-size: 0.6875rem; padding: 0.5rem 0 0.25rem; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; opacity: .7; }
+.cat-head:first-child { padding-top: 0; }
+.feat { display: flex; align-items: center; gap: 0.375rem; padding: 0.1875rem 0; cursor: pointer; font-size: 0.875rem; white-space: nowrap; }
+.feat:hover { color: var(--accent); }
+.feat input { accent-color: var(--accent); }
+.feat-desc { color: var(--muted); font-size: 0.6875rem; margin-left: auto; }
+
+/* Sidebar actions */
+.sidebar-actions { padding: 0.75rem 0.875rem; border-top: 1px solid var(--border); }
+.btn { width: 100%; padding: 0.625rem 0.75rem; border: none; border-radius: 0.375rem; cursor: pointer; font: 0.875rem inherit; display: flex; align-items: center; justify-content: center; gap: 0.375rem; }
+.btn.primary { background: var(--accent); color: #000; }
+.btn.primary:hover { filter: brightness(1.1); }
+.btn svg { width: 0.875rem; height: 0.875rem; }
+
+/* Modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; transition: opacity .15s, visibility .15s;
+}
+.modal-overlay.open { opacity: 1; visibility: visible; }
+.modal {
+  background: var(--bg2); border: 1px solid var(--border); border-radius: 0.625rem;
+  width: 43.75rem; height: 31.25rem; display: flex; flex-direction: column;
+  transform: scale(.95); transition: transform .15s;
+}
+.modal-overlay.open .modal { transform: scale(1); }
+.modal-body { flex: 1; min-height: 0; padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
+.modal-code-wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+.modal-code {
+  background: var(--bg); border: 1px solid var(--border); border-radius: 0.375rem;
+  padding: 0.75rem; font-size: 0.875rem; line-height: 1.5; overflow: auto;
+  flex: 1; min-height: 0; white-space: pre-wrap; word-break: break-all; color: var(--muted);
+}
+.modal-code-wrap .copy-btn {
+  position: absolute; top: 0.5rem; right: 0.5rem; background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 4px; padding: 0.25rem 0.5rem; font: 0.75rem inherit; color: var(--muted); cursor: pointer;
+  display: flex; align-items: center; gap: 0.25rem; z-index: 1;
+}
+.modal-code-wrap .copy-btn:hover { color: var(--fg); border-color: var(--accent); }
+.modal-code-wrap .copy-btn svg { width: 0.75rem; height: 0.75rem; }
+.modal-actions { display: flex; gap: 0.625rem; align-items: center; flex-shrink: 0; padding-top: 0.75rem; border-top: 1px solid var(--border); }
+.modal-actions .btn { width: auto; padding: 0.5rem 0.75rem; }
+.modal-actions .btn.secondary { background: var(--bg); color: var(--fg); }
+.modal-actions .btn.secondary:hover { background: #21262d; }
+.modal-toggle { display: flex; align-items: center; gap: 0.375rem; font-size: 0.75rem; color: var(--muted); }
+.modal-toggle input { accent-color: var(--accent); }
+.size-info { font-size: 0.75rem; color: var(--muted); }
+.modal-right { margin-left: auto; display: flex; gap: 0.625rem; align-items: center; }
+
+/* Header links */
+.header-link { color: var(--muted); text-decoration: none; opacity: 0.5; font-size: 1.125rem; line-height: 1; transition: opacity .15s, color .15s; }
+.header-link:hover { opacity: 1; color: var(--accent); }
+.logo-link { color: var(--accent); text-decoration: none; transition: filter .15s; }
+.logo-link:hover { filter: brightness(1.15); }
+
+/* Error highlight in editor */
+.editor.has-error #input { background: linear-gradient(transparent var(--err-line-top), rgba(248,81,73,.1) var(--err-line-top), rgba(248,81,73,.1) var(--err-line-bot), transparent var(--err-line-bot)); }
+
+/* Feature tooltips - show left of sidebar */
+.feat { position: relative; }
+.feat-tip { display: none; position: fixed; background: var(--bg); padding: 0.5rem 0.625rem; font-size: 0.75rem; line-height: 1.5; color: var(--fg); z-index: 100; pointer-events: none; max-width: 14rem; text-align: right; white-space: normal; }
+.feat-tip code { color: var(--muted); background: rgba(139,148,158,.1); padding: 0.1em 0.3em; border-radius: 2px; margin: 0.15em; display: inline-block; }
+
+/* Dependency indicator */
+.feat-dep { font-size: 0.625rem; color: var(--muted); opacity: 0.7; margin-left: 0.25rem; }
+
+/* Mobile view */
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  .wrap { flex-direction: column; }
+  main { margin-right: 0; }
+  main.sidebar-collapsed { margin-right: 0; }
+  .sidebar { position: relative; width: 100%; height: auto; right: auto; top: auto; }
+  .sidebar.collapsed { width: 100%; height: 0; }
+  .feat-tip { display: none !important; }
+}
+</style>
+</head>
+<body>
+<a href="https://github.com/krishnized/license" class="header-link" style="position: absolute; bottom: 1rem; right: 1rem;" target="_blank" rel="noopener" title="krishnized license">ॐ</a>
+<div class="wrap">
+  <main>
+    <header>
+      <h1><a href="https://github.com/dy/subscript" class="logo-link" target="_blank" rel="noopener" title="GitHub">subscript</a> repl</h1>
+      <a href="https://github.com/dy/subscript" class="header-link" target="_blank" rel="noopener" title="github">⎇</a>
+      <button class="toggle-sidebar" id="toggleSidebar">
+        <span>Features</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+    </header>
+
+    <div class="code-area">
+      <div class="editor">
+        <div class="line-nums" id="lineNums">1
+2
+3
+4</div>
+        <textarea id="input" placeholder="Type expression..." spellcheck="false" rows="4"></textarea>
+      </div>
+    </div>
+
+    <div class="info-bar">
+      <span class="error" id="error"></span>
+    </div>
+
+    <div class="output-section">
+      <div class="output-tabs">
+        <button class="output-tab active" data-tab="eval">Eval</button>
+        <button class="output-tab" data-tab="tree">Tree</button>
+      </div>
+
+      <!-- Eval panel -->
+      <div class="output-panel active" id="evalPanel">
+        <div class="eval-content">
+          <div class="eval-field">
+            <span class="label">Context</span>
+            <textarea id="context" placeholder="{ }">{ "x": 10 }</textarea>
+            </div>
+            <div class="eval-field">
+              <span class="label">Result</span>
+              <div id="result" data-testid="result"></div>
+            </div>
+            <div class="run-row">
+              <button class="run-btn" id="runBtn" title="Run (Cmd+Enter)">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                Run
+              </button>
+              <span class="eval-time" id="evalTime"></span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Tree panel -->
+      <div class="output-panel" id="treePanel">
+        <pre id="ast"></pre>
+      </div>
+    </div>
+  </main>
+
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-head">
+      <select class="preset-select" id="presetSelect" data-testid="preset">
+        <option value="minimal">Minimal</option>
+        <option value="expr">Expressions</option>
+        <option value="justin" selected>Justin (JSON+Expr)</option>
+        <option value="jessie">Jessie (statements)</option>
+        <option value="full">Full</option>
+        <option value="custom" disabled hidden>Custom</option>
+      </select>
+    </div>
+    <div class="features" id="features"></div>
+    <div class="sidebar-actions">
+      <button class="btn primary" id="getBundleBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 13V19C20 20.1046 19.1046 21 18 21H6C4.89543 21 4 20.1046 4 19V13"/><path d="M12 15V3M12 3L8.5 6.5M12 3L15.5 6.5"/></svg>
+        Export <span id="bundleSizeHint" style="opacity: 0.6; font-weight: 400"></span>
+      </button>
+    </div>
+  </aside>
+</div>
+
+<!-- Bundle modal -->
+<div class="modal-overlay" id="bundleModal">
+  <div class="modal">
+    <div class="modal-body">
+      <div class="modal-code-wrap">
+        <button class="copy-btn" id="codeCopyBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19.4 20H9.6a.6.6 0 01-.6-.6V9.6a.6.6 0 01.6-.6h9.8a.6.6 0 01.6.6v9.8a.6.6 0 01-.6.6z"/><path d="M15 9V4.6a.6.6 0 00-.6-.6H4.6a.6.6 0 00-.6.6v9.8a.6.6 0 00.6.6H9"/></svg>
+          Copy
+        </button>
+        <pre class="modal-code" id="modalCode"></pre>
+      </div>
+      <div class="modal-actions">
+        <span class="size-info" id="sizeInfo">0 B</span>
+        <div class="modal-right">
+          <label class="modal-toggle">
+            <input type="checkbox" id="bundleToggle">
+            <span>bundle</span>
+          </label>
+          <button class="btn primary" id="modalDownload" title="Download">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 20h12M12 4v12m0 0l3.5-3.5M12 16l-3.5-3.5"/></svg>
+            Save
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// Feature ID to file path mapping (actual file locations)
+const FEATURE_PATHS = {
+  // Core (from subscript.js)
+  number: 'feature/number.js',
+  string: 'feature/string.js',
+  literal: 'feature/literal.js',
+  access: 'feature/access.js',
+  group: 'feature/group.js',
+
+  // Operators (from subscript.js and justin.js)
+  assign: 'feature/op/assignment.js',
+  arithmetic: 'feature/op/arithmetic.js',
+  bit: 'feature/op/bitwise.js',
+  cmp: 'feature/op/comparison.js',
+  equality: 'feature/op/equality.js',
+  logical: 'feature/op/logical.js',
+  increment: 'feature/op/increment.js',
+  shift: 'feature/op/bitwise.js',         // bitwise includes shift
+  pow: 'feature/op/pow.js',
+  ternary: 'feature/op/ternary.js',
+  arrow: 'feature/op/arrow.js',
+  optional: 'feature/op/optional.js',
+  spread: 'feature/op/spread.js',
+  unary: 'feature/op/unary.js',
+  identity: 'feature/op/identity.js',
+  nullish: 'feature/op/nullish.js',
+
+  // Literals & misc
+  bool: 'feature/literal.js',             // true/false/null/undefined in literal.js
+  collection: 'feature/collection.js',
+  comment: 'feature/comment.js',
+  template: 'feature/template.js',
+  regex: 'feature/regex.js',
+  unit: 'feature/unit.js',
+
+  // Control flow (from jessie.js)
+  block: 'feature/block.js',
+  'if': 'feature/if.js',
+  loop: 'feature/loop.js',
+  'var': 'feature/var.js',
+  'switch': 'feature/switch.js',
+  destruct: 'feature/destruct.js',
+  'function': 'feature/function.js',
+  'throw': 'feature/try.js',              // throw is part of try.js
+  'try': 'feature/try.js',
+  accessor: 'feature/accessor.js',
+  async: 'feature/async.js',
+  'class': 'feature/class.js',
+  module: 'feature/module.js',
+  asi: 'feature/asi.js',
+}
+
+// Features in proper load order (dependency order matters!)
+const featureOrder = [
+  // Core parsing (subscript.js order)
+  'number', 'string',
+  // Operators - order matters for token chain
+  'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment',
+  // Expression features
+  'group', 'access',
+  // Justin additions
+  'comment', 'identity', 'nullish', 'pow', 'unary',
+  'literal', 'ternary', 'arrow', 'spread', 'optional',
+  'collection', 'template', 'regex', 'unit',
+  // Jessie additions (block before control flow)
+  'block', 'var', 'function', 'async', 'class', 'destruct',
+  'if', 'loop', 'try', 'switch', 'module', 'accessor', 'asi'
+]
+
+// UI feature groups (maps to internal IDs)
+const FEATURES = [
+  { cat: 'Core', items: ['number', 'string', 'group', 'access'] },
+  { cat: 'Operators', items: ['assign', 'arithmetic', 'logical', 'bit', 'cmp', 'equality', 'increment', 'pow'] },
+  { cat: 'Advanced Ops', items: ['ternary', 'arrow', 'optional', 'spread', 'unary', 'identity', 'nullish'] },
+  { cat: 'Literals', items: ['literal', 'collection', 'template', 'regex', 'unit', 'comment'] },
+  { cat: 'Control', items: ['block', 'if', 'loop', 'switch', 'var', 'destruct', 'try'] },
+  { cat: 'Functions', items: ['function', 'async', 'class', 'accessor', 'module', 'asi'] },
+]
+
+const DESC = {
+  // Core
+  number: '123, 1.5', string: '"x", \'y\'', group: '()', access: 'a.b, a[i]',
+  // Operators
+  assign: '=, +=', arithmetic: '+-*/%', logical: '&& || !', bit: '& | ^ ~',
+  cmp: '< > <= >=', equality: '== !=', increment: '++ --', pow: '**',
+  // Advanced ops
+  ternary: '?:', arrow: '=>', optional: '?.', spread: '...',
+  unary: 'typeof void', identity: '=== !==', nullish: '??',
+  // Literals
+  literal: 'true/false/null', collection: '[], {}', template: '`${}`',
+  regex: '/re/', unit: '5px', comment: '//',
+  // Control
+  block: '{ }', 'if': 'if/else', loop: 'for/while', 'switch': 'switch',
+  'var': 'let/const', destruct: '{a,b}=', 'try': 'try/catch',
+  // Functions
+  'function': 'fn(){}', async: 'async/await', 'class': 'class X {}',
+  accessor: 'get/set', module: 'import/export', asi: 'auto semicolons'
+}
+
+// Extended tooltips with syntax examples
+const TIPS = {
+  number: 'Decimal numbers<br><code>42</code> <code>3.14</code> <code>1e3</code> <code>0xFF</code> <code>0b101</code>',
+  string: 'String literals<br><code>"hello"</code> <code>\'world\'</code> with escapes',
+  group: 'Grouping & sequences<br><code>(a + b)</code> <code>a, b</code> <code>a; b</code>',
+  access: 'Property access<br><code>a.b</code> <code>a[i]</code> <code>fn()</code>',
+  assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code>',
+  arithmetic: 'Math operators<br><code>+ - * / %</code> unary: <code>+x</code> <code>-x</code>',
+  logical: 'Logical operators<br><code>&&</code> <code>||</code> <code>!</code>',
+  bit: 'Bitwise operators<br><code>&</code> <code>|</code> <code>^</code> <code>~</code> <code>&lt;&lt;</code> <code>&gt;&gt;</code>',
+  cmp: 'Comparison<br><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>',
+  equality: 'Equality<br><code>==</code> <code>!=</code>',
+  increment: 'Increment/Decrement<br><code>++x</code> <code>x++</code> <code>--x</code> <code>x--</code>',
+  pow: 'Exponentiation<br><code>2 ** 10</code> → 1024',
+  ternary: 'Conditional<br><code>cond ? then : else</code>',
+  arrow: 'Arrow functions<br><code>x => x * 2</code> <code>(a, b) => a + b</code>',
+  optional: 'Optional chaining<br><code>a?.b</code> <code>a?.()</code> <code>a?.[i]</code>',
+  spread: 'Spread operator<br><code>[...arr]</code> <code>{ ...obj }</code>',
+  unary: 'Unary operators<br><code>typeof x</code> <code>void 0</code> <code>delete o.x</code> <code>new X()</code>',
+  identity: 'Strict equality<br><code>===</code> <code>!==</code>',
+  nullish: 'Nullish coalescing<br><code>a ?? b</code> <code>a ??= b</code>',
+  literal: 'Boolean & nil literals<br><code>true</code> <code>false</code> <code>null</code> <code>undefined</code>',
+  collection: 'Arrays & objects<br><code>[1, 2, 3]</code> <code>{ a: 1 }</code>',
+  template: 'Template literals<br><code>\`hello \${name}\`</code>',
+  regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code>',
+  unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code>',
+  comment: 'Comments (ignored)<br><code>// line</code> <code>/* block */</code>',
+  block: 'Block statements<br><code>{ stmt1; stmt2 }</code>',
+  'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code>',
+  loop: 'Loops<br><code>while (c) body</code> <code>for (;;) body</code> <code>for (x of arr)</code>',
+  'switch': 'Switch statement<br><code>switch (x) { case 1: ... }</code>',
+  'var': 'Variable declaration<br><code>let x = 1</code> <code>const y = 2</code>',
+  destruct: 'Destructuring<br><code>const {a, b} = obj</code> <code>const [x, y] = arr</code>',
+  'try': 'Try/catch/finally<br><code>try { ... } catch (e) { ... }</code>',
+  'function': 'Function declaration<br><code>function f(a, b) { }</code>',
+  async: 'Async/await<br><code>async function f() { await x }</code>',
+  'class': 'Classes<br><code>class X extends Y { }</code>',
+  accessor: 'Getters/setters<br><code>{ get x() { } }</code> <code>{ set x(v) { } }</code>',
+  module: 'Modules<br><code>import x from \'y\'</code> <code>export { a }</code>',
+  asi: 'Auto Semicolon Insertion<br>Automatically inserts ; at line breaks'
+}
+
+// Multiline example templates for different feature combinations
+const TEMPLATES = {
+  full: {
+    code: `// Fibonacci with memoization
+function fib(n) {
+  if (n <= 1) return n;
+  return fib(n - 1) + fib(n - 2)
+};
+fib(10)`,
+    ctx: {}
+  },
+
+  jessie: {
+    code: `// Sum 1..n with loop
+let sum = 0;
+for (let i = 1; i <= n; i++)
+  sum = sum + i;
+sum`,
+    ctx: { n: 10 }
+  },
+
+  justin: {
+    code: `// Functional pipeline
+items
+  .filter(x => x.value > threshold)
+  .map(x => ({
+    ...x,
+    label: x.active ? "on" : "off"
+  }))`,
+    ctx: {
+      items: [
+        { value: 16, active: true },
+        { value: 9, active: false },
+        { value: 25, active: true }
+      ],
+      threshold: 8
+    }
+  }
+}
+
+// =============================================================================
+// PARSER CONSTRAINT: Subscript requires explicit semicolons between statements.
+// Unlike JavaScript, there is NO Automatic Semicolon Insertion (ASI).
+// Multi-line code MUST use `;` to separate statements: `let x = 1; let y = 2`
+// =============================================================================
+
+// Validate that code can be parsed with current features (catches syntax errors early)
+function validateSyntax(code) {
+  if (!workerReady || !currentWorker) return { valid: true } // Can't validate yet
+  try {
+    // Quick parse check - if we have parse function available
+    if (typeof parse === 'function') {
+      parse(code)
+    }
+    return { valid: true }
+  } catch (e) {
+    return { valid: false, error: e.message }
+  }
+}
+
+// Generate example based on enabled features
+function generateExample() {
+  const has = f => selected.has(f)
+  const all = f => f.every(has)
+
+  // Full subscript with functions
+  if (has('function') && all(['var', 'loop', 'if', 'cmp', 'arithmetic'])) {
+    return TEMPLATES.full
+  }
+
+  // Jessie preset - statements
+  if (all(['var', 'loop', 'cmp', 'arithmetic'])) {
+    return TEMPLATES.jessie
+  }
+
+  // Justin preset - functional style
+  if (all(['arrow', 'access', 'spread', 'ternary', 'collection', 'cmp'])) {
+    return TEMPLATES.justin
+  }
+
+  // Has control flow - build multiline program
+  if (has('var') || has('loop') || has('if') || has('switch')) {
+    const lines = []
+    const ctx = {}
+
+    if (has('var')) {
+      lines.push('let x = 10;')
+      lines.push('let y = 20;')
+    }
+
+    if (has('collection') && has('var')) {
+      lines.push('let nums = [1, 2, 3, 4, 5];')
+      ctx.nums = [1, 2, 3, 4, 5]
+    }
+
+    if (has('if') && has('cmp')) {
+      lines.push('')
+      lines.push('if (x > 5) {')
+      lines.push('  y = y + x;')
+      lines.push('} else {')
+      lines.push('  y = y - x;')
+      lines.push('}')
+    } else if (has('if')) {
+      lines.push('')
+      lines.push('if (flag) {')
+      lines.push('  x = 1;')
+      lines.push('} else {')
+      lines.push('  x = 0;')
+      lines.push('}')
+      ctx.flag = true
+    }
+
+    if (has('loop') && has('cmp') && has('arithmetic')) {
+      lines.push('')
+      lines.push('let sum = 0;')
+      lines.push('for (let i = 0; i < 5; i++)')
+      lines.push('  sum = sum + i;')
+    }
+
+    if (has('arrow') && has('access') && has('collection')) {
+      lines.push('')
+      lines.push('nums.map(n => n * 2)')
+    } else if (lines.length > 0) {
+      lines.push('')
+      lines.push(has('var') ? 'x + y' : 'result')
+    }
+
+    if (lines.length > 0) {
+      return { code: lines.join('\n'), ctx }
+    }
+  }
+
+  // Expression-only (no control flow) - build compound expression
+  if (has('arrow') && has('access') && has('collection')) {
+    if (has('spread') && has('ternary')) {
+      return {
+        code: `items.map(x => ({
+  ...x,
+  status: x.value > 10 ? "high" : "low"
+}))`,
+        ctx: { items: [{ value: 5 }, { value: 15 }, { value: 8 }] }
+      }
+    }
+    if (has('ternary') && has('cmp')) {
+      return {
+        code: `data
+  .filter(x => x.score > threshold)
+  .map(x => x.score * 2)`,
+        ctx: { data: [{ score: 80 }, { score: 60 }, { score: 90 }], threshold: 70 }
+      }
+    }
+    return {
+      code: `nums.map(n => n * multiplier)`,
+      ctx: { nums: [1, 2, 3, 4], multiplier: 10 }
+    }
+  }
+
+  if (has('ternary') && has('cmp')) {
+    return {
+      code: `x > 0 && x < 100
+  ? x * 2
+  : 0`,
+      ctx: { x: 50 }
+    }
+  }
+
+  if (has('ternary') && has('cmp')) {
+    return {
+      code: `a > b ? a : b`,
+      ctx: { a: 42, b: 17 }
+    }
+  }
+
+  if (has('arithmetic') && has('group')) {
+    return {
+      code: `(a + b) * (c - d)`,
+      ctx: { a: 10, b: 5, c: 8, d: 3 }
+    }
+  }
+
+  if (has('arithmetic')) {
+    return {
+      code: `a * b + c * d`,
+      ctx: { a: 2, b: 3, c: 4, d: 5 }
+    }
+  }
+
+  if (has('number') || has('literal')) {
+    return { code: '42', ctx: {} }
+  }
+
+  return { code: '1', ctx: {} }
+}
+
+const PRESETS = {
+  // Minimal: just numbers and basic arithmetic
+  minimal: ['number', 'string', 'group', 'arithmetic'],
+  // Expressions: subscript.js features
+  expr: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access'],
+  // Justin: JSON + expressions (no statements)
+  justin: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access',
+           'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
+           'collection', 'template'],
+  // Jessie: practical JS subset with statements
+  jessie: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access',
+           'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
+           'collection', 'template', 'regex', 'block', 'var', 'function', 'destruct', 'if', 'loop', 'try', 'switch', 'asi'],
+  // Full: all features
+  full: FEATURES.flatMap(c => c.items),
+}
+
+let selected = new Set(PRESETS.justin)
+let worker = null
+let currentAST = null
+let workerReady = false
+let evalId = 0
+let currentWorker = null
+
+// Fetch all feature sources upfront (using mapped paths)
+const featureSources = {}
+const uniquePaths = [...new Set(Object.values(FEATURE_PATHS))]
+await Promise.all(uniquePaths.map(async path => {
+  const res = await fetch('./' + path)
+  if (res.ok) featureSources[path] = await res.text()
+  else console.warn('Failed to fetch:', path)
+}))
+
+// Fetch core parser source (parse.js has all core in one file)
+const parseSrc = await fetch('./parse.js').then(r => r.text())
+
+// Terser for minification (~400KB vs esbuild-wasm ~2MB)
+let terser = null
+let terserReady = false
+async function initTerser() {
+  if (terserReady) return true
+  if (terser === 'loading') return false
+  terser = 'loading'
+  try {
+    const mod = await import('https://esm.sh/terser@5.37.0')
+    console.log('ESM module loaded:', Object.keys(mod).slice(0, 10))
+    terser = mod.default || mod
+    console.log('Terser object:', typeof terser, 'minify:', typeof terser?.minify)
+    if (!terser || !terser.minify) {
+      throw new Error('Terser minify not found on module')
+    }
+    terserReady = true
+    console.log('✓ Terser ready for minification')
+    return true
+  } catch (e) {
+    console.error('Terser init failed:', e)
+    terser = null
+    terserReady = false
+    return false
+  }
+}
+
+// Strip imports from source, replacing sibling imports with _ object references
+const stripImports = code => {
+  // First, handle sibling imports: import { X, Y } from './file.js' → const { X, Y } = _
+  code = code.replace(/^import\s+\{([^}]+)\}\s+from\s+['"]\.\/.+?['"];?\s*$/gm, (match, names) => {
+    return `const { ${names} } = _;`
+  })
+  // Remove remaining imports (from '../parse.js' etc) - these are global in bundled context
+  return code.replace(/^import\s+.*$/gm, '')
+}
+
+// Strip exports and convert to var declarations
+const stripExports = code => code
+  .replace(/^export\s+default\s+/gm, '')
+  .replace(/^export\s+(const|let|function)\s+/gm, '$1 ')
+  .replace(/^export\s+\{[^}]+\}.*$/gm, '')
+
+// Build worker source
+function buildWorkerSrc() {
+  // Start with parse.js (contains parse, compile, operators etc all in one file)
+  let parseCode = parseSrc
+    .replace(/^import\s+.*$/gm, '')
+    .replace(/^export\s+let\s+/gm, 'let ')
+    .replace(/^export\s+const\s+/gm, 'const ')
+    .replace(/^export\s+default\s+parse\s*;?\s*$/gm, '')
+
+  // Shared object for cross-feature exports
+  let src = `// Bundled subscript\nvar _ = {};\n${parseCode}\n`
+
+  // Track which file paths have been included to avoid duplicates
+  const includedPaths = new Set()
+
+  // Features that export things used by other features
+  const exports = {
+    block: ['keyword', 'infix', 'block', 'body'],
+    loop: ['BREAK', 'CONTINUE', 'RETURN', 'loop'],
+    access: ['unsafe', 'isLval', 'prop'],
+    destruct: ['destructure'],
+    accessor: ['ACC'],
+    unit: ['unit']
+  }
+
+  // Feature dependencies - these features import from other features
+  // Includes transitive dependencies (e.g., group→loop→block means group needs block)
+  const dependencies = {
+    // block exports keyword, infix, block, body - used by control flow features
+    // Also needed transitively by: group (via loop)
+    block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
+    // loop exports BREAK, CONTINUE, RETURN, loop - used by features that handle control flow
+    loop: ['group', 'function', 'try', 'switch'],
+    // destruct exports destructure - used by var and loop
+    destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
+    // access exports prop, unsafe, isLval - used by group
+    access: ['group'],
+    // accessor exports ACC - used by collection
+    accessor: ['collection']
+  }
+
+  // Include features in order, resolving to actual paths
+  for (const featureId of featureOrder) {
+    // Check if feature should be included (either selected, or needed by a selected feature)
+    let shouldInclude = selected.has(featureId)
+    if (!shouldInclude && dependencies[featureId]) {
+      shouldInclude = dependencies[featureId].some(x => selected.has(x))
+    }
+    if (!shouldInclude) continue
+
+    // Get the actual path
+    const path = FEATURE_PATHS[featureId]
+    if (!path) continue
+
+    // Skip if already included (e.g. 'throw' and 'try' both point to try.js)
+    if (includedPaths.has(path)) continue
+    includedPaths.add(path)
+
+    // Get source code
+    const code = featureSources[path]
+    if (!code) {
+      console.warn('Missing source for feature:', featureId, path)
+      continue
+    }
+
+    // Process the code
+    let processed = stripImports(code)
+    processed = stripExports(processed)
+
+    // Check if this feature has exports that other features need
+    const featureExports = exports[featureId]
+
+    // Build export assignments (assign exported vars to shared object)
+    let exportAssigns = ''
+    if (featureExports) {
+      exportAssigns = featureExports.map(name => `_.${name} = ${name};`).join('\n')
+    }
+
+    // Always wrap in IIFE to avoid naming conflicts
+    src += `\n// === ${path} ===\n;(function(){\n${processed}\n${exportAssigns}\n})();\n`
+  }
+
+  // Enable single quotes for string parsing (justin/jessie compatibility)
+  if (selected.has('string')) {
+    src += `parse.string["'"] = true;\n`
+  }
+
+  // After unit feature, register default units
+  if (selected.has('unit')) {
+    src += `_.unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n`
+  }
+
+  src += `
+// Built-in globals available in context
+var BUILTINS = {
+  Math: Math,
+  Date: Date,
+  JSON: JSON,
+  parseInt: parseInt,
+  parseFloat: parseFloat,
+  isNaN: isNaN,
+  isFinite: isFinite,
+  Infinity: Infinity,
+  NaN: NaN,
+  undefined: undefined,
+  Array: Array,
+  Object: Object,
+  String: String,
+  Number: Number,
+  Boolean: Boolean,
+  RegExp: RegExp
+}
+
+// Worker handler
+self.onmessage = function(e) {
+  var data = e.data
+  if (data.type === 'compile') {
+    try {
+      var t0 = performance.now()
+      var ast = parse(data.code)
+      var fn = compile(ast)
+      var compileTime = performance.now() - t0
+      self.postMessage({ id: data.id, ok: true, ast: ast, time: compileTime })
+    } catch (err) {
+      self.postMessage({ id: data.id, ok: false, error: err.message })
+    }
+  } else if (data.type === 'run') {
+    try {
+      var t0 = performance.now()
+      var ast = parse(data.code)
+      var fn = compile(ast)
+      // Merge builtins with user context (user context wins)
+      var ctx = Object.assign({}, BUILTINS, data.ctx)
+      var result = fn(ctx)
+      var evalTime = performance.now() - t0
+      var serializable = typeof result === 'function'
+        ? { __type: 'function', length: result.length }
+        : result
+      self.postMessage({ id: data.id, ok: true, result: serializable, time: evalTime })
+    } catch (err) {
+      self.postMessage({ id: data.id, ok: false, error: err.message })
+    }
+  }
+}
+self.postMessage({ type: 'ready' })
+`
+  return src
+}
+
+
+function rebuildWorker() {
+  return new Promise((resolve, reject) => {
+    evalId++
+    workerReady = false
+    clearTimeout(timer)
+
+    if (currentWorker) {
+      currentWorker.onmessage = null
+      currentWorker.onerror = null
+      currentWorker.terminate()
+      currentWorker = null
+      worker = null
+    }
+
+    const src = buildWorkerSrc()
+    const blob = new Blob([src], { type: 'text/javascript' })
+    const newWorker = new Worker(URL.createObjectURL(blob))
+
+    newWorker.onmessage = e => {
+      if (e.data.type === 'ready') {
+        currentWorker = newWorker
+        worker = newWorker
+        workerReady = true
+        worker.onmessage = handleWorkerMsg
+        resolve()
+      }
+    }
+    newWorker.onerror = e => {
+      console.error('Worker error:', e)
+      errorEl.textContent = 'Worker: ' + e.message
+      reject(e)
+    }
+  })
+}
+
+const editorEl = document.querySelector('.editor')
+
+function highlightError(error) {
+  // Parse error position: "... at 2:5 — ..."
+  const match = error?.match(/at (\d+):(\d+)/)
+  if (match) {
+    const line = parseInt(match[1])
+    const lineHeight = 1.6 // em, matches CSS
+    const padding = 0.5 // em, matches CSS
+    const top = `calc(${padding}em + ${(line - 1) * lineHeight}em)`
+    const bot = `calc(${padding}em + ${line * lineHeight}em)`
+    editorEl.style.setProperty('--err-line-top', top)
+    editorEl.style.setProperty('--err-line-bot', bot)
+    editorEl.classList.add('has-error')
+  } else {
+    editorEl.classList.remove('has-error')
+  }
+}
+
+function handleWorkerMsg(e) {
+  if (e.data.id !== evalId) return
+
+  const { ok, ast, result, error, time } = e.data
+  if (ok) {
+    editorEl.classList.remove('has-error')
+    if (ast !== undefined) {
+      currentAST = ast
+      astEl.textContent = formatAST(ast)
+      errorEl.textContent = ''
+    }
+    if (result !== undefined) {
+      if (result && result.__type === 'function') {
+        resultEl.textContent = `ƒ(${result.length})`
+      } else {
+        resultEl.textContent = JSON.stringify(result) ?? String(result)
+      }
+      resultEl.classList.remove('err')
+      evalTimeEl.textContent = time !== undefined ? `${time.toFixed(1)}ms` : ''
+    }
+  } else {
+    // Hint: if error looks like missing semicolon (keyword after expression)
+    const hint = /Unexpected token.*\^(for|while|if|let|const|return)/.test(error)
+      ? ' — Hint: use ; between statements'
+      : ''
+    errorEl.textContent = error + hint
+    highlightError(error)
+    evalTimeEl.textContent = ''
+    if (result === undefined) {
+      astEl.textContent = ''
+      currentAST = null
+    } else {
+      resultEl.textContent = error
+      resultEl.classList.add('err')
+    }
+  }
+}
+
+// AST formatter
+function formatAST(node, depth = 0) {
+  if (node === undefined) return 'undefined'
+  if (node === null) return 'null'
+  if (!Array.isArray(node)) return JSON.stringify(node)
+  if (node.length === 0) return '[]'
+
+  const indent = '  '.repeat(depth)
+  const inner = '  '.repeat(depth + 1)
+
+  if (node[0] === undefined && node.length === 2) return `[, ${JSON.stringify(node[1])}]`
+
+  const simple = node.every((n, i) => !Array.isArray(n) || (i > 0 && JSON.stringify(n).length < 20))
+  if (simple) {
+    const inline = `[${node.map((n, i) => i === 0 && n === undefined ? '' : (Array.isArray(n) ? formatAST(n, 0) : JSON.stringify(n))).join(', ')}]`
+    if (inline.length < 60) return inline
+  }
+
+  const parts = node.map((n, i) => {
+    if (i === 0 && n === undefined) return ''
+    return Array.isArray(n) ? formatAST(n, depth + 1) : JSON.stringify(n)
+  })
+  return `[${parts[0]},\n${inner}${parts.slice(1).join(`,\n${inner}`)}\n${indent}]`
+}
+
+// Compact JSON formatter - multiline but minimal
+function formatJSON(obj, indent = 0) {
+  const sp = '  '.repeat(indent)
+  const sp1 = '  '.repeat(indent + 1)
+  if (obj === null) return 'null'
+  if (typeof obj !== 'object') return JSON.stringify(obj)
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]'
+    if (obj.every(v => typeof v !== 'object' || v === null)) {
+      const inline = '[' + obj.map(v => JSON.stringify(v)).join(', ') + ']'
+      if (inline.length < 40) return inline
+    }
+    return '[\n' + obj.map(v => sp1 + formatJSON(v, indent + 1)).join(',\n') + '\n' + sp + ']'
+  }
+  const keys = Object.keys(obj)
+  if (keys.length === 0) return '{}'
+  if (keys.length <= 2 && keys.every(k => typeof obj[k] !== 'object' || obj[k] === null)) {
+    const inline = '{ ' + keys.map(k => JSON.stringify(k) + ': ' + JSON.stringify(obj[k])).join(', ') + ' }'
+    if (inline.length < 50) return inline
+  }
+  return '{\n' + keys.map(k => sp1 + JSON.stringify(k) + ': ' + formatJSON(obj[k], indent + 1)).join(',\n') + '\n' + sp + '}'
+}
+
+// Elements
+const inputEl = document.getElementById('input')
+const lineNumsEl = document.getElementById('lineNums')
+const errorEl = document.getElementById('error')
+const evalTimeEl = document.getElementById('evalTime')
+const astEl = document.getElementById('ast')
+const resultEl = document.getElementById('result')
+const contextEl = document.getElementById('context')
+
+// Auto-resize textarea + line numbers
+function updateEditor() {
+  const lines = inputEl.value.split('\n').length
+  lineNumsEl.textContent = Array.from({ length: lines }, (_, i) => i + 1).join('\n')
+  inputEl.style.height = 'auto'
+  inputEl.style.height = inputEl.scrollHeight + 'px'
+}
+inputEl.addEventListener('input', updateEditor)
+updateEditor()
+
+// Auto-resize context textarea
+function resizeContext() {
+  contextEl.style.height = 'auto'
+  contextEl.style.height = contextEl.scrollHeight + 'px'
+}
+contextEl.addEventListener('input', resizeContext)
+
+// Auto-format context JSON on blur
+contextEl.addEventListener('blur', () => {
+  try {
+    const parsed = JSON.parse(contextEl.value)
+    contextEl.value = formatJSON(parsed)
+    resizeContext()
+  } catch (e) { /* invalid JSON, leave as-is */ }
+})
+resizeContext()
+
+// Tab switching
+document.querySelectorAll('.output-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    const target = tab.dataset.tab
+    document.querySelectorAll('.output-tab').forEach(t => t.classList.toggle('active', t === tab))
+    document.getElementById('evalPanel').classList.toggle('active', target === 'eval')
+    document.getElementById('treePanel').classList.toggle('active', target === 'tree')
+  })
+})
+
+// Debounce
+let timer
+const debounce = fn => { clearTimeout(timer); timer = setTimeout(fn, 100) }
+
+// Compile only (no execution)
+function compile() {
+  errorEl.textContent = ''
+  astEl.textContent = ''
+  currentAST = null
+
+  const code = inputEl.value.trim()
+  if (!code || !worker || !workerReady) return
+
+  try { worker.postMessage({ type: 'compile', id: evalId, code }) }
+  catch (e) { /* Worker terminated */ }
+}
+
+// Run (execute with context)
+function run() {
+  resultEl.textContent = ''
+  resultEl.classList.remove('err')
+
+  const code = inputEl.value.trim()
+  if (!code || !worker || !workerReady) return
+
+  let ctx = {}
+  try { ctx = JSON.parse(contextEl.value || '{}') }
+  catch (e) { resultEl.textContent = `Context: ${e.message}`; resultEl.classList.add('err'); return }
+
+  try { worker.postMessage({ type: 'run', id: evalId, code, ctx }) }
+  catch (e) { /* Worker terminated */ }
+}
+
+inputEl.addEventListener('input', () => { updateEditor(); debounce(compile) })
+
+// Run button
+document.getElementById('runBtn').addEventListener('click', run)
+
+// Cmd+Enter to run
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 'Enter') {
+    e.preventDefault()
+    run()
+  }
+})
+
+// Tab in editor
+inputEl.addEventListener('keydown', e => {
+  if (e.key === 'Tab') {
+    e.preventDefault()
+    const s = inputEl.selectionStart
+    inputEl.value = inputEl.value.slice(0, s) + '  ' + inputEl.value.slice(inputEl.selectionEnd)
+    inputEl.selectionStart = inputEl.selectionEnd = s + 2
+    updateEditor()
+    debounce(compile)
+  }
+})
+
+// Update editor with generated example (validates syntax before setting)
+function updateExample() {
+  const ex = generateExample()
+
+  // Validate generated code syntax before displaying
+  // This catches bugs in example generation early
+  const validation = validateSyntax(ex.code)
+  if (!validation.valid) {
+    console.warn('Generated example has syntax error:', validation.error, '\nCode:', ex.code)
+  }
+
+  inputEl.value = ex.code
+  contextEl.value = formatJSON(ex.ctx)
+  updateEditor()
+  resizeContext()
+}
+
+// Render features
+let programmaticChange = false
+const featuresEl = document.getElementById('features')
+const DEPS = { 'if': ['block'], loop: ['block'], 'switch': ['block'], 'function': ['block'], 'try': ['block'], destruct: ['var'] } // Hidden dependencies
+
+// Tooltip element for features
+const featTip = document.createElement('div')
+featTip.className = 'feat-tip'
+document.body.appendChild(featTip)
+
+FEATURES.forEach(cat => {
+  featuresEl.insertAdjacentHTML('beforeend', `<div class="cat-head">${cat.cat}</div>`)
+  cat.items.forEach(id => {
+    const el = document.createElement('label')
+    el.className = 'feat'
+    const dep = DEPS[id] ? `<span class="feat-dep">+${DEPS[id].join(',')}</span>` : ''
+    el.innerHTML = `<input type="checkbox" data-id="${id}" ${selected.has(id) ? 'checked' : ''}>${id}${dep}<span class="feat-desc">${DESC[id]}</span>`
+    el.dataset.tip = TIPS[id] || DESC[id]
+
+    // Tooltip handlers - show left of sidebar
+    el.addEventListener('mouseenter', e => {
+      featTip.innerHTML = el.dataset.tip
+      featTip.style.display = 'block'
+      const rect = el.getBoundingClientRect()
+      const sidebar = document.querySelector('.sidebar')
+      const sidebarRect = sidebar.getBoundingClientRect()
+      const tipRect = featTip.getBoundingClientRect()
+      // Position to the left of sidebar, vertically aligned with feature
+      featTip.style.right = (window.innerWidth - sidebarRect.left + 8) + 'px'
+      featTip.style.left = 'auto'
+      featTip.style.top = rect.top + 'px'
+    })
+    el.addEventListener('mouseleave', () => featTip.style.display = 'none')
+
+    el.querySelector('input').addEventListener('change', async e => {
+      if (programmaticChange) return
+      const enabled = e.target.checked
+      enabled ? selected.add(id) : selected.delete(id)
+      updatePresetSelect()
+      await rebuildWorker()
+      updateBundleSizeHint()
+      updateExample()
+      compile()
+    })
+    featuresEl.appendChild(el)
+  })
+})
+
+// Preset select
+const presetSelect = document.getElementById('presetSelect')
+presetSelect.addEventListener('change', async () => {
+  if (presetSelect.value === 'custom') return
+  selected = new Set(PRESETS[presetSelect.value])
+  programmaticChange = true
+  document.querySelectorAll('.feat input').forEach(cb => cb.checked = selected.has(cb.dataset.id))
+  programmaticChange = false
+  await rebuildWorker()
+  updateBundleSizeHint()
+  updateExample()
+  compile()
+})
+
+function updatePresetSelect() {
+  const match = Object.entries(PRESETS).find(([k, v]) => v.length === selected.size && v.every(x => selected.has(x)))
+  if (match) {
+    presetSelect.value = match[0]
+    presetSelect.querySelector('[value=custom]').hidden = true
+  } else {
+    presetSelect.querySelector('[value=custom]').hidden = false
+    presetSelect.querySelector('[value=custom]').disabled = false
+    presetSelect.value = 'custom'
+  }
+}
+
+// Sidebar toggle
+const sidebar = document.getElementById('sidebar')
+const toggleBtn = document.getElementById('toggleSidebar')
+const mainEl = document.querySelector('main')
+toggleBtn.addEventListener('click', () => {
+  sidebar.classList.toggle('collapsed')
+  mainEl.classList.toggle('sidebar-collapsed')
+  const chevron = toggleBtn.querySelector('svg')
+  chevron.style.transform = sidebar.classList.contains('collapsed') ? 'rotate(180deg)' : ''
+})
+
+// Feature dependencies - these features import from other features
+// Includes transitive dependencies (e.g., group→loop→block means group needs block)
+const DEPENDENCIES = {
+  // block exports keyword, infix, block, body - used by control flow features
+  // Also needed transitively by: group (via loop)
+  block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
+  // loop exports BREAK, CONTINUE, RETURN, loop - used by features that handle control flow
+  loop: ['group', 'function', 'try', 'switch'],
+  // destruct exports destructure - used by var and loop
+  destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
+  // access exports prop, unsafe, isLval - used by group
+  access: ['group'],
+  // accessor exports ACC - used by collection
+  accessor: ['collection']
+}
+
+// Bundle generation - import version (requires subscript package)
+function generateImportBundle() {
+  // Build import list with proper paths
+  const imports = []
+  const includedPaths = new Set()
+
+  for (const featureId of featureOrder) {
+    // Check if feature should be included (either selected, or needed by a selected feature)
+    let shouldInclude = selected.has(featureId)
+    if (!shouldInclude && DEPENDENCIES[featureId]) {
+      shouldInclude = DEPENDENCIES[featureId].some(x => selected.has(x))
+    }
+    if (!shouldInclude) continue
+
+    const path = FEATURE_PATHS[featureId]
+    if (!path || includedPaths.has(path)) continue
+    includedPaths.add(path)
+
+    // Convert feature/X.js to subscript/feature/X.js
+    imports.push(`import 'subscript/${path}'`)
+  }
+
+  return `// subscript dialect (${selected.size} features)
+import { parse, compile } from 'subscript/parse'
+${imports.join('\n')}
+
+export { parse, compile }
+export default s => compile(parse(s))
+
+// Usage:
+// import evaluate from './dialect.js'
+// const result = evaluate('1 + 2 * 3')({ x: 10 })
+`
+}
+
+// Self-contained ES module bundle - proper bundling that preserves exports
+function generateSelfContainedBundle() {
+  let bundle = `// Bundled subscript (${selected.size} features)
+// https://github.com/dy/subscript
+
+`
+
+  // 1. Parse.js (contains parse, compile, operators all in one)
+  bundle += `// === parse.js ===\n`
+  let parseModule = stripImports(parseSrc)
+    .replace(/^export\s+let\s+/gm, 'let ')
+    .replace(/^export\s+const\s+/gm, 'const ')
+    .replace(/^export\s+default\s+parse\s*;?\s*$/gm, '')
+  bundle += parseModule + '\n\n'
+
+  // 2. Features (in order, avoiding duplicates)
+  const includedPaths = new Set()
+
+  for (const featureId of featureOrder) {
+    // Check if feature should be included (either selected, or needed by a selected feature)
+    let shouldInclude = selected.has(featureId)
+    if (!shouldInclude && DEPENDENCIES[featureId]) {
+      shouldInclude = DEPENDENCIES[featureId].some(x => selected.has(x))
+    }
+    if (!shouldInclude) continue
+
+    const path = FEATURE_PATHS[featureId]
+    if (!path || includedPaths.has(path)) continue
+    includedPaths.add(path)
+
+    const featureCode = featureSources[path]
+    if (!featureCode) continue
+
+    bundle += `// === ${path} ===\n`
+    let code = stripImports(featureCode)
+    code = stripExports(code)
+    // Wrap in IIFE to avoid const redeclaration (PREFIX, STATEMENT, etc.)
+    bundle += `;(function(){\n${code}\n})();\n\n`
+
+    if (featureId === 'unit') {
+      bundle += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n\n`
+    }
+  }
+
+  // Enable single quotes (justin/jessie compatibility)
+  if (selected.has('string')) {
+    bundle += `parse.string["'"] = true;\n\n`
+  }
+
+  // ESM exports
+  bundle += `export { parse, compile }
+export default (code) => compile(parse(code))
+`
+  return bundle
+}
+
+// Real minification via Terser (async)
+async function minify(code) {
+  if (!terserReady) {
+    const ok = await initTerser()
+    if (!ok) {
+      console.warn('Terser failed to load, using fallback')
+      return minifyFallback(code)
+    }
+  }
+  try {
+    if (!terser || !terser.minify) {
+      console.warn('Terser not ready, using fallback')
+      return minifyFallback(code)
+    }
+    console.log('Minifying with Terser...', code.length, 'bytes')
+    const result = await terser.minify(code, {
+      module: true,
+      compress: { passes: 3, ecma: 2020, unsafe: true },
+      mangle: { toplevel: false },
+      format: { ecma: 2020, comments: false, semicolons: false }
+    })
+    if (result.error) {
+      console.error('❌ Terser parse/minify error:', result.error)
+      return minifyFallback(code)
+    }
+    if (!result.code) {
+      console.warn('⚠️  Terser returned no code')
+      return minifyFallback(code)
+    }
+    console.log('✓ Minified to', result.code.length, 'bytes')
+    return result.code
+  } catch (e) {
+    console.error('❌ Terser exception:', e.message, e.stack)
+    return minifyFallback(code)
+  }
+}
+
+// Fallback minification (basic)
+function minifyFallback(code) {
+  return code
+    .replace(/\/\/.*$/gm, '')
+    .replace(/\/\*[\s\S]*?\*\//g, '')
+    .replace(/\n\s*\n/g, '\n')
+    .replace(/^\s+/gm, '')
+    .replace(/\s+$/gm, '')
+    .replace(/\n/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+}
+
+// Size formatting
+function formatSize(bytes) {
+  if (bytes < 1024) return bytes + ' B'
+  return (bytes / 1024).toFixed(1) + ' KB'
+}
+
+// Gzip size
+async function gzipSize(str) {
+  if (typeof CompressionStream === 'undefined') {
+    return Math.floor(str.length * 0.3)
+  }
+  const blob = new Blob([str])
+  const cs = new CompressionStream('gzip')
+  const stream = blob.stream().pipeThrough(cs)
+  const compressedBlob = await new Response(stream).blob()
+  return compressedBlob.size
+}
+
+// Update bundle size hint on export button (shows minified self-contained size)
+const bundleSizeHint = document.getElementById('bundleSizeHint')
+let lastBundleSize = null
+async function updateBundleSizeHint() {
+  const code = generateSelfContainedBundle()
+  const minCode = await minify(code)
+  const gz = await gzipSize(minCode)
+  lastBundleSize = { raw: new Blob([code]).size, min: new Blob([minCode]).size, gz }
+  bundleSizeHint.textContent = `(${formatSize(gz)} gz)`
+}
+
+// Modal
+const bundleModal = document.getElementById('bundleModal')
+const modalCode = document.getElementById('modalCode')
+const bundleToggle = document.getElementById('bundleToggle')
+const sizeInfo = document.getElementById('sizeInfo')
+let currentBundleCode = ''
+
+async function updateModalCode() {
+  const isBundle = bundleToggle.checked
+  console.log('updateModalCode called, isBundle:', isBundle)
+
+  let code = isBundle ? generateSelfContainedBundle() : generateImportBundle()
+  console.log('Generated code:', code.length, 'bytes')
+
+  if (isBundle) {
+    modalCode.textContent = 'Bundling & minifying...'
+    console.log('Calling minify...')
+    code = await minify(code)
+    console.log('After minify:', code.length, 'bytes')
+  }
+
+  currentBundleCode = code
+  modalCode.textContent = code
+
+  // Update size info
+  if (isBundle) {
+    const rawSize = new Blob([code]).size
+    const gzip = await gzipSize(code)
+    sizeInfo.textContent = `${formatSize(rawSize)} / ${formatSize(gzip)} gzip`
+  } else {
+    sizeInfo.textContent = `${selected.size} features`
+  }
+}
+
+document.getElementById('getBundleBtn').addEventListener('click', () => {
+  updateModalCode()
+  bundleModal.classList.add('open')
+})
+
+bundleModal.addEventListener('click', e => {
+  if (e.target === bundleModal) bundleModal.classList.remove('open')
+})
+
+bundleToggle.addEventListener('change', updateModalCode)
+
+document.getElementById('modalDownload').addEventListener('click', () => {
+  const isBundle = bundleToggle.checked
+  const filename = isBundle ? 'dialect.min.js' : 'dialect.js'
+  const a = document.createElement('a')
+  a.href = URL.createObjectURL(new Blob([currentBundleCode], { type: 'text/javascript' }))
+  a.download = filename
+  a.click()
+})
+
+// Copy handlers - select full text and copy
+function copyBundle(btn) {
+  // Select text in modalCode
+  const range = document.createRange()
+  range.selectNodeContents(modalCode)
+  const sel = window.getSelection()
+  sel.removeAllRanges()
+  sel.addRange(range)
+
+  navigator.clipboard.writeText(currentBundleCode)
+  const origHTML = btn.innerHTML
+  btn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 13l4 4L19 7"/></svg> Copied!'
+  setTimeout(() => { btn.innerHTML = origHTML }, 1500)
+}
+
+document.getElementById('codeCopyBtn').addEventListener('click', function() { copyBundle(this) })
+
+// Escape to close modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && bundleModal.classList.contains('open')) {
+    bundleModal.classList.remove('open')
+  }
+})
+
+// URL state - encode code/preset in hash for sharing
+function encodeState() {
+  const code = inputEl.value
+  const preset = presetSelect.value
+  const ctx = contextEl.value
+  const params = new URLSearchParams()
+  if (code) params.set('c', btoa(encodeURIComponent(code)))
+  if (preset !== 'justin') params.set('p', preset)
+  if (ctx && ctx !== '{ "x": 10 }') params.set('x', btoa(encodeURIComponent(ctx)))
+  const hash = params.toString()
+  history.replaceState(null, '', hash ? '#' + hash : location.pathname)
+}
+
+function decodeState() {
+  const hash = location.hash.slice(1)
+  if (!hash) return false
+  const params = new URLSearchParams(hash)
+  let hasState = false
+
+  if (params.has('c')) {
+    try {
+      inputEl.value = decodeURIComponent(atob(params.get('c')))
+      hasState = true
+    } catch (e) {}
+  }
+  if (params.has('p')) {
+    const preset = params.get('p')
+    if (PRESETS[preset]) {
+      presetSelect.value = preset
+      selected = new Set(PRESETS[preset])
+      programmaticChange = true
+      document.querySelectorAll('.feat input').forEach(cb => cb.checked = selected.has(cb.dataset.id))
+      programmaticChange = false
+      hasState = true
+    }
+  }
+  if (params.has('x')) {
+    try {
+      contextEl.value = decodeURIComponent(atob(params.get('x')))
+    } catch (e) {}
+  }
+  return hasState
+}
+
+// Debounced state save
+let stateTimer
+const saveState = () => { clearTimeout(stateTimer); stateTimer = setTimeout(encodeState, 500) }
+inputEl.addEventListener('input', saveState)
+contextEl.addEventListener('input', saveState)
+presetSelect.addEventListener('change', saveState)
+
+// Init - check URL state first
+const hasUrlState = decodeState()
+updatePresetSelect()
+await rebuildWorker()
+updateBundleSizeHint()
+if (!hasUrlState) updateExample()
+updateEditor()
+resizeContext()
+compile()
+
+console.log('=== PAGE STARTUP ===')
+console.log('initTerser starting...')
+initTerser()
+console.log('initTerser complete, terser:', typeof terser, terser ? Object.keys(terser).slice(0,5) : 'NOT LOADED')
+</script>
+</body>
+</html>

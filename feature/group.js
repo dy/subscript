@@ -1,11 +1,41 @@
-import { err, nary, group } from '../src/parse.js'
-import { compile, operator } from '../src/compile.js'
-import { PREC_ACCESS, PREC_GROUP, PREC_SEQ, PREC_STATEMENT } from '../src/const.js'
+import { nary, group, operator, compile } from '../parse.js';
+import { BREAK, CONTINUE } from './loop.js';
+import { prop } from './access.js';
 
-// (a,b,c), (a) — uses PREC_ACCESS to avoid conflict with ?.
-group('()', PREC_ACCESS)
-operator('()', (a, b) => b === undefined && (!a && err('Empty ()'), compile(a)))
+const STATEMENT = 5, SEQ = 10, ACCESS = 170;
 
-const last = (...args) => (args = args.map(compile), ctx => args.map(arg => arg(ctx)).pop())
-nary(',', PREC_SEQ), operator(',', last)
-nary(';', PREC_STATEMENT, true), operator(';', last)
+// (a,b,c), (a) — uses ACCESS to avoid conflict with ?.
+group('()', ACCESS);
+
+// Sequences
+nary(',', SEQ);
+nary(';', STATEMENT, true);  // right-assoc to allow same-prec statements
+
+// Compile
+const err = msg => { throw Error(msg) };
+operator('()', (a, b) => {
+  // Group: (expr) - no second argument means grouping, not call
+  if (b === undefined) return a == null ? err('Empty ()') : compile(a);
+  // Validate: no sparse arguments in calls
+  const hasSparse = n => n?.[0] === ',' && n.slice(1).some(a => a == null || hasSparse(a));
+  if (hasSparse(b)) err('Empty argument');
+  const args = !b ? () => [] :
+    b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) :
+    (b = compile(b), ctx => [b(ctx)]);
+  return prop(a, (obj, path, ctx) => obj[path](...args(ctx)), true);
+});
+
+// sequence returns last evaluated value; catches BREAK/CONTINUE and attaches result
+const seq = (...args) => (args = args.map(compile), ctx => {
+  let r;
+  for (const arg of args) {
+    try { r = arg(ctx); }
+    catch (e) {
+      if (e?.type === BREAK || e?.type === CONTINUE) { e.value = r; throw e; }
+      throw e;
+    }
+  }
+  return r;
+});
+operator(',', seq);
+operator(';', seq);

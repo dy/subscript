@@ -1,52 +1,48 @@
-import { lookup, next, err, skip, cur, idx } from "../src/parse.js"
-import { PERIOD, _0, _E, _e, _9 } from "../src/const.js"
+/**
+ * Numbers with configurable prefix notation
+ *
+ * Configurable via parse.number: { '0x': 16, '0b': 2, '0o': 8 }
+ */
+import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
 
-// Char codes for prefixes
-const _b = 98, _B = 66, _o = 111, _O = 79, _x = 120, _X = 88
-const _a = 97, _f = 102, _A = 65, _F = 70
-const PLUS = 43, MINUS = 45
+const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45;
+const _a = 97, _f = 102, _A = 65, _F = 70;
 
-// Check if char at offset is digit or sign (valid after 'e')
-const isExpFollow = off => {
-  const c = cur.charCodeAt(idx + off)
-  return (c >= _0 && c <= _9) || c === PLUS || c === MINUS
-}
+// Decimal number - check for .. range operator (don't consume . if followed by .)
+const num = a => [, (
+  a = +next(c =>
+    // . is decimal only if NOT followed by another . (range operator)
+    (c === PERIOD && cur.charCodeAt(idx + 1) !== PERIOD) ||
+    (c >= _0 && c <= _9) ||
+    ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)
+  )
+) != a ? err() : a];
 
-// parse decimal number (with optional exponent)
-// Only consume 'e' if followed by digit or +/-
-const num = (a, _) => [, (
-  a = +next(c => (c === PERIOD) || (c >= _0 && c <= _9) || ((c === _E || c === _e) && isExpFollow(1) ? 2 : 0))
-) != a ? err() : a]
+// Char test for prefix base
+const charTest = {
+  2: c => c === 48 || c === 49,
+  8: c => c >= 48 && c <= 55,
+  16: c => (c >= _0 && c <= _9) || (c >= _a && c <= _f) || (c >= _A && c <= _F)
+};
 
-// .1
-lookup[PERIOD] = a => !a && num()
+// Default: no prefixes
+parse.number = null;
 
-// 1-9 (non-zero starts decimal)
-for (let i = _0 + 1; i <= _9; i++) lookup[i] = a => a ? err() : num()
+// .1 (but not .. range)
+lookup[PERIOD] = a => !a && cur.charCodeAt(idx + 1) !== PERIOD && num();
 
-// 0 - check for prefix (0b, 0o, 0x) or plain decimal
+// 0-9: check parse.number for prefix config
+for (let i = _0; i <= _9; i++) lookup[i] = a => a ? void 0 : num();
 lookup[_0] = a => {
-  if (a) return err()
-  const nextChar = cur.charCodeAt(idx + 1)
-  
-  // Binary: 0b
-  if (nextChar === _b || nextChar === _B) {
-    skip(); skip() // consume '0b'
-    const s = next(c => c === 48 || c === 49) // 0 or 1
-    return [, parseInt(s, 2)]
+  if (a) return;
+  const cfg = parse.number;
+  if (cfg) {
+    for (const [pre, base] of Object.entries(cfg)) {
+      if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
+        skip(2);
+        return [, parseInt(next(charTest[base]), base)];
+      }
+    }
   }
-  // Octal: 0o
-  if (nextChar === _o || nextChar === _O) {
-    skip(); skip() // consume '0o'
-    const s = next(c => c >= 48 && c <= 55) // 0-7
-    return [, parseInt(s, 8)]
-  }
-  // Hex: 0x
-  if (nextChar === _x || nextChar === _X) {
-    skip(); skip() // consume '0x'
-    const s = next(c => (c >= _0 && c <= _9) || (c >= _a && c <= _f) || (c >= _A && c <= _F))
-    return [, parseInt(s, 16)]
-  }
-  
-  return num()
-}
+  return num();
+};

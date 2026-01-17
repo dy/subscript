@@ -1,62 +1,39 @@
 /**
- * Template string interpolation: `a ${expr} b`
- * 
- * AST:
- *   `a ${x} b`  → ['`', [,'a '], 'x', [,' b']]
+ * Template literals: `a ${x} b` → ['`', [,'a '], 'x', [,' b']]
+ * Tagged templates:  tag`...`  → ['``', 'tag', ...]
  */
-import * as P from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
+import { parse, skip, err, expr, lookup, cur, idx, operator, compile } from '../parse.js';
 
-const { lookup, skip, err, next, expr } = P
-const BACKTICK = 96, DOLLAR = 36, OBRACE = 123, CBRACE = 125, BSLASH = 92
+const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123, BSLASH = 92;
+const esc = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' };
 
-const escape = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' }
+// Parse template body after opening `
+const parseBody = () => {
+  const parts = [];
+  for (let s = '', c; (c = cur.charCodeAt(idx)) !== BACKTICK; )
+    !c ? err('Unterminated template') :
+    c === BSLASH ? (skip(), s += esc[cur[idx]] || cur[idx], skip()) :
+    c === DOLLAR && cur.charCodeAt(idx + 1) === OBRACE ? (s && parts.push([, s]), s = '', skip(2), parts.push(expr(0, 125))) :
+    (s += cur[idx], skip(), c = cur.charCodeAt(idx), c === BACKTICK && s && parts.push([, s]));
+  return skip(), parts;
+};
 
-// Parse template literal
-lookup[BACKTICK] = a => {
-  a && err('Unexpected template')
-  skip() // consume opening `
-  
-  const parts = []
-  let str = ''
-  
-  while (P.cur.charCodeAt(P.idx) !== BACKTICK) {
-    const c = P.cur.charCodeAt(P.idx)
-    if (!c) err('Unterminated template')
-    
-    // Escape sequence
-    if (c === BSLASH) {
-      skip()
-      const ec = P.cur[P.idx]
-      str += escape[ec] || ec
-      skip()
-    }
-    // Interpolation ${...}
-    else if (c === DOLLAR && P.cur.charCodeAt(P.idx + 1) === OBRACE) {
-      if (str) parts.push([, str])
-      str = ''
-      skip(); skip() // consume ${
-      parts.push(expr(0, CBRACE))
-    }
-    // Regular character
-    else {
-      str += P.cur[P.idx]
-      skip()
-    }
+const prev = lookup[BACKTICK];
+// Tagged templates: decline when ASI with newline (return undefined to let ASI handle)
+lookup[BACKTICK] = (a, prec) =>
+  a && prec < ACCESS ? (parse.asi && parse.newline ? void 0 : (skip(), ['``', a, ...parseBody()])) : // tagged
+  !a ? (skip(), (p => p.length < 2 && p[0]?.[0] === undefined ? p[0] || [,''] : ['`', ...p])(parseBody())) : // plain
+  prev?.(a, prec);
+
+// Compile
+operator('`', (...parts) => (parts = parts.map(compile), ctx => parts.map(p => p(ctx)).join('')));
+operator('``', (tag, ...parts) => {
+  tag = compile(tag);
+  const strings = [], exprs = [];
+  for (const p of parts) {
+    if (Array.isArray(p) && p[0] === undefined) strings.push(p[1]);
+    else exprs.push(compile(p));
   }
-  
-  skip() // consume closing `
-  if (str) parts.push([, str])
-  
-  // Optimize: if no interpolations, return plain string
-  if (parts.length === 0) return [, '']
-  if (parts.length === 1 && parts[0][0] === undefined) return parts[0]
-  
-  return ['`', ...parts]
-}
-
-// Compile template: concatenate parts
-operator('`', (...parts) => {
-  parts = parts.map(p => compile(p))
-  return ctx => parts.map(p => p(ctx)).join('')
-})
+  const strs = Object.assign([...strings], { raw: strings });
+  return ctx => tag(ctx)(strs, ...exprs.map(e => e(ctx)));
+});

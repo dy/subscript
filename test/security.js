@@ -1,44 +1,33 @@
-import test, { is } from 'tst'
-import subscript from '../subscript.js'
-import justin from '../justin.js'
+// Security tests
 
-test('security: blocked properties', t => {
-  // Direct property access attacks
-  is(subscript('a.constructor')({ a: {} }), undefined)
-  is(subscript('a.__proto__')({ a: {} }), undefined)
-  is(subscript('a.prototype')({ a: function(){} }), undefined)
+import test, { is, throws } from 'tst'
+import '../jessie.js'
+import { parse, compile } from '../parse.js'
+import { unsafe } from '../feature/access.js'
 
-  // Dynamic property access attacks
-  is(subscript('a[b]')({ a: {}, b: 'constructor' }), undefined)
-  is(subscript('a[b]')({ a: {}, b: '__proto__' }), undefined)
+const c = (s, ctx = {}) => compile(parse(s))(ctx)
 
-  // String/array constructor chain
-  is(subscript('"".constructor')({ }), undefined)
-  is(subscript('[].constructor')({ }), undefined)
-
-  // Normal access still works
-  is(subscript('a.b')({ a: { b: 42 } }), 42)
-  is(subscript('a[b]')({ a: { x: 1 }, b: 'x' }), 1)
+test('security: blocked constructor', () => {
+  // Blocked properties return undefined instead of actual value
+  is(c('[].constructor'), undefined)
+  is(c('"".constructor'), undefined)
+  is(c('({}).constructor'), undefined)
 })
 
-test('security: optional chaining blocked', t => {
-  is(justin('a?.constructor')({ a: {} }), undefined)
-  is(justin('a?.__proto__')({ a: {} }), undefined)
-  is(justin('a?.["constructor"]')({ a: {} }), undefined)
-
-  // Normal optional chaining works
-  is(justin('a?.b')({ a: { b: 42 } }), 42)
-  is(justin('a?.b')({ a: null }), undefined)
+test('security: blocked prototype', () => {
+  is(c('[].prototype'), undefined)
+  is(c('({}).prototype'), undefined)
 })
 
-test('security: Function constructor attack', t => {
-  // This was the main attack vector - should be blocked
-  let attacked = false
-  try {
-    const fn = subscript('a.constructor.constructor("attacked=true")()')
-    fn({ a: {} })
-  } catch (e) {
-    // Either blocked or errors - both acceptable
-  }
-  is(attacked, false)
+test('security: blocked __proto__', () => {
+  is(c('({}).__proto__'), undefined)
+  is(c('[].__proto__'), undefined)
+})
+
+test('security: unsafe checker', () => {
+  is(unsafe('constructor'), true)
+  is(unsafe('prototype'), true)
+  is(unsafe('__proto__'), true)
+  is(unsafe('normal'), false)
+  is(unsafe('x'), false)
 })

@@ -1,48 +1,39 @@
-// no-keywords js, just in https://github.com/endojs/Jessie/issues/66
-import { err, token, binary, unary } from './src/parse.js'
-import compile, { operator, prop } from './src/compile.js'
+/**
+ * justin: JSON superset expression language
+ *
+ * Builds on subscript with JS-specific features:
+ * optional chaining, arrow functions, spread, templates.
+ */
+import './subscript.js';
+import { parse } from './parse.js';
 
-import subscript from './subscript.js'
-import './feature/comment.js'
-import './feature/pow.js'
-import './feature/ternary.js'
-import './feature/bool.js'
-import './feature/array.js'
-import './feature/object.js'
-import './feature/arrow.js'
-import './feature/optional.js'
-import './feature/spread.js'
-import { PREC_ASSIGN, PREC_EQ, PREC_LOR, PREC_COMP } from './src/const.js'
+// Add single quotes
+parse.string["'"] = true;
 
-binary('in', PREC_COMP), operator('in', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) in b(ctx)))
+// Add hex, binary, octal prefixes
+parse.number = { '0x': 16, '0b': 2, '0o': 8 };
 
-// register !==, ===
-binary('===', PREC_EQ), binary('!==', 9)
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)))
-operator('!==', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) !== b(ctx)))
+import './feature/comment.js';
 
-// add nullish coalescing
-binary('??', PREC_LOR)
-operator('??', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)))
-binary('??=', PREC_ASSIGN, true)
-operator('??=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path] ??= b(ctx)))))
+// Extended operators
+// Note: assignment (=) is in subscript, must come BEFORE identity (===)
+import './feature/op/identity.js';         // === !==
+import './feature/op/nullish.js';          // ??
+import './feature/op/pow.js';              // ** **=
+import './feature/op/membership.js';       // in (instanceof is in jessie/class.js)
+import './feature/op/bitwise-unsigned.js'; // >>> >>>=
+import './feature/op/assign-logical.js';   // ||= &&= ??= + destructuring
 
-// complete logical assignments
-binary('||=', PREC_ASSIGN, true)
-operator('||=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path] ||= b(ctx)))))
-binary('&&=', PREC_ASSIGN, true)
-operator('&&=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path] &&= b(ctx)))))
+// JS-specific operators (ternary, arrow, spread, optional chaining, typeof/void/delete/new)
+import './feature/literal.js';
+import './feature/op/ternary.js';
+import './feature/op/arrow.js';
+import './feature/op/spread.js';
+import './feature/op/optional.js';
+import './feature/op/unary.js';
 
-// unsigned shift
-binary('>>>', PREC_EQ)
-operator('>>>', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) >>> b(ctx)))
-binary('>>>=', PREC_ASSIGN, true)
-operator('>>>=', (a, b) => (b = compile(b), prop(a, (obj, path, ctx) => (obj[path] >>>= b(ctx)))))
+import './feature/collection.js';
+import './feature/template.js';
 
-// add JS literals
-token('undefined', 20, a => a ? err() : [, undefined])
-token('NaN', 20, a => a ? err() : [, NaN])
-token('null', 20, a => a ? err() : [, null])
-
-export default subscript
-export * from './subscript.js'
+export * from './parse.js';
+export { default } from './subscript.js';

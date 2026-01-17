@@ -1,46 +1,41 @@
-/**
- * Block scope and control flow infrastructure
- *
- * AST:
- *   { a; b }  → ['block', [';', a, b]]
- *
- * Shared by: if.js, loop.js, control.js
- */
-import * as P from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
-import { OBRACE, CBRACE } from '../src/const.js'
+// Block parsing helpers
+import { expr, skip, space, lookup, err, parse, seek, cur, idx, parens, loc, operator, compile } from '../parse.js';
 
-const { expr, skip, space } = P
+const STATEMENT = 5, OBRACE = 123, CBRACE = 125;
 
-// Control signals for break/continue/return
-class Break {}
-class Continue {}
-class Return { constructor(v) { this.value = v } }
-export const BREAK = new Break(), CONTINUE = new Continue(), Return_ = Return
+// keyword(op, prec, fn) - prefix-only word token
+// keyword('while', 6, () => ['while', parens(), body()])
+// keyword('break', 6, () => ['break'])
+// attaches .loc to array results for source mapping
+export const keyword = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) =>
+  lookup[c] = (a, curPrec, curOp, from = idx) =>
+    !a &&
+    (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
+    curPrec < prec &&
+    !parse.id(cur.charCodeAt(idx + l)) &&
+    (seek(idx + l), (r = map()) ? loc(r, from) : (seek(from), !prev && err()), r) ||
+    prev?.(a, curPrec, curOp);
 
-// Shared loop body executor - handles control flow signals
-export const loop = (body, ctx) => {
-  try { return { val: body(ctx) } }
-  catch (e) {
-    if (e === BREAK) return { brk: 1 }
-    if (e === CONTINUE) return { cnt: 1 }
-    if (e instanceof Return) return { ret: 1, val: e.value }
-    throw e
-  }
-}
+// infix(op, prec, fn) - infix word token (requires left operand)
+// infix('catch', 6, a => ['catch', a, parens(), block()])
+// infix('finally', 6, a => ['finally', a, block()])
+// attaches .loc to array results for source mapping
+export const infix = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) =>
+  lookup[c] = (a, curPrec, curOp, from = idx) =>
+    a &&
+    (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
+    curPrec < prec &&
+    !parse.id(cur.charCodeAt(idx + l)) &&
+    (seek(idx + l), loc(r = map(a), from), r) ||
+    prev?.(a, curPrec, curOp);
 
-// Block parsing helper - parses { body } or single expression
-export const parseBody = () => {
-  if (space() === OBRACE) {
-    skip()
-    return ['block', expr(0, CBRACE)]
-  }
-  return expr(0)
-}
+// block() - parse required { body }
+export const block = () =>
+  (space() === OBRACE || err('Expected {'), skip(), expr(STATEMENT - .5, CBRACE) || null);
 
-// Block operator - creates new scope
-operator('block', body => {
-  if (body === undefined) return () => {}
-  body = compile(body)
-  return ctx => body(Object.create(ctx))
-})
+// body() - parse { body } or single statement
+export const body = () =>
+  space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), ['block', expr(STATEMENT - .5, CBRACE) || null]);
+
+// Compile
+operator('block', body => body === undefined ? () => {} : (body = compile(body), ctx => body(ctx)));

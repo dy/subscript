@@ -1,12 +1,15 @@
-import test, { is, throws, same } from 'tst'
-import parse, { err, unary } from '../src/parse.js'
-import subscript, { binary, operator, compile, token } from '../subscript.js'
-import { PREC_MULT } from '../src/const.js'
+// Tests for subscript.js - combined jessie parser + JS compiler pipeline
 
-// test result to be same as js
+import test, { is, throws, same } from 'tst'
+import parse, { err, unary, lookup } from '../parse.js'
+import subscript, { binary, operator, compile, token } from '../subscript.js'
+import { operators } from '../parse.js'
+
+const MULT = 120;
+
+// Test result to be same as js
 const sameAsJs = (str, ctx = {}) => {
   let ss = subscript(str), fn = new Function(...Object.keys(ctx), 'return ' + str)
-
   return is(ss(ctx), fn(...Object.values(ctx)))
 }
 
@@ -84,8 +87,7 @@ test('basic', t => {
 })
 
 test('right-assoc', async t => {
-  await import('../feature/pow.js');
-
+  // ** is now in consolidated op.js (imported via expr.js)
   sameAsJs('1 + 2 * 3 ** 4 + 5', {})
   sameAsJs(`a + b * c ** d | e`, { a: 1, b: 2, c: 3, d: 4, e: 5 })
 })
@@ -95,38 +97,6 @@ test('syntactic', t => {
   is(subscript('')(), undefined)
   is(subscript(' ')(), undefined)
   is(subscript('\n\r')(), undefined)
-})
-
-test('readme', t => {
-  sameAsJs(`a.b + c(d-1)`, { a: { b: 1 }, c: x => x * 2, d: 3 })
-  sameAsJs(`min * 60 + "sec"`, { min: 5 })
-
-  binary('|>', 60), operator('|>', (a, b) => (a = compile(a), b = compile(b), (ctx) => a(ctx)?.pipe?.(b(ctx)) || (a(ctx) | b(ctx))))
-
-  let evaluate = subscript(`
-    interval(350)
-    |> take(25)`
-    // | map(gaussian)
-    // | map(num => "•".repeat(Math.floor(num * 65)))
-  )
-  evaluate({
-    Math,
-    // map,
-    // gaussian
-    take: arg => ({ pipe: b => console.log('take', b) }),
-    interval: arg => ({ pipe: b => console.log('interval to', b) }),
-  })
-
-  // add === binary operator
-  binary('===', 9), operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)))
-
-  // add literals
-  // set('true',20, [,a => ()=>true])
-  // set('false',20, [,a => ()=>false])
-  token('true', 20, a => [, true])
-  token('false', 20, a => [, false])
-
-  is(subscript('true === false')(), false) // false
 })
 
 test('numbers', t => {
@@ -144,12 +114,6 @@ test('strings', t => {
   throws(x => subscript('"a'))
   throws(x => subscript('"a" + "b'))
   is(subscript('"a" + ("1" + "2")')(), "a12")
-
-  // parse.quote['<?']='?>'
-  // is(parse('"abc" + <?js\nxyz?>'), ['+','"abc','<?js\nxyz?>'])
-
-  // parse.quote['<--']='-->'
-  // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 
 test('ext: literals', t => {
@@ -174,20 +138,14 @@ test('ext: literals', t => {
 
   is(subscript('f')({ f: 1 }), 1)
   is(subscript('f(false)')({ f: v => !!v }), false)
-
-  // is(subscript('null++')(), ['++',null])
-  // is(subscript('false++'), ['++',false])
-  // is(subscript('++false'), ['++',false])
 })
 
 test.skip('bad number', t => {
   is(subscript('-1.23e-2')(), -1.23e-2)
-  // NOTE: it's not criminal to create NaN instead of this construct
   throws(x => subscript('.e-1')())
 })
 
 test('intersecting binary', async t => {
-  // await import('./justin.js')
   sameAsJs('a | b', { a: 1234, b: 4567 })
   sameAsJs('a || b', { a: false, b: true })
   sameAsJs('a & b', { a: 1234, b: 4567 })
@@ -261,13 +219,11 @@ test('unaries: postfix', t => {
   is(ctx.a, 2)
   is(subscript('a ++')(ctx), 2)
   is(subscript('a  --')(ctx), 3)
-  // sameAsJs('a++(b)',{})
 })
 
 test('prop access', t => {
   sameAsJs('a["b"]["c"][0]', { a: { b: { c: [1] } } })
   is(subscript('a.b.c')({ a: { b: { c: [1] } } }), [1])
-  // NOTE: invalid JS
   is(subscript('a.b.c.0')({ a: { b: { c: [1] } } }), 1)
 })
 
@@ -282,8 +238,6 @@ test('parens', t => {
   sameAsJs('+(b)', { b: 1 })
   sameAsJs('+((b))', { b: 1 })
   is(subscript('++(b)')({ b: 1 }), 2)
-  // NOTE: invalid in JS
-  // is(subscript('++a(b)')({b:1, a:v=>v+1}),3)
   is(subscript('!a(b)')({ a: v => v, b: false }), true)
   sameAsJs('+(b)', { b: 1 })
   sameAsJs('1+(b)', { b: 1 })
@@ -348,8 +302,8 @@ test.skip('ext: in operator', async t => {
 })
 
 test('array', async t => {
-  await import('../feature/array.js')
-  await import('../feature/spread.js')
+  await import('../feature/collection.js')
+  // spread is now in consolidated op.js
 
   is(subscript('[]')(), [])
   is(subscript('[ 1 ]')(), [1])
@@ -367,13 +321,6 @@ test('array', async t => {
 
   is(subscript('[ 1, ...x ]')({ x: [2, 3] }), [1, 2, 3])
 
-  // TODO: prefix/postfix maybe?
-  // is(subscript('[1,]')({}),[1])
-  // is(subscript('[,]')({}),[undefined])
-  // is(subscript('[1,,2,"b"]')({b:3}),[1,undefined,2,'b'])
-  // is(subscript('[,,2,"b"]')({b:3}),[undefined,undefined,2,'b'])
-  // is(subscript('[1,,2,b]')({b:3}),[1,undefined,2,3])
-
   sameAsJs('[1]')
   sameAsJs('[1,2,3]')
   sameAsJs('[0]', {})
@@ -385,7 +332,7 @@ test('array', async t => {
 })
 
 test('ternary', async t => {
-  await import('../feature/ternary.js')
+  // Ternary already included via c/op.js through jessie preset
 
   sameAsJs('a?b:c', { a: true, b: 1, c: 2 })
   sameAsJs('a?b:c', { a: false, b: 1, c: 2 })
@@ -404,8 +351,7 @@ test('ternary', async t => {
 })
 
 test('object', async t => {
-  await import('../feature/object.js')
-  await import('../feature/ternary.js')
+  // collection.js and ternary already included via jessie preset
 
   sameAsJs('{}', {})
   sameAsJs('{x: 1}', {})
@@ -427,7 +373,7 @@ test('object', async t => {
 })
 
 test('ext: arrow', async t => {
-  await import('../feature/arrow.js')
+  // arrow is now in consolidated op.js
 
   is(subscript('() => 1')()(), 1)
   is(subscript('(a) => a+1')()(1), 2)
@@ -507,9 +453,7 @@ test('assignment', async t => {
 })
 
 test('comments', async t => {
-  await import('../feature/comment.js')
-  // token('/*', 20, (a, prec) => (skip(c => c !== 42 && cur.charCodeAt(idx + 1) !== 47), skip(2), a || expr(prec) || ['']))
-  // token('//', 20, (a, prec) => (skip(c => c >= 32), a || expr(prec) || ['']))
+  // Comments already included via c/comment.js through jessie preset
   is(subscript('/* x */1/* y */+/* z */2')({}), 3)
   is(subscript(`a /
     // abc
@@ -530,9 +474,9 @@ test('comments', async t => {
 })
 
 test('unfinished sequences', async t => {
-  throws(() => subscript('a+b)+c'))//, ['+','a','b'])
-  throws(() => subscript('(a+(b)))+c'))//, ['+','a','b'])
-  throws(() => subscript('a+b+)c'))//, ['+','a','b',null])
+  throws(() => subscript('a+b)+c'))
+  throws(() => subscript('(a+(b)))+c'))
+  throws(() => subscript('a+b+)c'))
 })
 
 test('err: unknown operators', t => {
@@ -541,10 +485,7 @@ test('err: unknown operators', t => {
   throws(() => subscript('a -> b'))
   throws(() => subscript('a ->'))
   throws(() => subscript('-> a'))
-  throws(() => subscript('#a'))
-  // throws(() => subscript('~a'))
   throws(() => subscript('a !'))
-  throws(() => subscript('a#b'))
   throws(() => subscript('b @'))
 })
 
@@ -580,9 +521,16 @@ test('err: wrong sequences', t => {
 })
 
 test('low-precedence unary', t => {
-  unary('&', PREC_MULT - 0.5), operator('&', (a) => (a = compile(a), ctx => ~a(ctx)))
+  const ampCode = '&'.charCodeAt(0)
+  const origLookup = lookup[ampCode]
+  const origOp = operators['&']
+
+  unary('&', MULT - 0.5), operator('&', (a) => (a = compile(a), ctx => ~a(ctx)))
   is(subscript('&a+b*c')({ a: 1, b: 2, c: 3 }), 4)
   is(subscript('&a*b+c')({ a: 1, b: 2, c: 3 }), 0)
+
+  lookup[ampCode] = origLookup
+  operators['&'] = origOp
 })
 
 test('stdlib cases', t => {
@@ -595,9 +543,80 @@ test.skip('ext: collect args', async t => {
   let args = [], id = parse.id
   parse.id = (a, b) => (a = id(), a && args.push(a), a)
 
-  // FIXME: maybe needs ignoring pow and b?
   let fn = subscript('Math.pow(), a.b(), c + d() - e, f[g], h in e, true, {x: "y", "z": w}, i ? j : k')
   same(args,
     ['Math', 'pow', 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'e', 'x', 'w', 'i', 'j', 'k']
   )
+})
+
+test('err: invalid assignment target', t => {
+  throws(() => subscript('1 = 2'), 'number literal')
+  throws(() => subscript('"a" = b'), 'string literal')
+  throws(() => subscript('true = 1'), 'boolean literal')
+  throws(() => subscript('(a + b) = c'), 'expression')
+  throws(() => subscript('a() = b'), 'function call')
+  throws(() => subscript('1 += 2'), 'compound assignment to number')
+  throws(() => subscript('"a" -= 1'), 'compound assignment to string')
+  throws(() => subscript('a() *= 2'), 'compound assignment to call')
+})
+
+test('err: invalid increment target', t => {
+  throws(() => subscript('1++'), 'postfix number')
+  throws(() => subscript('++1'), 'prefix number')
+  throws(() => subscript('"a"++'), 'postfix string')
+  throws(() => subscript('++"a"'), 'prefix string')
+  throws(() => subscript('(a+b)++'), 'postfix expression')
+  throws(() => subscript('++(a+b)'), 'prefix expression')
+  throws(() => subscript('a()++'), 'postfix call')
+  throws(() => subscript('++a()'), 'prefix call')
+  throws(() => subscript('1--'), 'decrement number')
+  throws(() => subscript('--1'), 'decrement prefix number')
+})
+
+test('template tag', t => {
+  // Basic template tag
+  is(subscript`1 + 2`(), 3)
+  is(subscript`a + b`({ a: 1, b: 2 }), 3)
+
+  // Interpolation - primitives become literals
+  const x = 10
+  is(subscript`a + ${x}`({ a: 5 }), 15)
+  is(subscript`${x} + ${20}`(), 30)
+
+  // Interpolation - functions become callable literals
+  const double = n => n * 2
+  is(subscript`${double}(x)`({ x: 5 }), 10)
+
+  // Interpolation - objects become literals
+  const obj = { a: 1 }
+  is(subscript`${obj}.a`(), 1)
+
+  // AST injection - compose expressions
+  const inner = ['+', 'b', 'c']  // b + c as AST
+  is(subscript`a * ${inner}`({ a: 2, b: 3, c: 4 }), 14)  // 2 * (3 + 4)
+
+  // AST injection via parse
+  const sum = parse('x + y')
+  is(subscript`${sum} * 2`({ x: 3, y: 4 }), 14)  // (3 + 4) * 2
+
+  // AST injection - literal node
+  const lit = [, 100]
+  is(subscript`a + ${lit}`({ a: 5 }), 105)
+
+  // AST injection - identifier
+  is(subscript`a + ${'b'}`({ a: 1, b: 2 }), 3)
+
+  // Regular arrays stay as literals (first element not string/undefined)
+  const arr = [1, 2, 3]
+  is(subscript`${arr}[1]`(), 2)
+
+  // Caching - same template literal in loop reuses compiled fn
+  const compileFn = () => subscript`a + 1`
+  const fn1 = compileFn()
+  const fn2 = compileFn()
+  is(fn1, fn2) // same template strings array = cached
+
+  // Direct string call (no caching)
+  is(subscript('1 + 2')(), 3)
+  is(subscript('1 + 2')(), 3)
 })

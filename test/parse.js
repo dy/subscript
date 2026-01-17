@@ -1,10 +1,9 @@
-// Calltree tests.
-// NOTE: we have redone it so many times that it's just better be kept as is
+// Core Pratt parser tests
 
 import test, { is, any, throws } from 'tst'
-import { binary, nary, unary, token } from '../subscript.js'
-import parse from '../src/parse.js'
-import { PREC_MULT } from '../src/const.js'
+import { binary, nary, unary, token, compile, parse } from '../subscript.js'
+
+const MULT = 120;
 
 
 test('parse: basic', t => {
@@ -39,7 +38,6 @@ test('parse: basic', t => {
   is(parse(`+-a.b+-!a`), ['+', ['+', ['-', ['.', 'a', 'b']]], ['-', ['!', 'a']]])
   is(parse(`1.0`), [, 1])
 
-  // is(parse(`   .1   +   -1.0 -  2.ce+1 `), ['-', ['+', '.1', ['-', '1']], '2c'])
   is(parse(`( a,  b )`), ['()', [',', 'a', 'b']])
   is(parse(`a * c / b`), ['/', ['*', 'a', 'c'], 'b'])
   is(parse('a(b)(c)'), ['()', ['()', 'a', 'b'], 'c'])
@@ -51,9 +49,6 @@ test('parse: basic', t => {
   is(parse('a()()()'), ['()', ['()', ['()', 'a', null,], null,], null,])
   is(parse(`a (  ccc. d,  -+1.0 )`), ['()', "a", [",", [".", "ccc", "d"], ["-", ["+", ["", 1]]]]])
   is(parse(`(a + 2) * 3 / 2 + b * 2 - 1`), ["-", ["+", ["/", ["*", ["()", ["+", "a", ["", 2]]], ["", 3]], ["", 2]], ["*", "b", ["", 2]]], ["", 1]])
-
-  // is(parse('1 + 2 * 3 ** 4 + 5'), ['+', [, 1], ['*', [, 2], ['**', [, 3], [, 4]]], [, 5]])
-  // is(parse(`a + b * c ** d | e`), ['|', ['+', 'a', ['*', 'b', ['**', 'c', 'd']]], 'e'])
 
   is(parse('x(a + 3)'), ['()', 'x', ['+', 'a', [, 3]]])
   is(parse('1 + x(a.b + 3.5)'), ['+', [, 1], ['()', 'x', ['+', ['.', 'a', 'b'], [, 3.5]]]])
@@ -126,12 +121,6 @@ test('parse: strings', t => {
   is(parse('a + b'), ['+', 'a', 'b'])
   throws(() => parse('"a" + "b'), 'bad string')
   is(parse('"a" + ("1" + "2")'), ['+', [, 'a'], ['()', ['+', [, '1'], [, '2']]]])
-
-  // parse.quote['<?']='?>'
-  // is(parse('"abc" + <?js\nxyz?>'), ['+','"abc','<?js\nxyz?>'])
-
-  // parse.quote['<--']='-->'
-  // is(parse('"abc" + <--js\nxyz-->'), ['+','"abc','<--js\nxyz-->'])
 })
 
 test('parse: bad number', t => {
@@ -155,7 +144,6 @@ test('parse: signs', t => {
   is(parse('a+(x)'), ['+', 'a', ['()', 'x']])
   is(parse('a+!x'), ['+', 'a', ['!', 'x']])
   is(parse('a+-x'), ['+', 'a', ['-', 'x']])
-  // is(parse('1+-1.23e-2-1.12'),['-',['+','1',['-','1.23e-2']], '1.12'])
   is(parse('-+(x)'), ['-', ['+', ['()', 'x']]])
   is(parse('+1.12-+-a+-(+x)'), ['+', ['-', ['+', [, 1.12]], ['+', ['-', 'a']]], ['-', ['()', ['+', 'x']]]])
   is(parse('+1.12-+-a[+x]'), ['-', ['+', [, 1.12]], ['+', ['-', ['[]', 'a', ['+', 'x']]]]])
@@ -187,8 +175,6 @@ test('parse: unaries', t => {
 test('parse: prop access', t => {
   is(parse('a["b"]["c"][0]'), ['[]', ['[]', ['[]', 'a', [, 'b']], [, 'c']], [, 0]])
   is(parse('a.b.c.0'), ['.', ['.', ['.', 'a', 'b'], 'c'], [, 0]])
-  // is(evaluate(['.','a','b',new String('c'),0], {a:{b:{c:[2]}}}), 2)
-  // is(evaluate(['.',['.',['.','a','b'],new String('c')],0], {a:{b:{c:[2]}}}), 2)
 })
 
 test('parse: parens', t => {
@@ -202,7 +188,7 @@ test('parse: parens', t => {
   is(parse('+(b)'), ['+', ['()', 'b']])
   is(parse('+((b))'), ['+', ['()', ['()', 'b']]])
   is(parse('++(b)'), ['++', ['()', 'b']])
-  is(parse('++a(b)'), ['++', ['()', 'a', 'b']])
+  throws(() => compile(parse('++a(b)')), 'prefix increment on call is invalid')
   is(parse('+(b)'), ['+', ['()', 'b']])
   is(parse('x+(b)'), ['+', 'x', ['()', 'b']])
   is(parse('(x)+-b'), ['+', ['()', 'x'], ['-', 'b']])
@@ -265,14 +251,11 @@ test('parse: nary', t => {
   is(parse('a;;b;c'), [';', 'a', null, 'b', 'c'])
   is(parse(';a;;;c;'), [';', null, 'a', null, null, 'c', null,])
 
-  // console.log(parse('a;&b'))
-  // special error case
-  throws(() => parse('&a;'), /Unexpected/)
-  throws(() => parse(';&b'), /Unexpected/)
-  throws(() => parse('a;&b'), /Unexpected/)
+  // special error case (@ isn't a registered operator)
+  throws(() => parse('@a;'), /Unexpected/)
+  throws(() => parse(';@b'), /Unexpected/)
+  throws(() => parse('a;@b'), /Unexpected/)
 })
-
-// NOTE: `in` operator not implemented yet (needs feature/in.js)
 
 test('parse: justin', async t => {
   const { parse } = await import('../justin.js')
@@ -285,9 +268,9 @@ test('parse: justin', async t => {
 })
 
 test('parse: unfinished sequences', async t => {
-  throws(() => parse('a+b)+c'))//, ['+','a','b'])
-  throws(() => parse('(a+(b)))+c'))//, ['+','a','b'])
-  throws(() => parse('a+b+)c'))//, ['+','a','b',null])
+  throws(() => parse('a+b)+c'))
+  throws(() => parse('(a+(b)))+c'))
+  throws(() => parse('a+b+)c'))
 })
 
 test('parse: non-existing operators', t => {
@@ -297,7 +280,6 @@ test('parse: non-existing operators', t => {
 })
 
 test('parse: error messages', t => {
-  // Error format: "Message at line:col — context^rest"
   throws(() => parse('(a'), /Unclosed \( at 1:3/)
   throws(() => parse('"a'), /Bad string at 1:3/)
   throws(() => parse('a b'), /Unexpected token at 1:3/)
@@ -312,7 +294,7 @@ test('parse: error messages', t => {
 })
 
 test('parse: low-precedence unary', t => {
-  unary('#', PREC_MULT - 0.5)
+  unary('#', MULT - 0.5)
   is(parse('#a+b*c'), ['+', ['#', 'a'], ['*', 'b', 'c']])
   is(parse('#a*b+c'), ['+', ['#', ['*', 'a', 'b']], 'c'])
 })

@@ -1,116 +1,123 @@
-/**
- * Loops: while, for, break, continue, return
- *
- * AST:
- *   while (c) a        → ['while', c, a]
- *   for (i;c;s) a      → ['for', i, c, s, a]
- *   break/continue     → ['break'] / ['continue']
- *   return x           → ['return', x?]
- */
-import * as P from '../src/parse.js'
-import { operator, compile } from '../src/compile.js'
-import { PREC_STATEMENT, OPAREN, CPAREN, CBRACE, PREC_SEQ, PREC_TOKEN } from '../src/const.js'
-import { parseBody, loop, BREAK, CONTINUE, Return_ as Return } from './block.js'
-export { BREAK, CONTINUE } from './block.js'
+// Loops: while, do-while, for, for await, break, continue, return
+import { expr, skip, space, parse, word, parens, cur, idx, operator, compile } from '../parse.js';
+import { body, keyword } from './block.js';
+import { destructure } from './destruct.js';
 
-const { token, expr, skip, space, err, next, parse } = P
-const SEMI = 59
+// Control flow symbols
+export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
 
-// while (cond) body
-token('while', PREC_STATEMENT, a => {
-  if (a) return
-  space() === OPAREN || err('Expected (')
-  skip()
-  return ['while', expr(0, CPAREN), parseBody()]
-})
+// Loop body executor - catches control flow and returns status
+export const loop = (body, ctx) => {
+  try { return { v: body(ctx) }; }
+  catch (e) {
+    if (e?.type === BREAK) return { b: 1 };
+    if (e?.type === CONTINUE) return { c: 1 };
+    if (e?.type === RETURN) return { r: 1, v: e.value };
+    throw e;
+  }
+};
 
+const STATEMENT = 5, CBRACE = 125, SEMI = 59;
+
+keyword('while', STATEMENT + 1, () => (space(), ['while', parens(), body()]));
+keyword('do', STATEMENT + 1, () => (b => (space(), skip(5), space(), ['do', b, parens()]))(body()));
+
+// for / for await
+keyword('for', STATEMENT + 1, () => {
+  space();
+  // for await (x of y)
+  if (word('await')) {
+    skip(5);
+    space();
+    return ['for await', parens(), body()];
+  }
+  return ['for', parens(), body()];
+});
+
+keyword('break', STATEMENT + 1, () => ['break']);
+keyword('continue', STATEMENT + 1, () => ['continue']);
+keyword('return', STATEMENT + 1, () => {
+  parse.asi && (parse.newline = false);
+  space();
+  const c = cur.charCodeAt(idx);
+  return !c || c === CBRACE || c === SEMI || parse.newline ? ['return'] : ['return', expr(STATEMENT)];
+});
+
+// Compile
 operator('while', (cond, body) => {
-  cond = compile(cond); body = compile(body)
+  cond = compile(cond); body = compile(body);
   return ctx => {
-    let r, res
-    while (cond(ctx)) {
-      r = loop(body, ctx)
-      if (r.brk) break
-      if (r.cnt) continue
-      if (r.ret) return r.val
-      res = r.val
-    }
-    return res
-  }
-})
+    let r, res;
+    while (cond(ctx)) if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+    return res;
+  };
+});
 
-// for (init; cond; step) body
-// Note: init supports both expressions AND let/const declarations
-token('for', PREC_STATEMENT, a => {
-  if (a) return
-  space() === OPAREN || err('Expected (')
-  skip()
-  // Parse init: can be expression (PREC_SEQ) or let/const declaration (PREC_STATEMENT)
-  // Using expr(PREC_SEQ) excludes statement-level tokens like let/const
-  // So we detect let/const keywords and parse the declaration inline
-  let init
-  const cc = space()
-  if (cc === SEMI) init = null
-  else if (cc === 108 && P.cur.substr(P.idx, 3) === 'let' && !parse.id(P.cur.charCodeAt(P.idx + 3))) {
-    skip(); skip(); skip() // skip 'let'
-    space()
-    const name = next(parse.id)
-    if (!name) err('Expected identifier')
-    space()
-    if (P.cur.charCodeAt(P.idx) === 61 && P.cur.charCodeAt(P.idx + 1) !== 61) {
-      skip(); init = ['let', name, expr(PREC_SEQ)]
-    } else init = ['let', name]
-  } else if (cc === 99 && P.cur.substr(P.idx, 5) === 'const' && !parse.id(P.cur.charCodeAt(P.idx + 5))) {
-    skip(); skip(); skip(); skip(); skip() // skip 'const'
-    space()
-    const name = next(parse.id)
-    if (!name) err('Expected identifier')
-    space()
-    P.cur.charCodeAt(P.idx) === 61 && P.cur.charCodeAt(P.idx + 1) !== 61 || err('Expected =')
-    skip(); init = ['const', name, expr(PREC_SEQ)]
-  } else init = expr(PREC_SEQ)
-  space() === SEMI ? skip() : err('Expected ;')
-  const cond = space() === SEMI ? null : expr(PREC_SEQ)
-  space() === SEMI ? skip() : err('Expected ;')
-  const step = space() === CPAREN ? null : expr(PREC_SEQ)
-  space() === CPAREN ? skip() : err('Expected )')
-  return ['for', init, cond, step, parseBody()]
-})
-
-operator('for', (init, cond, step, body) => {
-  init = init ? compile(init) : null
-  cond = cond ? compile(cond) : () => true
-  step = step ? compile(step) : null
-  body = compile(body)
+operator('do', (body, cond) => {
+  body = compile(body); cond = compile(cond);
   return ctx => {
-    let r, res
-    for (init?.(ctx); cond(ctx); step?.(ctx)) {
-      r = loop(body, ctx)
-      if (r.brk) break
-      if (r.cnt) continue
-      if (r.ret) return r.val
-      res = r.val
-    }
-    return res
+    let r, res;
+    do { if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v; } while (cond(ctx));
+    return res;
+  };
+});
+
+operator('for', (head, body) => {
+  // Normalize head: [';', init, cond, step] or single expr (for-in/of)
+  if (Array.isArray(head) && head[0] === ';') {
+    let [, init, cond, step] = head;
+    init = init ? compile(init) : null;
+    cond = cond ? compile(cond) : () => true;
+    step = step ? compile(step) : null;
+    body = compile(body);
+    return ctx => {
+      let r, res;
+      for (init?.(ctx); cond(ctx); step?.(ctx))
+        if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+      return res;
+    };
   }
-})
+  // For-in/of: head is ['in', lhs, rhs] or ['of', lhs, rhs]
+  if (Array.isArray(head) && (head[0] === 'in' || head[0] === 'of')) {
+    let [op, lhs, rhs] = head;
+    // Extract name from declaration: ['let', 'x'] → 'x'
+    if (Array.isArray(lhs) && (lhs[0] === 'let' || lhs[0] === 'const' || lhs[0] === 'var')) lhs = lhs[1];
+    if (op === 'in') return forIn(lhs, rhs, body);
+    if (op === 'of') return forOf(lhs, rhs, body);
+  }
+});
 
-// break / continue / return
-token('break', PREC_TOKEN, a => a ? null : ['break'])
-operator('break', () => () => { throw BREAK })
+const forOf = (name, iterable, body) => {
+  iterable = compile(iterable); body = compile(body);
+  const isPattern = Array.isArray(name);
+  return ctx => {
+    let r, res;
+    const prev = isPattern ? null : ctx[name];
+    for (const val of iterable(ctx)) {
+      if (isPattern) destructure(name, val, ctx); else ctx[name] = val;
+      if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+    }
+    if (!isPattern) ctx[name] = prev;
+    return res;
+  };
+};
 
-token('continue', PREC_TOKEN, a => a ? null : ['continue'])
-operator('continue', () => () => { throw CONTINUE })
+const forIn = (name, obj, body) => {
+  obj = compile(obj); body = compile(body);
+  const isPattern = Array.isArray(name);
+  return ctx => {
+    let r, res;
+    const prev = isPattern ? null : ctx[name];
+    for (const key in obj(ctx)) {
+      if (isPattern) destructure(name, key, ctx); else ctx[name] = key;
+      if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+    }
+    if (!isPattern) ctx[name] = prev;
+    return res;
+  };
+};
 
-token('return', PREC_STATEMENT, a => {
-  if (a) return
-  space()
-  const c = P.cur.charCodeAt(P.idx)
-  if (!c || c === CBRACE || c === SEMI) return ['return']
-  return ['return', expr(PREC_STATEMENT)]
-})
-
-operator('return', val => {
-  val = val !== undefined ? compile(val) : null
-  return ctx => { throw new Return(val?.(ctx)) }
-})
+operator('break', () => () => { throw { type: BREAK }; });
+operator('continue', () => () => { throw { type: CONTINUE }; });
+operator('return', val => (val = val !== undefined ? compile(val) : null,
+  ctx => { throw { type: RETURN, value: val?.(ctx) }; }));
