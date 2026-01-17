@@ -143,8 +143,8 @@ const code = await bundle('subscript/jessie.js')
 // → self-contained ES module with parse, compile exports
 ```
 
-**REPL** — interactive dialect builder with live bundling:
-[**Try REPL →**](https://dy.github.io/subscript/repl.html)
+**Playground** — interactive dialect builder with live bundling:
+[**Try it →**](https://dy.github.io/subscript/)
 
 
 ## Used by

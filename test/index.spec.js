@@ -1,7 +1,7 @@
 // @ts-check
 import { test, expect } from '@playwright/test'
 
-const URL = 'http://localhost:8765/repl.html'
+const URL = 'http://localhost:8765/'
 
 test.describe('Subscript REPL', () => {
 
