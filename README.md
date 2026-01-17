@@ -151,14 +151,14 @@ Eval 30k:   new Function 7ms · subscript 15ms · jsep+eval 30ms · expr-eval 72
 
 ## Utils
 
-### Stringify
+### Codegen
 
-To convert tree back to code, there's codegenerator function:
+Convert tree back to code:
 
 ```js
-import { stringify } from 'subscript.js'
+import { codegen } from 'subscript/util/stringify.js'
 
-stringify(['+', ['*', 'min', [,60]], [,'sec']])
+codegen(['+', ['*', 'min', [,60]], [,'sec']])
 // 'min * 60 + "sec"'
 ```
 
