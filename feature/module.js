@@ -9,7 +9,7 @@
  *   export { a } from './x'      → ['export', ['from', ['{}', ...], path]]
  *   export const x = 1           → ['export', decl]
  */
-import { token, expr, space, lookup, skip } from '../parse/pratt.js';
+import { token, expr, space, lookup, skip } from '../parse.js';
 import { keyword } from './block.js';
 
 const STATEMENT = 5, SEQ = 10, STAR = 42;

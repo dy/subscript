@@ -3,7 +3,7 @@
  *
  * Configurable via parse.string: { '"': true } or { '"': true, "'": true }
  */
-import { parse, lookup, next, err, skip, idx, cur } from '../parse/pratt.js';
+import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
 
 const BSLASH = 92, DQUOTE = 34, SQUOTE = 39;
 const esc = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v' };

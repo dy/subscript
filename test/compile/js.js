@@ -1,7 +1,7 @@
 // Tests for compile/js.js - AST → closure evaluator (direct AST input)
 
 import test, { is, throws } from 'tst'
-import { compile, operator, operators } from '../../compile/js.js'
+import { compile, operator, operators } from '../../parse.js'
 
 // Test compile directly with AST (no parsing)
 test('compile: literals', t => {

@@ -37,20 +37,21 @@ async function bundleAndVerifySyntax(entry) {
 
 // === Tests ===
 
-test('bundle: parse/pratt.js exports', async () => {
-  await bundleAndRun('parse/pratt.js', async (mod) => {
+test('bundle: parse.js exports', async () => {
+  await bundleAndRun('parse.js', async (mod) => {
     is(typeof mod.default, 'function')
     is(typeof mod.token, 'function')
     is(typeof mod.binary, 'function')
-    is(typeof mod.expr, 'function')
+    is(typeof mod.compile, 'function')
+    is(typeof mod.operator, 'function')
   })
 })
 
-test('bundle: compile/js.js exports', async () => {
-  await bundleAndRun('compile/js.js', async (mod) => {
-    is(typeof mod.default, 'function')
-    is(typeof mod.operator, 'function')
-    is(typeof mod.compile, 'function')
+test('bundle: util/stringify.js exports', async () => {
+  await bundleAndRun('util/stringify.js', async (mod) => {
+    is(typeof mod.codegen, 'function')
+    is(typeof mod.generator, 'function')
+    is(typeof mod.generators, 'object')
   })
 })
 
@@ -94,7 +95,7 @@ test('dogfood: parse (expr)', async () => {
 
 test('dogfood: parse (jessie)', async () => {
   await bundleAndRun('subscript.js', async (mod) => {
-    const { parse: jessieParse } = await import('../parse/jessie.js')
+    const { parse: jessieParse } = await import('../jessie.js')
     mod.default.parse = jessieParse
     const { parse } = mod
     is(jessieParse('x => x * 2')[0], '=>')

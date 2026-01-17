@@ -36,21 +36,21 @@ async function run() {
 
   // expr (subscript core)
   try {
-    const { parse } = await import('../parse/expr.js');
+    const { parse } = await import('../subscript.js');
     parse(expr);
     results.parse['expr'] = bench('expr', () => parse(expr));
   } catch (e) { console.log('expr: SKIP -', e.message); }
 
   // justin
   try {
-    const { parse } = await import('../parse/justin.js');
+    const { parse } = await import('../justin.js');
     parse(expr);
     results.parse['justin'] = bench('justin', () => parse(expr));
   } catch (e) { console.log('justin: SKIP -', e.message); }
 
   // jessie
   try {
-    const { parse } = await import('../parse/jessie.js');
+    const { parse } = await import('../jessie.js');
     parse(expr);
     results.parse['jessie'] = bench('jessie', () => parse(expr));
   } catch (e) { console.log('jessie: SKIP -', e.message); }

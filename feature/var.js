@@ -7,7 +7,7 @@
  *   const x = 1 → ['const', 'x', val]
  *   var x = 1   → ['var', 'x', val]
  */
-import { expr, space } from '../parse/pratt.js';
+import { expr, space, operator, compile, destructure } from '../parse.js';
 import { keyword } from './block.js';
 
 const STATEMENT = 5, ASSIGN = 20;
@@ -24,3 +24,18 @@ const decl = op => {
 keyword('let', STATEMENT, () => decl('let'));
 keyword('const', STATEMENT, () => decl('const'));
 keyword('var', STATEMENT, () => decl('var'));
+
+// Compile
+const varOp = body => {
+  if (typeof body === 'string') return ctx => { ctx[body] = undefined; };
+  if (body[0] === '=') {
+    const [, pattern, val] = body;
+    const v = compile(val);
+    if (typeof pattern === 'string') return ctx => { ctx[pattern] = v(ctx); };
+    return ctx => destructure(pattern, v(ctx), ctx);
+  }
+  return compile(body);
+};
+operator('let', varOp);
+operator('const', varOp);
+operator('var', varOp);

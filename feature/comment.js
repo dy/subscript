@@ -1,5 +1,5 @@
 /** Configurable comments via parse.comment = { start: end } */
-import { parse, cur, idx, seek } from '../parse/pratt.js';
+import { parse, cur, idx, seek } from '../parse.js';
 
 const SPACE = 32, space = parse.space;
 

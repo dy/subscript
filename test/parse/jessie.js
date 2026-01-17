@@ -4,12 +4,12 @@ import test, { is, throws } from 'tst'
 import { parse, compile } from '../../subscript.js'
 
 // Import jessie preset (includes all jessie features)
-import '../../parse/jessie.js'
+import '../../jessie.js'
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)
 
 test('jessie: exports', async () => {
-  const mod = await import('../../parse/jessie.js')
+  const mod = await import('../../jessie.js')
   is(typeof mod.parse, 'function')
 })
 

@@ -1,5 +1,5 @@
 // Metacircularity test - jessie parses itself
-import { parse } from '../parse/jessie.js';
+import { parse } from '../jessie.js';
 import fs from 'fs';
 import tst, { is } from 'tst';
 
@@ -15,9 +15,8 @@ function testFile(file) {
 
 const files = [
   'subscript.js',
-  'parse/pratt.js', 'parse/expr.js', 'parse/justin.js', 'parse/jessie.js',
-  'compile/js.js', 'compile/js-emit.js',
-  'util/bundle.js',
+  'parse.js', 'justin.js', 'jessie.js',
+  'util/bundle.js', 'util/stringify.js',
   ...fs.readdirSync('feature').filter(f => f.endsWith('.js')).map(f => 'feature/' + f),
 ];
 

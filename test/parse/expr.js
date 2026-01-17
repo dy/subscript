@@ -3,7 +3,7 @@
 import test, { is, throws } from 'tst'
 
 test('expr: exports', async () => {
-  const mod = await import('../../parse/expr.js')
+  const mod = await import('../../subscript.js')
   is(typeof mod.parse, 'function')
   is(typeof mod.token, 'function')
   is(typeof mod.binary, 'function')
@@ -11,12 +11,12 @@ test('expr: exports', async () => {
   is(typeof mod.nary, 'function')
   is(typeof mod.group, 'function')
   is(typeof mod.access, 'function')
-  // expr has no compiler
-  is(mod.compile, undefined)
+  // expr exports compile from parse.js
+  is(typeof mod.compile, 'function')
 })
 
 test('expr: literals', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('42'), [, 42])
   is(parse('"hi"'), [, 'hi'])
   is(parse('3.14'), [, 3.14])
@@ -25,7 +25,7 @@ test('expr: literals', async () => {
 })
 
 test('expr: arithmetic', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('1 + 2'), ['+', [, 1], [, 2]])
   is(parse('a * b'), ['*', 'a', 'b'])
   is(parse('a / b'), ['/', 'a', 'b'])
@@ -35,7 +35,7 @@ test('expr: arithmetic', async () => {
 })
 
 test('expr: member access', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('a.b'), ['.', 'a', 'b'])
   is(parse('a[0]'), ['[]', 'a', [, 0]])
   is(parse('a.b.c'), ['.', ['.', 'a', 'b'], 'c'])
@@ -43,7 +43,7 @@ test('expr: member access', async () => {
 })
 
 test('expr: function calls', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('f()'), ['()', 'f', null])
   is(parse('f(x)'), ['()', 'f', 'x'])
   is(parse('f(x, y)'), ['()', 'f', [',', 'x', 'y']])
@@ -51,13 +51,13 @@ test('expr: function calls', async () => {
 })
 
 test('expr: grouping', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('(a + b)'), ['()', ['+', 'a', 'b']])
   is(parse('(a)'), ['()', 'a'])
 })
 
 test('expr: comparisons', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('a > b'), ['>', 'a', 'b'])
   is(parse('a < b'), ['<', 'a', 'b'])
   is(parse('a >= b'), ['>=', 'a', 'b'])
@@ -67,7 +67,7 @@ test('expr: comparisons', async () => {
 })
 
 test('expr: bitwise', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('a | b'), ['|', 'a', 'b'])
   is(parse('a & b'), ['&', 'a', 'b'])
   is(parse('a ^ b'), ['^', 'a', 'b'])
@@ -75,20 +75,20 @@ test('expr: bitwise', async () => {
 })
 
 test('expr: shift', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('a << 2'), ['<<', 'a', [, 2]])
   is(parse('a >> 2'), ['>>', 'a', [, 2]])
 })
 
 test('expr: assignment', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('a = 1'), ['=', 'a', [, 1]])
   is(parse('a += b'), ['+=', 'a', 'b'])
   is(parse('a -= b'), ['-=', 'a', 'b'])
 })
 
 test('expr: increment/decrement', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('++a'), ['++', 'a'])
   is(parse('--a'), ['--', 'a'])
   is(parse('a++'), ['++', 'a', null])
@@ -96,7 +96,7 @@ test('expr: increment/decrement', async () => {
 })
 
 test('expr: sequence', async () => {
-  const { parse } = await import('../../parse/expr.js')
+  const { parse } = await import('../../subscript.js')
   is(parse('a, b'), [',', 'a', 'b'])
   is(parse('a; b'), [';', 'a', 'b'])
 })

@@ -48,17 +48,6 @@
 
 - [x] ~~Add validation logic~~ -> leave to implementors
 
-- [ ] All C-like compiler targets
-  - [ ] GLSL target
-  - [ ] C target
-  - [ ] Wasm target
-
-- [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
-  - [ ] Add link to repl
-- [ ] CHANGELOG.md — 9 major versions, no migration history
-- [ ] Installation section before usage in README
-- [ ] "Add Your Own Operator" guide — current extension examples are cryptic
-- [ ] Real "Used by" with actual links if projects exist
 - [x] typeof is part of jessie (many features are part of it)
 - [x] ~~justin should not have custom decls: these are features~~
 - [x] Switch statement — feature/switch.js
@@ -66,20 +55,41 @@
 - [x] Rest parameters — feature/function.js, feature/arrow.js
 - [x] Getters/setters — feature/accessor.js (optimized with Symbol marker)
 - [x] REPL updated with new features and jessie preset
-- [ ] Remove implementation details from extension examples
-- [ ] Highlight security model (blocked constructor/__proto__)
-- [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
-- [ ] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
 - [x] feature/loop.js, feature/block.js, feature/var.js — promoted to jessie.js
-- [ ] Integrations section — either commit or delete the dreams
-- [ ] "Parser/evaluator/microlanguage" — three nouns = unclear positioning
-- [ ] "fast, tiny" — every library claims this
-- [ ] First code example uses Math.sqrt — implies I need to pass globals. Red flag.
-- [ ] No installation instructions before usage code
-- [ ] The emoji badges compete for attention with no clear value hierarchy
-- [ ] Separate compile / parse, since we can reuse parse
 
-- [ ] Subscript template tag? sub`export x = () => {}`
+- [x] Subscript template tag? sub`export x = () => {}`
+  - [x] customizable parse, compile
+  - [x] interpolations
+  - [x] caching strings
+  - [x] composability
+
+- [x] `for|if|while|with|switch (...) {...}`, `else|try|catch {...}`, `function|class N? (...)? {...}`
+  - Added `word(w)` and `parens()` helpers to pratt.js
+  - Refactored if.js, loop.js, try.js, function.js, switch.js to use them
+
+- [ ] A note to ast.md about .loc
+  - [ ] A note to ast about statement convention
+
+- [ ] Readme & values
+  - [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
+  - [ ] Add link to repl
+  - [ ] CHANGELOG.md — 9 major versions, no migration history
+  - [ ] Installation section before usage in README
+  - [ ] "Add Your Own Operator" guide — current extension examples are cryptic
+  - [ ] Real "Used by" with actual links if projects exist
+  - [ ] Remove implementation details from extension examples
+  - [ ] Highlight security model (blocked constructor/__proto__)
+  - [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
+  - [ ] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
+  - [ ] No installation instructions before usage code
+
+- [ ] Fix repl
+  - [ ] Improve design
+  - [ ] Update docs
+  - [ ] Bundle itself
+
+- [x] ~~C-like compiler targets: GLSL, C, Wasm~~ -> dedicated projects
+
 
 ## [ ] Integrations
 

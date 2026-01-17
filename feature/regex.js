@@ -8,7 +8,7 @@
  *   - `/` after value = division (falls through to prev)
  *   - `/` at start or after operator = regex
  */
-import { token, skip, err, next, idx, cur } from '../parse/pratt.js';
+import { token, skip, err, next, idx, cur } from '../parse.js';
 
 const PREFIX = 140, SLASH = 47, BSLASH = 92;
 

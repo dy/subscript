@@ -1,5 +1,5 @@
 // Block parsing helpers
-import { expr, skip, space, lookup, err, parse, seek, cur, idx, parens, loc } from '../parse/pratt.js';
+import { expr, skip, space, lookup, err, parse, seek, cur, idx, parens, loc, operator, compile } from '../parse.js';
 
 const STATEMENT = 5, OBRACE = 123, CBRACE = 125;
 
@@ -36,3 +36,6 @@ export const block = () =>
 // body() - parse { body } or single statement
 export const body = () =>
   space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), ['block', expr(STATEMENT - .5, CBRACE) || null]);
+
+// Compile
+operator('block', body => body === undefined ? () => {} : (body = compile(body), ctx => body(ctx)));

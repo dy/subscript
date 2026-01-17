@@ -3,7 +3,7 @@
  *
  * ! && || ??
  */
-import { binary, unary } from '../../parse/pratt.js';
+import { binary, unary, operator, compile } from '../../parse.js';
 
 const LOR = 30, LAND = 40, PREFIX = 140;
 
@@ -14,3 +14,9 @@ unary('!', PREFIX);
 binary('||', LOR);
 binary('&&', LAND);
 binary('??', LOR);
+
+// Compile
+operator('!', a => (a = compile(a), ctx => !a(ctx)));
+operator('||', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) || b(ctx)));
+operator('&&', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) && b(ctx)));
+operator('??', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)));

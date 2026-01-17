@@ -1,9 +1,9 @@
 // Tests for js-emit.js (AST → JS source string)
 
 import test, { is, throws } from 'tst'
-import { codegen, generator, generators } from '../../compile/js-emit.js'
-import parse from '../../parse/pratt.js'
-import '../../parse/jessie.js'
+import { codegen, generator, generators } from '../../util/stringify.js'
+import parse from '../../parse.js'
+import '../../jessie.js'
 
 // Helper: parse and codegen
 const gen = s => codegen(parse(s))

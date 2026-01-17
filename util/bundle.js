@@ -4,8 +4,8 @@
  * Thin layer: scope analysis + tree transform
  * Parser comes from the dialect (jessie by default)
  */
-import { parse } from '../parse/jessie.js';
-import { codegen } from '../compile/js-emit.js';
+import { parse } from '../jessie.js';
+import { codegen } from './stringify.js';
 import { readFile } from 'fs/promises';
 import { resolve } from 'path';
 
@@ -432,18 +432,46 @@ export async function bundle(entry, read) {
   const entryRenames = renames.get(entry) || {};
   const exportLines = [];
 
-  for (const [exp, local] of Object.entries(entryMod.exports.named)) {
-    const resolved = entryRenames[local] || local;
-    exportLines.push(exp === resolved ? exp : `${resolved} as ${exp}`);
-  }
+  // Resolve all named exports including from re-exports
+  const resolveExports = (path, seen = new Set()) => {
+    if (seen.has(path)) return {};
+    seen.add(path);
+    const mod = modules.get(path);
+    if (!mod) return {};
+    const pathRenames = renames.get(path) || {};
+    const result = {};
 
-  for (const re of entryMod.exports.reexports) {
-    if (re.star) continue;
-    const depRenames = renames.get(re.resolved) || {};
-    for (const { name, alias } of re.names) {
-      const resolved = depRenames[name] || name;
-      exportLines.push(alias === resolved ? alias : `${resolved} as ${alias}`);
+    // Direct named exports
+    for (const [exp, local] of Object.entries(mod.exports.named)) {
+      result[exp] = pathRenames[local] || local;
     }
+
+    // Re-exports
+    for (const re of mod.exports.reexports) {
+      const depRenames = renames.get(re.resolved) || {};
+      if (re.star) {
+        // export * from './x' - get all exports from that module
+        const depExports = resolveExports(re.resolved, seen);
+        for (const [exp, resolved] of Object.entries(depExports)) {
+          if (!(exp in result)) result[exp] = resolved; // don't override local exports
+        }
+      } else if (re.names) {
+        // export { a, b } from './x'
+        const depMod = modules.get(re.resolved);
+        if (depMod) {
+          for (const { name, alias } of re.names) {
+            const local = depMod.exports.named[name] || name;
+            result[alias] = depRenames[local] || local;
+          }
+        }
+      }
+    }
+    return result;
+  };
+
+  const allExports = resolveExports(entry);
+  for (const [exp, resolved] of Object.entries(allExports)) {
+    exportLines.push(exp === resolved ? exp : `${resolved} as ${exp}`);
   }
 
   if (entryMod.exports.default_) {

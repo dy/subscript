@@ -9,7 +9,7 @@
  *
  * Stops at COMP so `in`/`of` remain for for-loops
  */
-import { token, expr } from '../parse/pratt.js';
+import { token, expr } from '../parse.js';
 
 const STATEMENT = 5, SEQ = 10;
 

@@ -3,7 +3,7 @@
  *
  * JS-style ASI: insert virtual ; when newline precedes illegal token at statement level
  */
-import { parse } from '../parse/pratt.js';
+import { parse } from '../parse.js';
 
 const STATEMENT = 5;
 

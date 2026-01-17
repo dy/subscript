@@ -14,7 +14,7 @@ test.fork('perf: expr < jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) 
     return best
   }
 
-  const { parse } = await import('file:///Users/div/projects/subscript/parse/expr.js')
+  const { parse } = await import('file:///Users/div/projects/subscript/subscript.js')
   const jsep = (await import('jsep')).default
 
   for (let w = 0; w < RUNS; w++) { parse(src(w)); jsep(src(w)) }
@@ -36,7 +36,7 @@ test.fork('perf: justin <= jsep*1', {data: {RUNS, src}}, async ({ ok }, {RUNS, s
     return best
   }
 
-  const { parse } = await import('file:///Users/div/projects/subscript/parse/justin.js')
+  const { parse } = await import('file:///Users/div/projects/subscript/justin.js')
   const jsep = (await import('jsep')).default
 
   for (let w = 0; w < RUNS; w++) { parse(src(w)); jsep(src(w)) }

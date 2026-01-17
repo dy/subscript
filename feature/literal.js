@@ -3,7 +3,7 @@
  *
  * true, false, null, undefined, NaN, Infinity
  */
-import { literal } from '../parse/pratt.js';
+import { literal } from '../parse.js';
 
 literal('true', true);
 literal('false', false);

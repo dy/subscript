@@ -1,24 +1,36 @@
 /**
- * subscript: Default bundle (expr parser + JS compiler)
- *
- * Default parser is minimal (expr). For more features:
- *   subscript.parse = (await import('subscript/parse/justin.js')).parse  // + JSON, arrows, templates
- *   subscript.parse = (await import('subscript/parse/jessie.js')).parse  // + statements, functions
+ * subscript: Default expression parser + compiler
  *
  * Usage:
  *   subscript`a + b`(ctx)           - template tag, returns compiled evaluator
  *   subscript`a + ${x}`(ctx)        - interpolations: primitives, objects, AST nodes
  *   subscript('a + b')(ctx)         - direct call (no caching)
- *   subscript.parse = customParse   - swap parser
- *   subscript.compile = customCompile - swap compiler
+ *
+ * For more features:
+ *   import { parse, compile } from 'subscript/justin.js'  // + JSON, arrows, templates
+ *   import { parse, compile } from 'subscript/jessie.js'  // + statements, functions
  */
-import { parse as exprParse } from './parse/expr.js';
-import { compile as jsCompile, operator, operators, prop } from './compile/js.js';
 
-export { parse } from './parse/expr.js';
-export { token, binary, unary, nary, group, access, literal } from './parse/pratt.js';
-export { compile, operator, operators, prop } from './compile/js.js';
-export { codegen } from './compile/js-emit.js';
+// Expression features
+import './feature/number.js';   // Decimal numbers: 123, 1.5, 1e3
+import './feature/string.js';   // Double-quoted strings with escapes
+
+// Operators
+import './feature/op/assignment.js';
+import './feature/op/logical.js';
+import './feature/op/bitwise.js';
+import './feature/op/comparison.js';
+import './feature/op/equality.js';
+import './feature/op/membership.js';
+import './feature/op/arithmetic.js';
+import './feature/op/pow.js';
+import './feature/op/increment.js';
+
+import './feature/group.js';    // Parentheses and function calls
+import './feature/member.js';   // Property access: a.b, a[b]
+
+import { parse, compile } from './parse.js';
+export * from './parse.js';
 
 // Cache for compiled templates (keyed by template strings array reference)
 const cache = new WeakMap();
@@ -26,21 +38,23 @@ const cache = new WeakMap();
 // Template tag: subscript`a + b` or subscript`a + ${x}`
 const subscript = (strings, ...values) =>
   // Direct call subscript('code') - strings is just a string
-  typeof strings === 'string' ? subscript.compile(subscript.parse(strings)) :
+  typeof strings === 'string' ? compile(parse(strings)) :
   // Template literal - use cache
   cache.get(strings) || cache.set(strings, compileTemplate(strings, values)).get(strings);
 
-// Compile template with placeholders
+// Compile template with placeholders (using Private Use Area chars)
+const PUA = 0xE000;
 const compileTemplate = (strings, values) => {
-  // Join with placeholder markers: __$0__, __$1__, etc.
-  const code = strings.reduce((acc, s, i) => acc + (i ? `__$${i - 1}__` : '') + s, '');
-  const ast = subscript.parse(code);
-  // Replace placeholder identifiers with actual values in AST
-  const inject = node =>
-    typeof node === 'string' && node.startsWith('__$') && node.endsWith('__')
-      ? injectValue(values[+node.slice(3, -2)])
-      : Array.isArray(node) ? node.map(inject) : node;
-  return subscript.compile(inject(ast));
+  const code = strings.reduce((acc, s, i) => acc + (i ? String.fromCharCode(PUA + i - 1) : '') + s, '');
+  const ast = parse(code);
+  const inject = node => {
+    if (typeof node === 'string' && node.length === 1) {
+      const i = node.charCodeAt(0) - PUA;
+      if (i >= 0 && i < values.length) return injectValue(values[i]);
+    }
+    return Array.isArray(node) ? node.map(inject) : node;
+  };
+  return compile(inject(ast));
 };
 
 // Detect AST node vs regular value
@@ -51,9 +65,5 @@ const isAST = v =>
 
 // Inject value: AST nodes splice directly, others become literals
 const injectValue = v => isAST(v) ? v : [, v];
-
-// Configurable parse/compile (default to expr + js)
-subscript.parse = exprParse;
-subscript.compile = jsCompile;
 
 export default subscript;

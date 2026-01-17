@@ -9,14 +9,13 @@
  *   import { unit } from 'subscript/feature/unit.js'
  *   unit('px', 'em', 'rem', 's', 'ms')
  */
-import { lookup, next, parse, idx, seek } from '../parse/pratt.js';
-import { operators, compile as jsCompile } from '../compile/js.js';
+import { lookup, next, parse, idx, seek, operator, compile } from '../parse.js';
 
 const units = {};
 
 export const unit = (...names) => names.forEach(name => {
   units[name] = 1;
-  operators[name] = val => (val = jsCompile(val), ctx => ({ value: val(ctx), unit: name }));
+  operator(name, val => (val = compile(val), ctx => ({ value: val(ctx), unit: name })));
 });
 
 // Wrap number handler to check for unit suffix

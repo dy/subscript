@@ -3,7 +3,7 @@
  *
  * Configurable via parse.number: { '0x': 16, '0b': 2, '0o': 8 }
  */
-import { parse, lookup, next, err, skip, idx, cur } from '../parse/pratt.js';
+import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
 
 const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45;
 const _a = 97, _f = 102, _A = 65, _F = 70;

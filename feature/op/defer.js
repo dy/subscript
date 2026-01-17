@@ -5,8 +5,11 @@
  *
  * Common in: Go, Swift, Zig
  */
-import { unary } from '../../parse/pratt.js';
+import { unary, operator, compile } from '../../parse.js';
 
 const PREFIX = 140;
 
 unary('defer', PREFIX);
+
+// Compile
+operator('defer', a => (a = compile(a), ctx => { ctx.__deferred__ = ctx.__deferred__ || []; ctx.__deferred__.push(a); }));

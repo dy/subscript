@@ -1,9 +1,9 @@
 // Tests for subscript.js - combined jessie parser + JS compiler pipeline
 
 import test, { is, throws, same } from 'tst'
-import parse, { err, unary, lookup } from '../parse/pratt.js'
+import parse, { err, unary, lookup } from '../parse.js'
 import subscript, { binary, operator, compile, token } from '../subscript.js'
-import { operators } from '../compile/js.js'
+import { operators } from '../parse.js'
 
 const MULT = 120;
 
@@ -384,7 +384,7 @@ test('ext: arrow', async t => {
 })
 
 test('ext: justin', async t => {
-  await import('../parse/justin.js')
+  await import('../justin.js')
   sameAsJs(`"abcd" + 'efgh'`)
   is(subscript('a;b')({ a: 1, b: 2 }), 2)
 
@@ -596,7 +596,7 @@ test('template tag', t => {
   is(subscript`a * ${inner}`({ a: 2, b: 3, c: 4 }), 14)  // 2 * (3 + 4)
 
   // AST injection via parse
-  const sum = subscript.parse('x + y')
+  const sum = parse('x + y')
   is(subscript`${sum} * 2`({ x: 3, y: 4 }), 14)  // (3 + 4) * 2
 
   // AST injection - literal node
@@ -611,20 +611,12 @@ test('template tag', t => {
   is(subscript`${arr}[1]`(), 2)
 
   // Caching - same template literal in loop reuses compiled fn
-  const compile = () => subscript`a + 1`
-  const fn1 = compile()
-  const fn2 = compile()
+  const compileFn = () => subscript`a + 1`
+  const fn1 = compileFn()
+  const fn2 = compileFn()
   is(fn1, fn2) // same template strings array = cached
 
   // Direct string call (no caching)
   is(subscript('1 + 2')(), 3)
   is(subscript('1 + 2')(), 3)
-
-  // Configurable parser/compile
-  const origParse = subscript.parse
-  const origCompile = subscript.compile
-  subscript.parse = s => [, 42] // always return literal 42
-  is(subscript('anything')(), 42)
-  subscript.parse = origParse
-  subscript.compile = origCompile
 })
