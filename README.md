@@ -22,7 +22,7 @@ fn({ a: 1, b: 3 })  // 7
 ## Presets
 
 **subscript** — common expressions (~4kb gzip):
-`a.b` `a[b]` `a(b)` `+` `-` `*` `/` `%` `<` `>` `<=` `>=` `==` `!=` `!` `&&` `||` `~` `&` `|` `^` `<<` `>>` `++` `--` `=` `+=` `-=` `*=` `/=`
+`a.b a[b] a(b) + - * / % < > <= >= == != ! && || ~ & | ^ << >> ++ -- = += -= *= /=`
 ```js
 import subscript from 'subscript'
 
@@ -30,7 +30,7 @@ subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
 **justin** — + JSON, arrows, templates (~6kb gzip):
-`'str'` `0x` `0b` `===` `!==` `**` `??` `>>>` `?.` `? :` `=>` `...` `[]` `{}` `` ` ` `` `//` `/**/` `true` `false` `null`
+`` 'str' 0x 0b === !== ** ?? >>> ?. ? : => ... [] {} ` // /**/ true false null ``
 ```js
 import justin from 'subscript/justin.js'
 
@@ -39,7 +39,7 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 ```
 
 **jessie** — + statements, functions (~8kb gzip):
-`if` `else` `for` `while` `do` `let` `const` `var` `function` `class` `return` `throw` `try` `catch` `switch` `import` `export` `/regex/`
+`if else for while do let const var function class return throw try catch switch import export /regex/`
 ```js
 import jessie from 'subscript/jessie.js'
 
@@ -57,11 +57,10 @@ Jessie can parse and compile its own source.
 
 ## Extension
 
-Add a set intersection operator:
-
 ```js
 import { binary, operator, compile } from 'subscript/justin.js'
 
+// add intersection operator
 binary('∩', 80)  // register parser
 operator('∩', (a, b) => (  // register compiler
   a = compile(a), b = compile(b),
