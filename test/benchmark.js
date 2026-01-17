@@ -16,7 +16,7 @@ const ctx = {
 const bench = (name, fn) => {
   // Warmup
   for (let i = 0; i < 1000; i++) fn();
-  
+
   const t = performance.now();
   for (let i = 0; i < RUNS; i++) fn();
   const ms = performance.now() - t;
@@ -190,13 +190,13 @@ async function run() {
 
   // Summary
   console.log('\n=== SUMMARY ===\n');
-  
+
   console.log('Parse (sorted):');
   const parseSorted = Object.entries(results.parse).sort((a, b) => a[1] - b[1]);
   for (const [name, ms] of parseSorted) {
     console.log(`  ${name}: ${ms.toFixed(0)}ms`);
   }
-  
+
   console.log('\nEval (sorted):');
   const evalSorted = Object.entries(results.eval).sort((a, b) => a[1] - b[1]);
   for (const [name, ms] of evalSorted) {

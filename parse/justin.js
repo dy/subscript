@@ -16,7 +16,12 @@ parse.number = { '0x': 16, '0b': 2, '0o': 8 };
 import '../feature/comment.js';
 
 // JS-specific operators (ternary, arrow, spread, optional chaining, typeof/void/delete/new)
-import '../feature/op-js.js';
+import '../feature/literal.js';
+import '../feature/op/ternary.js';
+import '../feature/op/arrow.js';
+import '../feature/op/spread.js';
+import '../feature/op/optional.js';
+import '../feature/op/unary.js';
 
 import '../feature/collection.js';
 import '../feature/template.js';

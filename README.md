@@ -1,5 +1,12 @@
 # sub*script* <a href="https://github.com/dy/subscript/actions/workflows/node.js.yml"><img src="https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
+> _Subscript_ is safe & tiny expression evaluator.
+
+* The smallest safe sandbox
+* The universal expression AST
+* 2x faster than popular alternative
+* Modular syntax extensions
+
 > _Subscript_ is safe & tiny expression evaluator for building DSLs.
 
 [**Try it →**](https://dy.github.io/subscript/repl.html)
@@ -14,6 +21,7 @@
 * Turbo Pratt parser engine (make a pun here)
 * Language design tool
 * Cross-compilation
+* Smallest JS runtime
 
 <!--
 ####  Useful for:
@@ -37,7 +45,10 @@ _Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.j
 ```js
 import subscript from './subscript.js'
 
-// parse expression
+// template tag (preferred)
+const fn = subscript`a.b + Math.sqrt(c - 1)`
+
+// or direct call
 const fn = subscript('a.b + Math.sqrt(c - 1)')
 
 // evaluate with context
@@ -45,9 +56,50 @@ fn({ a: { b:1 }, c: 5, Math })
 // 3
 ```
 
-### Core
+### Template Tag Features
 
-_Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) (_JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
+```js
+// Interpolation - embed values directly
+const limit = 10
+subscript`x > ${limit}`({ x: 15 }) // true
+
+// AST composability
+const sum = subscript.parse('a + b')
+subscript`${sum} * 2`({ a: 1, b: 2 }) // 6
+
+// Caching - same template reuses compiled function
+const check = () => subscript`x > 0`
+check() === check() // true (cached)
+
+// Upgrade parser for more features
+import { parse } from './parse/justin.js'  // or jessie.js
+subscript.parse = parse
+```
+
+
+## Operators
+
+### Expr *(default)*
+
+Minimal portable syntax ([common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) for _JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
+
+
+* - assignment: = += etc (base ops registered first)
+* - logical: ! && || ??
+* - bitwise: | & ^ ~ >> << >>>
+* - comparison: < > <= >=
+* - equality: == != === !==
+* - membership: in of instanceof
+* - arithmetic: + - * / %
+* - pow: ** **=
+* - increment: ++ --
+* - literal: true, false, null, undefined, NaN, Infinity
+
+* `a.b`, `a[b]`, `a(b)` — member access, calls
+* `+a`, `-a`, `!a` — unary
+* `a + b`, `a - b`, `a * b`, `a / b`, `a % b` — arithmetic
+* `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b` — comparison
+* `"abc"`, `0.1`, `1.2e+3` — literals
 
 * `a.b`, `a[b]`, `a(b)`
 * `a++`, `a--`, `++a`, `--a`
@@ -64,8 +116,8 @@ _Subscript_ supports [common syntax](https://en.wikipedia.org/wiki/Comparison_of
 
 ### Justin
 
-_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ (see [thread](https://github.com/endojs/Jessie/issues/66)).<br/>
-It extends _subscript_ with:
+_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ ([Jessie thread](https://github.com/endojs/Jessie/issues/66)).<br/>
+It extends _expr_ with:
 
 + `a === b`, `a !== b`
 + `a ** b`, `a **= b`
@@ -120,81 +172,6 @@ let fac = jessie(`
 fac({}) // 120
 ```
 
-#### Extras
-
-+ `5px`, `10rem` — unit suffixes — `feature/unit.js`
-
-
-## Architecture
-
-Subscript separates **parsing** (syntax → AST) from **compilation** (AST → target).
-
-```
-parse/                  # parsing axis
-  pratt.js              # core Pratt parser engine
-  expr.js               # preset: minimal expressions
-  justin.js             # preset: JSON + operators
-  jessie.js             # preset: Justin + control flow
-
-compile/                # compiling axis
-  js.js                 # AST → JS evaluator
-  js-emit.js            # AST → JS source
-
-feature/                # atomic syntax modules
-  (root)                # universal/portable features
-  c/                    # C-family extensions
-  js/                   # JavaScript-specific features
-
-subscript.js            # main bundle: jessie + js compiler
-```
-
-### Feature Organization
-
-Features are organized by language family for portability:
-
-```
-feature/
-  # Universal (portable to ANY language target)
-  number.js       # decimal numbers: 123, 1.5, 1e3
-  string.js       # double-quoted strings with escapes
-  op.js           # + - * / % < > <= >= == != !
-  group.js        # ( ) grouping and calls
-  member.js       # a.b, a[b] property access
-
-  # C-family extensions (C, JS, Java, Go, Rust, Swift...)
-  c/
-    number.js     # 0x hex, 0b binary, 0o octal
-    string.js     # 'single quotes'
-    op.js         # && || & | ^ ~ << >> ?: ++ -- compound assigns
-    comment.js    # // and /* */
-    block.js      # { } statement blocks
-    if.js         # if/else
-    loop.js       # for, while, do-while
-    try.js        # try/catch/finally/throw
-    switch.js     # switch/case
-
-  # JavaScript-specific
-  js/
-    op.js         # === !== ?? in typeof void delete instanceof
-    arrow.js      # () => x
-    optional.js   # ?., ?.[], ?.()
-    spread.js     # ...x
-    template.js   # `${expr}`, tag``
-    destruct.js   # [a, b] = x, {a, b} = x
-    module.js     # import/export
-    accessor.js   # get/set
-```
-
-This enables targeting different languages — root features work everywhere, c/ for C-like targets, js/ for JavaScript only.
-
-### Parser Presets
-
-```
-expr.js      → justin.js      → jessie.js
-(minimal)      (JSON+expr)      (JS subset)
-```
-
-Each preset configures the Pratt engine with features and re-exports `parse`.
 
 ### Compilers
 
@@ -218,44 +195,6 @@ tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
 fn = compile(tree)
 fn({ a: {b: 1}, c: 2 }) // 2
 ```
-
-### Parser-only
-
-```js
-// Import a preset (configures parser + re-exports parse)
-import { parse } from 'subscript/parse/justin.js'
-
-const tree = parse('a + b')
-// ['+', 'a', 'b']
-```
-
-### With custom compiler
-
-```js
-import { parse } from 'subscript/parse/jessie.js'
-import { compile } from 'subscript/compile/js.js'
-
-const tree = parse('x + 1')
-const fn = compile(tree)
-fn({ x: 2 }) // 3
-```
-
-## Util
-
-```js
-// ASI (Automatic Semicolon Insertion) for multiline code
-import { withASI } from 'subscript/util/asi.js'
-import jessie, { parse, compile } from 'subscript/parse/jessie.js'
-
-const asiParse = withASI(parse)
-const tree = asiParse(`
-  x = 1
-  y = 2
-  x + y
-`)
-compile(tree)({}) // 3
-```
-
 
 ### Syntax Tree
 
@@ -338,27 +277,6 @@ _Subscript_ provides premade language [features](./feature) and API to customize
 
 Longer operators should be registered after shorter ones, eg. first `|`, then `||`, then `||=`.
 
-### Compiler API
-
-* `operator(str, (a, b) => ctx => value)` − register evaluator for an operator. Callback takes node arguments and returns evaluator function.
-
-```js
-import { compile, operator } from 'subscript/compile/js.js'
-import { binary, literal } from 'subscript/parse/pratt.js'
-
-// add identity operators (precedence of comparison)
-binary('===', 80), binary('!==', 80)
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)===b(ctx)))
-operator('!==', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx)!==b(ctx)))
-
-// add nullish coalescing (precedence of logical or)
-binary('??', 30)
-operator('??', (a, b) => b && (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)))
-
-// add JS literals
-literal('undefined', undefined)
-literal('NaN', NaN)
-```
 
 See [`./feature/*`](./feature) or [`./parse/justin.js`](./parse/justin.js) for examples.
 
@@ -366,32 +284,49 @@ See [`./feature/*`](./feature) or [`./parse/justin.js`](./parse/justin.js) for e
 
 ## Performance
 
-Parse 30k expressions (lower is better):
+Subscript shows good performance within other evaluators. Example expression:
 
-| Parser | Time | Notes |
-|--------|------|-------|
-| new Function | ~5ms | native JS |
-| angular-expr | ~19ms | |
-| expr | ~25ms | core |
-| justin | ~37ms | + comments, templates |
-| jsep | ~39ms | |
-| jessie | ~50ms | + statements, functions |
-| expr-eval | ~57ms | |
-| mathjs | ~133ms | |
-| jexl | ~276ms | |
+```
+1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(0)
+```
+
+Parse 30k times:
+
+```
+subscript: ~150 ms 🥇
+jsep: ~270 ms 🥈
+jexpr: ~297 ms 🥉
+```
+<!--
+justin: ~183 ms
+mr-parser: ~420 ms
+expr-eval: ~480 ms
+math-parser: ~570 ms
+math-expression-evaluator: ~900ms
+jexl: ~1056 ms
+mathjs: ~1200 ms
+new Function: ~1154 ms
+-->
 
 Eval 30k times:
 
-| Evaluator | Time |
-|-----------|------|
-| new Function | ~3ms |
-| compile (js) | ~2ms |
-| expression-eval | ~10ms |
-| mathjs | ~17ms |
-| angular-expr | ~92ms |
+```
+new Function: ~7 ms 🥇
+subscript: ~15 ms 🥈
+jexpr: ~23 ms 🥉
+jsep (expression-eval): ~30 ms
+```
+<!--
+justin: ~17 ms
+math-expression-evaluator: ~50ms
+expr-eval: ~72 ms
+jexl: ~110 ms
+mathjs: ~119 ms
+mr-parser: -
+math-parser: -
+-->
 
 > Run `node --import ./test/https-loader.js test/benchmark.js` for full benchmarks
-
 
 ## Used by
 

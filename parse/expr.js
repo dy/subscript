@@ -7,7 +7,18 @@
  */
 import '../feature/number.js';   // Decimal numbers: 123, 1.5, 1e3
 import '../feature/string.js';   // Double-quoted strings with escapes
-import '../feature/op.js';       // Universal operators: + - * / % < > <= >= == != !
+
+// Universal operators: + - * / % < > <= >= == != !
+import '../feature/op/assignment.js';
+import '../feature/op/logical.js';
+import '../feature/op/bitwise.js';
+import '../feature/op/comparison.js';
+import '../feature/op/equality.js';
+import '../feature/op/membership.js';
+import '../feature/op/arithmetic.js';
+import '../feature/op/pow.js';
+import '../feature/op/increment.js';
+
 import '../feature/group.js';    // Parentheses and function calls
 import '../feature/member.js';   // Property access: a.b, a[b]
 

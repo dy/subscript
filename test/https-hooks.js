@@ -11,7 +11,7 @@ export async function resolve(specifier, context, nextResolve) {
 export async function load(url, context, nextLoad) {
   if (url.startsWith('https://')) {
     if (cache.has(url)) return cache.get(url);
-    
+
     const res = await fetch(url);
     if (!res.ok) throw new Error(`Failed to fetch ${url}: ${res.status}`);
     const source = await res.text();

@@ -56,7 +56,7 @@ test('bundle: compile/js.js exports', async () => {
 
 test('bundle: feature/number.js', () => bundleAndVerifySyntax('feature/number.js'))
 test('bundle: feature/string.js', () => bundleAndVerifySyntax('feature/string.js'))
-test('bundle: feature/op.js', () => bundleAndVerifySyntax('feature/op.js'))
+test('bundle: feature/literal.js', () => bundleAndVerifySyntax('feature/literal.js'))
 test('bundle: feature/member.js', () => bundleAndVerifySyntax('feature/member.js'))
 test('bundle: feature/group.js', () => bundleAndVerifySyntax('feature/group.js'))
 test('bundle: feature/collection.js', () => bundleAndVerifySyntax('feature/collection.js'))
@@ -126,8 +126,8 @@ test('dogfood: compile context', async () => {
 
 test('dogfood: compile logical', async () => {
   await bundleAndRun('subscript.js', async ({ parse, compile }) => {
-    is(compile(parse('!false'))(), true)
-    is(compile(parse('!true'))(), false)
+    is(compile(parse('!0'))(), true)
+    is(compile(parse('!1'))(), false)
   })
 })
 
