@@ -88,6 +88,7 @@
 
 - [x] ~~C-like compiler targets: GLSL, C, Wasm~~ -> dedicated projects
 
+- [ ] Bundle itself instead of esbuild
 
 ## [ ] Integrations
 

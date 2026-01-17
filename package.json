@@ -1,42 +1,34 @@
 {
   "name": "subscript",
   "version": "10.0.0",
-  "description": "Fast and tiny expression parser / evaluator.",
+  "description": "Tiny expression parser & evaluator",
   "main": "subscript.js",
   "module": "subscript.js",
   "browser": "subscript.js",
   "types": "./subscript.d.ts",
   "exports": {
     ".": "./subscript.js",
-    "./parse": "./src/parse.js",
-    "./compile": "./compile/js.js",
-    "./compile/*": "./compile/*",
-    "./const": "./src/const.js",
+    "./parse": "./parse.js",
     "./justin": "./justin.js",
     "./jessie": "./jessie.js",
-    "./src/*": "./src/*",
-    "./feature/*": "./feature/*"
+    "./feature/*": "./feature/*",
+    "./util/*": "./util/*"
   },
   "type": "module",
   "files": [
-    "src",
-    "compile",
     "feature",
+    "util",
     "subscript.js",
     "subscript.min.js",
     "subscript.d.ts",
+    "parse.js",
     "justin.js",
     "justin.min.js",
     "jessie.js",
-    "expr.js"
+    "jessie.min.js"
   ],
-  "directories": {
-    "lib": "lib",
-    "src": "src",
-    "test": "test"
-  },
   "scripts": {
-    "build": "esbuild subscript.js --bundle --minify --format=esm --outfile=subscript.min.js && esbuild justin.js --bundle --minify --format=esm --outfile=justin.min.js",
+    "build": "esbuild subscript.js --bundle --minify --format=esm --outfile=subscript.min.js && esbuild justin.js --bundle --minify --format=esm --outfile=justin.min.js && esbuild jessie.js --bundle --minify --format=esm --outfile=jessie.min.js",
     "prepublishOnly": "npm run build",
     "test": "node test/test.js",
     "check-types": "tsc --noEmit subscript.d.ts"
