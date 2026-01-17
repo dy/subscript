@@ -28,4 +28,4 @@ import './feature/accessor.js';
 import './feature/asi.js';
 
 export * from './parse.js';
-export { default } from './parse.js';
+export { default } from './subscript.js';

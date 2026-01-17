@@ -42,3 +42,4 @@ import './feature/collection.js';
 import './feature/template.js';
 
 export * from './parse.js';
+export { default } from './subscript.js';
