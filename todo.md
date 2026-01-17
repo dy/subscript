@@ -67,8 +67,8 @@
   - Added `word(w)` and `parens()` helpers to pratt.js
   - Refactored if.js, loop.js, try.js, function.js, switch.js to use them
 
-- [ ] A note to ast.md about .loc
-  - [ ] A note to ast about statement convention
+- [x] A note to ast.md about .loc
+  - [x] A note to ast about statement convention
 
 - [ ] Readme & values
   - [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)

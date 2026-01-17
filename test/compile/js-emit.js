@@ -28,43 +28,43 @@ test('codegen: identifiers', t => {
 })
 
 test('codegen: arithmetic', t => {
-  is(gen('1 + 2'), '(1 + 2)')
-  is(gen('a - b'), '(a - b)')
-  is(gen('x * y'), '(x * y)')
-  is(gen('a / b'), '(a / b)')
-  is(gen('n % 2'), '(n % 2)')
-  is(gen('-x'), '(-x)')
-  is(gen('1 + 2 + 3'), '((1 + 2) + 3)')
-  is(gen('a + b * c'), '(a + (b * c))')
+  is(gen('1 + 2'), '1 + 2')
+  is(gen('a - b'), 'a - b')
+  is(gen('x * y'), 'x * y')
+  is(gen('a / b'), 'a / b')
+  is(gen('n % 2'), 'n % 2')
+  is(gen('-x'), '-x')
+  is(gen('1 + 2 + 3'), '1 + 2 + 3')
+  is(gen('a + b * c'), 'a + b * c')
 })
 
 test('codegen: comparison', t => {
-  is(gen('a == b'), '(a == b)')
-  is(gen('a != b'), '(a != b)')
-  is(gen('a === b'), '(a === b)')
-  is(gen('a !== b'), '(a !== b)')
-  is(gen('a > b'), '(a > b)')
-  is(gen('a < b'), '(a < b)')
-  is(gen('a >= b'), '(a >= b)')
-  is(gen('a <= b'), '(a <= b)')
+  is(gen('a == b'), 'a == b')
+  is(gen('a != b'), 'a != b')
+  is(gen('a === b'), 'a === b')
+  is(gen('a !== b'), 'a !== b')
+  is(gen('a > b'), 'a > b')
+  is(gen('a < b'), 'a < b')
+  is(gen('a >= b'), 'a >= b')
+  is(gen('a <= b'), 'a <= b')
 })
 
 test('codegen: logical', t => {
-  is(gen('a || b'), '(a || b)')
-  is(gen('a && b'), '(a && b)')
-  is(gen('!x'), '(!x)')
-  is(gen('a && b || c'), '((a && b) || c)')
-  is(gen('!(a && b)'), '(!((a && b)))')  // Extra parens from grouping
+  is(gen('a || b'), 'a || b')
+  is(gen('a && b'), 'a && b')
+  is(gen('!x'), '!x')
+  is(gen('a && b || c'), 'a && b || c')
+  is(gen('!(a && b)'), '!(a && b)')
 })
 
 test('codegen: bitwise', t => {
-  is(gen('a | b'), '(a | b)')
-  is(gen('a & b'), '(a & b)')
-  is(gen('a ^ b'), '(a ^ b)')
-  is(gen('~x'), '(~x)')
-  is(gen('a << 2'), '(a << 2)')
-  is(gen('a >> 2'), '(a >> 2)')
-  is(gen('a >>> 2'), '(a >>> 2)')
+  is(gen('a | b'), 'a | b')
+  is(gen('a & b'), 'a & b')
+  is(gen('a ^ b'), 'a ^ b')
+  is(gen('~x'), '~x')
+  is(gen('a << 2'), 'a << 2')
+  is(gen('a >> 2'), 'a >> 2')
+  is(gen('a >>> 2'), 'a >>> 2')
 })
 
 test('codegen: member access', t => {
@@ -102,18 +102,18 @@ test('codegen: function calls', t => {
 
 test('codegen: grouping', t => {
   is(gen('(a)'), '(a)')
-  is(gen('(a + b)'), '((a + b))')
-  is(gen('(a + b) * c'), '(((a + b)) * c)')
+  is(gen('(a + b)'), '(a + b)')
+  is(gen('(a + b) * c'), '(a + b) * c')
 })
 
 test('codegen: ternary', t => {
-  is(gen('a ? b : c'), '(a ? b : c)')
-  is(gen('x > 0 ? x : -x'), '((x > 0) ? x : (-x))')
+  is(gen('a ? b : c'), 'a ? b : c')
+  is(gen('x > 0 ? x : -x'), 'x > 0 ? x : -x')
 })
 
 test('codegen: assignment', t => {
   is(gen('a = 1'), 'a = 1')
-  is(gen('a = b + c'), 'a = (b + c)')
+  is(gen('a = b + c'), 'a = b + c')
 })
 
 test('codegen: variables', t => {
@@ -131,7 +131,7 @@ test('codegen: if', t => {
 test('codegen: loops', t => {
   is(codegen(['while', 'x', ['block', 'y']]), 'while (x) { y }')
   is(codegen(['for', [';', ['let', ['=', 'i', [, 0]]], ['<', 'i', [, 10]], ['=', 'i', ['+', 'i', [, 1]]]], ['block', 'x']]),
-    'for (let i = 0; (i < 10); i = (i + 1)) { x }')
+    'for (let i = 0; i < 10; i = i + 1) { x }')
 })
 
 test('codegen: control flow', t => {
@@ -146,7 +146,7 @@ test('codegen: functions', t => {
   is(codegen(['function', 'foo', null, ['block', ['return', [, 1]]]]), 'function foo() { return 1 }')
   is(codegen(['function', 'foo', 'x', ['block', ['return', 'x']]]), 'function foo(x) { return x }')
   is(codegen(['function', 'foo', [',', 'a', 'b'], ['block', ['return', ['+', 'a', 'b']]]]),
-    'function foo(a, b) { return (a + b) }')
+    'function foo(a, b) { return a + b }')
   // Anonymous
   is(codegen(['function', null, null, ['block', ['return', [, 1]]]]), 'function() { return 1 }')
 })
@@ -154,7 +154,7 @@ test('codegen: functions', t => {
 test('codegen: arrow functions', t => {
   is(codegen(['=>', null, [, 1]]), '() => 1')
   is(codegen(['=>', 'x', 'x']), 'x => x')
-  is(codegen(['=>', [',', 'a', 'b'], ['+', 'a', 'b']]), '(a, b) => (a + b)')
+  is(codegen(['=>', [',', 'a', 'b'], ['+', 'a', 'b']]), '(a, b) => a + b')
 })
 
 test('codegen: async/await', t => {
@@ -198,8 +198,9 @@ test('codegen: extensibility', t => {
   delete generators['custom_op']
 })
 
-test('codegen: unknown operator throws', t => {
-  throws(() => codegen(['unknown_op_xyz', 'a']))
+test('codegen: unknown operator', t => {
+  // Unknown operators are stringified generically
+  is(codegen(['unknown_op', 'a', 'b']), 'a unknown_op b')
 })
 
 test('codegen: round-trip parse->codegen', t => {
