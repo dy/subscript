@@ -25,7 +25,7 @@ test.fork('perf: expr < jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) 
   ok(time < baseline, `expr (${time.toFixed(0)}ms) should be < jsep (${baseline.toFixed(0)}ms)`)
 })
 
-test.fork('perf: justin <= jsep*1.3', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) => {
+test.fork('perf: justin < jsep', {data: {RUNS, src}}, async ({ ok }, {RUNS, src}) => {
   const bench = (fn) => {
     let best = Infinity
     for (let r = 0; r < 3; r++) {
@@ -44,5 +44,5 @@ test.fork('perf: justin <= jsep*1.3', {data: {RUNS, src}}, async ({ ok }, {RUNS,
   const time = bench(i => parse(src(i)))
   const baseline = bench(i => jsep(src(i)))
   console.log(`justin: ${time.toFixed(1)}ms, jsep: ${baseline.toFixed(1)}ms`)
-  ok(time <= baseline * 1.3, `justin (${time.toFixed(0)}ms) should be <= jsep (${baseline.toFixed(0)}ms) * 1.3`)
+  ok(time < baseline, `justin (${time.toFixed(0)}ms) should be < jsep (${baseline.toFixed(0)}ms)`)
 })

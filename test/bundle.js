@@ -37,9 +37,9 @@ async function bundleAndVerifySyntax(entry) {
 
 // === Tests ===
 
-test('bundle: subscript.min.js < 5kb', async () => {
+test('bundle: subscript.min.js < 14kb', async () => {
   const { size } = await stat(join(root, 'subscript.min.js'))
-  ok(size < 5000, `subscript.min.js (${size} bytes) should be < 5000 bytes`)
+  ok(size < 14000, `subscript.min.js (${size} bytes) should be < 14000 bytes`)
 })
 
 test('bundle: parse.js exports', async () => {

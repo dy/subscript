@@ -15,13 +15,17 @@
 import './feature/number.js';       // Decimal numbers: 123, 1.5, 1e3
 import './feature/string.js';       // Double-quoted strings with escapes
 
-// Operators (minimal set)
+// Operators (C-family common set) - order matters for token chain performance
+import './feature/op/assignment.js';  // = += -= *= /= %= |= &= ^= >>= <<=
 import './feature/op/logical.js';     // ! && ||
+import './feature/op/bitwise.js';     // ~ | & ^ >> <<
 import './feature/op/comparison.js';  // < > <= >=
 import './feature/op/equality.js';    // == !=
 import './feature/op/arithmetic.js';  // + - * / %
+import './feature/op/increment.js';   // ++ --
 
-import './feature/prop.js';         // Property access: a.b, a[b], f(), ()
+import './feature/group.js';          // Grouping: (a), sequences: a, b; a; b
+import './feature/member.js';         // Property access: a.b, a[b], f(), [a,b]
 
 import { parse, compile } from './parse.js';
 export * from './parse.js';

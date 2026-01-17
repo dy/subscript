@@ -102,7 +102,7 @@ export let idx, cur,
     (matched = curOp,
       (curOp ?
         op == curOp :
-        (l < 2 || cur.substr(idx, l) == op) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op)
+        (l < 2 || (op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (l < 3 || cur.substr(idx, l) == op))) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op)
       ) &&
       curPrec < prec &&
       (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r)

@@ -1,7 +1,8 @@
 /**
- * Bitwise operators
+ * Bitwise operators (C-family)
  *
- * | & ^ ~ >> << >>>
+ * | & ^ ~ >> <<
+ * Note: >>> is JS-specific (in bitwise-js.js)
  */
 import { binary, unary, operator, compile } from '../../parse.js';
 
@@ -15,7 +16,6 @@ binary('^', XOR);
 // Shifts (after < >)
 binary('>>', SHIFT);
 binary('<<', SHIFT);
-binary('>>>', SHIFT);
 
 // Unary
 unary('~', PREFIX);
@@ -27,4 +27,3 @@ operator('&', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) & b(ctx))
 operator('^', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) ^ b(ctx)));
 operator('>>', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) >> b(ctx)));
 operator('<<', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) << b(ctx)));
-operator('>>>', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) >>> b(ctx)));

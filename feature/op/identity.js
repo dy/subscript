@@ -1,5 +1,5 @@
 /**
- * Strict equality operators (JS-specific)
+ * Identity operators
  *
  * === !==
  */
