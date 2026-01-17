@@ -5,32 +5,43 @@
 ```js
 import subscript from 'subscript'
 
-// evaluate expression
-subscript`x + 1`({ x: 2 })  // 3
+// compile and evaluate
+let fn = subscript('x + 1')
+fn({ x: 2 })  // 3
 
-// with interpolation
-const max = 100
-subscript`x < ${max}`({ x: 50 })  // true
+// or one-liner
+subscript('a * b')({ a: 3, b: 4 })  // 12
 ```
 
----
+
 
 ## Evaluate Code
 
-### Template Tag *(recommended)*
+### Function Call
+
+```js
+subscript('a + b')({ a: 1, b: 2 })  // 3
+```
+
+Parses and compiles on each call. Use for dynamic expressions.
+
+### Template Tag *(cached)*
 
 ```js
 subscript`a + b`({ a: 1, b: 2 })  // 3
 
-// caching - same template reuses compiled function
+// same template reuses compiled function
 const check = () => subscript`x > 0`
 check() === check() // true (cached)
 
 // embed values
 const limit = 10
 subscript`x > ${limit}`({ x: 15 })  // true
+```
 
-// embed functions
+### Interpolation
+
+```js
 const double = x => x * 2
 subscript`${double}(x)`({ x: 5 })  // 10
 
@@ -38,11 +49,11 @@ subscript`${double}(x)`({ x: 5 })  // 10
 const math = { pi: 3.14 }
 subscript`${math}.pi * r * r`({ r: 2 })  // 12.56
 
-// embed AST
+// embed AST nodes
 subscript`${['+', 'a', 'b']} * 2`({ a: 1, b: 2 }) // 6
 ```
 
-#### Detection Rules
+**Detection rules:**
 
 | Value | Detected As | Result |
 |-------|-------------|--------|
@@ -55,39 +66,18 @@ subscript`${['+', 'a', 'b']} * 2`({ a: 1, b: 2 }) // 6
 | `[, 100]` | Array (undefined first) | AST literal |
 
 
-### String Input
+
+## Parse / Compile Separately
 
 ```js
-subscript('a + b')({ a: 1, b: 2 })  // 3
+import { parse, compile } from 'subscript'
+
+let ast = parse('a + b')
+// ['+', 'a', 'b']
+
+let fn = compile(ast)
+fn({ a: 1, b: 2 })  // 3
 ```
-
-No caching. Use for dynamic code.
-
----
-
-## Swap Parser / Compiler
-
-### `subscript.parse`
-
-Default: expr (minimal). Upgrade for more features:
-
-```js
-import { parse } from 'subscript/justin.js'
-subscript.parse = parse  // + arrows, templates, JSON
-```
-
-
-### `subscript.compile`
-
-Default: JS evaluator.
-
-```js
-import { codegen } from 'subscript/compile/js-emit.js'
-subscript.compile = ast => codegen(ast)  // emit source instead
-```
-
----
-
 
 
 ## Presets
@@ -252,21 +242,11 @@ token('?', 25, left => {
 })
 ```
 
-### Import Order
+> [!NOTE]
+> When extending operators that share a prefix (like `=`, `==`, `===`), **import shorter operators first** so longer ones are checked first in the token chain.
+> This applies to: `=`/`==`/`===`, `!`/`!=`/`!==`, `|`/`||`, `&`/`&&`, etc.
 
-When extending operators that share a prefix (like `=`, `==`, `===`), **import shorter operators first** so longer ones are checked first in the token chain:
 
-```js
-// Correct order - = before ===
-import './feature/op/assignment.js'      // =
-import './feature/op/equality-strict.js' // ===
-
-// Wrong order would make === parse as = followed by ==
-```
-
-This applies to: `=`/`==`/`===`, `!`/`!=`/`!==`, `|`/`||`, `&`/`&&`, etc.
-
----
 
 ## Extend Compiler
 
@@ -303,7 +283,7 @@ import { prop, compile } from 'subscript'
 operator('delete', a => prop(a, (obj, key) => delete obj[key]))
 ```
 
----
+
 
 ## Named Exports
 
@@ -328,7 +308,7 @@ import {
 } from 'subscript'
 ```
 
----
+
 
 ## Syntax Tree
 

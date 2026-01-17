@@ -1,78 +1,94 @@
-# sub<sub><sup> ✦ </sup></sub>script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![demo](https://img.shields.io/badge/demo-%F0%9F%9A%80-white)](https://dy.github.io/subscript/repl) [![ॐ](https://img.shields.io/badge/MIT-%E0%A5%90-white)](https://krishnized.github.io/license)
+# sub<sub><sup> ✦ </sup></sub>script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript)
 
-> Safe expression evaluator & language tool.
+> Tiny expression compiler.
 
 ```js
 import subscript from 'subscript'
 
-subscript`a + b * 2`({ a: 1, b: 3 })  // 7
+let fn = subscript('a + b * 2')
+fn({ a: 1, b: 3 })  // 7
 ```
 
+
 * **Minimal** – common expressions < JSON + expressions < JS subset
-* **Safe** — sandboxed, no global access
-* **Fast** — Pratt parser engine, strong in class
+* **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
+* **Fast** — Pratt parser engine, see [benchmarks](#performance)
 * **Portable** — universal expression format, any compile target
-* **Self-hosting** — compiles own source (js in js)
-* **Language tool** — modular syntax extensions for custom DSL
+* **Metacircular** — [jessie](#jessie) can parse and compile itself
+* **Extensible** — pluggable syntax for building custom DSL
+
+
+[**Playground →**](https://dy.github.io/subscript/)
+
+
+## Install
+
+```
+npm install subscript
+```
 
 
 ## Presets
 
-**subscript** — common expressions
+**subscript** — common expressions (~4kb gzip)
 ```js
-import expr from 'subscript'
+import subscript from 'subscript'
 
-expr`a.b + c * 2`({ a: { b: 1 }, c: 3 })  // 7
-expr`x > 0 && y != z`({ x: 1, y: 2, z: 3 })  // true
+subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
+subscript('x > 0 && y != z')({ x: 1, y: 2, z: 3 })  // true
 ```
 
-**justin** — JSON + expressions (JSON superset)
+**justin** — JSON + expressions (~6kb gzip)
 ```js
 import justin from 'subscript/justin.js'
 
-justin`{ x: a?.b ?? 0, y: [1, ...rest] }`({ a: null, rest: [2, 3] })
+justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 
-justin`items.filter(x => x > 1)`({ items: [1, 2, 3] })  // [2, 3]
+justin('items.filter(x => x > 1)')({ items: [1, 2, 3] })  // [2, 3]
 ```
 
-**jessie** — JSON + expressions + statements (JS subset)
+**jessie** — JS subset (~8kb gzip)
 ```js
 import jessie from 'subscript/jessie.js'
 
-jessie`
+let fn = jessie(`
   function factorial(n) {
     if (n <= 1) return 1
     return n * factorial(n - 1)
   }
   factorial(5)
-`({})  // 120
+`)
+fn({})  // 120
 ```
+
+Jessie can parse and compile its own source code.
 
 ## Extension
 
-```js
-import subscript, { binary, operator, compile, token } from 'subscript/justin.js'
+Add a set intersection operator:
 
-// add intersection operator
-binary('∩', 80)
-operator('∩', (a, b) => (
+```js
+import { binary, operator, compile } from 'subscript/justin.js'
+
+binary('∩', 80)  // register parser
+operator('∩', (a, b) => (  // register compiler
   a = compile(a), b = compile(b),
   ctx => a(ctx).filter(x => b(ctx).includes(x))
 ))
-
-subscript`[1,2,3] ∩ [2,3,4]`({})  // [2, 3]
-
-// add units
-token('px', 200, n => n && [, n[1] + 'px'])  // 5px → "5px"
 ```
 
-See [docs.md](./docs.md) for full API.
+```js
+import justin from 'subscript/justin.js'
+justin('[1,2,3] ∩ [2,3,4]')({})  // [2, 3]
+```
+
+See [docs.md](./docs.md) for full API: `binary`, `unary`, `nary`, `group`, `access`, `literal`, `token`.
 
 
-## Expressions format
+## Tree Format
 
-Subscript uses simplified syntax tree format:
+Expressions parse to a minimal JSON-compatible AST:
 
 ```js
 import { parse } from 'subscript'
@@ -85,11 +101,11 @@ Three forms:
 
 ```js
 'x'             // identifier — resolve from context
-[, value]       // literal — return as-is
+[, value]       // literal — return as-is (empty slot = data)
 [op, ...args]   // operation — apply operator
 ```
 
-See [spec.md](./spec.md) for full specification.
+Portable to any language. See [spec.md](./spec.md).
 
 
 ## Safety
@@ -100,51 +116,56 @@ Blocked by default:
 - Global access (only context is visible)
 
 ```js
-subscript`constructor.constructor("alert(1)")()`({})
+subscript('constructor.constructor("alert(1)")()')({})
 // undefined (blocked)
 ```
 
 ## Performance
 
-Parse 30k times:
+Parse 30k expressions:
+
+| Parser | Time |
+|--------|------|
+| subscript | ~150ms |
+| justin | ~183ms |
+| jsep | ~270ms |
+| expr-eval | ~480ms |
+| jexl | ~1056ms |
+
+Evaluate 30k times:
+
+| Evaluator | Time |
+|-----------|------|
+| new Function | ~7ms |
+| subscript | ~15ms |
+| jsep+eval | ~30ms |
+| expr-eval | ~72ms |
+
+
+## Template Tag
+
+For repeated evaluation, use template syntax for automatic caching:
+
+```js
+subscript`a + b`({ a: 1, b: 2 })  // cached compilation
+
+// interpolate values
+const limit = 100
+subscript`x < ${limit}`({ x: 50 })  // true
 ```
-subscript: ~150 ms 🥇
-justin: ~183 ms
-jsep: ~270 ms 🥈
-jexpr: ~297 ms 🥉
-mr-parser: ~420 ms
-expr-eval: ~480 ms
-math-parser: ~570 ms
-math-expression-evaluator: ~900ms
-jexl: ~1056 ms
-mathjs: ~1200 ms
-new Function: ~1154 ms
 
-// Evaluate 30k times:
-new Function  ~7ms   🥇
-subscript     ~15ms  🥈
-justin: ~17 ms
-jsep          ~30ms  🥉
-math-expression-evaluator: ~50ms
-expr-eval: ~72 ms
-jexl: ~110 ms
-mathjs: ~119 ms
-```
+## Bundle
 
+Create custom dialect as single file:
 
-## Utils
-
-**Bundle** — create custom dialect bundle:
 ```js
 import { bundle } from 'subscript/util/bundle.js'
 
-// Bundle specific features into single file
 const code = await bundle('subscript/jessie.js')
-// → self-contained ES module with parse, compile exports
+// → self-contained ES module
 ```
 
-**Playground** — interactive dialect builder with live bundling:
-[**Try it →**](https://dy.github.io/subscript/)
+[**Playground →**](https://dy.github.io/subscript/) — interactive dialect builder
 
 
 ## Used by
