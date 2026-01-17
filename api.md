@@ -21,13 +21,12 @@ subscript`x < ${max}`({ x: 50 })  // true
 
 ```js
 subscript`a + b`({ a: 1, b: 2 })  // 3
-```
 
-Caches compiled function per template.
+// caching - same template reuses compiled function
+const check = () => subscript`x > 0`
+check() === check() // true (cached)
 
-### Interpolation
-
-```js
+// embed values
 const limit = 10
 subscript`x > ${limit}`({ x: 15 })  // true
 
@@ -38,26 +37,9 @@ subscript`${double}(x)`({ x: 5 })  // 10
 // embed objects
 const math = { pi: 3.14 }
 subscript`${math}.pi * r * r`({ r: 2 })  // 12.56
-```
 
-#### AST Injection (Composability)
-
-Interpolate AST nodes directly for composability:
-
-```js
-// Compose expressions
-const inner = ['+', 'b', 'c']  // b + c
-subscript`a * ${inner}`({ a: 2, b: 3, c: 4 })  // 14 → 2 * (3 + 4)
-
-// Via parse
-const sum = subscript.parse('x + y')
-subscript`${sum} * 2`({ x: 3, y: 4 })  // 14 → (x + y) * 2
-
-// Inject identifier
-subscript`a + ${'b'}`({ a: 1, b: 2 })  // 3
-
-// Inject literal node
-subscript`a + ${[, 100]}`({ a: 5 })  // 105
+// embed AST
+subscript`${['+', 'a', 'b']} * 2`({ a: 1, b: 2 }) // 6
 ```
 
 #### Detection Rules
@@ -71,6 +53,7 @@ subscript`a + ${[, 100]}`({ a: 5 })  // 105
 | `'varName'` | String | Identifier (AST) |
 | `['+', 'a', 'b']` | Array (string first) | AST node |
 | `[, 100]` | Array (undefined first) | AST literal |
+
 
 ### String Input
 
@@ -92,6 +75,7 @@ Default: expr (minimal). Upgrade for more features:
 import { parse } from 'subscript/parse/justin.js'
 subscript.parse = parse  // + arrows, templates, JSON
 ```
+
 
 ### `subscript.compile`
 

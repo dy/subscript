@@ -1,27 +1,21 @@
 # sub*script* <a href="https://github.com/dy/subscript/actions/workflows/node.js.yml"><img src="https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
 
-> _Subscript_ is safe & tiny expression evaluator.
-
-* The smallest safe sandbox
-* The universal expression AST
-* 2x faster than popular alternative
-* Modular syntax extensions
-
 > _Subscript_ is safe & tiny expression evaluator for building DSLs.
 
-[**Try it →**](https://dy.github.io/subscript/repl.html)
+define, parse, and execute expressions safely
 
 * **Generic** — not JS-specific, supports various language syntaxes
-* **Universal AST** — consistent tree structure
-* **Portable** — parser separate from compiler, targets JS/C/WASM
-* **Safe sandbox** — no access to globals
+* **Universal expression AST** — language-agnostic tree structure
+* **Cross-compilation** — parser separate from compiler, same AST → JS/C/WASM
+* **Safe eval** — smallest safe sandbox (blocked globals, __proto__, constructor)
 * **Fast** — best in class parsing, minimal overhead
-* **Extensible** — pluggable/composable sytax subsets: operators and features
-* Homoiconic, metacircular – compiles itself
+  * 2x faster than popular alternative
+* **Language design** — modular pluggable sytax features for prototyping custom DSL
+* **Homoiconic, metacircular** – compiles itself, js in js runtime — the acid test
 * Turbo Pratt parser engine (make a pun here)
-* Language design tool
-* Cross-compilation
-* Smallest JS runtime
+* **Smallest JS runtime**
+
+[**Try it →**](https://dy.github.io/subscript/repl.html)
 
 <!--
 ####  Useful for:
@@ -34,7 +28,6 @@
 * templates
 -->
 
-
 <!--
 _Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.js) footprint  (compare to [11.4kb](https://npmfs.com/package/jsep/1.2.0/dist/jsep.min.js) _jsep_ + [4.5kb](https://npmfs.com/package/expression-eval/5.0.0/dist/expression-eval.module.js) _expression-eval_) , good [performance](#performance) and extensive test coverage.
 -->
@@ -43,38 +36,13 @@ _Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.j
 ## Usage
 
 ```js
-import subscript from './subscript.js'
+import subscript from 'subscript'
 
-// template tag (preferred)
-const fn = subscript`a.b + Math.sqrt(c - 1)`
-
-// or direct call
-const fn = subscript('a.b + Math.sqrt(c - 1)')
-
-// evaluate with context
-fn({ a: { b:1 }, c: 5, Math })
-// 3
+const fn = subscript`a + b * 2`
+fn({ a: 1, b: 3 })  // 7
 ```
 
-### Template Tag Features
-
-```js
-// Interpolation - embed values directly
-const limit = 10
-subscript`x > ${limit}`({ x: 15 }) // true
-
-// AST composability
-const sum = subscript.parse('a + b')
-subscript`${sum} * 2`({ a: 1, b: 2 }) // 6
-
-// Caching - same template reuses compiled function
-const check = () => subscript`x > 0`
-check() === check() // true (cached)
-
-// Upgrade parser for more features
-import { parse } from './parse/justin.js'  // or jessie.js
-subscript.parse = parse
-```
+See [full API](./api.md)
 
 
 ## Operators
