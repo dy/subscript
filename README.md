@@ -19,7 +19,10 @@ fn({ a: 1, b: 3 })  // 7
 
 ## Presets
 
-**subscript** — common expressions:<br>
+### subscript
+
+Common expressions:
+
 `a.b a[b] a(b) + - * / % < > <= >= == != ! && || ~ & | ^ << >> ++ -- = += -= *= /=`
 ```js
 import subscript from 'subscript'
@@ -27,7 +30,10 @@ import subscript from 'subscript'
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
-**justin** — + JSON, arrows, templates:<br>
+### justin
+
+JSON + expressions + templates + arrows:
+
 `` 'str' 0x 0b === !== ** ?? >>> ?. ? : => ... [] {} ` // /**/ true false null ``
 ```js
 import justin from 'subscript/justin.js'
@@ -36,7 +42,10 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 ```
 
-**jessie** — + statements, functions:<br>
+### jessie
+
+JSON + expressions + statements, functions:
+
 `if else for while do let const var function class return throw try catch switch import export /regex/`
 ```js
 import jessie from 'subscript/jessie.js'
@@ -153,7 +162,7 @@ stringify(['+', ['*', 'min', [,60]], [,'sec']])
 // 'min * 60 + "sec"'
 ```
 
-## Bundle
+### Bundle
 
 Create custom dialect as single file:
 
