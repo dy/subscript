@@ -1,21 +1,35 @@
-# sub*script* <a href="https://github.com/dy/subscript/actions/workflows/node.js.yml"><img src="https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
+# sub✦script <a href="https://github.com/dy/subscript/actions/workflows/node.js.yml"><img src="https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg"/></a> <a href="https://bundlejs.com/?q=subscript"><img alt="npm bundle size" src="https://img.shields.io/bundlejs/size/subscript"/></a> <a href="http://npmjs.org/subscript"><img src="https://img.shields.io/npm/v/subscript"/></a> <a href="http://microjs.com/#subscript"><img src="https://img.shields.io/badge/microjs-subscript-blue?color=darkslateblue"/></a>
+[**Try it →**](https://dy.github.io/subscript/repl.html)
 
 > _Subscript_ is safe & tiny expression evaluator for building DSLs.
 
 define, parse, and execute expressions safely
 
+* Parse + evaluate expressions
+* Sandboxed evaluation
+* Code analysis, transformation
+
+
+```js
+import subscript from 'subscript'
+
+const fn = subscript`a + b * 2`
+fn({ a: 1, b: 3 })  // 7
+```
+
+See [full API](./api.md)
+
+
 * **Generic** — not JS-specific, supports various language syntaxes
-* **Universal expression AST** — language-agnostic tree structure
+* **Universal expression format** — language-agnostic tree structure
 * **Cross-compilation** — parser separate from compiler, same AST → JS/C/WASM
-* **Safe eval** — smallest safe sandbox (blocked globals, __proto__, constructor)
+* **Safe eval** — security sandbox with blocked globals, __proto__, constructor
 * **Fast** — best in class parsing, minimal overhead
   * 2x faster than popular alternative
 * **Language design** — modular pluggable sytax features for prototyping custom DSL
-* **Homoiconic, metacircular** – compiles itself, js in js runtime — the acid test
+* **Homoiconic, metacircular** – jessie can parse and compile own source (js in js runtime)
 * Turbo Pratt parser engine (make a pun here)
 * **Smallest JS runtime**
-
-[**Try it →**](https://dy.github.io/subscript/repl.html)
 
 <!--
 ####  Useful for:
@@ -33,24 +47,39 @@ _Subscript_ has ~[2kb](https://npmfs.com/package/subscript/7.4.3/subscript.min.j
 -->
 
 
-## Usage
+## Dialects
 
+**default** — minimal common syntax
 ```js
-import subscript from 'subscript'
-
-const fn = subscript`a + b * 2`
-fn({ a: 1, b: 3 })  // 7
+import expr from 'subscript/parse/expr.js'
+expr('a.b + c * 2')
 ```
 
-See [full API](./api.md)
+**justin** — JSON + expressions (no keywords)
+```js
+import justin from 'subscript/parse/justin.js'
+justin('{ x: a?.b ?? 0, y: [1, 2, ...rest] }')
+```
+
+**jessie** — practical JS subset (functions, loops, everything)
+```js
+import jessie from 'subscript/parse/jessie.js'
+jessie(`
+  function factorial(n) {
+    if (n <= 1) return 1
+    return n * factorial(n - 1)
+  }
+  factorial(5)
+`)({})  // 120
+```
+
+See [docs](./API.md)
 
 
-## Operators
 
-### Expr *(default)*
+### Default
 
-Minimal portable syntax ([common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) for _JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
-
+Minimal ([common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) for _JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
 
 * - assignment: = += etc (base ops registered first)
 * - logical: ! && || ??
@@ -141,114 +170,72 @@ fac({}) // 120
 ```
 
 
-### Compilers
+### Expression format
 
-```
-compile/js.js       — AST → closures (direct eval)
-compile/js-emit.js  — AST → JS source string
-```
-
-Future: `c-emit.js`, `wat-emit.js`, `wasm.js`
-
-### Usage
+Subscript uses simplified lispy syntax tree:
 
 ```js
-import { parse, compile } from 'subscript'
+import { parse } from 'subscript'
 
-// parse expression
-let tree = parse('a.b + c - 1')
-tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
-
-// compile tree to evaluable function
-fn = compile(tree)
-fn({ a: {b: 1}, c: 2 }) // 2
+parse('a + b * 2')
+// ['+', 'a', ['*', 'b', [, 2]]]
 ```
 
-### Syntax Tree
-
-AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
-
-* not limited to particular language (JS), can be compiled to different targets;
+* portable to any language, not limited to JS;
 * reflects execution sequence, rather than code layout;
 * has minimal overhead, directly maps to operators;
 * simplifies manual evaluation and debugging;
 * has conventional form and one-liner docs:
 
-```js
-import { compile } from 'subscript.js'
-
-const fn = compile(['+', ['*', 'min', [,60]], [,'sec']])
-fn({min: 5}) // min*60 + "sec" == "300sec"
-
-// node kinds
-'a'                // identifier — variable from scope
-[, value]          // literal — [0] empty distinguishes from operator
-[op, a]            // unary — prefix operator
-[op, a, null]      // unary — postfix operator (null marks postfix)
-[op, a, b]         // binary
-[op, a, b, c]      // n-ary / ternary
-
-// operators
-['+', a, b]        // a + b
-['.', a, 'b']      // a.b — property access
-['[]', a, b]       // a[b] — bracket access
-['()', a]          // (a) — grouping
-['()', a, b]       // a(b) — function call
-['()', a, null]    // a() — call with no args
-
-// literals & structures
-[, 1]              // 1
-[, 'hello']        // "hello"
-['[]', [',', ...]] // [a, b] — array literal
-['{}', [':', ...]] // {a: b} — object literal
-
-// justin extensions
-['?', a, b, c]     // a ? b : c — ternary
-['=>', params, x]  // (a) => x — arrow function
-['...', a]         // ...a — spread
-
-// control flow (extra)
-['if', cond, then, else]
-['while', cond, body]
-['for', init, cond, step, body]
-
-// postfix example
-['++', 'a']        // ++a
-['++', 'a', null]  // a++
-['px', [,5]]       // 5px (unit suffix)
-```
-
-### Codegen
-
-To convert tree back to JS source:
+Three forms. That's the entire AST:
 
 ```js
-import { codegen } from 'subscript.js'
-
-codegen(['+', ['*', 'min', [,60]], [,'sec']])
-// '(min * 60) + "sec"'
+'name'              // identifier — resolve from context
+[, value]           // literal — return as-is
+[op, ...args]       // operation — apply operator
 ```
 
-## Extending
-
-_Subscript_ provides premade language [features](./feature) and API to customize syntax.
-
-### Parser API
-
-* `unary(str, precedence, postfix=false)` − register unary operator, either prefix `⚬a` or postfix `a⚬`.
-* `binary(str, precedence, rassoc=false)` − register binary operator `a ⚬ b`, optionally right-associative.
-* `nary(str, precedence)` − register n-ary (sequence) operator like `a; b;` or `a, b`, allows missing args.
-* `group(str, precedence)` - register group, like `[a]`, `{a}`, `(a)` etc.
-* `access(str, precedence)` - register access operator, like `a[b]`, `a(b)` etc.
-* `literal(str, value)` − register keyword literal like `null`, `true`, `undefined`.
-* `token(str, precedence, lnode => node)` − register custom token. Callback takes left-side node and returns complete expression node. Use for complex patterns like `++`/`--`, `?:`, etc.
-
-Longer operators should be registered after shorter ones, eg. first `|`, then `||`, then `||=`.
+See [full spec](./AST.md).
 
 
-See [`./feature/*`](./feature) or [`./parse/justin.js`](./parse/justin.js) for examples.
+## Extension
+
+Add a set intersection operator:
+
+```js
+import { binary } from 'subscript'
+import { operator, compile } from 'subscript/compile/js.js'
+
+binary('∩', 80)  // register syntax
+operator('∩', (a, b) => (a = compile(a), b = compile(b),
+  ctx => a(ctx).filter(x => b(ctx).includes(x))))
+
+subscript('[1,2,3] ∩ [2,3,4]')({})  // [2, 3]
+```
+
+Add units:
+
+```js
+import { token } from 'subscript/parse/pratt.js'
+
+token('px', 200, n => n && [, n[1] + 'px'])  // 5px → "5px"
+token('em', 200, n => n && [, n[1] + 'em'])
+```
+
+See [feature/](./feature) for 30+ built-in operators.
 
 
+## Safety
+
+Blocked by default:
+- `__proto__`, `__defineGetter__`, `__defineSetter__`
+- `constructor`, `prototype`
+- Global access (only context is visible)
+
+```js
+subscript('constructor.constructor("alert(1)")()')({})
+// Error: unsafe property access
+```
 
 ## Performance
 
@@ -294,18 +281,51 @@ mr-parser: -
 math-parser: -
 -->
 
+
 > Run `node --import ./test/https-loader.js test/benchmark.js` for full benchmarks
+
+
+## API Reference
+
+### Parser
+
+```js
+import { parse, token, binary, unary, nary, group, access, literal } from 'subscript/parse/pratt.js'
+
+binary(op, precedence, rightAssoc?)   // a + b
+unary(op, precedence, postfix?)       // -a or a++
+nary(op, precedence)                  // a, b, c
+group(op, precedence)                 // (a)
+access(op, precedence)                // a[b]
+literal(op, value)                    // null → [, null]
+token(op, prec, fn)                   // custom pattern
+```
+
+### Compiler
+
+```js
+import { compile, operator, operators } from 'subscript/compile/js.js'
+import { codegen } from 'subscript/compile/js-emit.js'
+
+compile(tree)        // AST → evaluator function
+operator(op, fn)     // register operator compiler
+codegen(tree)        // AST → JS source string
+```
+
 
 ## Used by
 
-* [jz](https://github.com/dy/jz)
+* [jz](https://github.com/dy/jz) — JS subset → WASM compiler
 <!-- * [prepr](https://github.com/dy/prepr) -->
 <!-- * [glsl-transpiler](https://github.com/stackgl/glsl-transpiler) -->
 <!-- * [piezo](https://github.com/dy/piezo) -->
 
+---
 
-## Alternatives
+## See Also
 
-[jexpr](https://github.com/justinfagnani/jexpr), [jsep](https://github.com/EricSmekens/jsep), [jexl](https://github.com/TomFrost/Jexl), [mozjexl](https://github.com/mozilla/mozjexl), [expr-eval](https://github.com/silentmatt/expr-eval), [expression-eval](https://github.com/donmccurdy/expression-eval), [string-math](https://github.com/devrafalko/string-math), [nerdamer](https://github.com/jiggzson/nerdamer), [math-codegen](https://github.com/mauriciopoppe/math-codegen), [math-parser](https://www.npmjs.com/package/math-parser), [math.js](https://mathjs.org/docs/expressions/parsing.html), [nx-compile](https://github.com/nx-js/compiler-util), [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval)
+[jsep](https://github.com/EricSmekens/jsep), [jexl](https://github.com/TomFrost/Jexl), [expr-eval](https://github.com/silentmatt/expr-eval), [math.js](https://mathjs.org/) and others.
+
+<!-- [mozjexl](https://github.com/mozilla/mozjexl), [jexpr](https://github.com/justinfagnani/jexpr), [expression-eval](https://github.com/donmccurdy/expression-eval), [string-math](https://github.com/devrafalko/string-math), [nerdamer](https://github.com/jiggzson/nerdamer), [math-codegen](https://github.com/mauriciopoppe/math-codegen), [math-parser](https://www.npmjs.com/package/math-parser), [nx-compile](https://github.com/nx-js/compiler-util), [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval) -->
 
 <p align=center><a href="https://github.com/krsnzd/license/">🕉</a></p>
