@@ -35,19 +35,16 @@ export let idx, cur,
   // set position (for backtracking)
   seek = n => idx = n,
 
-  // end character for current expr scope
-  endChar = 0,
-
   // a + b - c
   expr = (prec = 0, end) => {
-    let cc, token, newNode, fn, prevEnd = endChar, prevReserved = parse.reserved, nl;
-    if (end) endChar = end, parse.asi && (parse.newline = false);
+    let cc, token, newNode, fn, prevReserved = parse.reserved, nl;
+    if (end) parse.asi && (parse.newline = false);
     parse.reserved = 0;
 
     while (
       (cc = parse.space()) &&
       (nl = parse.newline, 1) &&
-      cc !== endChar &&
+      cc !== end &&
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ??
         (parse.asi && token && nl && (newNode = parse.asi(token, prec, expr))) ??
@@ -57,7 +54,6 @@ export let idx, cur,
     parse.reserved = prevReserved;
 
     if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
-    endChar = prevEnd;
 
     return token;
   },
