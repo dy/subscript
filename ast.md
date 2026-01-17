@@ -251,6 +251,15 @@ a + b + c  →  ['+', 'a', 'b', 'c']    // not ['+', ['+', 'a', 'b'], 'c']
 
 This reflects execution semantics and enables SIMD-style optimization.
 
+### 6. Location Metadata
+
+Nodes may carry a `.loc` property indicating source position:
+```js
+['+', 'a', 'b', loc: 5]    // operator at column 5
+```
+
+This is a non-enumerable property, ignored during serialization.
+
 
 ## Extension
 
@@ -310,9 +319,10 @@ Implementations SHOULD accept both forms on input.
 
 Inspiration:
 
+- **Pratt parsing** — Pratt, 1973. [Top Down Operator Precedence](https://tdop.github.io/). Elegant precedence-driven parsing.
 - **S-expressions** — McCarthy, 1960. Code as nested lists.
-- **[frisk](https://github.com/porsager/frisk)** — Porsager. Evaluable arrays as function calls.
-- **[nisp](https://github.com/aspect-build/aspect-cli/tree/develop/packages/nisp)** — Ysmood. JSON-compatible lisp.
+- **[frisk](https://www.npmjs.com/package/frisk)** — Porsager. Evaluable arrays as function calls.
+- **[nisp](https://github.com/ysmood/nisp)** — Ysmood. JSON-compatible lisp.
 - **JSON** — Crockford, 2001. Minimal format, universal adoption.
 
 Counter-examples:
