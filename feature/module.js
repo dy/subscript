@@ -32,3 +32,11 @@ keyword('export', STATEMENT, () => (space(), ['export', expr(STATEMENT)]));
 
 // default: prefix for export default
 keyword('default', SEQ + 1, () => (space(), ['default', expr(SEQ)]));
+
+// Compile stubs - import/export are parse-only (no runtime semantics)
+import { operator, compile } from '../parse.js';
+operator('import', () => () => undefined);
+operator('export', () => () => undefined);
+operator('from', (a, b) => () => undefined);
+operator('as', (a, b) => () => undefined);
+operator('default', (a) => compile(a));

@@ -5,7 +5,7 @@
  */
 import { binary, operator, compile } from '../../parse.js';
 import { destructure } from '../destruct.js';
-import { isLval, prop } from '../member.js';
+import { isLval, prop } from '../access.js';
 
 const ASSIGN = 20;
 const err = msg => { throw Error(msg) };

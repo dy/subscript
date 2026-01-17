@@ -1,6 +1,6 @@
 import { nary, group, operator, compile } from '../parse.js';
 import { BREAK, CONTINUE } from './loop.js';
-import { prop } from './member.js';
+import { prop } from './access.js';
 
 const STATEMENT = 5, SEQ = 10, ACCESS = 170;
 

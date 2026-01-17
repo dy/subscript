@@ -1,4 +1,4 @@
-# sub✦script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![ॐ](https://img.shields.io/badge/MIT-%E0%A5%90-white)](https://krishnized.github.io/license)
+# sub<sub><sup> ✦ </sup></sub>script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![demo](https://img.shields.io/badge/demo-%F0%9F%9A%80-white)](https://dy.github.io/subscript/repl) [![ॐ](https://img.shields.io/badge/MIT-%E0%A5%90-white)](https://krishnized.github.io/license)
 
 > Safe expression evaluator & language tool.
 
@@ -14,8 +14,6 @@ subscript`a + b * 2`({ a: 1, b: 3 })  // 7
 * **Portable** — universal expression format, any compile target
 * **Self-hosting** — compiles own source (js in js)
 * **Language tool** — modular syntax extensions for custom DSL
-
-[**Try REPL →**](https://dy.github.io/subscript/repl.html)
 
 
 ## Presets
@@ -72,7 +70,7 @@ token('px', 200, n => n && [, n[1] + 'px'])  // 5px → "5px"
 See [docs.md](./docs.md) for full API.
 
 
-## Expressions
+## Expressions format
 
 Subscript uses simplified syntax tree format:
 
@@ -106,7 +104,6 @@ subscript`constructor.constructor("alert(1)")()`({})
 // undefined (blocked)
 ```
 
-
 ## Performance
 
 Parse 30k times:
@@ -115,8 +112,6 @@ subscript: ~150 ms 🥇
 justin: ~183 ms
 jsep: ~270 ms 🥈
 jexpr: ~297 ms 🥉
-```
-<!--
 mr-parser: ~420 ms
 expr-eval: ~480 ms
 math-parser: ~570 ms
@@ -124,23 +119,32 @@ math-expression-evaluator: ~900ms
 jexl: ~1056 ms
 mathjs: ~1200 ms
 new Function: ~1154 ms
--->
 
-Evaluate 30k times:
-```
+// Evaluate 30k times:
 new Function  ~7ms   🥇
 subscript     ~15ms  🥈
 justin: ~17 ms
 jsep          ~30ms  🥉
-```
-<!--
 math-expression-evaluator: ~50ms
 expr-eval: ~72 ms
 jexl: ~110 ms
 mathjs: ~119 ms
-mr-parser: -
-math-parser: -
--->
+```
+
+
+## Utils
+
+**Bundle** — create custom dialect bundle:
+```js
+import { bundle } from 'subscript/util/bundle.js'
+
+// Bundle specific features into single file
+const code = await bundle('subscript/jessie.js')
+// → self-contained ES module with parse, compile exports
+```
+
+**REPL** — interactive dialect builder with live bundling:
+[**Try REPL →**](https://dy.github.io/subscript/repl.html)
 
 
 ## Used by

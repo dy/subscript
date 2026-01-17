@@ -34,10 +34,10 @@ h1 span { color: var(--accent); }
 .toggle-sidebar svg { width: 0.875rem; height: 0.875rem; }
 
 /* Code area - editor only */
-.code-area { display: flex; gap: 1rem; align-items: flex-start; }
+.code-area { display: flex; gap: 1rem; align-items: flex-start; margin-top: 1rem; }
 
 /* Editor with line numbers */
-.editor { display: flex; position: relative; overflow: auto; max-height: 50vh; min-width: 200px; flex: 1; max-width: 80ch; }
+.editor { display: flex; position: relative; overflow: auto; max-height: 50vh; min-width: 200px; flex: 1; }
 .line-nums {
   padding: 0.5rem; color: var(--ln); font-size: 0.875rem; line-height: 1.6;
   text-align: right; user-select: none; white-space: pre; min-width: 1.75rem;
@@ -57,7 +57,7 @@ h1 span { color: var(--accent); }
 .info-bar .error { color: var(--err); flex: 1; }
 
 /* Output section - tabs */
-.output-section { display: flex; flex-direction: column; max-width: 80ch; }
+.output-section { display: flex; flex-direction: column; }
 .output-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); }
 .output-tab { background: none; border: none; color: var(--muted); padding: 0.375rem 0.75rem; font: 0.875rem inherit; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
 .output-tab:hover { color: var(--fg); }
@@ -305,63 +305,145 @@ h1 span { color: var(--accent); }
 </div>
 
 <script type="module">
-// Feature files in load order (matches actual file names in feature/*.js)
+// Feature ID to file path mapping (actual file locations)
+const FEATURE_PATHS = {
+  // Core (from subscript.js)
+  number: 'feature/number.js',
+  string: 'feature/string.js',
+  literal: 'feature/literal.js',
+  access: 'feature/access.js',
+  group: 'feature/group.js',
+
+  // Operators (from subscript.js and justin.js)
+  assign: 'feature/op/assignment.js',
+  arithmetic: 'feature/op/arithmetic.js',
+  bit: 'feature/op/bitwise.js',
+  cmp: 'feature/op/comparison.js',
+  equality: 'feature/op/equality.js',
+  logical: 'feature/op/logical.js',
+  increment: 'feature/op/increment.js',
+  shift: 'feature/op/bitwise.js',         // bitwise includes shift
+  pow: 'feature/op/pow.js',
+  ternary: 'feature/op/ternary.js',
+  arrow: 'feature/op/arrow.js',
+  optional: 'feature/op/optional.js',
+  spread: 'feature/op/spread.js',
+  unary: 'feature/op/unary.js',
+  identity: 'feature/op/identity.js',
+  nullish: 'feature/op/nullish.js',
+
+  // Literals & misc
+  bool: 'feature/literal.js',             // true/false/null/undefined in literal.js
+  collection: 'feature/collection.js',
+  comment: 'feature/comment.js',
+  template: 'feature/template.js',
+  regex: 'feature/regex.js',
+  unit: 'feature/unit.js',
+
+  // Control flow (from jessie.js)
+  block: 'feature/block.js',
+  'if': 'feature/if.js',
+  loop: 'feature/loop.js',
+  'var': 'feature/var.js',
+  'switch': 'feature/switch.js',
+  destruct: 'feature/destruct.js',
+  'function': 'feature/function.js',
+  'throw': 'feature/try.js',              // throw is part of try.js
+  'try': 'feature/try.js',
+  accessor: 'feature/accessor.js',
+  async: 'feature/async.js',
+  'class': 'feature/class.js',
+  module: 'feature/module.js',
+  asi: 'feature/asi.js',
+}
+
+// Features in proper load order (dependency order matters!)
 const featureOrder = [
-  'literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow',
-  'bool', 'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'regex', 'unit',
-  'block', 'if', 'loop', 'var', 'switch', 'destruct', 'function', 'throw', 'try', 'accessor'
+  // Core parsing (subscript.js order)
+  'number', 'string',
+  // Operators - order matters for token chain
+  'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment',
+  // Expression features
+  'group', 'access',
+  // Justin additions
+  'comment', 'identity', 'nullish', 'pow', 'unary',
+  'literal', 'ternary', 'arrow', 'spread', 'optional',
+  'collection', 'template', 'regex', 'unit',
+  // Jessie additions (block before control flow)
+  'block', 'var', 'function', 'async', 'class', 'destruct',
+  'if', 'loop', 'try', 'switch', 'module', 'accessor', 'asi'
 ]
 
+// UI feature groups (maps to internal IDs)
 const FEATURES = [
-  { cat: 'Core', items: ['literal', 'member', 'group'] },
-  { cat: 'Operators', items: ['assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow'] },
-  { cat: 'Literals', items: ['bool', 'collection', 'template', 'regex'] },
-  { cat: 'Advanced', items: ['ternary', 'arrow', 'optional', 'spread', 'comment', 'unit', 'accessor'] },
-  { cat: 'Control', items: ['if', 'loop', 'switch', 'var', 'destruct', 'throw', 'try'] },
-  { cat: 'Functions', items: ['function'] },
+  { cat: 'Core', items: ['number', 'string', 'group', 'access'] },
+  { cat: 'Operators', items: ['assign', 'arithmetic', 'logical', 'bit', 'cmp', 'equality', 'increment', 'pow'] },
+  { cat: 'Advanced Ops', items: ['ternary', 'arrow', 'optional', 'spread', 'unary', 'identity', 'nullish'] },
+  { cat: 'Literals', items: ['literal', 'collection', 'template', 'regex', 'unit', 'comment'] },
+  { cat: 'Control', items: ['block', 'if', 'loop', 'switch', 'var', 'destruct', 'try'] },
+  { cat: 'Functions', items: ['function', 'async', 'class', 'accessor', 'module', 'asi'] },
 ]
 
 const DESC = {
-  literal: '1, "x"', member: 'a.b, f()', group: '()',
-  assign: '=, +=', arithmetic: '+-*/%', bit: '&|^~', cmp: '==<>&&!', shift: '<<>>', pow: '**',
-  bool: 'true/false', collection: '[],{}',
-  ternary: '?:', arrow: '=>', optional: '?.', spread: '...', comment: '//',
-  template: '`${}`', regex: '/re/', unit: '5px',
-  'if': 'if/else', loop: 'for/while', 'var': 'let/const', 'switch': 'switch',
-  destruct: '{a,b}=', 'function': 'fn(){}', accessor: 'get/set',
-  'throw': 'throw', 'try': 'try/catch'
+  // Core
+  number: '123, 1.5', string: '"x", \'y\'', group: '()', access: 'a.b, a[i]',
+  // Operators
+  assign: '=, +=', arithmetic: '+-*/%', logical: '&& || !', bit: '& | ^ ~',
+  cmp: '< > <= >=', equality: '== !=', increment: '++ --', pow: '**',
+  // Advanced ops
+  ternary: '?:', arrow: '=>', optional: '?.', spread: '...',
+  unary: 'typeof void', identity: '=== !==', nullish: '??',
+  // Literals
+  literal: 'true/false/null', collection: '[], {}', template: '`${}`',
+  regex: '/re/', unit: '5px', comment: '//',
+  // Control
+  block: '{ }', 'if': 'if/else', loop: 'for/while', 'switch': 'switch',
+  'var': 'let/const', destruct: '{a,b}=', 'try': 'try/catch',
+  // Functions
+  'function': 'fn(){}', async: 'async/await', 'class': 'class X {}',
+  accessor: 'get/set', module: 'import/export', asi: 'auto semicolons'
 }
 
 // Extended tooltips with syntax examples
 const TIPS = {
-  literal: 'Numbers & strings<br><code>42</code> <code>3.14</code> <code>0xFF</code> <code>"hello"</code> <code>\'world\'</code>',
-  member: 'Property access & calls<br><code>a.b</code> <code>a[i]</code> <code>fn()</code> <code>obj.method()</code>',
-  group: 'Grouping parentheses<br><code>(a + b) * c</code>',
-  assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code> <code>%=</code>',
-  arithmetic: 'Math operators<br><code>+ - * / %</code> <code>++x</code> <code>x--</code> <code>-x</code>',
-  bit: 'Bitwise operators<br><code>&</code> <code>|</code> <code>^</code> <code>~x</code>',
-  cmp: 'Comparison & logic<br><code>== != < > <= >=</code> <code>&& || !</code>',
-  shift: 'Bit shift<br><code>&lt;&lt;</code> <code>&gt;&gt;</code> <code>&gt;&gt;&gt;</code>',
+  number: 'Decimal numbers<br><code>42</code> <code>3.14</code> <code>1e3</code> <code>0xFF</code> <code>0b101</code>',
+  string: 'String literals<br><code>"hello"</code> <code>\'world\'</code> with escapes',
+  group: 'Grouping & sequences<br><code>(a + b)</code> <code>a, b</code> <code>a; b</code>',
+  access: 'Property access<br><code>a.b</code> <code>a[i]</code> <code>fn()</code>',
+  assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code>',
+  arithmetic: 'Math operators<br><code>+ - * / %</code> unary: <code>+x</code> <code>-x</code>',
+  logical: 'Logical operators<br><code>&&</code> <code>||</code> <code>!</code>',
+  bit: 'Bitwise operators<br><code>&</code> <code>|</code> <code>^</code> <code>~</code> <code>&lt;&lt;</code> <code>&gt;&gt;</code>',
+  cmp: 'Comparison<br><code>&lt;</code> <code>&gt;</code> <code>&lt;=</code> <code>&gt;=</code>',
+  equality: 'Equality<br><code>==</code> <code>!=</code>',
+  increment: 'Increment/Decrement<br><code>++x</code> <code>x++</code> <code>--x</code> <code>x--</code>',
   pow: 'Exponentiation<br><code>2 ** 10</code> → 1024',
-  bool: 'Boolean & nil literals<br><code>true</code> <code>false</code> <code>null</code> <code>undefined</code>',
-  collection: 'Arrays & objects<br><code>[1, 2, 3]</code> <code>{ a: 1, b: 2 }</code> <code>arr[i]</code>',
-  ternary: 'Conditional expression<br><code>cond ? then : else</code>',
-  arrow: 'Arrow functions<br><code>x => x * 2</code> <code>(a, b) => a + b</code> <code>() => 42</code>',
+  ternary: 'Conditional<br><code>cond ? then : else</code>',
+  arrow: 'Arrow functions<br><code>x => x * 2</code> <code>(a, b) => a + b</code>',
   optional: 'Optional chaining<br><code>a?.b</code> <code>a?.()</code> <code>a?.[i]</code>',
-  spread: 'Spread operator<br><code>[...arr]</code> <code>{ ...obj }</code> <code>fn(...args)</code>',
-  comment: 'Comments (ignored)<br><code>// line comment</code> <code>/* block */</code>',
-  'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code> <code>if (c) { ... }</code>',
-  loop: 'Loops<br><code>while (c) body</code> <code>for (init; cond; step) body</code> <code>for (x of arr)</code>',
-  'switch': 'Switch statement<br><code>switch (x) { case 1: ...; break }</code>',
+  spread: 'Spread operator<br><code>[...arr]</code> <code>{ ...obj }</code>',
+  unary: 'Unary operators<br><code>typeof x</code> <code>void 0</code> <code>delete o.x</code> <code>new X()</code>',
+  identity: 'Strict equality<br><code>===</code> <code>!==</code>',
+  nullish: 'Nullish coalescing<br><code>a ?? b</code> <code>a ??= b</code>',
+  literal: 'Boolean & nil literals<br><code>true</code> <code>false</code> <code>null</code> <code>undefined</code>',
+  collection: 'Arrays & objects<br><code>[1, 2, 3]</code> <code>{ a: 1 }</code>',
+  template: 'Template literals<br><code>\`hello \${name}\`</code>',
+  regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code>',
+  unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code>',
+  comment: 'Comments (ignored)<br><code>// line</code> <code>/* block */</code>',
+  block: 'Block statements<br><code>{ stmt1; stmt2 }</code>',
+  'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code>',
+  loop: 'Loops<br><code>while (c) body</code> <code>for (;;) body</code> <code>for (x of arr)</code>',
+  'switch': 'Switch statement<br><code>switch (x) { case 1: ... }</code>',
   'var': 'Variable declaration<br><code>let x = 1</code> <code>const y = 2</code>',
   destruct: 'Destructuring<br><code>const {a, b} = obj</code> <code>const [x, y] = arr</code>',
-  'function': 'Function declaration<br><code>function f(a, b) { return a + b }</code> <code>function sum(...args) {}</code>',
-  accessor: 'Getters/setters<br><code>{ get x() { val } }</code> <code>{ set x(v) { ... } }</code>',
-  'throw': 'Throw statement<br><code>throw "error"</code> <code>throw new Error()</code>',
   'try': 'Try/catch/finally<br><code>try { ... } catch (e) { ... }</code>',
-  template: 'Template literals<br><code>\`hello \${name}\`</code> <code>\`${a} + ${b} = ${a+b}\`</code>',
-  regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code> <code>/^start/i</code>',
-  unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code> <code>100ms</code> <code>90deg</code>'
+  'function': 'Function declaration<br><code>function f(a, b) { }</code>',
+  async: 'Async/await<br><code>async function f() { await x }</code>',
+  'class': 'Classes<br><code>class X extends Y { }</code>',
+  accessor: 'Getters/setters<br><code>{ get x() { } }</code> <code>{ set x(v) { } }</code>',
+  module: 'Modules<br><code>import x from \'y\'</code> <code>export { a }</code>',
+  asi: 'Auto Semicolon Insertion<br>Automatically inserts ; at line breaks'
 }
 
 // Multiline example templates for different feature combinations
@@ -440,7 +522,7 @@ function generateExample() {
   }
 
   // Justin preset - functional style
-  if (all(['arrow', 'member', 'spread', 'ternary', 'collection', 'cmp'])) {
+  if (all(['arrow', 'access', 'spread', 'ternary', 'collection', 'cmp'])) {
     return TEMPLATES.justin
   }
 
@@ -483,7 +565,7 @@ function generateExample() {
       lines.push('  sum = sum + i;')
     }
 
-    if (has('arrow') && has('member') && has('collection')) {
+    if (has('arrow') && has('access') && has('collection')) {
       lines.push('')
       lines.push('nums.map(n => n * 2)')
     } else if (lines.length > 0) {
@@ -497,7 +579,7 @@ function generateExample() {
   }
 
   // Expression-only (no control flow) - build compound expression
-  if (has('arrow') && has('member') && has('collection')) {
+  if (has('arrow') && has('access') && has('collection')) {
     if (has('spread') && has('ternary')) {
       return {
         code: `items.map(x => ({
@@ -551,7 +633,7 @@ function generateExample() {
     }
   }
 
-  if (has('literal')) {
+  if (has('number') || has('literal')) {
     return { code: '42', ctx: {} }
   }
 
@@ -559,10 +641,19 @@ function generateExample() {
 }
 
 const PRESETS = {
-  minimal: ['literal', 'group', 'arithmetic'],
-  expr: ['literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift'],
-  justin: ['literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow', 'bool', 'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template'],
-  jessie: ['literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow', 'bool', 'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'if', 'loop', 'var'],
+  // Minimal: just numbers and basic arithmetic
+  minimal: ['number', 'string', 'group', 'arithmetic'],
+  // Expressions: subscript.js features
+  expr: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access'],
+  // Justin: JSON + expressions (no statements)
+  justin: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access',
+           'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
+           'collection', 'template'],
+  // Jessie: practical JS subset with statements
+  jessie: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access',
+           'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
+           'collection', 'template', 'regex', 'block', 'var', 'function', 'destruct', 'if', 'loop', 'try', 'switch', 'asi'],
+  // Full: all features
   full: FEATURES.flatMap(c => c.items),
 }
 
@@ -573,20 +664,17 @@ let workerReady = false
 let evalId = 0
 let currentWorker = null
 
-// Fetch all feature sources upfront
+// Fetch all feature sources upfront (using mapped paths)
 const featureSources = {}
-await Promise.all(featureOrder.map(async f => {
-  const res = await fetch(`./feature/${f}.js`)
-  featureSources[f] = await res.text()
+const uniquePaths = [...new Set(Object.values(FEATURE_PATHS))]
+await Promise.all(uniquePaths.map(async path => {
+  const res = await fetch('./' + path)
+  if (res.ok) featureSources[path] = await res.text()
+  else console.warn('Failed to fetch:', path)
 }))
 
-// Fetch core sources
-const [parseSrc, compileSrc, constSrc, stringifySrc] = await Promise.all([
-  fetch('./src/parse.js').then(r => r.text()),
-  fetch('./src/compile.js').then(r => r.text()),
-  fetch('./src/const.js').then(r => r.text()),
-  fetch('./src/stringify.js').then(r => r.text()),
-])
+// Fetch core parser source (parse.js has all core in one file)
+const parseSrc = await fetch('./parse.js').then(r => r.text())
 
 // Terser for minification (~400KB vs esbuild-wasm ~2MB)
 let terser = null
@@ -614,73 +702,112 @@ async function initTerser() {
   }
 }
 
+// Strip imports from source, replacing sibling imports with _ object references
+const stripImports = code => {
+  // First, handle sibling imports: import { X, Y } from './file.js' → const { X, Y } = _
+  code = code.replace(/^import\s+\{([^}]+)\}\s+from\s+['"]\.\/.+?['"];?\s*$/gm, (match, names) => {
+    return `const { ${names} } = _;`
+  })
+  // Remove remaining imports (from '../parse.js' etc) - these are global in bundled context
+  return code.replace(/^import\s+.*$/gm, '')
+}
+
+// Strip exports and convert to var declarations
+const stripExports = code => code
+  .replace(/^export\s+default\s+/gm, '')
+  .replace(/^export\s+(const|let|function)\s+/gm, '$1 ')
+  .replace(/^export\s+\{[^}]+\}.*$/gm, '')
+
 // Build worker source
 function buildWorkerSrc() {
-  let constCode = constSrc.replace(/^export\s+const\s+/gm, 'var ')
-
+  // Start with parse.js (contains parse, compile, operators etc all in one file)
   let parseCode = parseSrc
     .replace(/^import\s+.*$/gm, '')
-    .replace(/^export\s+let\s+/gm, 'var ')
-    .replace(/^export\s+default\s+/gm, 'var parseDefault = ')
+    .replace(/^export\s+let\s+/gm, 'let ')
+    .replace(/^export\s+const\s+/gm, 'const ')
+    .replace(/^export\s+default\s+parse\s*;?\s*$/gm, '')
 
-  let compileCode = compileSrc
-    .replace(/^import\s+.*$/gm, '')
-    .replace(/^export\s+const\s+/gm, 'var ')
-    .replace(/^export\s+default\s+compile\s*;?\s*$/gm, '')
-    .replace(/,\s*\/\/.*\n\s*id\s*=\s*compile\.id\s*=/g, '; compile.id =')
+  // Shared object for cross-feature exports
+  let src = `// Bundled subscript\nvar _ = {};\n${parseCode}\n`
 
-  let stringifyCode = stringifySrc
-    .replace(/^import\s+.*$/gm, '')
-    .replace(/^export\s+default\s+/gm, 'var _default = ')
-    .replace(/^export\s+(const|let)\s+/gm, 'var ')
-    .replace(/^export\s+function\s+/gm, 'function ')
+  // Track which file paths have been included to avoid duplicates
+  const includedPaths = new Set()
 
-  let src = `// Bundled subscript\n${constCode}\n${parseCode}\n${compileCode}\n${stringifyCode}\n`
+  // Features that export things used by other features
+  const exports = {
+    block: ['keyword', 'infix', 'block', 'body'],
+    loop: ['BREAK', 'CONTINUE', 'RETURN', 'loop'],
+    access: ['unsafe', 'isLval', 'prop'],
+    destruct: ['destructure'],
+    accessor: ['ACC'],
+    unit: ['unit']
+  }
 
-  // Create P object for features that use `import * as P`
-  // Use getters for idx/cur since they change during parsing
-  src += `
-var P = {
-  parse: parse,
-  token: token,
-  space: space,
-  expr: expr,
-  skip: skip,
-  next: next,
-  err: err,
-  lookup: lookup,
-  get idx() { return idx },
-  set idx(v) { idx = v },
-  get cur() { return cur }
-};
-`
+  // Feature dependencies - these features import from other features
+  // Includes transitive dependencies (e.g., group→loop→block means group needs block)
+  const dependencies = {
+    // block exports keyword, infix, block, body - used by control flow features
+    // Also needed transitively by: group (via loop)
+    block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
+    // loop exports BREAK, CONTINUE, RETURN, loop - used by features that handle control flow
+    loop: ['group', 'function', 'try', 'switch'],
+    // destruct exports destructure - used by var and loop
+    destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
+    // access exports prop, unsafe, isLval - used by group
+    access: ['group'],
+    // accessor exports ACC - used by collection
+    accessor: ['collection']
+  }
 
-  for (const f of featureOrder) {
-    // Auto-include block when control features are selected (it's a dependency)
-    const needsBlock = ['if', 'loop', 'switch', 'function', 'try'].some(x => selected.has(x))
-    const shouldInclude = f === 'block' ? needsBlock : selected.has(f)
-    if (shouldInclude) {
-      let code = featureSources[f]
-        .replace(/^import\s+.*$/gm, '')
-        .replace(/^export\s+\{[^}]+\}\s+from\s+['"].*['"];?\s*$/gm, '') // Remove re-exports
-        .replace(/^export\s+/gm, '')
-        // Convert destructuring const { x, y } = P to individual assignments
-        .replace(/^const\s*\{([^}]+)\}\s*=\s*(\w+)\s*$/gm, (_, vars, obj) => {
-          return vars.split(',').map(v => v.trim()).filter(Boolean)
-            .map(v => `var ${v} = ${obj}.${v}`).join('\n')
-        })
-      // Don't wrap control features in IIFE - they share exports between them
-      if (['block', 'if', 'loop', 'var', 'switch', 'function', 'throw', 'try', 'destruct'].includes(f)) {
-        src += `\n// feature: ${f}\n${code}\n`
-      } else if (f === 'unit') {
-        // Unit needs `unit` function exposed globally, then register default units
-        src += `\n// feature: ${f}\n${code}\n`
-        src += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n`
-      } else {
-        // Wrap in IIFE to avoid naming conflicts between features
-        src += `\n// feature: ${f}\n;(function(){\n${code}\n})();\n`
-      }
+  // Include features in order, resolving to actual paths
+  for (const featureId of featureOrder) {
+    // Check if feature should be included (either selected, or needed by a selected feature)
+    let shouldInclude = selected.has(featureId)
+    if (!shouldInclude && dependencies[featureId]) {
+      shouldInclude = dependencies[featureId].some(x => selected.has(x))
     }
+    if (!shouldInclude) continue
+
+    // Get the actual path
+    const path = FEATURE_PATHS[featureId]
+    if (!path) continue
+
+    // Skip if already included (e.g. 'throw' and 'try' both point to try.js)
+    if (includedPaths.has(path)) continue
+    includedPaths.add(path)
+
+    // Get source code
+    const code = featureSources[path]
+    if (!code) {
+      console.warn('Missing source for feature:', featureId, path)
+      continue
+    }
+
+    // Process the code
+    let processed = stripImports(code)
+    processed = stripExports(processed)
+
+    // Check if this feature has exports that other features need
+    const featureExports = exports[featureId]
+
+    // Build export assignments (assign exported vars to shared object)
+    let exportAssigns = ''
+    if (featureExports) {
+      exportAssigns = featureExports.map(name => `_.${name} = ${name};`).join('\n')
+    }
+
+    // Always wrap in IIFE to avoid naming conflicts
+    src += `\n// === ${path} ===\n;(function(){\n${processed}\n${exportAssigns}\n})();\n`
+  }
+
+  // Enable single quotes for string parsing (justin/jessie compatibility)
+  if (selected.has('string')) {
+    src += `parse.string["'"] = true;\n`
+  }
+
+  // After unit feature, register default units
+  if (selected.has('unit')) {
+    src += `_.unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n`
   }
 
   src += `
@@ -739,6 +866,7 @@ self.postMessage({ type: 'ready' })
 `
   return src
 }
+
 
 function rebuildWorker() {
   return new Promise((resolve, reject) => {
@@ -1086,13 +1214,47 @@ toggleBtn.addEventListener('click', () => {
   chevron.style.transform = sidebar.classList.contains('collapsed') ? 'rotate(180deg)' : ''
 })
 
+// Feature dependencies - these features import from other features
+// Includes transitive dependencies (e.g., group→loop→block means group needs block)
+const DEPENDENCIES = {
+  // block exports keyword, infix, block, body - used by control flow features
+  // Also needed transitively by: group (via loop)
+  block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
+  // loop exports BREAK, CONTINUE, RETURN, loop - used by features that handle control flow
+  loop: ['group', 'function', 'try', 'switch'],
+  // destruct exports destructure - used by var and loop
+  destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
+  // access exports prop, unsafe, isLval - used by group
+  access: ['group'],
+  // accessor exports ACC - used by collection
+  accessor: ['collection']
+}
+
 // Bundle generation - import version (requires subscript package)
 function generateImportBundle() {
-  const imports = featureOrder.filter(f => selected.has(f)).map(f => `import 'subscript/feature/${f}.js'`).join('\n')
+  // Build import list with proper paths
+  const imports = []
+  const includedPaths = new Set()
+
+  for (const featureId of featureOrder) {
+    // Check if feature should be included (either selected, or needed by a selected feature)
+    let shouldInclude = selected.has(featureId)
+    if (!shouldInclude && DEPENDENCIES[featureId]) {
+      shouldInclude = DEPENDENCIES[featureId].some(x => selected.has(x))
+    }
+    if (!shouldInclude) continue
+
+    const path = FEATURE_PATHS[featureId]
+    if (!path || includedPaths.has(path)) continue
+    includedPaths.add(path)
+
+    // Convert feature/X.js to subscript/feature/X.js
+    imports.push(`import 'subscript/${path}'`)
+  }
+
   return `// subscript dialect (${selected.size} features)
-import { parse } from 'subscript/parse'
-import compile from 'subscript/compile'
-${imports}
+import { parse, compile } from 'subscript/parse'
+${imports.join('\n')}
 
 export { parse, compile }
 export default s => compile(parse(s))
@@ -1105,52 +1267,51 @@ export default s => compile(parse(s))
 
 // Self-contained ES module bundle - proper bundling that preserves exports
 function generateSelfContainedBundle() {
-  const stripImports = code => code.replace(/^import\s+.*$/gm, '')
-  const stripExports = code => code
-    .replace(/^export\s+default\s+/gm, '')
-    .replace(/^export\s+(const|let|function)\s+/gm, '$1 ')
-    .replace(/^export\s+\{[^}]+\}.*$/gm, '')
-
   let bundle = `// Bundled subscript (${selected.size} features)
-// https://github.com/phtml/subscript
+// https://github.com/dy/subscript
 
 `
 
-  // 1. Constants
-  bundle += `// === src/const.js ===\n`
-  bundle += stripExports(constSrc) + '\n\n'
-
-  // 2. Parse - FIRST module to define shared vars like 'id'
-  bundle += `// === src/parse.js ===\n`
+  // 1. Parse.js (contains parse, compile, operators all in one)
+  bundle += `// === parse.js ===\n`
   let parseModule = stripImports(parseSrc)
     .replace(/^export\s+let\s+/gm, 'let ')
+    .replace(/^export\s+const\s+/gm, 'const ')
     .replace(/^export\s+default\s+parse\s*;?\s*$/gm, '')
   bundle += parseModule + '\n\n'
 
-  // 3. Compile
-  bundle += `// === src/compile.js ===\n`
-  let compileModule = stripImports(compileSrc)
-    .replace(/^export\s+const\s+/gm, 'const ')
-    .replace(/^export\s+default\s+compile\s*;?\s*$/gm, '')
-  bundle += compileModule + '\n\n'
+  // 2. Features (in order, avoiding duplicates)
+  const includedPaths = new Set()
 
-  // 4. Features
-  for (const f of featureOrder) {
-    const needsBlock = ['if', 'loop', 'switch', 'function', 'try'].some(x => selected.has(x))
-    const shouldInclude = f === 'block' ? needsBlock : selected.has(f)
-
-    if (shouldInclude) {
-      bundle += `// === feature/${f}.js ===\n`
-      let featureCode = featureSources[f]
-      featureCode = stripImports(featureCode)
-      featureCode = featureCode.replace(/^export\s+\{[^}]+\}\s+from\s+['"].*['"];?\s*$/gm, '')
-      featureCode = stripExports(featureCode)
-      bundle += featureCode + '\n\n'
-
-      if (f === 'unit') {
-        bundle += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n\n`
-      }
+  for (const featureId of featureOrder) {
+    // Check if feature should be included (either selected, or needed by a selected feature)
+    let shouldInclude = selected.has(featureId)
+    if (!shouldInclude && DEPENDENCIES[featureId]) {
+      shouldInclude = DEPENDENCIES[featureId].some(x => selected.has(x))
     }
+    if (!shouldInclude) continue
+
+    const path = FEATURE_PATHS[featureId]
+    if (!path || includedPaths.has(path)) continue
+    includedPaths.add(path)
+
+    const featureCode = featureSources[path]
+    if (!featureCode) continue
+
+    bundle += `// === ${path} ===\n`
+    let code = stripImports(featureCode)
+    code = stripExports(code)
+    // Wrap in IIFE to avoid const redeclaration (PREFIX, STATEMENT, etc.)
+    bundle += `;(function(){\n${code}\n})();\n\n`
+
+    if (featureId === 'unit') {
+      bundle += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n\n`
+    }
+  }
+
+  // Enable single quotes (justin/jessie compatibility)
+  if (selected.has('string')) {
+    bundle += `parse.string["'"] = true;\n\n`
   }
 
   // ESM exports

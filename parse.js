@@ -17,7 +17,7 @@ export let idx, cur,
     chr = (cur[at] || '∅') + ptr,
     after = cur.slice(at + 1, at + 20)
   ) => {
-    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1} — ${before}${chr}${after}`)
+    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1}\n${(cur[at-41]!=='\n' ? '...' : '') +before}${chr}${after}`)
   },
 
   // attach location to node (returns node for chaining)

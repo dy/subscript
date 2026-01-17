@@ -1,5 +1,5 @@
 /**
- * Property access and function calls: a.b, a[b], a(b)
+ * Property access: a.b, a[b], a(b), [1,2,3]
  * For private fields (#x), see class.js
  */
 import { access, binary, operator, compile } from '../parse.js';
@@ -24,7 +24,7 @@ operator('[]', (a, b) => {
   // Array literal: [1,2,3] - b is strictly undefined (AST length 2)
   if (b === undefined) {
     a = !a ? [] : a[0] === ',' ? a.slice(1) : [a];
-    a = a.map(a => a[0] === '...' ? (a = compile(a[1]), ctx => a(ctx)) : (a = compile(a), ctx => [a(ctx)]));
+    a = a.map(a => a == null ? (() => undefined) : a[0] === '...' ? (a = compile(a[1]), ctx => a(ctx)) : (a = compile(a), ctx => [a(ctx)]));
     return ctx => a.flatMap(a => a(ctx));
   }
   // Member access: a[b]

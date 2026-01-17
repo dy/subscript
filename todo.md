@@ -70,23 +70,21 @@
 - [x] A note to ast.md about .loc
   - [x] A note to ast about statement convention
 
-- [ ] Readme & values
-  - [ ] (Readme slogan: bad phrasing. Distill core value and use-cases)
-  - [ ] Add link to repl
-  - [ ] CHANGELOG.md — 9 major versions, no migration history
-  - [ ] Installation section before usage in README
-  - [ ] "Add Your Own Operator" guide — current extension examples are cryptic
-  - [ ] Real "Used by" with actual links if projects exist
-  - [ ] Remove implementation details from extension examples
-  - [ ] Highlight security model (blocked constructor/__proto__)
-  - [ ] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
-  - [ ] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
-  - [ ] No installation instructions before usage code
+- [x] Readme & values
+  - [x] (Readme slogan: bad phrasing. Distill core value and use-cases)
+  - [x] Add link to repl
+  - [x] ~~Installation section before usage in README~~
+  - [x] "Add Your Own Operator" guide — current extension examples are cryptic
+  - [x] Real "Used by" with actual links if projects exist
+  - [x] Remove implementation details from extension examples
+  - [x] Highlight security model (blocked constructor/__proto__)
+  - [x] Clarify positioning: one noun, not "parser/evaluator/microlanguage"
+  - [x] Extension API is cryptic: Implementation details leak into API (prec, rassoc, cryptic signatures)
 
-- [ ] Fix repl
-  - [ ] Improve design
-  - [ ] Update docs
-  - [ ] Bundle itself
+- [x] Fix repl
+  - [x] Improve design
+  - [x] Update docs
+  - [x] Bundle itself
 
 - [x] ~~C-like compiler targets: GLSL, C, Wasm~~ -> dedicated projects
 

@@ -3,7 +3,7 @@
 import test, { is, throws } from 'tst'
 import '../jessie.js'
 import { parse, compile } from '../parse.js'
-import { unsafe } from '../feature/member.js'
+import { unsafe } from '../feature/access.js'
 
 const c = (s, ctx = {}) => compile(parse(s))(ctx)
 

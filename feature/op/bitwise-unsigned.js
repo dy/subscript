@@ -4,7 +4,7 @@
  * >>> >>>=
  */
 import { binary, operator, compile } from '../../parse.js';
-import { isLval, prop } from '../member.js';
+import { isLval, prop } from '../access.js';
 
 const ASSIGN = 20, SHIFT = 100;
 const err = msg => { throw Error(msg) };

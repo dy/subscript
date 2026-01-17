@@ -8,7 +8,7 @@
  * Common in: JS, TS, Swift, Kotlin, C#
  */
 import { token, expr, skip, space, operator, compile } from '../../parse.js';
-import { unsafe } from '../member.js';
+import { unsafe } from '../access.js';
 
 const ACCESS = 170;
 

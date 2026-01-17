@@ -11,6 +11,18 @@ test.describe('Subscript REPL', () => {
     await expect(page.locator('#ast')).not.toBeEmpty({ timeout: 5000 })
   })
 
+  test('no console errors on load', async ({ page }) => {
+    const errors = []
+    page.on('console', msg => {
+      if (msg.type() === 'error') errors.push(msg.text())
+    })
+    await page.goto(URL)
+    await expect(page.locator('#ast')).not.toBeEmpty({ timeout: 5000 })
+    // Filter out expected startup logs, only check for real errors
+    const realErrors = errors.filter(e => !e.includes('=== PAGE STARTUP ==='))
+    expect(realErrors, `Console errors found: ${realErrors.join(', ')}`).toEqual([])
+  })
+
   test('compiles expression on load', async ({ page }) => {
     const ast = page.locator('#ast')
     await expect(ast).not.toBeEmpty()
@@ -239,12 +251,78 @@ test.describe('Subscript REPL', () => {
     expect(text).toMatch(/\d+(\.\d+)?\s*(B|KB)\s*\/\s*\d+(\.\d+)?\s*(B|KB)\s*gzip/)
   })
 
+  test('shows clear error for unsupported syntax', async ({ page }) => {
+    const input = page.locator('#input')
+    const error = page.locator('#error')
+
+    // 'const' requires var feature (jessie preset)
+    await input.fill('const x = 1')
+    await expect(error).toContainText('Unexpected', { timeout: 2000 })
+
+    // Error should show position indicator
+    const errorText = await error.textContent()
+    expect(errorText).toMatch(/at \d+:\d+/)
+  })
+
+  test('parses complex JS code with full preset', async ({ page }) => {
+    const preset = page.locator('[data-testid="preset"]')
+    const input = page.locator('#input')
+    const error = page.locator('#error')
+    const ast = page.locator('#ast')
+
+    // Select full preset
+    await preset.selectOption('full')
+    await expect(ast).not.toBeEmpty({ timeout: 5000 })
+
+    // Test parsing subscript.js-like code (imports, const, functions, template literals, sparse arrays)
+    const testCode = `
+import './feature/number.js';
+import { parse, compile } from './parse.js';
+export * from './parse.js';
+
+const cache = new WeakMap();
+
+const subscript = (strings, ...values) =>
+  typeof strings === 'string' ? compile(parse(strings)) :
+  cache.get(strings) || cache.set(strings, compileTemplate(strings, values)).get(strings);
+
+// Sparse array literal [, v] - tests elision handling
+const wrap = v => [, v];
+
+const isAST = v =>
+  typeof v === 'string' ||
+  (Array.isArray(v) && (typeof v[0] === 'string' || v[0] === undefined));
+
+export default subscript;
+`.trim()
+
+    await input.fill(testCode)
+    await page.waitForTimeout(500)
+
+    // Should parse without errors
+    const errorText = await error.textContent()
+    expect(errorText, `Full preset failed to parse: ${errorText}`).toBe('')
+
+    // AST should be populated
+    await expect(ast).not.toBeEmpty({ timeout: 3000 })
+  })
+
   // Comprehensive feature toggle test - ensures each feature can be enabled without errors
   test.describe('Feature toggles', () => {
+    // Features that appear in the REPL sidebar (matching the FEATURES groups)
     const features = [
-      'literal', 'member', 'group', 'assign', 'arithmetic', 'bit', 'cmp', 'shift', 'pow', 'bool',
-      'collection', 'ternary', 'arrow', 'optional', 'spread', 'comment', 'template', 'regex', 'unit',
-      'if', 'loop', 'var', 'switch', 'destruct', 'function', 'throw', 'try', 'accessor'
+      // Core
+      'number', 'string', 'group', 'access',
+      // Operators
+      'assign', 'arithmetic', 'logical', 'bit', 'cmp', 'equality', 'increment', 'pow',
+      // Advanced Ops
+      'ternary', 'arrow', 'optional', 'spread', 'unary', 'identity', 'nullish',
+      // Literals
+      'literal', 'collection', 'template', 'regex', 'unit', 'comment',
+      // Control
+      'block', 'if', 'loop', 'switch', 'var', 'destruct', 'try',
+      // Functions
+      'function', 'async', 'class', 'accessor', 'module', 'asi'
     ]
 
     for (const feature of features) {
