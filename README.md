@@ -8,7 +8,7 @@ import subscript from 'subscript'
 subscript`a + b * 2`({ a: 1, b: 3 })  // 7
 ```
 
-* **~5kb** minimal, **~15kb** js in js runtime
+* **Minimal** – common expressions < JSON + expressions < JS subset
 * **Safe** — sandboxed, no global access
 * **Fast** — Pratt parser engine, strong in class
 * **Portable** — universal expression format, any compile target
@@ -54,9 +54,9 @@ jessie`
 ## Extension
 
 ```js
-import subscript, { binary, operator, compile } from 'subscript/justin.js'
+import subscript, { binary, operator, compile, token } from 'subscript/justin.js'
 
-// add instersection operator
+// add intersection operator
 binary('∩', 80)
 operator('∩', (a, b) => (
   a = compile(a), b = compile(b),
@@ -69,7 +69,7 @@ subscript`[1,2,3] ∩ [2,3,4]`({})  // [2, 3]
 token('px', 200, n => n && [, n[1] + 'px'])  // 5px → "5px"
 ```
 
-See [feature/](./feature) for 30+ pluggable language features.
+See [docs.md](./docs.md) for full API.
 
 
 ## Expressions

@@ -72,7 +72,7 @@ No caching. Use for dynamic code.
 Default: expr (minimal). Upgrade for more features:
 
 ```js
-import { parse } from 'subscript/parse/justin.js'
+import { parse } from 'subscript/justin.js'
 subscript.parse = parse  // + arrows, templates, JSON
 ```
 
@@ -88,71 +88,58 @@ subscript.compile = ast => codegen(ast)  // emit source instead
 
 ---
 
+
+
 ## Presets
 
-### Default
+### Subscript
 
-Minimal ([common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) for _JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
+Minimal [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) for _JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.:
 
-* - assignment: = += etc (base ops registered first)
-* - logical: ! && || ??
-* - bitwise: | & ^ ~ >> << >>>
-* - comparison: < > <= >=
-* - equality: == != === !==
-* - membership: in of instanceof
-* - arithmetic: + - * / %
-* - pow: ** **=
-* - increment: ++ --
-* - literal: true, false, null, undefined, NaN, Infinity
-
-* `a.b`, `a[b]`, `a(b)` — member access, calls
-* `+a`, `-a`, `!a` — unary
-* `a + b`, `a - b`, `a * b`, `a / b`, `a % b` — arithmetic
-* `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b` — comparison
-* `"abc"`, `0.1`, `1.2e+3` — literals
-
-* `a.b`, `a[b]`, `a(b)`
-* `a++`, `a--`, `++a`, `--a`
-* `a * b`, `a / b`, `a % b`
-* `+a`, `-a`, `a + b`, `a - b`
-* `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b`
-* `~a`, `a & b`, `a ^ b`, `a | b`, `a << b`, `a >> b`
-* `!a`, `a && b`, `a || b`
-* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`, `a <<= b`, `a >>= b`
-* `(a, (b))`, `a; b;`
-* `"abc"`, `'abc'`
-* `0.1`, `1.2e+3`
+* `a.b`, `a[b]`, `a(b)` — property access
+* `a * b`, `a / b`, `a % b` — multiplicative
+* `+a`, `-a`, `a + b`, `a - b` — additive
+* `a < b`, `a <= b`, `a > b`, `a >= b` — comparison
+* `a == b`, `a != b` — equality
+* `!a`, `a && b`, `a || b` — logical
+* `~a`, `a | b`, `a & b`, `a ^ b`, `a << b`, `a >> b` — bitwise
+* `a++`, `a--`, `++a`, `--a` — increment/decrement
+* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b` — assignment
+* `a |= b`, `a &= b`, `a ^= b`, `a >>= b`, `a <<= b` — bitwise assignment
+* `a, b`, `a; b` — sequences
+* `"abc"` — double-quoted strings
+* `0.1`, `1.2e3` — decimal numbers
 
 
 ### Justin
 
-_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ ([Jessie thread](https://github.com/endojs/Jessie/issues/66)).<br/>
-It extends _expr_ with:
+_Just-in_ is no-keywords JS subset, _JSON_ + _expressions ([thread](https://github.com/endojs/Jessie/issues/66)) — extends subscript with:
 
-+ `a === b`, `a !== b`
-+ `a ** b`, `a **= b`
-+ `a ?? b`, `a ??= b`
-+ `a ||= b`, `a &&= b`
-+ `a >>> b`, `a >>>= b`
-+ `a ? b : c`, `a?.b`, `a?.[b]`, `a?.(b)`
-+ `...a`
-+ `[a, b]`, `{a: b}`, `{a}`
-+ `(a, b) => c`
-+ `// foo`, `/* bar */`
-+ `true`, `false`, `null`, `undefined`, `NaN`, `Infinity`
-+ `a in b`, `a instanceof b`
-+ `` `a ${x} b` ``, `` tag`...` ``
++ `'abc'` — single-quoted strings
++ `0x1f`, `0b11`, `0o17` — hex, binary, octal
++ `a === b`, `a !== b` — strict equality
++ `a ** b`, `a **= b` — exponentiation
++ `a ?? b`, `a ??= b` — nullish coalescing
++ `a >>> b`, `a >>>= b`, `a ||= b`, `a &&= b` — JS-specific operators
++ `a?.b`, `a?.[b]`, `a?.(b)` — optional chaining
++ `a ? b : c` — ternary
++ `a in b` — membership
++ `...a` — spread
++ `[a, b]`, `{a: b}`, `{a}` — collections
++ `(a, b) => c` — arrow functions
++ `` `a ${x} b` ``, `` tag`...` `` — templates
++ `// foo`, `/* bar */` — comments
++ `true`, `false`, `null`, `undefined`, `NaN`, `Infinity` — literals
 
 ```js
-import justin from 'subscript/parse/justin.js'
+import justin from 'subscript/justin.js'
 
-let fn = justin('{ x: 1, "y": 2+2 }["x"]')
-fn()  // 1
+justin`{ x: 1, y: 2+2 }.x`({})  // 1
 ```
 
 ### Jessie
 
-Extends Justin with statements — practical JS subset inspired by [Jessie](https://github.com/endojs/Jessie).
+Extends Justin with statements — practical JS subset (inspired by [Jessie](https://github.com/endojs/Jessie)).
 
 + `if (c) a`, `if (c) a else b`
 + `while (c) body`, `do { body } while (c)`
@@ -161,25 +148,25 @@ Extends Justin with statements — practical JS subset inspired by [Jessie](http
 + `let x`, `const x = 1`, `var x = 1`, `const {a, b} = x`
 + `break`, `continue`, `return x`
 + `throw x`, `try { } catch (e) { } finally { }`
-+ `function f(a, b) { }`, `function(x) { }`, `function f(...args) {}`
++ `function f(a, b) { }`, `async function`, `function*`
++ `class X { }`, `class X extends Y { }`
 + `typeof x`, `void x`, `delete x`, `x instanceof Y`
 + `new X()`, `new X(a, b)`
 + `import`, `export`
 + `switch (x) { case a: ...; default: ... }`
 + `{ get x() {}, set y(v) {} }`
-+ `/pattern/flags`
++ `/pattern/flags` — regex
 
 ```js
-import jessie from 'subscript/parse/jessie.js'
+import jessie from 'subscript/jessie.js'
 
-let fac = jessie(`
+jessie`
   function fac(n) {
     if (n <= 1) return 1;
     return n * fac(n - 1)
   };
   fac(5)
-`)
-fac({}) // 120
+`({})  // 120
 ```
 
 
@@ -343,9 +330,15 @@ import {
 
 ---
 
-## AST Format
+## Syntax Tree
 
-See [ast.md](./ast.md) for full specification.
+AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
+
+* portable to any language, not limited to JS;
+* reflects execution sequence, rather than code layout;
+* has minimal overhead, directly maps to operators;
+* simplifies manual evaluation and debugging;
+* has conventional form and one-liner docs:
 
 ```js
 'x'              // identifier
@@ -354,8 +347,9 @@ See [ast.md](./ast.md) for full specification.
 ['-', 'a']       // unary prefix
 ['++', 'a', null]  // unary postfix
 ['?', a, b, c]   // ternary
+['if', cond, then, else] // control flow
 ```
 
----
+See full [spec](./spec.md)
 
 <p align="center">🕉</p>
