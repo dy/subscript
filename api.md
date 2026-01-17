@@ -208,6 +208,20 @@ token('?', 25, left => {
 })
 ```
 
+### Import Order
+
+When extending operators that share a prefix (like `=`, `==`, `===`), **import shorter operators first** so longer ones are checked first in the token chain:
+
+```js
+// Correct order - = before ===
+import './feature/op/assignment.js'      // =
+import './feature/op/equality-strict.js' // ===
+
+// Wrong order would make === parse as = followed by ==
+```
+
+This applies to: `=`/`==`/`===`, `!`/`!=`/`!==`, `|`/`||`, `&`/`&&`, etc.
+
 ---
 
 ## Extend Compiler

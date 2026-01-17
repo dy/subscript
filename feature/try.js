@@ -1,7 +1,8 @@
 // try/catch/finally/throw statements
 // AST: ['catch', ['try', body], param, catchBody] or ['finally', inner, body]
-import { space, parse, parens, expr, operator, compile, BREAK, CONTINUE, RETURN } from '../parse.js';
+import { space, parse, parens, expr, operator, compile } from '../parse.js';
 import { keyword, infix, block } from './block.js';
+import { BREAK, CONTINUE, RETURN } from './loop.js';
 
 const STATEMENT = 5;
 

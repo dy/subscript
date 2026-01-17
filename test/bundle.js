@@ -1,11 +1,11 @@
 /**
  * Test bundler by bundling feature files and verifying runtime works
  */
-import test, { is } from 'tst'
+import test, { is, ok } from 'tst'
 import { bundleFile } from '../util/bundle.js'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
-import { writeFile, unlink } from 'fs/promises'
+import { writeFile, unlink, stat } from 'fs/promises'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const root = join(__dirname, '..')
@@ -36,6 +36,11 @@ async function bundleAndVerifySyntax(entry) {
 }
 
 // === Tests ===
+
+test('bundle: subscript.min.js < 5kb', async () => {
+  const { size } = await stat(join(root, 'subscript.min.js'))
+  ok(size < 5000, `subscript.min.js (${size} bytes) should be < 5000 bytes`)
+})
 
 test('bundle: parse.js exports', async () => {
   await bundleAndRun('parse.js', async (mod) => {

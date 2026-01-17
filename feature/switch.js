@@ -1,7 +1,8 @@
 // Switch/case/default
 // AST: ['switch', val, [';', ['case', test], stmts..., ['default'], stmts...]]
-import { expr, skip, space, parens, operator, compile, BREAK } from '../parse.js';
+import { expr, skip, space, parens, operator, compile } from '../parse.js';
 import { keyword, block } from './block.js';
+import { BREAK } from './loop.js';
 
 const STATEMENT = 5, ASSIGN = 20, COLON = 58;
 

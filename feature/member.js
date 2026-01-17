@@ -1,9 +1,13 @@
 /**
- * Property access and function calls: a.b, a[b], a(b), #private
+ * Property access and function calls: a.b, a[b], a(b)
+ * For private fields (#x), see class.js
  */
-import { access, binary, token, next, parse, operator, compile, prop, unsafe } from '../parse.js';
+import { access, binary, operator, compile } from '../parse.js';
 
-const ACCESS = 170, TOKEN = 200;
+// Block prototype chain attacks
+export const unsafe = k => k?.[0] === '_' && k[1] === '_' || k === 'constructor' || k === 'prototype';
+
+const ACCESS = 170;
 
 // a[b]
 access('[]', ACCESS);
@@ -13,13 +17,6 @@ binary('.', ACCESS);
 
 // a(b,c,d), a()
 access('()', ACCESS);
-
-// #private fields: #x → '#x' (identifier starting with #)
-token('#', TOKEN, a => {
-  if (a) return;
-  const id = next(parse.id);
-  return id ? '#' + id : void 0;
-});
 
 // Compile
 const err = msg => { throw Error(msg) };
@@ -47,3 +44,28 @@ operator('()', (a, b) => {
     (b = compile(b), ctx => [b(ctx)]);
   return prop(a, (obj, path, ctx) => obj[path](...args(ctx)), true);
 });
+
+// Left-value check (valid assignment target)
+export const isLval = n =>
+  typeof n === 'string' ||
+  (Array.isArray(n) && (
+    n[0] === '.' || n[0] === '?.' ||
+    (n[0] === '[]' && n.length === 3) || n[0] === '?.[]' ||
+    (n[0] === '()' && n.length === 2 && isLval(n[1])) ||
+    n[0] === '{}'
+  ));
+
+// Compile error helper
+const compileErr = msg => { throw Error(msg) };
+
+// Property accessor helper - compiles property access pattern to evaluator
+export const prop = (a, fn, generic, obj, path) => (
+  a == null ? compileErr('Empty ()') :
+  a[0] === '()' && a.length == 2 ? prop(a[1], fn, generic) :
+  typeof a === 'string' ? ctx => fn(ctx, a, ctx) :
+  a[0] === '.' ? (obj = compile(a[1]), path = a[2], ctx => fn(obj(ctx), path, ctx)) :
+  a[0] === '?.' ? (obj = compile(a[1]), path = a[2], ctx => { const o = obj(ctx); return o == null ? undefined : fn(o, path, ctx); }) :
+  a[0] === '[]' && a.length === 3 ? (obj = compile(a[1]), path = compile(a[2]), ctx => fn(obj(ctx), path(ctx), ctx)) :
+  a[0] === '?.[]' ? (obj = compile(a[1]), path = compile(a[2]), ctx => { const o = obj(ctx); return o == null ? undefined : fn(o, path(ctx), ctx); }) :
+  (a = compile(a), ctx => fn([a(ctx)], 0, ctx))
+);

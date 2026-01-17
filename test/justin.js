@@ -2,8 +2,8 @@
 // Covers jsep-compatible cases + extensions
 
 import test, { is, throws } from 'tst'
-import { parse, nary, binary, unary } from '../../justin.js'
-import { compile, operator } from '../../parse.js'
+import { parse, nary, binary, unary } from '../justin.js'
+import { compile, operator } from '../parse.js'
 
 const justin = s => compile(parse(s))
 
@@ -26,7 +26,7 @@ export const set = (op, prec, fn) => (
 )
 
 test('justin: exports', async () => {
-  const mod = await import('../../justin.js')
+  const mod = await import('../justin.js')
   is(typeof mod.parse, 'function')
   is(typeof mod.token, 'function')
   is(typeof mod.binary, 'function')

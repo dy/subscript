@@ -1,9 +1,9 @@
 // Class declarations and expressions
 // class A extends B { ... }
-import { unary, expr, space, next, parse, literal, word, operator, compile } from '../parse.js';
+import { binary, unary, token, expr, space, next, parse, literal, word, operator, compile } from '../parse.js';
 import { keyword, block } from './block.js';
 
-const TOKEN = 200, PREFIX = 140;
+const TOKEN = 200, PREFIX = 140, COMP = 90;
 const STATIC = Symbol('static');
 
 // super → literal
@@ -11,6 +11,16 @@ literal('super', Symbol.for('super'));
 
 // static member → ['static', member]
 unary('static', PREFIX);
+
+// instanceof: object instanceof Constructor
+binary('instanceof', COMP);
+
+// #private fields: #x → '#x' (identifier starting with #)
+token('#', TOKEN, a => {
+  if (a) return;
+  const id = next(parse.id);
+  return id ? '#' + id : void 0;
+});
 
 // class [Name] [extends Base] { body }
 keyword('class', TOKEN, () => {
@@ -28,6 +38,7 @@ keyword('class', TOKEN, () => {
 
 // Compile
 const err = msg => { throw Error(msg) };
+operator('instanceof', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) instanceof b(ctx)));
 operator('class', (name, base, body) => {
   base = base ? compile(base) : null;
   body = body ? compile(body) : null;

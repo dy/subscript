@@ -2,40 +2,58 @@
  * Variable declarations: let, const, var
  *
  * AST:
- *   let x       → ['let', 'x']
- *   let x = 1   → ['let', 'x', val]
- *   const x = 1 → ['const', 'x', val]
- *   var x = 1   → ['var', 'x', val]
+ *   let x = 1         → ['let', ['=', 'x', 1]]
+ *   let x = 1, y = 2  → ['let', ['=', 'x', 1], ['=', 'y', 2]]
+ *   const {a} = x     → ['const', ['=', ['{}', 'a'], 'x']]
+ *   for (let x in o)  → ['for', ['in', ['let', 'x'], 'o'], body]
+ *   var x             → ['var', 'x']   (acts as assignment target)
  */
-import { expr, space, operator, compile, destructure } from '../parse.js';
+import { token, expr, space, operator, compile } from '../parse.js';
 import { keyword } from './block.js';
+import { destructure } from './destruct.js';
 
-const STATEMENT = 5, ASSIGN = 20;
+const STATEMENT = 5, SEQ = 10, ASSIGN = 20;
 
-// Parse: name or name = value (no validation - defer to compile)
-const decl = op => {
-  space();
-  const e = expr(ASSIGN);
-  return e?.[0] === '=' && typeof e[1] === 'string' ? [op, e[1], e[2]] :
-         typeof e === 'string' ? [op, e] :
-         Array.isArray(e) ? [op, e] : [op];
+// let/const: expr(SEQ-1) consumes assignment, stops before comma
+// For for-in/of, return ['in/of', ['let', x], iterable] not ['let', ['in', x, it]]
+// For comma, return ['let', decl1, decl2, ...] not ['let', [',', ...]]
+const decl = keyword => {
+  let node = expr(SEQ - 1);
+  // for (let x in obj) - restructure so for-loop sees in/of at top
+  if (node?.[0] === 'in' || node?.[0] === 'of')
+    return [node[0], [keyword, node[1]], node[2]];
+  // let x = 1, y = 2 - flatten comma into nary let
+  if (node?.[0] === ',')
+    return [keyword, ...node.slice(1)];
+  return [keyword, node];
 };
 
-keyword('let', STATEMENT, () => decl('let'));
-keyword('const', STATEMENT, () => decl('const'));
-keyword('var', STATEMENT, () => decl('var'));
+token('let', STATEMENT + 1, a => !a && decl('let'));
+token('const', STATEMENT + 1, a => !a && decl('const'));
+
+// var: just declares identifier, assignment happens separately
+// var x = 5 → ['=', ['var', 'x'], 5]
+keyword('var', STATEMENT, () => (space(), ['var', expr(ASSIGN)]));
 
 // Compile
-const varOp = body => {
-  if (typeof body === 'string') return ctx => { ctx[body] = undefined; };
-  if (body[0] === '=') {
-    const [, pattern, val] = body;
-    const v = compile(val);
-    if (typeof pattern === 'string') return ctx => { ctx[pattern] = v(ctx); };
-    return ctx => destructure(pattern, v(ctx), ctx);
-  }
-  return compile(body);
+const varOp = (...decls) => {
+  decls = decls.map(d => {
+    // Just identifier: let x
+    if (typeof d === 'string') return ctx => { ctx[d] = undefined; };
+    // Assignment: let x = 1
+    if (d[0] === '=') {
+      const [, pattern, val] = d;
+      const v = compile(val);
+      if (typeof pattern === 'string') return ctx => { ctx[pattern] = v(ctx); };
+      return ctx => destructure(pattern, v(ctx), ctx);
+    }
+    return compile(d);
+  });
+  return ctx => { for (const d of decls) d(ctx); };
 };
 operator('let', varOp);
 operator('const', varOp);
-operator('var', varOp);
+// var just declares the variable (assignment handled by = operator)
+operator('var', name => (typeof name === 'string'
+  ? ctx => { ctx[name] = undefined; }
+  : () => {}));

@@ -5,7 +5,10 @@
  *   { get x() { body } }         → ['{}', ['get', 'x', body]]
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
  */
-import { token, expr, skip, space, err, next, parse, cur, idx, operator, compile, ACC } from '../parse.js';
+import { token, expr, skip, space, err, next, parse, cur, idx, operator, compile } from '../parse.js';
+
+// Accessor marker for object property definitions
+export const ACC = Symbol('accessor');
 
 const ASSIGN = 20;
 const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;

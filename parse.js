@@ -136,12 +136,8 @@ export let idx, cur,
 // Current node being compiled (for error location)
 let curNode;
 
-// Compile error with optional source location
-const compileErr = (msg = 'Compile error', node = curNode) => {
-  const e = Error(msg);
-  if (node?.loc != null) e.loc = node.loc;
-  throw e;
-};
+// Compile error with source location
+const compileErr = (msg = 'Compile error', node = curNode) => err(msg, node?.loc);
 
 // Operator registry
 export const operators = {};
@@ -157,74 +153,5 @@ export const compile = node => (
   node[0] === undefined ? (v => () => v)(node[1]) :
   operators[node[0]]?.(...node.slice(1)) ?? compileErr(`Unknown operator: ${node[0]}`)
 );
-
-// Left-value check
-export const isLval = n =>
-  typeof n === 'string' ||
-  (Array.isArray(n) && (
-    n[0] === '.' || n[0] === '?.' ||
-    (n[0] === '[]' && n.length === 3) || n[0] === '?.[]' ||
-    (n[0] === '()' && n.length === 2 && isLval(n[1])) ||
-    n[0] === '{}'
-  ));
-
-// Property accessor helper
-export const prop = (a, fn, generic, obj, path) => (
-  a == null ? compileErr('Empty ()') :
-  a[0] === '()' && a.length == 2 ? prop(a[1], fn, generic) :
-  typeof a === 'string' ? ctx => fn(ctx, a, ctx) :
-  a[0] === '.' ? (obj = compile(a[1]), path = a[2], ctx => fn(obj(ctx), path, ctx)) :
-  a[0] === '?.' ? (obj = compile(a[1]), path = a[2], ctx => { const o = obj(ctx); return o == null ? undefined : fn(o, path, ctx); }) :
-  a[0] === '[]' && a.length === 3 ? (obj = compile(a[1]), path = compile(a[2]), ctx => fn(obj(ctx), path(ctx), ctx)) :
-  a[0] === '?.[]' ? (obj = compile(a[1]), path = compile(a[2]), ctx => { const o = obj(ctx); return o == null ? undefined : fn(o, path(ctx), ctx); }) :
-  (a = compile(a), ctx => fn([a(ctx)], 0, ctx))
-);
-
-// Block prototype chain attacks
-export const unsafe = k => k?.[0] === '_' && k[1] === '_' || k === 'constructor' || k === 'prototype';
-
-// Control flow symbols
-export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
-
-// Loop body executor
-export const loop = (body, ctx) => {
-  try { return { v: body(ctx) }; }
-  catch (e) {
-    if (e?.type === BREAK) return { b: 1 };
-    if (e?.type === CONTINUE) return { c: 1 };
-    if (e?.type === RETURN) return { r: 1, v: e.value };
-    throw e;
-  }
-};
-
-// Destructure value into context
-export const destructure = (pattern, value, ctx) => {
-  if (typeof pattern === 'string') { ctx[pattern] = value; return; }
-  const [op, ...items] = pattern;
-  if (op === '{}') {
-    for (const item of items) {
-      let key, binding, def;
-      if (item[0] === '=') [, [, key, binding], def] = item;
-      else [, key, binding] = item;
-      let val = value[key];
-      if (val === undefined && def) val = compile(def)(ctx);
-      destructure(binding, val, ctx);
-    }
-  } else if (op === '[]') {
-    let i = 0;
-    for (const item of items) {
-      if (item === null) { i++; continue; }
-      if (Array.isArray(item) && item[0] === '...') { ctx[item[1]] = value.slice(i); break; }
-      let binding = item, def;
-      if (Array.isArray(item) && item[0] === '=') [, binding, def] = item;
-      let val = value[i++];
-      if (val === undefined && def) val = compile(def)(ctx);
-      destructure(binding, val, ctx);
-    }
-  }
-};
-
-// Accessor marker
-export const ACC = Symbol('accessor');
 
 export default parse;

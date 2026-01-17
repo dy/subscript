@@ -4,7 +4,9 @@
  * = += -= *= /= %= |= &= ^= >>= <<= >>>= ||= &&= ??=
  * Note: **= is in pow.js (must be with ** for correct parsing)
  */
-import { binary, operator, compile, isLval, prop, destructure } from '../../parse.js';
+import { binary, operator, compile } from '../../parse.js';
+import { destructure } from '../destruct.js';
+import { isLval, prop } from '../member.js';
 
 const ASSIGN = 20;
 const err = msg => { throw Error(msg) };

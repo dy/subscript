@@ -3,7 +3,8 @@
  *
  * ++ -- (prefix and postfix)
  */
-import { token, expr, operator, prop, isLval } from '../../parse.js';
+import { token, expr, operator } from '../../parse.js';
+import { prop, isLval } from '../member.js';
 
 const POSTFIX = 150;
 

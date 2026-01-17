@@ -1,13 +1,13 @@
 // Parse tests
-import './parse/core.js'
-import './parse/expr.js'
-import './parse/justin.js'
-import './parse/jessie.js'
+import './parse.js'
+import './expr.js'
+import './justin.js'
+import './jessie.js'
 
 // Compile tests
-import './compile/js.js'
-import './compile/js-emit.js'
-import './compile/security.js'
+import './compile.js'
+import './stringify.js'
+import './security.js'
 
 // Feature tests
 import './feature/control.js'

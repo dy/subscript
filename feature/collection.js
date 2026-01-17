@@ -5,7 +5,8 @@
  * {a: 1, b: 2}
  * {a, b} (shorthand)
  */
-import { group, binary, operator, compile, ACC } from '../parse.js';
+import { group, binary, operator, compile } from '../parse.js';
+import { ACC } from './accessor.js';
 
 const ASSIGN = 20, TOKEN = 200;
 

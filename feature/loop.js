@@ -1,6 +1,21 @@
 // Loops: while, do-while, for, for await, break, continue, return
-import { expr, skip, space, parse, word, parens, cur, idx, operator, compile, loop, BREAK, CONTINUE, RETURN, destructure } from '../parse.js';
+import { expr, skip, space, parse, word, parens, cur, idx, operator, compile } from '../parse.js';
 import { body, keyword } from './block.js';
+import { destructure } from './destruct.js';
+
+// Control flow symbols
+export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
+
+// Loop body executor - catches control flow and returns status
+export const loop = (body, ctx) => {
+  try { return { v: body(ctx) }; }
+  catch (e) {
+    if (e?.type === BREAK) return { b: 1 };
+    if (e?.type === CONTINUE) return { c: 1 };
+    if (e?.type === RETURN) return { r: 1, v: e.value };
+    throw e;
+  }
+};
 
 const STATEMENT = 5, CBRACE = 125, SEMI = 59;
 

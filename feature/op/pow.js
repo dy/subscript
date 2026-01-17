@@ -5,7 +5,8 @@
  *
  * ES2016+, not in classic JS/C
  */
-import { binary, operator, compile, isLval, prop } from '../../parse.js';
+import { binary, operator, compile } from '../../parse.js';
+import { isLval, prop } from '../member.js';
 
 const EXP = 130, ASSIGN = 20;
 

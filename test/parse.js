@@ -1,8 +1,7 @@
 // Core Pratt parser tests
 
 import test, { is, any, throws } from 'tst'
-import { binary, nary, unary, token, compile } from '../../subscript.js'
-import parse from '../../parse.js'
+import { binary, nary, unary, token, compile, parse } from '../subscript.js'
 
 const MULT = 120;
 
@@ -259,7 +258,7 @@ test('parse: nary', t => {
 })
 
 test('parse: justin', async t => {
-  const { parse } = await import('../../justin.js')
+  const { parse } = await import('../justin.js')
   is(parse('a;b'), [';', 'a', 'b'])
   is(parse('a;b;'), [';', 'a', 'b', null,])
   is(parse('b;'), [';', 'b', null,])

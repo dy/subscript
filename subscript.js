@@ -1,5 +1,5 @@
 /**
- * subscript: Default expression parser + compiler
+ * subscript: Minimal expression parser + compiler
  *
  * Usage:
  *   subscript`a + b`(ctx)           - template tag, returns compiled evaluator
@@ -12,22 +12,16 @@
  */
 
 // Expression features
-import './feature/number.js';   // Decimal numbers: 123, 1.5, 1e3
-import './feature/string.js';   // Double-quoted strings with escapes
+import './feature/number.js';       // Decimal numbers: 123, 1.5, 1e3
+import './feature/string.js';       // Double-quoted strings with escapes
 
-// Operators
-import './feature/op/assignment.js';
-import './feature/op/logical.js';
-import './feature/op/bitwise.js';
-import './feature/op/comparison.js';
-import './feature/op/equality.js';
-import './feature/op/membership.js';
-import './feature/op/arithmetic.js';
-import './feature/op/pow.js';
-import './feature/op/increment.js';
+// Operators (minimal set)
+import './feature/op/logical.js';     // ! && ||
+import './feature/op/comparison.js';  // < > <= >=
+import './feature/op/equality.js';    // == !=
+import './feature/op/arithmetic.js';  // + - * / %
 
-import './feature/group.js';    // Parentheses and function calls
-import './feature/member.js';   // Property access: a.b, a[b]
+import './feature/prop.js';         // Property access: a.b, a[b], f(), ()
 
 import { parse, compile } from './parse.js';
 export * from './parse.js';
@@ -49,8 +43,8 @@ const compileTemplate = (strings, values) => {
   const ast = parse(code);
   const inject = node => {
     if (typeof node === 'string' && node.length === 1) {
-      const i = node.charCodeAt(0) - PUA;
-      if (i >= 0 && i < values.length) return injectValue(values[i]);
+      let i = node.charCodeAt(0) - PUA, v;
+      if (i >= 0 && i < values.length) return v = values[i], isAST(v) ? v : [, v];
     }
     return Array.isArray(node) ? node.map(inject) : node;
   };
@@ -62,8 +56,5 @@ const compileTemplate = (strings, values) => {
 const isAST = v =>
   typeof v === 'string' ||
   (Array.isArray(v) && (typeof v[0] === 'string' || v[0] === undefined));
-
-// Inject value: AST nodes splice directly, others become literals
-const injectValue = v => isAST(v) ? v : [, v];
 
 export default subscript;

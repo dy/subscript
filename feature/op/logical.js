@@ -1,7 +1,8 @@
 /**
- * Logical operators
+ * Logical operators (base)
  *
- * ! && || ??
+ * ! && ||
+ * For ?? see nullish.js
  */
 import { binary, unary, operator, compile } from '../../parse.js';
 
@@ -13,10 +14,8 @@ unary('!', PREFIX);
 
 binary('||', LOR);
 binary('&&', LAND);
-binary('??', LOR);
 
 // Compile
 operator('!', a => (a = compile(a), ctx => !a(ctx)));
 operator('||', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) || b(ctx)));
 operator('&&', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) && b(ctx)));
-operator('??', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) ?? b(ctx)));
