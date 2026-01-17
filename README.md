@@ -17,7 +17,7 @@ const fn = subscript`a + b * 2`
 fn({ a: 1, b: 3 })  // 7
 ```
 
-See [full API](./api.md)
+See [full API](./docs.md)
 
 
 * **Generic** — not JS-specific, supports various language syntaxes
@@ -73,101 +73,8 @@ jessie(`
 `)({})  // 120
 ```
 
-See [docs](./API.md)
+See [docs](./docs.md)
 
-
-
-### Default
-
-Minimal ([common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_languages_(syntax)) for _JavaScript_, _C_, _C++_, _Java_, _C#_, _PHP_, _Swift_, _Objective-C_, _Kotlin_, _Perl_ etc.):
-
-* - assignment: = += etc (base ops registered first)
-* - logical: ! && || ??
-* - bitwise: | & ^ ~ >> << >>>
-* - comparison: < > <= >=
-* - equality: == != === !==
-* - membership: in of instanceof
-* - arithmetic: + - * / %
-* - pow: ** **=
-* - increment: ++ --
-* - literal: true, false, null, undefined, NaN, Infinity
-
-* `a.b`, `a[b]`, `a(b)` — member access, calls
-* `+a`, `-a`, `!a` — unary
-* `a + b`, `a - b`, `a * b`, `a / b`, `a % b` — arithmetic
-* `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b` — comparison
-* `"abc"`, `0.1`, `1.2e+3` — literals
-
-* `a.b`, `a[b]`, `a(b)`
-* `a++`, `a--`, `++a`, `--a`
-* `a * b`, `a / b`, `a % b`
-* `+a`, `-a`, `a + b`, `a - b`
-* `a < b`, `a <= b`, `a > b`, `a >= b`, `a == b`, `a != b`
-* `~a`, `a & b`, `a ^ b`, `a | b`, `a << b`, `a >> b`
-* `!a`, `a && b`, `a || b`
-* `a = b`, `a += b`, `a -= b`, `a *= b`, `a /= b`, `a %= b`, `a <<= b`, `a >>= b`
-* `(a, (b))`, `a; b;`
-* `"abc"`, `'abc'`
-* `0.1`, `1.2e+3`
-
-
-### Justin
-
-_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ ([Jessie thread](https://github.com/endojs/Jessie/issues/66)).<br/>
-It extends _expr_ with:
-
-+ `a === b`, `a !== b`
-+ `a ** b`, `a **= b`
-+ `a ?? b`, `a ??= b`
-+ `a ||= b`, `a &&= b`
-+ `a >>> b`, `a >>>= b`
-+ `a ? b : c`, `a?.b`, `a?.[b]`, `a?.(b)`
-+ `...a`
-+ `[a, b]`, `{a: b}`, `{a}`
-+ `(a, b) => c`
-+ `// foo`, `/* bar */`
-+ `true`, `false`, `null`, `undefined`, `NaN`, `Infinity`
-+ `a in b`, `a instanceof b`
-+ `` `a ${x} b` ``, `` tag`...` ``
-
-```js
-import justin from 'subscript/parse/justin.js'
-
-let fn = justin('{ x: 1, "y": 2+2 }["x"]')
-fn()  // 1
-```
-
-### Jessie
-
-Extends Justin with statements — practical JS subset inspired by [Jessie](https://github.com/endojs/Jessie).
-
-+ `if (c) a`, `if (c) a else b`
-+ `while (c) body`, `do { body } while (c)`
-+ `for (init; cond; step) body`, `for (x of iter) body`, `for (x in obj) body`
-+ `{ a; b }` — block scope
-+ `let x`, `const x = 1`, `var x = 1`, `const {a, b} = x`
-+ `break`, `continue`, `return x`
-+ `throw x`, `try { } catch (e) { } finally { }`
-+ `function f(a, b) { }`, `function(x) { }`, `function f(...args) {}`
-+ `typeof x`, `void x`, `delete x`, `x instanceof Y`
-+ `new X()`, `new X(a, b)`
-+ `import`, `export`
-+ `switch (x) { case a: ...; default: ... }`
-+ `{ get x() {}, set y(v) {} }`
-+ `/pattern/flags`
-
-```js
-import jessie from 'subscript/parse/jessie.js'
-
-let fac = jessie(`
-  function fac(n) {
-    if (n <= 1) return 1;
-    return n * fac(n - 1)
-  };
-  fac(5)
-`)
-fac({}) // 120
-```
 
 
 ### Expression format
@@ -195,7 +102,7 @@ Three forms. That's the entire AST:
 [op, ...args]       // operation — apply operator
 ```
 
-See [full spec](./AST.md).
+See [full spec](./spec.md).
 
 
 ## Extension
