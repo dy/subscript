@@ -332,4 +332,18 @@ AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/fri
 
 See full [spec](./spec.md)
 
+
+## Bundle
+
+Create custom dialect as single file:
+
+```js
+import { bundle } from 'subscript/util/bundle.js'
+
+const code = await bundle('subscript/jessie.js')
+// → self-contained ES module
+```
+
+[**Playground →**](https://dy.github.io/subscript/) — interactive DSL builder
+
 <p align="center">🕉</p>

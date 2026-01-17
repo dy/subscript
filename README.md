@@ -1,4 +1,4 @@
-# sub<sub><sup> ✦ </sup></sub>script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript)
+# sub<sub><sup> ✦ </sup></sub>script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript) [![demo](https://img.shields.io/badge/play-%F0%9F%9A%80-white)](https://dy.github.io/subscript/)
 
 > Tiny expression compiler.
 
@@ -14,41 +14,32 @@ fn({ a: 1, b: 3 })  // 7
 * **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
 * **Fast** — Pratt parser engine, see [benchmarks](#performance)
 * **Portable** — universal expression format, any compile target
-* **Metacircular** — [jessie](#jessie) can parse and compile itself
+* **Metacircular** — can parse and compile itself
 * **Extensible** — pluggable syntax for building custom DSL
 
-
-[**Playground →**](https://dy.github.io/subscript/)
-
-
-## Install
-
-```
-npm install subscript
-```
 
 
 ## Presets
 
-**subscript** — common expressions (~4kb gzip)
+**subscript** — common expressions (~4kb gzip):
+`a.b` `a[b]` `a(b)` `+` `-` `*` `/` `%` `<` `>` `<=` `>=` `==` `!=` `!` `&&` `||` `~` `&` `|` `^` `<<` `>>` `++` `--` `=` `+=` `-=` `*=` `/=`
 ```js
 import subscript from 'subscript'
 
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
-subscript('x > 0 && y != z')({ x: 1, y: 2, z: 3 })  // true
 ```
 
-**justin** — JSON + expressions (~6kb gzip)
+**justin** — + JSON, arrows, templates (~6kb gzip):
+`'str'` `0x` `0b` `===` `!==` `**` `??` `>>>` `?.` `? :` `=>` `...` `[]` `{}` `` ` ` `` `//` `/**/` `true` `false` `null`
 ```js
 import justin from 'subscript/justin.js'
 
 justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
-
-justin('items.filter(x => x > 1)')({ items: [1, 2, 3] })  // [2, 3]
 ```
 
-**jessie** — JS subset (~8kb gzip)
+**jessie** — + statements, functions (~8kb gzip):
+`if` `else` `for` `while` `do` `let` `const` `var` `function` `class` `return` `throw` `try` `catch` `switch` `import` `export` `/regex/`
 ```js
 import jessie from 'subscript/jessie.js'
 
@@ -62,7 +53,7 @@ let fn = jessie(`
 fn({})  // 120
 ```
 
-Jessie can parse and compile its own source code.
+Jessie can parse and compile its own source.
 
 ## Extension
 
@@ -86,7 +77,7 @@ justin('[1,2,3] ∩ [2,3,4]')({})  // [2, 3]
 See [docs.md](./docs.md) for full API: `binary`, `unary`, `nary`, `group`, `access`, `literal`, `token`.
 
 
-## Tree Format
+## Syntax Tree
 
 Expressions parse to a minimal JSON-compatible AST:
 
@@ -122,50 +113,10 @@ subscript('constructor.constructor("alert(1)")()')({})
 
 ## Performance
 
-Parse 30k expressions:
-
-| Parser | Time |
-|--------|------|
-| subscript | ~150ms |
-| justin | ~183ms |
-| jsep | ~270ms |
-| expr-eval | ~480ms |
-| jexl | ~1056ms |
-
-Evaluate 30k times:
-
-| Evaluator | Time |
-|-----------|------|
-| new Function | ~7ms |
-| subscript | ~15ms |
-| jsep+eval | ~30ms |
-| expr-eval | ~72ms |
-
-
-## Template Tag
-
-For repeated evaluation, use template syntax for automatic caching:
-
-```js
-subscript`a + b`({ a: 1, b: 2 })  // cached compilation
-
-// interpolate values
-const limit = 100
-subscript`x < ${limit}`({ x: 50 })  // true
 ```
-
-## Bundle
-
-Create custom dialect as single file:
-
-```js
-import { bundle } from 'subscript/util/bundle.js'
-
-const code = await bundle('subscript/jessie.js')
-// → self-contained ES module
+Parse 30k:  subscript 150ms · justin 183ms · jsep 270ms · expr-eval 480ms · jexl 1056ms
+Eval 30k:   new Function 7ms · subscript 15ms · jsep+eval 30ms · expr-eval 72ms
 ```
-
-[**Playground →**](https://dy.github.io/subscript/) — interactive dialect builder
 
 
 ## Used by
@@ -176,10 +127,10 @@ const code = await bundle('subscript/jessie.js')
 <!-- * [piezo](https://github.com/dy/piezo) -->
 
 
-## See Also
+## Refs
 
 [jsep](https://github.com/EricSmekens/jsep), [jexl](https://github.com/TomFrost/Jexl), [expr-eval](https://github.com/silentmatt/expr-eval), [math.js](https://mathjs.org/).
 
 <!-- [mozjexl](https://github.com/mozilla/mozjexl), [jexpr](https://github.com/justinfagnani/jexpr), [expression-eval](https://github.com/donmccurdy/expression-eval), [string-math](https://github.com/devrafalko/string-math), [nerdamer](https://github.com/jiggzson/nerdamer), [math-codegen](https://github.com/mauriciopoppe/math-codegen), [math-parser](https://www.npmjs.com/package/math-parser), [nx-compile](https://github.com/nx-js/compiler-util), [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval) -->
 
-<p align=center><a href="https://github.com/krsnzd/license/">🕉</a></p>
+<p align=center><a href="https://github.com/krsnzd/license/">ॐ</a></p>
