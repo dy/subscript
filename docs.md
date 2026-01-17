@@ -14,7 +14,6 @@ subscript('a * b')({ a: 3, b: 4 })  // 12
 ```
 
 
-
 ## Evaluate Code
 
 ### Function Call
@@ -308,41 +307,6 @@ import {
 } from 'subscript'
 ```
 
-
-
-## Syntax Tree
-
-AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
-
-* portable to any language, not limited to JS;
-* reflects execution sequence, rather than code layout;
-* has minimal overhead, directly maps to operators;
-* simplifies manual evaluation and debugging;
-* has conventional form and one-liner docs:
-
-```js
-'x'              // identifier
-[, 1]            // literal
-['+', 'a', 'b']  // binary
-['-', 'a']       // unary prefix
-['++', 'a', null]  // unary postfix
-['?', a, b, c]   // ternary
-['if', cond, then, else] // control flow
-```
-
-See full [spec](./spec.md)
-
-
-## Bundle
-
-Create custom dialect as single file:
-
-```js
-import { bundle } from 'subscript/util/bundle.js'
-
-const code = await bundle('subscript/jessie.js')
-// → self-contained ES module
-```
 
 [**Playground →**](https://dy.github.io/subscript/) — interactive DSL builder
 
