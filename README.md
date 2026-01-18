@@ -1,14 +1,12 @@
-# sub<sub><sup> ✦ </sup></sub>script [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript) [![microjs](https://img.shields.io/badge/microjs-subscript-darkslateblue)](http://microjs.com/#subscript) [![demo](https://img.shields.io/badge/play-%F0%9F%9A%80-white)](https://dy.github.io/subscript/)
+<h1 align="center">sub<sub><sup> ✦ </sup></sub>script</h1>
 
-> Tiny expression parser & evaluator.
+<p align="center">Tiny expression parser & evaluator.</p>
+<div align="center">
+  
+[![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript) [![microjs](https://img.shields.io/badge/µjs-subscript-darkslateblue)](http://microjs.com/#subscript) <!--[![demo](https://img.shields.io/badge/play-%F0%9F%9A%80-white)](https://dy.github.io/subscript/)-->
 
-* **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
-* **Fast** — Pratt parser engine, see [benchmarks](#performance)
-* **Portable** — universal expression format, any compile target
-* **Metacircular** — can parse and compile itself
-* **Extensible** — pluggable syntax for building custom DSL
+</div>
 
-## Usage
 
 ```js
 import subscript from 'subscript'
@@ -17,24 +15,28 @@ let fn = subscript('a + b * 2')
 fn({ a: 1, b: 3 })  // 7
 ```
 
+* **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
+* **Fast** — Pratt parser engine, see [benchmarks](#performance)
+* **Portable** — universal expression format, see [spec](./spec.md)
+* **Extensible** — pluggable syntax, see [DSL builder](https://dy.github.io/subscript/)
+* **Metacircular** — can parse and compile itself
+
+
 ## Presets
 
-### subscript
+**Subscript**: common expressions
 
-Common expressions:
+`a.b a[b] a(b)` `+ - * / %` `< > <= >= == !=` `! && ||` `~ & | ^` `<< >>` `++ --` `= += -= *= /=`
 
-`a.b a[b] a(b) + - * / % < > <= >= == != ! && || ~ & | ^ << >> ++ -- = += -= *= /=`
 ```js
 import subscript from 'subscript'
 
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
-### justin
+**Justin**: JSON + expressions + templates + arrows
 
-JSON + expressions + templates + arrows:
-
-`` 'str' 0x 0b === !== ** ?? >>> ?. ? : => ... [] {} ` // /**/ true false null ``
+`'str' "str"` `0x 0b` `=== !==` `** >>>` `?? ?.` `? :` `=>` `...` `[] {}` `` ` `` `// /**/` `true false null`
 ```js
 import justin from 'subscript/justin.js'
 
@@ -42,11 +44,9 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 ```
 
-### jessie
+**Jessie**: JSON + expressions + statements, functions
 
-JSON + expressions + statements, functions:
-
-`if else for while do let const var function class return throw try catch switch import export /regex/`
+`if else` `for while do` `let const var` `function return` `class` `throw try catch` `switch` `import export` `/regex/`
 ```js
 import jessie from 'subscript/jessie.js'
 
@@ -60,24 +60,7 @@ let fn = jessie(`
 fn({})  // 120
 ```
 
-Jessie can parse and compile its own source.
 
-
-## Parse / Compile
-
-Subscript exposes `parse` to build AST and `compile` to create evaluators.
-
-```js
-import { parse, compile } from 'subscript'
-
-// parse expression
-let tree = parse('a.b + c - 1')
-tree // ['-', ['+', ['.', 'a', 'b'], 'c'], [,1]]
-
-// compile tree to evaluable function
-fn = compile(tree)
-fn({ a: {b: 1}, c: 2 }) // 2
-```
 
 ## Extension
 
@@ -102,7 +85,7 @@ See [docs.md](./docs.md) for full API.
 
 ## Syntax Tree
 
-Expressions parse to a minimal JSON-compatible AST:
+Expressions parse to a minimal JSON-compatible syntax tree:
 
 ```js
 import { parse } from 'subscript'
@@ -111,13 +94,12 @@ parse('a + b * 2')
 // ['+', 'a', ['*', 'b', [, 2]]]
 ```
 
-AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
+AST is simplified lispy tree structure:
 
-* not limited to particular language (JS), can be compiled to different targets;
-* reflects execution sequence, rather than code layout;
-* has minimal overhead, directly maps to operators;
-* simplifies manual evaluation and debugging;
-* has conventional form and one-liner docs:
+* not limited to particular language (JS), can be compiled to any target
+* reflects execution sequence, rather than code layout
+* has minimal overhead, directly maps to operators
+* simplifies manual evaluation and debugging
 
 Three forms:
 
@@ -164,7 +146,7 @@ codegen(['+', ['*', 'min', [,60]], [,'sec']])
 
 ### Bundle
 
-Create custom dialect as single file:
+Bundle imports into a single file:
 
 ```js
 import { bundle } from 'subscript/util/bundle.js'
@@ -181,11 +163,11 @@ const code = await bundle('subscript/jessie.js')
 <!-- * [glsl-transpiler](https://github.com/stackgl/glsl-transpiler) -->
 <!-- * [piezo](https://github.com/dy/piezo) -->
 
-
+<!-- 
 ## Refs
 
 [jsep](https://github.com/EricSmekens/jsep), [jexl](https://github.com/TomFrost/Jexl), [expr-eval](https://github.com/silentmatt/expr-eval), [math.js](https://mathjs.org/).
 
-<!-- [mozjexl](https://github.com/mozilla/mozjexl), [jexpr](https://github.com/justinfagnani/jexpr), [expression-eval](https://github.com/donmccurdy/expression-eval), [string-math](https://github.com/devrafalko/string-math), [nerdamer](https://github.com/jiggzson/nerdamer), [math-codegen](https://github.com/mauriciopoppe/math-codegen), [math-parser](https://www.npmjs.com/package/math-parser), [nx-compile](https://github.com/nx-js/compiler-util), [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval) -->
+[mozjexl](https://github.com/mozilla/mozjexl), [jexpr](https://github.com/justinfagnani/jexpr), [expression-eval](https://github.com/donmccurdy/expression-eval), [string-math](https://github.com/devrafalko/string-math), [nerdamer](https://github.com/jiggzson/nerdamer), [math-codegen](https://github.com/mauriciopoppe/math-codegen), [math-parser](https://www.npmjs.com/package/math-parser), [nx-compile](https://github.com/nx-js/compiler-util), [built-in-math-eval](https://github.com/mauriciopoppe/built-in-math-eval) -->
 
 <p align=center><a href="https://github.com/krsnzd/license/">ॐ</a></p>
