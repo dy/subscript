@@ -2,7 +2,7 @@
 // AST: ['switch', val, [';', ['case', test], stmts..., ['default'], stmts...]]
 import { expr, skip, space, parens, operator, compile } from '../parse.js';
 import { keyword, block } from './block.js';
-import { BREAK } from './loop.js';
+import { BREAK } from './control.js';
 
 const STATEMENT = 5, ASSIGN = 20, COLON = 58;
 

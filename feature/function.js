@@ -1,6 +1,6 @@
 // Function declarations and expressions
 import { space, next, parse, parens, expr, operator, compile } from '../parse.js';
-import { RETURN } from './loop.js';
+import { RETURN } from './control.js';
 import { keyword, block } from './block.js';
 
 const TOKEN = 200;

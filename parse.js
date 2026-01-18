@@ -129,12 +129,6 @@ export let idx, cur,
 
 // === Compile: AST → Evaluator ===
 
-// Current node being compiled (for error location)
-let curNode;
-
-// Compile error with source location
-const compileErr = (msg = 'Compile error', node = curNode) => err(msg, node?.loc);
-
 // Operator registry
 export const operators = {};
 
@@ -144,10 +138,9 @@ export const operator = (op, fn, prev = operators[op]) =>
 
 // Compile AST to evaluator function
 export const compile = node => (
-  curNode = node,
   !Array.isArray(node) ? (node === undefined ? () => undefined : ctx => ctx?.[node]) :
   node[0] === undefined ? (v => () => v)(node[1]) :
-  operators[node[0]]?.(...node.slice(1)) ?? compileErr(`Unknown operator: ${node[0]}`)
+  operators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`, node?.loc)
 );
 
 export default parse;

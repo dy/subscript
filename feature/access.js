@@ -42,7 +42,8 @@ operator('()', (a, b) => {
   const args = !b ? () => [] :
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) :
     (b = compile(b), ctx => [b(ctx)]);
-  return prop(a, (obj, path, ctx) => obj[path](...args(ctx)), true);
+  // Inline call handling for x(), a.b(), a[b](), (x)()
+  return call(a, (obj, path, ctx) => obj[path](...args(ctx)));
 });
 
 // Left-value check (valid assignment target)
@@ -55,13 +56,10 @@ export const isLval = n =>
     n[0] === '{}'
   ));
 
-// Compile error helper
-const compileErr = msg => { throw Error(msg) };
-
-// Property accessor helper - compiles property access pattern to evaluator
-export const prop = (a, fn, generic, obj, path) => (
-  a == null ? compileErr('Empty ()') :
-  a[0] === '()' && a.length == 2 ? prop(a[1], fn, generic) :
+// Simple call helper (no optional chaining) - handles x(), a.b(), a[b](), (x)()
+const call = (a, fn, obj, path) => (
+  a == null ? err('Empty ()') :
+  a[0] === '()' && a.length == 2 ? call(a[1], fn) :
   typeof a === 'string' ? ctx => fn(ctx, a, ctx) :
   a[0] === '.' ? (obj = compile(a[1]), path = a[2], ctx => fn(obj(ctx), path, ctx)) :
   a[0] === '?.' ? (obj = compile(a[1]), path = a[2], ctx => { const o = obj(ctx); return o == null ? undefined : fn(o, path, ctx); }) :
@@ -69,3 +67,6 @@ export const prop = (a, fn, generic, obj, path) => (
   a[0] === '?.[]' ? (obj = compile(a[1]), path = compile(a[2]), ctx => { const o = obj(ctx); return o == null ? undefined : fn(o, path(ctx), ctx); }) :
   (a = compile(a), ctx => fn([a(ctx)], 0, ctx))
 );
+
+// Export as prop for backward compatibility with other features
+export const prop = call;

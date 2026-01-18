@@ -87,6 +87,25 @@ test('compile: function call', () => {
   is(c('a.f()', { a: { f: () => 1 } }), 1)
 })
 
+test('compile: function call patterns', () => {
+  // Direct call: f()
+  is(c('f(1)', { f: x => x * 2 }), 2)
+  // Method call: a.b()
+  is(c('a.f()', { a: { f() { return this.x }, x: 42 } }), 42)
+  // Computed method: a[b]()
+  is(c('a[m]()', { a: { f: () => 99 }, m: 'f' }), 99)
+  // Nested: a.b.c()
+  is(c('a.b.c()', { a: { b: { c: () => 7 } } }), 7)
+  // Parenthesized: (f)()
+  is(c('(f)()', { f: () => 5 }), 5)
+  // Optional chain call: a?.f()
+  is(c('a?.f()', { a: { f: () => 3 } }), 3)
+  is(c('a?.f()', { a: null }), undefined)
+  // Computed optional: a?.[m]()
+  is(c('a?.[m]()', { a: { f: () => 8 }, m: 'f' }), 8)
+  is(c('a?.[m]()', { a: null, m: 'f' }), undefined)
+})
+
 test('compile: ternary', () => {
   is(e('true ? 1 : 2'), 1)
   is(e('false ? 1 : 2'), 2)

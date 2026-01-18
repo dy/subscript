@@ -2,9 +2,9 @@
 import { expr, skip, space, parse, word, parens, cur, idx, operator, compile } from '../parse.js';
 import { body, keyword } from './block.js';
 import { destructure } from './destruct.js';
+import { BREAK, CONTINUE, RETURN } from './control.js';
 
-// Control flow symbols
-export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
+export { BREAK, CONTINUE, RETURN };
 
 // Loop body executor - catches control flow and returns status
 export const loop = (body, ctx) => {

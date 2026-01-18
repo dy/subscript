@@ -2,7 +2,7 @@
 // AST: ['catch', ['try', body], param, catchBody] or ['finally', inner, body]
 import { space, parse, parens, expr, operator, compile } from '../parse.js';
 import { keyword, infix, block } from './block.js';
-import { BREAK, CONTINUE, RETURN } from './loop.js';
+import { BREAK, CONTINUE, RETURN } from './control.js';
 
 const STATEMENT = 5;
 

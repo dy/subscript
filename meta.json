@@ -1,0 +1,312 @@
+{
+  "inputs": {
+    "parse.js": {
+      "bytes": 4795,
+      "imports": [],
+      "format": "esm"
+    },
+    "feature/number.js": {
+      "bytes": 1506,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/string.js": {
+      "bytes": 878,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/assignment.js": {
+      "bytes": 2054,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/logical.js": {
+      "bytes": 544,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/bitwise.js": {
+      "bytes": 917,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/comparison.js": {
+      "bytes": 553,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/equality.js": {
+      "bytes": 382,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/arithmetic.js": {
+      "bytes": 849,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/op/increment.js": {
+      "bytes": 1012,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/block.js": {
+      "bytes": 1879,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/destruct.js": {
+      "bytes": 1131,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/loop.js": {
+      "bytes": 4227,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        },
+        {
+          "path": "feature/block.js",
+          "kind": "import-statement",
+          "original": "./block.js"
+        },
+        {
+          "path": "feature/destruct.js",
+          "kind": "import-statement",
+          "original": "./destruct.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/access.js": {
+      "bytes": 2895,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "feature/group.js": {
+      "bytes": 1380,
+      "imports": [
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "../parse.js"
+        },
+        {
+          "path": "feature/loop.js",
+          "kind": "import-statement",
+          "original": "./loop.js"
+        },
+        {
+          "path": "feature/access.js",
+          "kind": "import-statement",
+          "original": "./access.js"
+        }
+      ],
+      "format": "esm"
+    },
+    "subscript.js": {
+      "bytes": 2648,
+      "imports": [
+        {
+          "path": "feature/number.js",
+          "kind": "import-statement",
+          "original": "./feature/number.js"
+        },
+        {
+          "path": "feature/string.js",
+          "kind": "import-statement",
+          "original": "./feature/string.js"
+        },
+        {
+          "path": "feature/op/assignment.js",
+          "kind": "import-statement",
+          "original": "./feature/op/assignment.js"
+        },
+        {
+          "path": "feature/op/logical.js",
+          "kind": "import-statement",
+          "original": "./feature/op/logical.js"
+        },
+        {
+          "path": "feature/op/bitwise.js",
+          "kind": "import-statement",
+          "original": "./feature/op/bitwise.js"
+        },
+        {
+          "path": "feature/op/comparison.js",
+          "kind": "import-statement",
+          "original": "./feature/op/comparison.js"
+        },
+        {
+          "path": "feature/op/equality.js",
+          "kind": "import-statement",
+          "original": "./feature/op/equality.js"
+        },
+        {
+          "path": "feature/op/arithmetic.js",
+          "kind": "import-statement",
+          "original": "./feature/op/arithmetic.js"
+        },
+        {
+          "path": "feature/op/increment.js",
+          "kind": "import-statement",
+          "original": "./feature/op/increment.js"
+        },
+        {
+          "path": "feature/group.js",
+          "kind": "import-statement",
+          "original": "./feature/group.js"
+        },
+        {
+          "path": "feature/access.js",
+          "kind": "import-statement",
+          "original": "./feature/access.js"
+        },
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "./parse.js"
+        },
+        {
+          "path": "parse.js",
+          "kind": "import-statement",
+          "original": "./parse.js"
+        }
+      ],
+      "format": "esm"
+    }
+  },
+  "outputs": {
+    "../../../../dev/null": {
+      "imports": [],
+      "exports": [],
+      "entryPoint": "subscript.js",
+      "inputs": {
+        "parse.js": {
+          "bytesInOutput": 3805
+        },
+        "feature/number.js": {
+          "bytesInOutput": 1206
+        },
+        "feature/string.js": {
+          "bytesInOutput": 561
+        },
+        "feature/op/assignment.js": {
+          "bytesInOutput": 1768
+        },
+        "feature/op/logical.js": {
+          "bytesInOutput": 379
+        },
+        "feature/op/bitwise.js": {
+          "bytesInOutput": 714
+        },
+        "feature/op/comparison.js": {
+          "bytesInOutput": 455
+        },
+        "feature/op/equality.js": {
+          "bytesInOutput": 233
+        },
+        "feature/op/arithmetic.js": {
+          "bytesInOutput": 744
+        },
+        "feature/op/increment.js": {
+          "bytesInOutput": 777
+        },
+        "feature/block.js": {
+          "bytesInOutput": 686
+        },
+        "feature/destruct.js": {
+          "bytesInOutput": 1035
+        },
+        "feature/loop.js": {
+          "bytesInOutput": 4065
+        },
+        "feature/access.js": {
+          "bytesInOutput": 2140
+        },
+        "feature/group.js": {
+          "bytesInOutput": 1022
+        },
+        "subscript.js": {
+          "bytesInOutput": 1043
+        }
+      },
+      "bytes": 21055
+    }
+  }
+}

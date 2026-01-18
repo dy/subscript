@@ -48,6 +48,19 @@ test('control: continue', t => {
   is(ctx.sum, 12) // 1+2+4+5
 })
 
+test('control: break/continue in sequence preserves prior value', t => {
+  // break in middle of sequence - value before break should be returned from loop
+  let ctx = { i: 0, values: [] }
+  run('while (i < 5) (values.push(i), i += 1, (if (i == 3) break))', ctx)
+  is(ctx.values.join(','), '0,1,2')
+  is(ctx.i, 3)
+
+  // continue in sequence - loop should skip remainder but continue iteration
+  ctx = { i: 0, values: [] }
+  run('while (i < 5) (i += 1, (if (i == 3) continue), values.push(i))', ctx)
+  is(ctx.values.join(','), '1,2,4,5') // 3 is skipped
+})
+
 test('control: return', t => {
   is(parse('return 42'), ['return', [, 42]])
   is(parse('return'), ['return'])
