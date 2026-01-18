@@ -1,8 +1,6 @@
-# Subscript Tree Format
+# Expression Tree Format
 
-An expression tree notation.
-
----
+An universal expression tree notation.
 
 ## Overview
 
@@ -16,7 +14,6 @@ Expressions parse to trees. This document describes a format for those trees —
 
 That's the entire format.
 
----
 
 ## Tree Structure
 
@@ -57,7 +54,7 @@ An array where the first element is the operator, followed by operands.
 [op, a, b, c, ...]  → n-ary
 ```
 
----
+
 
 ## Operator Reference
 
@@ -113,7 +110,8 @@ An array where the first element is the operator, followed by operands.
 ['?.', a, 'b']     a?.b
 ```
 
-Note: Property access uses the literal property name as a string, not an identifier to resolve.
+> [!NOTE]
+> Property access uses the literal property name as a string, not an identifier to resolve.
 
 ### Assignment
 ```
@@ -211,7 +209,7 @@ Template literals contain string parts (as literals) interleaved with expression
 ['function', null, ['x'], body]         function(x) { body }
 ```
 
----
+
 
 ## Design Principles
 
@@ -301,7 +299,7 @@ Operands must be valid tree nodes:
 ['px', 100]        ✗  raw number is not a tree node
 ```
 
----
+
 
 ## Serialization
 
@@ -313,7 +311,7 @@ The format is valid JSON when serialized with standard `JSON.stringify`. Elided 
 
 Implementations SHOULD accept both forms on input.
 
----
+
 
 ## Acknowledgments
 
@@ -329,7 +327,7 @@ Counter-examples:
 
 - **[ESTree](https://github.com/estree/estree)** — Verbose, JS-specific, layout-oriented rather than semantic. What not to do.
 
----
+
 
 ## License
 
@@ -337,6 +335,5 @@ This specification is released under [CC0](https://creativecommons.org/publicdom
 
 Use it freely.
 
----
 
 <p align="center">🕉</p>
