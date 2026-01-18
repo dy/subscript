@@ -24,9 +24,7 @@ fn({ a: 1, b: 3 })  // 7
 
 ## Presets
 
-**Subscript**: common expressions
-
-`a.b a[b] a(b)` `+ - * / %` `< > <= >= == !=` `! && ||` `~ & | ^` `<< >>` `++ --` `= += -= *= /=`
+**Subscript**: common expressions:
 
 ```js
 import subscript from 'subscript'
@@ -34,9 +32,8 @@ import subscript from 'subscript'
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
-**Justin**: JSON + expressions + templates + arrows
+**Justin**: JSON + expressions + templates + arrows:
 
-`'str' "str"` `0x 0b` `=== !==` `** >>>` `?? ?.` `? :` `=>` `...` `[] {}` `` ` `` `// /**/` `true false null`
 ```js
 import justin from 'subscript/justin.js'
 
@@ -44,9 +41,8 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 ```
 
-**Jessie**: JSON + expressions + statements, functions
+**Jessie**: JSON + expressions + statements, functions (JS subset):
 
-`if else` `for while do` `let const var` `function return` `class` `throw try catch` `switch` `import export` `/regex/`
 ```js
 import jessie from 'subscript/jessie.js'
 
@@ -60,7 +56,7 @@ let fn = jessie(`
 fn({})  // 120
 ```
 
-
+See [docs](./docs.md#presets) for full description.
 
 ## Extension
 
