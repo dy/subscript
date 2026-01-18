@@ -14,7 +14,7 @@ subscript('a * b')({ a: 3, b: 4 })  // 12
 ```
 
 
-## Evaluate Code
+## Evaluate
 
 ### Function Call
 
@@ -66,7 +66,7 @@ subscript`${['+', 'a', 'b']} * 2`({ a: 1, b: 2 }) // 6
 
 
 
-## Parse / Compile Separately
+## Parse / Compile
 
 ```js
 import { parse, compile } from 'subscript'
@@ -99,10 +99,15 @@ Minimal [common syntax](https://en.wikipedia.org/wiki/Comparison_of_programming_
 * `"abc"` — double-quoted strings
 * `0.1`, `1.2e3` — decimal numbers
 
+```js
+import subscript from 'subscript'
+
+subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
+```
 
 ### Justin
 
-_Just-in_ is no-keywords JS subset, _JSON_ + _expressions ([thread](https://github.com/endojs/Jessie/issues/66)) — extends subscript with:
+_Just-in_ is no-keywords JS subset, _JSON_ + _expressions_ ([thread](https://github.com/endojs/Jessie/issues/66)) — extends subscript with:
 
 + `'abc'` — single-quoted strings
 + `0x1f`, `0b11`, `0o17` — hex, binary, octal
@@ -163,7 +168,9 @@ jessie`
 
 ## Extend Parser
 
-### `binary(op, prec, right?)`
+### `binary(op, prec, right?)`** 
+
+Binary operator `a ⚬ b`, optionally right-associative.
 
 ```js
 import { binary } from 'subscript'
@@ -174,6 +181,8 @@ binary('%%', 110)  // modulo precedence
 
 ### `unary(op, prec, post?)`
 
+Unary operator, either prefix `⚬a` or postfix `a⚬`
+
 ```js
 import { unary } from 'subscript'
 
@@ -183,7 +192,7 @@ unary('°', 150, true) // postfix: x°
 
 ### `nary(op, prec, right?)`
 
-Sequence operators (allows empty slots):
+N-ary (sequence) operator like a; b; or a, b, allows empty slots.
 
 ```js
 import { nary } from 'subscript'
@@ -193,7 +202,7 @@ nary(';', 10, true)  // a; b; c → [';', 'a', 'b', 'c']
 
 ### `group(op, prec)`
 
-Grouping constructs:
+Group construct, like `[a]`, `{a}` etc.
 
 ```js
 import { group } from 'subscript'
@@ -204,7 +213,7 @@ group('[]', 200)  // [a] → ['[]', 'a']
 
 ### `access(op, prec)`
 
-Member access:
+Member access operator, like `a[b]`, `a(b)` etc.
 
 ```js
 import { access } from 'subscript'
@@ -246,10 +255,11 @@ token('?', 25, left => {
 > This applies to: `=`/`==`/`===`, `!`/`!=`/`!==`, `|`/`||`, `&`/`&&`, etc.
 
 
-
 ## Extend Compiler
 
 ### `operator(op, handler)`
+
+Register evaluator for an operator.
 
 ```js
 import { operator, compile } from 'subscript'
@@ -307,6 +317,27 @@ import {
 } from 'subscript'
 ```
 
+## Syntax Tree
+
+AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/frisk) / [nisp](https://github.com/ysmood/nisp)), opposed to [ESTree](https://github.com/estree/estree):
+
+* portable to any language, not limited to JS;
+* reflects execution sequence, rather than code layout;
+* has minimal overhead, directly maps to operators;
+* simplifies manual evaluation and debugging;
+* has conventional form and one-liner docs:
+
+```js
+'x'              // identifier
+[, 1]            // literal
+['+', 'a', 'b']  // binary
+['-', 'a']       // unary prefix
+['++', 'a', null]  // unary postfix
+['?', a, b, c]   // ternary
+['if', cond, then, else] // control flow
+```
+
+See full [spec](./spec.md)
 
 [**Playground →**](https://dy.github.io/subscript/) — interactive DSL builder
 
