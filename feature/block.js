@@ -35,7 +35,4 @@ export const block = () =>
 
 // body() - parse { body } or single statement
 export const body = () =>
-  space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), ['block', expr(STATEMENT - .5, CBRACE) || null]);
-
-// Compile
-operator('block', body => body === undefined ? () => {} : (body = compile(body), ctx => body(ctx)));
+  space() !== OBRACE ? expr(STATEMENT + .5) : (skip(), expr(STATEMENT - .5, CBRACE) || null);

@@ -69,7 +69,7 @@ test('async/class: private fields', async () => {
 
 test('async/class: for await', async () => {
   const { parse } = await import('../../jessie.js');
-  assert.deepEqual(parse('for await (x of y) {}'), ['for await', ['of', 'x', 'y'], ['block', null]]);
+  assert.deepEqual(parse('for await (x of y) {}'), ['for await', ['of', 'x', 'y'], null]);
 });
 
 test('operators: range', async () => {

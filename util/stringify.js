@@ -67,8 +67,6 @@ export const codegen = node => {
 
 // --- Statement generators (need structure) ---
 
-generator('block', body => body === undefined ? '{}' : '{ ' + codegen(body) + ' }');
-
 // Variables: ['let', decl] or ['let', decl1, decl2, ...]
 const varGen = kw => (...args) => kw + ' ' + args.map(codegen).join(', ');
 generator('let', varGen('let'));
@@ -76,7 +74,7 @@ generator('const', varGen('const'));
 generator('var', varGen('var'));
 
 // Control flow
-const wrap = s => s?.[0] === 'block' ? codegen(s) : '{ ' + (s ? codegen(s) : '') + ' }';
+const wrap = s => '{ ' + (s ? codegen(s) : '') + ' }';
 generator('if', (cond, then, els) => 'if (' + codegen(cond) + ') ' + wrap(then) + (els ? ' else ' + wrap(els) : ''));
 generator('while', (cond, body) => 'while (' + codegen(cond) + ') ' + wrap(body));
 generator('do', (body, cond) => 'do ' + wrap(body) + ' while (' + codegen(cond) + ')');
@@ -101,8 +99,7 @@ generator('finally', (expr, body) => codegen(expr) + ' finally { ' + codegen(bod
 // Functions
 generator('function', (name, params, body) => {
   const args = !params ? '' : params[0] === ',' ? params.slice(1).map(codegen).join(', ') : codegen(params);
-  const b = body?.[0] === 'block' ? codegen(body) : '{ ' + (body ? codegen(body) : '') + ' }';
-  return 'function' + (name ? ' ' + name : '') + '(' + args + ') ' + b;
+  return 'function' + (name ? ' ' + name : '') + '(' + args + ') ' + wrap(body);
 });
 
 generator('=>', (params, body) => {

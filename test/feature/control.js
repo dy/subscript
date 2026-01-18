@@ -67,10 +67,10 @@ test('control: return', t => {
 })
 
 test('control: block', t => {
-  // blocks only work inside control structures, not standalone (to avoid conflict with object literal)
-  is(parse('if (1) { a }'), ['if', [, 1], ['block', 'a']])
-  is(parse('if (1) { a; b }'), ['if', [, 1], ['block', [';', 'a', 'b']]])
-  is(parse('while (x) { y }'), ['while', 'x', ['block', 'y']])
+  // blocks are just sequences, no wrapper node
+  is(parse('if (1) { a }'), ['if', [, 1], 'a'])
+  is(parse('if (1) { a; b }'), ['if', [, 1], [';', 'a', 'b']])
+  is(parse('while (x) { y }'), ['while', 'x', 'y'])
   // blocks allow access to outer scope (like JS)
   let ctx = { x: 1 }
   run('if (1) { x = 2 }', ctx)

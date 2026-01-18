@@ -394,10 +394,10 @@ const DESC = {
   ternary: '?:', arrow: '=>', optional: '?.', spread: '...',
   unary: 'typeof void', identity: '=== !==', nullish: '??',
   // Literals
-  literal: 'true/false/null', collection: '[], {}', template: '`${}`',
+  literal: 'true/false/null', collection: '[1,2], {a:1}', template: '`${}`',
   regex: '/re/', unit: '5px', comment: '//',
   // Control
-  block: '{ }', 'if': 'if/else', loop: 'for/while', 'switch': 'switch',
+  block: '{...}', 'if': 'if/else', loop: 'for/while', 'switch': 'switch,
   'var': 'let/const', destruct: '{a,b}=', 'try': 'try/catch',
   // Functions
   'function': 'fn(){}', async: 'async/await', 'class': 'class X {}',
@@ -431,7 +431,7 @@ const TIPS = {
   regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code>',
   unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code>',
   comment: 'Comments (ignored)<br><code>// line</code> <code>/* block */</code>',
-  block: 'Block statements<br><code>{ stmt1; stmt2 }</code>',
+  block: 'Statement block<br><code>if (x) { a; b }</code>',
   'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code>',
   loop: 'Loops<br><code>while (c) body</code> <code>for (;;) body</code> <code>for (x of arr)</code>',
   'switch': 'Switch statement<br><code>switch (x) { case 1: ... }</code>',
