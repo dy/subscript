@@ -168,7 +168,7 @@ jessie`
 
 ## Extend Parser
 
-### `binary(op, prec, right?)`** 
+### `binary(op, prec, right?)`
 
 Binary operator `a ⚬ b`, optionally right-associative.
 
@@ -338,7 +338,3 @@ AST has simplified lispy tree structure (inspired by [frisk](https://ghub.io/fri
 ```
 
 See full [spec](./spec.md)
-
-[**Playground →**](https://dy.github.io/subscript/) — interactive DSL builder
-
-<p align="center">🕉</p>
