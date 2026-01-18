@@ -90,13 +90,6 @@ parse('a + b * 2')
 // ['+', 'a', ['*', 'b', [, 2]]]
 ```
 
-AST is simplified lispy tree structure:
-
-* not limited to particular language (JS), can be compiled to any target
-* reflects execution sequence, rather than code layout
-* has minimal overhead, directly maps to operators
-* simplifies manual evaluation and debugging
-
 Three forms:
 
 ```js
