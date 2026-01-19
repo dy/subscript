@@ -104,6 +104,49 @@ test('jessie: function compile', t => {
   is(ctx.mult(4), 12)
 })
 
+test('jessie: early return', t => {
+  // Standalone if with return (guard clause pattern)
+  let ctx = {}
+  run('function guard(x) { if (x < 0) return -1; return x * 2 }', ctx)
+  is(ctx.guard(-5), -1, 'early return on negative')
+  is(ctx.guard(5), 10, 'normal path')
+
+  // Multiple early returns
+  ctx = {}
+  run('function grade(s) { if (s >= 90) return "A"; if (s >= 80) return "B"; return "C" }', ctx)
+  is(ctx.grade(95), 'A')
+  is(ctx.grade(85), 'B')
+  is(ctx.grade(70), 'C')
+
+  // Early return with no value
+  ctx = { called: false }
+  run('function maybe(x) { if (!x) return; called = true }', ctx)
+  ctx.maybe(false)
+  is(ctx.called, false, 'early return prevented side effect')
+  ctx.maybe(true)
+  is(ctx.called, true, 'no early return, side effect happened')
+})
+
+test('jessie: standalone if statement', t => {
+  // if without else, single statement body
+  is(parse('if (x) y')[0], 'if')
+  is(parse('if (x) y').length, 3, 'no else branch')
+
+  // if with return (common guard pattern)
+  const ast = parse('if (x < 0) return -1')
+  is(ast[0], 'if')
+  is(ast[2][0], 'return')
+
+  // Compile standalone if
+  let ctx = { x: true, y: 0 }
+  run('if (x) y = 1', ctx)
+  is(ctx.y, 1)
+
+  ctx = { x: false, y: 0 }
+  run('if (x) y = 1', ctx)
+  is(ctx.y, 0, 'false condition skips body')
+})
+
 test('jessie: function rest param', t => {
   const ast = parse('function f(a, ...rest) { return rest }')
   is(ast[2][0], ',')
