@@ -30,8 +30,8 @@ keyword('import', STATEMENT, () => (space(), ['import', expr(SEQ)]));
 // export: prefix for declarations or re-exports (use STATEMENT to capture const/let/function)
 keyword('export', STATEMENT, () => (space(), ['export', expr(STATEMENT)]));
 
-// default: prefix for export default
-keyword('default', SEQ + 1, () => (space(), ['default', expr(SEQ)]));
+// default: prefix for export default (NOT switch default: which has colon)
+keyword('default', SEQ + 1, () => space() !== 58 && (space(), ['default', expr(SEQ)]));
 
 // Compile stubs - import/export are parse-only (no runtime semantics)
 import { operator, compile } from '../parse.js';

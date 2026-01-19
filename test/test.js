@@ -14,6 +14,7 @@ import './feature/control.js'
 import './feature/regex.js'
 import './feature/template.js'
 import './feature/unit.js'
+import './feature/jessie.js'
 
 import './meta.js'
 

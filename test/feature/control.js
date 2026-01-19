@@ -132,3 +132,46 @@ test('control: for with var multi-decl', t => {
   is(ast[1][0], ';')
   is(ast[1][1][0], ',', 'multi-var uses comma operator')
 })
+
+test('control: switch basic', t => {
+  // Parse tests - AST: ['switch', val, ['case', test, body], ['default', body], ...]
+  is(parse('switch (x) { case 1: a }')[0], 'switch')
+  is(parse('switch (x) { case 1: a }')[1], 'x')
+  is(parse('switch (x) { case 1: a }')[2][0], 'case')
+  is(parse('switch (x) { case 1: a }')[2][1][1], 1) // literal AST: [null, 1]
+  is(parse('switch (x) { case 1: a }')[2][2], 'a')
+  is(parse('switch (x) { default: a }')[2][0], 'default')
+  is(parse('switch (x) { default: a }')[2][1], 'a')
+
+  // Multiple cases
+  const ast = parse('switch (x) { case 1: a; case 2: b }')
+  is(ast[2][0], 'case')
+  is(ast[3][0], 'case')
+})
+
+test('control: switch compile', t => {
+  // Basic case match
+  let ctx = { x: 1, y: 0 }
+  run('switch (x) { case 1: y = 10 }', ctx)
+  is(ctx.y, 10)
+
+  // No match
+  ctx = { x: 5, y: 0 }
+  run('switch (x) { case 1: y = 10 }', ctx)
+  is(ctx.y, 0)
+
+  // Fallthrough
+  ctx = { x: 1, y: 0 }
+  run('switch (x) { case 1: y = 10; case 2: y = 20 }', ctx)
+  is(ctx.y, 20, 'fallthrough')
+
+  // Break stops fallthrough
+  ctx = { x: 1, y: 0 }
+  run('switch (x) { case 1: y = 10; break; case 2: y = 20 }', ctx)
+  is(ctx.y, 10, 'break stops fallthrough')
+
+  // Default
+  ctx = { x: 99, y: 0 }
+  run('switch (x) { case 1: y = 10; default: y = 99 }', ctx)
+  is(ctx.y, 99, 'default case')
+})
