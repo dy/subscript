@@ -4,8 +4,6 @@
  * [a, b, c]
  * {a: 1, b: 2}
  * {a, b} (shorthand)
- *
- * Method shorthand not yet supported: {foo() {}} - use {foo: () => {}} or {foo: function() {}}
  */
 import { group, binary, operator, compile } from '../parse.js';
 import { ACC } from './accessor.js';

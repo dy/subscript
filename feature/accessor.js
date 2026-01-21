@@ -5,7 +5,7 @@
  *   { get x() { body } }         → ['{}', ['get', 'x', body]]
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
  */
-import { token, expr, skip, space, err, next, parse, cur, idx, operator, compile } from '../parse.js';
+import { token, expr, skip, space, next, parse, cur, idx, operator, compile } from '../parse.js';
 
 // Accessor marker for object property definitions
 export const ACC = Symbol('accessor');
@@ -32,6 +32,19 @@ const accessor = (kind) => a => {
 
 token('get', ASSIGN - 1, accessor('get'));
 token('set', ASSIGN - 1, accessor('set'));
+
+// Method shorthand: { foo() {} } → [':', 'foo', ['=>', ['()', params], body]]
+// Uses token() infix handler - returns undefined to fall through to function call
+token('(', ASSIGN - 1, a => {
+  // Only handle infix position with plain identifier in low-precedence context (object literal)
+  if (!a || typeof a !== 'string') return;
+  const params = expr(0, CPAREN) || null;
+  space();
+  // Not followed by { - not method shorthand, fall through
+  if (cur.charCodeAt(idx) !== OBRACE) return;
+  skip();
+  return [':', a, ['=>', ['()', params], expr(0, CBRACE) || null]];
+});
 
 // Compile
 operator('get', (name, body) => {

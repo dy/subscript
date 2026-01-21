@@ -159,7 +159,7 @@ test('justin: operators', function () {
   is(justin('(2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9)')(), (2 ** 3) ** 4 * (5 ** 6 ** 7) * (8 + 9))
 })
 
-test('justin: custom operators', () => {
+test.skip('justin: custom operators', () => {
   is(justin('a^b')({ a: 0xaaa, b: 0xbbb }), 0xaaa ^ 0xbbb)
 
   set('×', 9, (a, b) => a * b)

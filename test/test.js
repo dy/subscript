@@ -1,6 +1,8 @@
 // Parse tests
 import './parse.js'
 import './expr.js'
+
+
 import './justin.js'
 import './jessie.js'
 
@@ -15,6 +17,7 @@ import './feature/regex.js'
 import './feature/template.js'
 import './feature/unit.js'
 import './feature/jessie.js'
+import './feature/async-class.js'
 
 import './meta.js'
 

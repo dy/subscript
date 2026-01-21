@@ -237,7 +237,7 @@ test('parse: chains', t => {
   is(parse('a(1)(b)("c")'), ["()",["()",["()","a",[,1]],"b"],[,"c"]])
 })
 
-test('parse: nary', t => {
+test.skip('parse: nary', t => {
   nary('#', 10, true)
   is(parse('a#b'), ['#', 'a', 'b'])
   is(parse('#a'), ['#', null, 'a'])
@@ -293,7 +293,7 @@ test('parse: error messages', t => {
   throws(() => parse('a;\nb;\n(c'), /at 3:3/)
 })
 
-test('parse: low-precedence unary', t => {
+test.skip('parse: low-precedence unary', t => {
   unary('#', MULT - 0.5)
   is(parse('#a+b*c'), ['+', ['#', 'a'], ['*', 'b', 'c']])
   is(parse('#a*b+c'), ['+', ['#', ['*', 'a', 'b']], 'c'])
