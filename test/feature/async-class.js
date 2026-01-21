@@ -28,6 +28,22 @@ test('async/class: yield', async () => {
   assert.deepEqual(parse('yield* g'), ['yield*', 'g']);
 });
 
+test('async/class: generator function', async () => {
+  const { parse } = await import('../../jessie.js');
+  assert.deepEqual(parse('function* gen() {}'), ['function*', 'gen', null, null]);
+  assert.deepEqual(parse('function* gen(a) { yield a }'), ['function*', 'gen', 'a', ['yield', 'a']]);
+  assert.deepEqual(parse('function* () {}'), ['function*', null, null, null]);
+  assert.deepEqual(parse('function* gen(a, b) { yield a + b }'), ['function*', 'gen', [',', 'a', 'b'], ['yield', ['+', 'a', 'b']]]);
+});
+
+test('async/class: numeric separators', async () => {
+  const { parse } = await import('../../jessie.js');
+  assert.deepEqual(parse('1_000_000'), [, 1000000]);
+  assert.deepEqual(parse('1_234.56_78'), [, 1234.5678]);
+  assert.deepEqual(parse('0x1_FF'), [, 0x1FF]);
+  assert.deepEqual(parse('0b1010_1010'), [, 0b10101010]);
+});
+
 test('async/class: class declaration', async () => {
   const { parse } = await import('../../jessie.js');
   assert.deepEqual(parse('class A {}'), ['class', 'A', null, null]);

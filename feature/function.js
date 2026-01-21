@@ -1,5 +1,5 @@
 // Function declarations and expressions
-import { space, next, parse, parens, expr, operator, compile } from '../parse.js';
+import { space, next, parse, parens, expr, operator, compile, cur, idx, skip } from '../parse.js';
 import { RETURN } from './control.js';
 import { keyword, block } from './block.js';
 
@@ -7,9 +7,17 @@ const TOKEN = 200;
 
 keyword('function', TOKEN, () => {
   space();
+  // Check for generator: function*
+  let generator = false;
+  if (cur[idx] === '*') {
+    generator = true;
+    skip();
+    space();
+  }
   const name = next(parse.id);
   name && space();
-  return ['function', name, parens() || null, block()];
+  const node = generator ? ['function*', name, parens() || null, block()] : ['function', name, parens() || null, block()];
+  return node;
 });
 
 // Compile
@@ -41,4 +49,9 @@ operator('function', (name, params, body) => {
     if (name) ctx[name] = fn;
     return fn;
   };
+});
+
+// Generator function (parse only, no implementation)
+operator('function*', (name, params, body) => {
+  throw Error('Generator functions are not supported in evaluation');
 });

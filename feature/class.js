@@ -1,6 +1,6 @@
 // Class declarations and expressions
 // class A extends B { ... }
-import { binary, unary, token, expr, space, next, parse, literal, word, operator, compile } from '../parse.js';
+import { binary, unary, token, expr, space, next, parse, literal, word, operator, compile, skip } from '../parse.js';
 import { keyword, block } from './block.js';
 
 const TOKEN = 200, PREFIX = 140, COMP = 90;
@@ -27,12 +27,15 @@ keyword('class', TOKEN, () => {
   space();
   let name = next(parse.id) || null;
   // 'extends' parsed as name? → anonymous class
-  if (name === 'extends') name = null;
-  else {
+  if (name === 'extends') {
+    name = null;
+    space();
+  } else {
     space();
     if (!word('extends')) return ['class', name, null, block()];
+    skip(7); // skip 'extends'
+    space();
   }
-  space();
   return ['class', name, expr(TOKEN), block()];
 });
 

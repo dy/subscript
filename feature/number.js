@@ -5,7 +5,7 @@
  */
 import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
 
-const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45;
+const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45, UNDERSCORE = 95;
 const _a = 97, _f = 102, _A = 65, _F = 70;
 
 // Decimal number - check for .. range operator (don't consume . if followed by .)
@@ -14,15 +14,16 @@ const num = a => [, (
     // . is decimal only if NOT followed by another . (range operator)
     (c === PERIOD && cur.charCodeAt(idx + 1) !== PERIOD) ||
     (c >= _0 && c <= _9) ||
+    c === UNDERSCORE || // numeric separator
     ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)
-  )
+  ).replace(/_/g, '') // strip underscores
 ) != a ? err() : a];
 
 // Char test for prefix base
 const charTest = {
-  2: c => c === 48 || c === 49,
-  8: c => c >= 48 && c <= 55,
-  16: c => (c >= _0 && c <= _9) || (c >= _a && c <= _f) || (c >= _A && c <= _F)
+  2: c => c === 48 || c === 49 || c === UNDERSCORE,
+  8: c => (c >= 48 && c <= 55) || c === UNDERSCORE,
+  16: c => (c >= _0 && c <= _9) || (c >= _a && c <= _f) || (c >= _A && c <= _F) || c === UNDERSCORE
 };
 
 // Default: no prefixes
@@ -40,7 +41,7 @@ lookup[_0] = a => {
     for (const [pre, base] of Object.entries(cfg)) {
       if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
         skip(2);
-        return [, parseInt(next(charTest[base]), base)];
+        return [, parseInt(next(charTest[base]).replace(/_/g, ''), base)];
       }
     }
   }
