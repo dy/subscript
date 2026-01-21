@@ -292,9 +292,17 @@ const resolvePath = (from, to) => {
 /**
  * Bundle ES modules into single file
  * @param {string} entry - Entry file path
- * @param {(path: string) => string|Promise<string>} read - File reader
+ * @param {Object|Function} read - Source map {path: code} or reader function
  */
 export async function bundle(entry, read) {
+  // Accept object as source map
+  if (typeof read === 'object') {
+    const sources = read;
+    read = path => {
+      if (!(path in sources)) throw Error(`Module not found: ${path}`);
+      return sources[path];
+    };
+  }
   const modules = new Map();
   const order = [];
 
@@ -484,16 +492,6 @@ export async function bundle(entry, read) {
 
   return result;
 }
-
-/**
- * Create a read function from a map of path → source code
- * @param {Object<string, string>} sources - Map of path to source code
- * @returns {(path: string) => string}
- */
-export const fromSources = sources => path => {
-  if (!(path in sources)) throw Error(`Module not found: ${path}`);
-  return sources[path];
-};
 
 /**
  * Bundle with Node.js fs (only available in Node.js environment)

@@ -95,7 +95,7 @@
 
 - [x] ~~Warn Jessie on bad ASI~~ no complaints
 
-- [ ] Better error pointers
+- [x] Better error pointers
 
 - [ ] Bundle itself instead of esbuild
 

@@ -143,12 +143,11 @@ import { bundleFile } from 'subscript/util/bundle.js'
 console.log(await bundleFile('jessie.js'))
 
 // Browser / custom sources
-import { bundle, fromSources } from 'subscript/util/bundle.js'
-const read = fromSources({
+import { bundle } from 'subscript/util/bundle.js'
+console.log(await bundle('main.js', {
   'main.js': `import { x } from './lib.js'; export default x * 2`,
   'lib.js': `export const x = 21`
-})
-console.log(await bundle('main.js', read))
+}))
 // → "const x = 21;\nexport { x as default }"
 ```
 
