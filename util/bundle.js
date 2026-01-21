@@ -6,8 +6,6 @@
  */
 import { parse } from '../jessie.js';
 import { codegen } from './stringify.js';
-import { readFile } from 'fs/promises';
-import { resolve } from 'path';
 
 // === AST Utilities ===
 
@@ -487,10 +485,27 @@ export async function bundle(entry, read) {
   return result;
 }
 
-/** Bundle with Node.js fs */
-export const bundleFile = (entry) => bundle(resolve(entry), path => readFile(path, 'utf-8'));
+/**
+ * Create a read function from a map of path → source code
+ * @param {Object<string, string>} sources - Map of path to source code
+ * @returns {(path: string) => string}
+ */
+export const fromSources = sources => path => {
+  if (!(path in sources)) throw Error(`Module not found: ${path}`);
+  return sources[path];
+};
 
-// CLI
+/**
+ * Bundle with Node.js fs (only available in Node.js environment)
+ * Dynamically imports fs/path to avoid browser errors
+ */
+export async function bundleFile(entry) {
+  const { readFile } = await import('fs/promises');
+  const { resolve } = await import('path');
+  return bundle(resolve(entry), path => readFile(path, 'utf-8'));
+}
+
+// CLI (Node.js only)
 if (typeof process !== 'undefined' && process.argv[1]?.includes('bundle')) {
   const entry = process.argv[2];
   if (!entry) {

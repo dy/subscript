@@ -1,5 +1,6 @@
 /**
  * Test bundler by bundling feature files and verifying runtime works
+ * Node.js only - uses fs for file operations
  */
 import test, { is, ok } from 'tst'
 import { bundleFile } from '../util/bundle.js'

@@ -16,6 +16,9 @@ test.describe('Subscript REPL', () => {
     page.on('console', msg => {
       if (msg.type() === 'error') errors.push(msg.text())
     })
+    page.on('pageerror', err => {
+      errors.push(err.message)
+    })
     await page.goto(URL)
     await expect(page.locator('#ast')).not.toBeEmpty({ timeout: 5000 })
     // Filter out expected startup logs, only check for real errors
@@ -177,6 +180,9 @@ test.describe('Subscript REPL', () => {
     // Uncheck arrow feature - example updates to one without arrows
     const arrowCheckbox = page.locator('input[data-id="arrow"]')
     await arrowCheckbox.uncheck()
+    
+    // Wait for example to update (should not contain arrows anymore)
+    await expect(input).not.toHaveValue(/=>/, { timeout: 3000 })
     await expect(ast).not.toBeEmpty({ timeout: 2000 })
 
     // Verify no arrows in updated code (feature combinator adapts)

@@ -305,6 +305,9 @@ h1 span { color: var(--accent); }
 </div>
 
 <script type="module">
+// Import bundler for export functionality
+import { bundle } from './util/bundle.js';
+
 // Feature ID to file path mapping (actual file locations)
 const FEATURE_PATHS = {
   // Core (from subscript.js)
@@ -665,8 +668,9 @@ let evalId = 0
 let currentWorker = null
 
 // Fetch all feature sources upfront (using mapped paths)
+// Include control.js which is imported by function/loop/switch/try
 const featureSources = {}
-const uniquePaths = [...new Set(Object.values(FEATURE_PATHS))]
+const uniquePaths = [...new Set([...Object.values(FEATURE_PATHS), 'feature/control.js'])]
 await Promise.all(uniquePaths.map(async path => {
   const res = await fetch('./' + path)
   if (res.ok) featureSources[path] = await res.text()
@@ -1265,60 +1269,59 @@ export default s => compile(parse(s))
 `
 }
 
-// Self-contained ES module bundle - proper bundling that preserves exports
-function generateSelfContainedBundle() {
-  let bundle = `// Bundled subscript (${selected.size} features)
-// https://github.com/dy/subscript
-
-`
-
-  // 1. Parse.js (contains parse, compile, operators all in one)
-  bundle += `// === parse.js ===\n`
-  let parseModule = stripImports(parseSrc)
-    .replace(/^export\s+let\s+/gm, 'let ')
-    .replace(/^export\s+const\s+/gm, 'const ')
-    .replace(/^export\s+default\s+parse\s*;?\s*$/gm, '')
-  bundle += parseModule + '\n\n'
-
-  // 2. Features (in order, avoiding duplicates)
-  const includedPaths = new Set()
+// Self-contained ES module bundle using proper bundler
+async function generateSelfContainedBundle() {
+  // Collect feature paths in dependency order
+  const featurePaths = [];
+  const includedPaths = new Set();
 
   for (const featureId of featureOrder) {
-    // Check if feature should be included (either selected, or needed by a selected feature)
-    let shouldInclude = selected.has(featureId)
+    let shouldInclude = selected.has(featureId);
     if (!shouldInclude && DEPENDENCIES[featureId]) {
-      shouldInclude = DEPENDENCIES[featureId].some(x => selected.has(x))
+      shouldInclude = DEPENDENCIES[featureId].some(x => selected.has(x));
     }
-    if (!shouldInclude) continue
+    if (!shouldInclude) continue;
 
-    const path = FEATURE_PATHS[featureId]
-    if (!path || includedPaths.has(path)) continue
-    includedPaths.add(path)
-
-    const featureCode = featureSources[path]
-    if (!featureCode) continue
-
-    bundle += `// === ${path} ===\n`
-    let code = stripImports(featureCode)
-    code = stripExports(code)
-    // Wrap in IIFE to avoid const redeclaration (PREFIX, STATEMENT, etc.)
-    bundle += `;(function(){\n${code}\n})();\n\n`
-
-    if (featureId === 'unit') {
-      bundle += `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n\n`
-    }
+    const path = FEATURE_PATHS[featureId];
+    if (!path || includedPaths.has(path)) continue;
+    includedPaths.add(path);
+    featurePaths.push(path);
   }
 
-  // Enable single quotes (justin/jessie compatibility)
+  // Build virtual entry that imports parse + features
+  const allSources = { ...featureSources, 'parse.js': parseSrc };
+  const imports = featurePaths.map(f => `import './${f}';`).join('\n');
+  const entry = `import './parse.js';\n${imports}\nexport { parse, compile } from './parse.js';\n`;
+  allSources['__entry__.js'] = entry;
+
+  let bundled = await bundle('__entry__.js', path => {
+    if (path in allSources) return allSources[path];
+    throw Error(`Module not found: ${path}`);
+  });
+
+  // Add header comment
+  bundled = `// Bundled subscript (${selected.size} features)\n// https://github.com/dy/subscript\n\n` + bundled;
+
+  // Add unit registration if unit feature is selected
+  if (selected.has('unit')) {
+    bundled = bundled.replace(
+      /export \{/,
+      `unit('px','em','rem','vh','vw','vmin','vmax','ch','ex','pt','pc','in','cm','mm','s','ms','deg','rad','turn','fr');\n\nexport {`
+    );
+  }
+
+  // Enable single quotes if string feature is selected
   if (selected.has('string')) {
-    bundle += `parse.string["'"] = true;\n\n`
+    bundled = bundled.replace(
+      /export \{/,
+      `parse.string["'"] = true;\n\nexport {`
+    );
   }
 
-  // ESM exports
-  bundle += `export { parse, compile }
-export default (code) => compile(parse(code))
-`
-  return bundle
+  // Add default export
+  bundled += `\nexport default (code) => compile(parse(code))\n`;
+
+  return bundled;
 }
 
 // Real minification via Terser (async)
@@ -1393,7 +1396,7 @@ async function gzipSize(str) {
 const bundleSizeHint = document.getElementById('bundleSizeHint')
 let lastBundleSize = null
 async function updateBundleSizeHint() {
-  const code = generateSelfContainedBundle()
+  const code = await generateSelfContainedBundle()
   const minCode = await minify(code)
   const gz = await gzipSize(minCode)
   lastBundleSize = { raw: new Blob([code]).size, min: new Blob([minCode]).size, gz }
@@ -1406,32 +1409,48 @@ const modalCode = document.getElementById('modalCode')
 const bundleToggle = document.getElementById('bundleToggle')
 const sizeInfo = document.getElementById('sizeInfo')
 let currentBundleCode = ''
+let updatePending = null
 
 async function updateModalCode() {
+  // Cancel any pending update and wait for current to finish
+  if (updatePending) {
+    await updatePending
+  }
+
   const isBundle = bundleToggle.checked
   console.log('updateModalCode called, isBundle:', isBundle)
 
-  let code = isBundle ? generateSelfContainedBundle() : generateImportBundle()
-  console.log('Generated code:', code.length, 'bytes')
-
   if (isBundle) {
     modalCode.textContent = 'Bundling & minifying...'
-    console.log('Calling minify...')
-    code = await minify(code)
-    console.log('After minify:', code.length, 'bytes')
+    sizeInfo.textContent = 'bundling...'
   }
 
-  currentBundleCode = code
-  modalCode.textContent = code
+  const doUpdate = async () => {
+    let code = isBundle ? (await generateSelfContainedBundle()) : generateImportBundle()
+    console.log('Generated code:', code.length, 'bytes')
 
-  // Update size info
-  if (isBundle) {
-    const rawSize = new Blob([code]).size
-    const gzip = await gzipSize(code)
-    sizeInfo.textContent = `${formatSize(rawSize)} / ${formatSize(gzip)} gzip`
-  } else {
-    sizeInfo.textContent = `${selected.size} features`
+    if (isBundle) {
+      console.log('Calling minify...')
+      code = await minify(code)
+      console.log('After minify:', code.length, 'bytes')
+    }
+
+    currentBundleCode = code
+    modalCode.textContent = code
+
+    // Update size info
+    if (isBundle) {
+      const rawSize = new Blob([code]).size
+      const gzip = await gzipSize(code)
+      sizeInfo.textContent = `${formatSize(rawSize)} / ${formatSize(gzip)} gzip`
+    } else {
+      sizeInfo.textContent = `${selected.size} features`
+    }
   }
+
+  updatePending = doUpdate()
+  await updatePending
+  updatePending = null
 }
 
 document.getElementById('getBundleBtn').addEventListener('click', () => {
