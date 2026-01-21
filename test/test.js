@@ -19,11 +19,16 @@ import './feature/unit.js'
 import './feature/jessie.js'
 import './feature/async-class.js'
 
-import './meta.js'
 
 // Integration tests
 import './subscript.js'
 
-// Bundler tests (dogfooding)
-import './bundle.js'
-import './perf.js'
+// Node.js only tests (bundler uses fs, perf needs stable timing)
+if (typeof process !== 'undefined') {
+  await import('./meta.js')
+  await import('./bundle.js')
+  await import('./perf.js')
+}
+
+// Error formatting demo
+// import './errors-demo.js'

@@ -138,10 +138,18 @@ codegen(['+', ['*', 'min', [,60]], [,'sec']])
 Bundle imports into a single file:
 
 ```js
-import { bundle } from 'subscript/util/bundle.js'
+// Node.js
+import { bundleFile } from 'subscript/util/bundle.js'
+console.log(await bundleFile('jessie.js'))
 
-const code = await bundle('subscript/jessie.js')
-// → self-contained ES module
+// Browser / custom sources
+import { bundle, fromSources } from 'subscript/util/bundle.js'
+const read = fromSources({
+  'main.js': `import { x } from './lib.js'; export default x * 2`,
+  'lib.js': `export const x = 21`
+})
+console.log(await bundle('main.js', read))
+// → "const x = 21;\nexport { x as default }"
 ```
 
 

@@ -14,10 +14,10 @@ export let idx, cur,
     last = lines.pop(),
     before = cur.slice(Math.max(0, at - 40), at),
     ptr = '\u032D',
-    chr = (cur[at] || '∅') + ptr,
+    chr = (cur[at] || ' ') + ptr,
     after = cur.slice(at + 1, at + 20)
   ) => {
-    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1}\n${(cur[at-41]!=='\n' ? '...' : '') +before}${chr}${after}`)
+    throw SyntaxError(`${msg} at ${lines.length + 1}:${last.length + 1}\n${(cur[at-41]!=='\n' ? '' : '') +before}${chr}${after}`)
   },
 
   // attach location to node (returns node for chaining)
