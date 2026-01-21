@@ -74,6 +74,22 @@ test('numbers: numeric separators', () => {
   is(compile(parse('1_000 + 2_000'))(), 3000);
 });
 
+test('numbers: bigint', () => {
+  is(parse('123n'), [, 123n]);
+  is(parse('1_000n'), [, 1000n]);
+  is(parse('0n'), [, 0n]);
+});
+
+test('meta: import.meta', () => {
+  is(parse('import.meta'), ['import.meta']);
+  is(parse('import.meta.url'), ['.', ['import.meta'], 'url']);
+});
+
+test('meta: new.target', () => {
+  is(parse('new.target'), ['new.target']);
+  is(parse('new.target.name'), ['.', ['new.target'], 'name']);
+});
+
 test('object: method shorthand', () => {
   is(parse('{ foo() {} }'), ['{}', [':', 'foo', ['=>', ['()', null], null]]]);
   is(parse('{ add(a, b) { a + b } }'), ['{}', [':', 'add', ['=>', ['()', [',', 'a', 'b']], ['+', 'a', 'b']]]]);

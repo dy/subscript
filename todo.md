@@ -90,10 +90,10 @@
 
 - [x] class extends - Parse-only support added (feature/class.js)
 - [x] Generators function* - Parse-only support added (feature/function.js)
-- [ ] Numeric separators 1_000_000 - Minor convenience, easy workaround
-- [ ] Method shorthand { foo() {} } - Use { foo: () => {} } instead
+- [x] Numeric separators 1_000_000 - Minor convenience, easy workaround
+- [x] Method shorthand { foo() {} } - Use { foo: () => {} } instead
 
-- [ ] Warn Jessie on bad ASI
+- [x] ~~Warn Jessie on bad ASI~~ no complaints
 
 - [ ] Better error pointers
 

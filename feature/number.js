@@ -5,20 +5,26 @@
  */
 import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
 
-const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45, UNDERSCORE = 95;
+const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45, UNDERSCORE = 95, _n = 110;
 const _a = 97, _f = 102, _A = 65, _F = 70;
 
+// Strip underscores only if present (avoid allocation for common case)
+const strip = s => s.indexOf('_') < 0 ? s : s.replaceAll('_', '');
+
 // Decimal number - check for .. range operator (don't consume . if followed by .)
-// Supports numeric separators: 1_000_000
-const num = a => [, (
-  a = +next(c =>
+// Supports numeric separators: 1_000_000 and BigInt suffix: 123n
+const num = a => {
+  let str = strip(next(c =>
     // . is decimal only if NOT followed by another . (range operator)
     (c === PERIOD && cur.charCodeAt(idx + 1) !== PERIOD) ||
     (c >= _0 && c <= _9) ||
     c === UNDERSCORE ||
     ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)
-  ).replaceAll('_', '')
-) != a ? err() : a];
+  ));
+  // BigInt suffix
+  if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt(str)]; }
+  return (a = +str) != a ? err() : [, a];
+};
 
 // Char test for prefix base (with underscore support)
 const charTest = {
@@ -42,7 +48,7 @@ lookup[_0] = a => {
     for (const [pre, base] of Object.entries(cfg)) {
       if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
         skip(2);
-        return [, parseInt(next(charTest[base]).replaceAll('_', ''), base)];
+        return [, parseInt(strip(next(charTest[base])), base)];
       }
     }
   }
