@@ -17,7 +17,7 @@ fn({ a: 1, b: 3 })  // 7
 
 * **Fast** — Pratt parser engine, see [benchmarks](#performance)
 * **Portable** — universal expression format, see [spec](./spec.md)
-* **Extensible** — pluggable syntax, see [DSL builder](https://dy.github.io/subscript/)
+* **Extensible** — pluggable syntax, see [playground](https://dy.github.io/subscript/)
 * **Metacircular** — can parse and compile itself
 * **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
 
