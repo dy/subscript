@@ -183,13 +183,15 @@ Template literals contain string parts (as literals) interleaved with expression
 ['if', cond, then]            if (cond) then
 ['if', cond, then, else]      if (cond) then else alt
 ['while', cond, body]         while (cond) body
-['for', init, cond, step, body]  for (init; cond; step) body
-['for-of', 'x', iter, body]   for (x of iter) body
-['for-of', 'x', iter, body, 'const']  for (const x of iter) body
-['block', body]               { body }
+['for', head, body]           for (...) body
+['for', ['of', 'x', iter], body]        for (x of iter) body
+['for', ['of', ['const', 'x'], iter], body]  for (const x of iter) body
+['for', ['in', 'x', obj], body]         for (x in obj) body
+['for', [';', init, cond, step], body]  for (init; cond; step) body
+['{}', body]                  { body } (block)
 ['let', 'x']                  let x
-['let', 'x', val]             let x = val
-['const', 'x', val]           const x = val
+['let', ['=', 'x', val]]      let x = val
+['const', ['=', 'x', val]]    const x = val
 ['break']                     break
 ['continue']                  continue
 ['return']                    return
@@ -198,16 +200,16 @@ Template literals contain string parts (as literals) interleaved with expression
 
 ### Exceptions (feature/throw.js, feature/try.js)
 ```
-['throw', val]                throw val
-['try', body, 'e', catch]     try { body } catch (e) { catch }
-['try', body, null, null, finally]  try { body } finally { finally }
-['try', body, 'e', catch, finally]  try { body } catch (e) { catch } finally { finally }
+['throw', val]                              throw val
+['catch', ['try', body], 'e', handler]      try { body } catch (e) { handler }
+['finally', ['try', body], handler]         try { body } finally { handler }
+['finally', ['catch', ...], handler]        try {...} catch {...} finally {...}
 ```
 
 ### Function Declarations (feature/function.js)
 ```
-['function', 'name', ['a', 'b'], body]  function name(a, b) { body }
-['function', null, ['x'], body]         function(x) { body }
+['function', 'name', [',', 'a', 'b'], body]  function name(a, b) { body }
+['function', '', 'x', body]                  function(x) { body }
 ```
 
 
@@ -218,14 +220,24 @@ Template literals contain string parts (as literals) interleaved with expression
 
 Following McCarthy's [original Lisp](http://www-formal.stanford.edu/jmc/recursive.pdf) (1960), the operator occupies position zero. This enables uniform traversal: every node is processed identically regardless of arity.
 
-### 2. Strings are References
+### 2. Strings are References or Tokens
 
-An unwrapped string is always an identifier — a name to resolve from context. This prevents confusion between the *name* `"x"` and the *string value* `"x"`.
+An unwrapped string in operand position is interpreted by the operator:
+
+- **Identifier**: resolved from context (most operators)
+- **Token**: used directly as name/data (operator-specific)
 
 ```
-"x"           → resolve x from context
-[, "x"]       → the literal string "x"
+"x"               → resolve x from context
+[, "x"]           → the literal string "x"
+['.', a, 'b']     → 'b' is property name (token)
+['//', 'abc', 'g']→ pattern/flags are tokens
+['n', '123']      → bigint digits are token
+['px', '100']     → unit value is token
+['function', 'f', ...] → 'f' is function name (token)
 ```
+
+Operators that use tokens: `.`, `?.`, `//`, `n`, `px`/units, `=>`, `function`, `let`, `const`, `try` (catch param).
 
 ### 3. Empty Slot for Literals
 
@@ -275,38 +287,71 @@ Custom operators are simply strings in position zero.
 
 Literals (`[, value]`) hold JSON primitives only: number, string, boolean, null.
 
-Non-JSON values use **constructor form** — an operator that constructs the value:
+Non-JSON values use **primitive operators** with token operands:
 
-| Value | Constructor Form |
-|-------|------------------|
+| Value | Form |
+|-------|------|
 | `undefined` | `[]` (empty array, JSON round-trip safe) |
 | `NaN` | `[, NaN]` (JS runtime only, serializes to `[null, null]`) |
 | `Infinity` | `[, Infinity]` (JS runtime only, serializes to `[null, null]`) |
-| `/abc/gi` | `['//', 'abc', 'gi']` |
+| `/abc/gi` | `['//', 'abc', 'gi']` (pattern/flags are tokens) |
 | `/abc/` | `['//', 'abc']` |
-| `10n` (BigInt) | `['n', '10']` |
+| `10n` (BigInt) | `['n', '10']` (digits are token) |
+| `100px` | `['px', '100']` (unit with value token) |
 | `Symbol('x')` | `['()', 'Symbol', [, 'x']]` (function call) |
-| `100px` | `['px', [, 100]]` (unit operator) |
 | `` `a${x}b` `` | `` ['`', [, 'a'], 'x', [, 'b']] `` (interpolation) |
 
-**Regex** uses `//` as constructor operator (distinct from `/` division):
-- Division: `['/', a, b]`
-- Regex: `['//', pattern]` or `['//', pattern, flags]`
+**Regex** (`//`), **BigInt** (`n`), and **Units** (`px`, `em`, etc.) use tokens because they're syntactic parts of the primitive, like property names in `.` access.
 
 **Template literals** must be operations — they contain sub-expressions to evaluate.
 
-**Note**: For full JSON serialization portability, non-JSON primitives should use constructor form. JS-only values (`undefined`, `NaN`, `Infinity`) work in JS runtime but serialize to `null`.
 
+### Examples
 
-### Operand Validity
-
-Operands must be valid tree nodes:
-
+**Property access** — name is token:
 ```
-['px', [, 100]]    ✓  literal operand
-['px', 'x']        ✓  identifier operand
-['px', 100]        ✗  raw number is not a tree node
+a.b               → ['.', 'a', 'b']
+a?.b              → ['?.', 'a', 'b']
 ```
+
+**Primitives** — pattern/digits/unit are tokens:
+```
+/abc/gi           → ['//', 'abc', 'gi']
+10n               → ['n', '10']
+100px             → ['px', '100']
+```
+
+**Variables** — wrap assignment expression:
+```
+let x             → ['let', 'x']
+let x = 1         → ['let', ['=', 'x', [, 1]]]
+const y = 2       → ['const', ['=', 'y', [, 2]]]
+```
+
+**For loops** — head is an expression:
+```
+for (x of arr) {}         → ['for', ['of', 'x', 'arr'], body]
+for (const x of arr) {}   → ['for', ['of', ['const', 'x'], 'arr'], body]
+for (let x of arr) {}     → ['for', ['of', ['let', 'x'], 'arr'], body]
+for (x in obj) {}         → ['for', ['in', 'x', 'obj'], body]
+for (;;) {}               → ['for', [';', null, null, null], body]
+```
+
+**Try/catch** — uses `catch`/`finally` as operators:
+```
+try { a } catch (e) { b }     → ['catch', ['try', 'a'], 'e', 'b']
+try { a } finally { c }       → ['finally', ['try', 'a'], 'c']
+try { a } catch (e) { b } finally { c }  → ['finally', ['catch', ['try', 'a'], 'e', 'b'], 'c']
+```
+
+**Functions** — name and params are tokens:
+```
+function f(a, b) { c }    → ['function', 'f', [',', 'a', 'b'], 'c']
+function(x) { y }         → ['function', '', 'x', 'y']
+x => x                    → ['=>', 'x', 'x']
+(a, b) => a + b           → ['=>', ['()', [',', 'a', 'b']], ['+', 'a', 'b']]
+```
+
 
 
 

@@ -86,6 +86,10 @@ test('justin: JSON serialization', () => {
   // Compile from JSON-restored AST
   const ast = JSON.parse(JSON.stringify(parse('1 + 2')))
   is(compile(ast)({}), 3)
+
+  // Property access - name is token
+  is(JSON.parse(JSON.stringify(parse('a.b'))), ['.', 'a', 'b'])
+  is(JSON.parse(JSON.stringify(parse('a?.b'))), ['?.', 'a', 'b'])
 })
 
 test('justin: logical', () => {
