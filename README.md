@@ -2,7 +2,7 @@
 
 <p align="center">Tiny expression parser & evaluator.</p>
 <div align="center">
-  
+
 [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript) [![microjs](https://img.shields.io/badge/µjs-subscript-darkslateblue)](http://microjs.com/#subscript) <!--[![demo](https://img.shields.io/badge/play-%F0%9F%9A%80-white)](https://dy.github.io/subscript/)-->
 
 </div>
@@ -15,16 +15,16 @@ let fn = subscript('a + b * 2')
 fn({ a: 1, b: 3 })  // 7
 ```
 
-* **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
 * **Fast** — Pratt parser engine, see [benchmarks](#performance)
 * **Portable** — universal expression format, see [spec](./spec.md)
 * **Extensible** — pluggable syntax, see [DSL builder](https://dy.github.io/subscript/)
 * **Metacircular** — can parse and compile itself
+* **Safe** — sandboxed, blocks `__proto__`, `constructor`, no global access
 
 
 ## Presets
 
-**Subscript**: common expressions:
+**Subscript** – common expressions:
 
 ```js
 import subscript from 'subscript'
@@ -32,7 +32,7 @@ import subscript from 'subscript'
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
-**Justin**: JSON + expressions + templates + arrows:
+**Justin** – JSON + expressions + templates + arrows:
 
 ```js
 import justin from 'subscript/justin.js'
@@ -41,7 +41,7 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 ```
 
-**Jessie**: JSON + expressions + statements, functions (JS subset):
+**Jessie** – JSON + expressions + statements, functions (JS subset):
 
 ```js
 import jessie from 'subscript/jessie.js'
@@ -59,6 +59,8 @@ fn({})  // 120
 See [docs](./docs.md#presets) for full description.
 
 ## Extension
+
+Add operators, literals or custom syntax:
 
 ```js
 import { binary, operator, compile } from 'subscript/justin.js'
@@ -159,7 +161,7 @@ console.log(await bundle('main.js', {
 <!-- * [glsl-transpiler](https://github.com/stackgl/glsl-transpiler) -->
 <!-- * [piezo](https://github.com/dy/piezo) -->
 
-<!-- 
+<!--
 ## Refs
 
 [jsep](https://github.com/EricSmekens/jsep), [jexl](https://github.com/TomFrost/Jexl), [expr-eval](https://github.com/silentmatt/expr-eval), [math.js](https://mathjs.org/).
