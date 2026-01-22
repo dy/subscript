@@ -25,8 +25,11 @@ export const codegen = node => {
   // Literal: [, value]
   if (op === undefined) return typeof args[0] === 'string' ? JSON.stringify(args[0]) : String(args[0]);
 
-  // Custom generator
-  if (generators[op]) return generators[op](...args);
+  // Custom generator (if returns result, use it; undefined falls through)
+  if (generators[op]) {
+    const result = generators[op](...args);
+    if (result !== undefined) return result;
+  }
 
   // Brackets: [], {}, ()
   if (op === '[]' || op === '{}' || op === '()') {
@@ -142,6 +145,9 @@ generator(':', (k, v) => (typeof k === 'string' ? k : '[' + codegen(k) + ']') + 
 // Template literals
 generator('`', (...parts) => '`' + parts.map(p => p?.[0] === undefined ? String(p[1]).replace(/`/g, '\\`').replace(/\$/g, '\\$') : '${' + codegen(p) + '}').join('') + '`');
 generator('``', (tag, ...parts) => codegen(tag) + '`' + parts.map(p => p?.[0] === undefined ? String(p[1]).replace(/`/g, '\\`').replace(/\$/g, '\\$') : '${' + codegen(p) + '}').join('') + '`');
+
+// Regex constructor: ['//', pattern, flags?]
+generator('//', (a, b) => '/' + a + '/' + (b || ''));
 
 // Getter/Setter
 generator('get', (name, body) => 'get ' + name + '() { ' + (body ? codegen(body) : '') + ' }');

@@ -67,6 +67,27 @@ test('justin: booleans', () => {
   is(justin('null')(), null)
 })
 
+test('justin: JSON serialization', () => {
+  // JSON primitives serialize cleanly
+  is(JSON.parse(JSON.stringify(parse('true'))), [null, true])
+  is(JSON.parse(JSON.stringify(parse('false'))), [null, false])
+  is(JSON.parse(JSON.stringify(parse('null'))), [null, null])
+  is(JSON.parse(JSON.stringify(parse('42'))), [null, 42])
+  is(JSON.parse(JSON.stringify(parse('"hi"'))), [null, 'hi'])
+
+  // undefined uses [] for JSON round-trip (compiles back to undefined)
+  is(JSON.parse(JSON.stringify(parse('undefined'))), [])
+  is(compile(JSON.parse(JSON.stringify(parse('undefined'))))(), undefined)
+
+  // NaN/Infinity lose value in JSON (become null)
+  is(JSON.parse(JSON.stringify(parse('NaN'))), [null, null])
+  is(JSON.parse(JSON.stringify(parse('Infinity'))), [null, null])
+
+  // Compile from JSON-restored AST
+  const ast = JSON.parse(JSON.stringify(parse('1 + 2')))
+  is(compile(ast)({}), 3)
+})
+
 test('justin: logical', () => {
   is(parse('a && b'), ['&&', 'a', 'b'])
   is(parse('a || b'), ['||', 'a', 'b'])

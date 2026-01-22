@@ -1,14 +1,18 @@
 /**
  * Regex literals: /pattern/flags
  *
- * AST:
- *   /abc/gi  → [, /abc/gi]
+ * AST (constructor form, JSON-serializable):
+ *   /abc/gi  → ['//', 'abc', 'gi']
+ *   /abc/    → ['//', 'abc']
  *
  * Note: Disambiguates from division by context:
  *   - `/` after value = division (falls through to prev)
  *   - `/` at start or after operator = regex
+ *
+ * Compile:
+ *   ['//', 'abc', 'gi']  → new RegExp('abc', 'gi')
  */
-import { token, skip, err, next, idx, cur } from '../parse.js';
+import { token, skip, err, next, idx, cur, operator } from '../parse.js';
 
 const PREFIX = 140, SLASH = 47, BSLASH = 92;
 
@@ -26,6 +30,16 @@ token('/', PREFIX, a => {
   cur.charCodeAt(idx) === SLASH || err('Unterminated regex');
   skip(); // consume closing /
 
-  try { return [, new RegExp(pattern, next(regexFlag))]; }
+  const flags = next(regexFlag);
+  // Validate regex syntax
+  try { new RegExp(pattern, flags); }
   catch (e) { err('Invalid regex: ' + e.message); }
+
+  return flags ? ['//', pattern, flags] : ['//', pattern];
+});
+
+// Compile: ['//', pattern, flags?] → RegExp
+operator('//', (a, b) => {
+  const re = new RegExp(a, b || '');
+  return () => re;
 });

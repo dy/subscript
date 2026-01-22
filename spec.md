@@ -151,8 +151,9 @@ Sequence operators flatten naturally into n-ary form.
 [, true]           true
 [, false]          false
 [, null]           null
-[, undefined]      undefined
-[, NaN]            NaN
+[]                 undefined (empty array for JSON safety)
+[, NaN]            NaN (JS only)
+[, Infinity]       Infinity (JS only)
 ```
 
 Keywords are literals — they have no operator, only a value.
@@ -272,21 +273,29 @@ Custom operators are simply strings in position zero.
 
 ### Non-JSON Primitives
 
-JSON supports: number, string, boolean, null. Other values require representation choices:
+Literals (`[, value]`) hold JSON primitives only: number, string, boolean, null.
 
-| Value | Options |
-|-------|---------|
-| `undefined` | `[, undefined]` (JS only, serializes as `[null]`) |
-| `NaN` | `[, NaN]` (JS only) or keyword via context |
-| `10n` (BigInt) | `['n', [, '10']]` (constructor) or `[, '10n']` (string literal) |
+Non-JSON values use **constructor form** — an operator that constructs the value:
+
+| Value | Constructor Form |
+|-------|------------------|
+| `undefined` | `[]` (empty array, JSON round-trip safe) |
+| `NaN` | `[, NaN]` (JS runtime only, serializes to `[null, null]`) |
+| `Infinity` | `[, Infinity]` (JS runtime only, serializes to `[null, null]`) |
+| `/abc/gi` | `['//', 'abc', 'gi']` |
+| `/abc/` | `['//', 'abc']` |
+| `10n` (BigInt) | `['n', '10']` |
 | `Symbol('x')` | `['()', 'Symbol', [, 'x']]` (function call) |
-| `/abc/gi` | `['regex', [, 'abc'], [, 'gi']]` (constructor) or `[, '/abc/gi']` (string) |
-| `100px` | `['px', [, 100]]` (operator) or `[, '100px']` (string literal) |
-| `` `a${x}b` `` | `['\`', [, 'a'], 'x', [, 'b']]` (must interpolate) |
+| `100px` | `['px', [, 100]]` (unit operator) |
+| `` `a${x}b` `` | `` ['`', [, 'a'], 'x', [, 'b']] `` (interpolation) |
+
+**Regex** uses `//` as constructor operator (distinct from `/` division):
+- Division: `['/', a, b]`
+- Regex: `['//', pattern]` or `['//', pattern, flags]`
 
 **Template literals** must be operations — they contain sub-expressions to evaluate.
 
-**Units, regex, BigInt** can be either operators or string literals — parser decides, evaluator must match.
+**Note**: For full JSON serialization portability, non-JSON primitives should use constructor form. JS-only values (`undefined`, `NaN`, `Infinity`) work in JS runtime but serialize to `null`.
 
 
 ### Operand Validity

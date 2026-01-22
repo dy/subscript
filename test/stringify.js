@@ -149,3 +149,9 @@ test('stringify: sequence', () => {
   is(gen('a,b'), 'a, b')
   is(gen('a,b,c'), 'a, b, c')
 })
+
+test('stringify: regex', () => {
+  is(gen('/abc/'), '/abc/')
+  is(gen('/abc/gi'), '/abc/gi')
+  is(gen('/a\\/b/'), '/a\\/b/')
+})

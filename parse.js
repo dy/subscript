@@ -137,9 +137,10 @@ export const operator = (op, fn, prev = operators[op]) =>
   (operators[op] = (...args) => fn(...args) || prev?.(...args));
 
 // Compile AST to evaluator function
+// Note: [, value] serializes to [null, value] in JSON, both forms accepted
 export const compile = node => (
   !Array.isArray(node) ? (node === undefined ? () => undefined : ctx => ctx?.[node]) :
-  node[0] === undefined ? (v => () => v)(node[1]) :
+  node[0] == null ? (v => () => v)(node[1]) :  // == catches both undefined and null
   operators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`, node?.loc)
 );
 
