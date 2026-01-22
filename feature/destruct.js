@@ -14,7 +14,15 @@ export const destructure = (pattern, value, ctx) => {
   const [op, ...raw] = pattern;
   const items = flatten(raw);
   if (op === '{}') {
+    const used = [];
     for (const item of items) {
+      // Rest: {...rest}
+      if (Array.isArray(item) && item[0] === '...') {
+        const rest = {};
+        for (const k in value) if (!used.includes(k)) rest[k] = value[k];
+        ctx[item[1]] = rest;
+        break;
+      }
       let key, binding, def;
       // Shorthand: {x} → item is 'x'
       // With default: {x = 1} → ['=', 'x', default]
@@ -22,6 +30,7 @@ export const destructure = (pattern, value, ctx) => {
       if (typeof item === 'string') { key = binding = item }
       else if (item[0] === '=') { typeof item[1] === 'string' ? (key = binding = item[1]) : ([, key, binding] = item[1]); def = item[2] }
       else { [, key, binding] = item }
+      used.push(key);
       let val = value[key];
       if (val === undefined && def) val = compile(def)(ctx);
       destructure(binding, val, ctx);

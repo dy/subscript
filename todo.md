@@ -97,6 +97,13 @@
 
 - [x] Better error pointers
 
+- [x] Destructuring cases
+  - [x] `let [a, [b, c]] = [1, [2, 3]]` - nested array
+  - [x] `let [a = 10] = []` - default value
+  - [x] `let [a, ...rest] = [1, 2, 3]` - rest in array
+  - [x] `let {a, b = 5} = {a: 1}` - object default
+  - [x] `let {a, ...rest} = {a: 1, b: 2}` - object rest
+
 - [ ] Bundle itself instead of esbuild
 
 ## [ ] Integrations
