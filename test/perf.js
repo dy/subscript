@@ -4,8 +4,8 @@ const RUNS = 3e4
 const src = c => `1 + (a * b / c % d) - 2.0 + -3e-3 * +4.4e4 / f.g[0] - i.j(+k == 1)(${c})`
 const subscriptUrl = new URL('../subscript.js', import.meta.url).href
 const justinUrl = new URL('../justin.js', import.meta.url).href
-// Browser uses CDN, Node uses npm package
-const jsepUrl = typeof process !== 'undefined' ? 'jsep' : 'https://esm.sh/jsep'
+// Always use CDN - Node requires --import ./test/https-loader.js
+const jsepUrl = 'https://esm.sh/jsep'
 
 test.fork('perf: expr < jsep', {data: {RUNS, src, subscriptUrl, jsepUrl}}, async ({ ok }, {RUNS, src, subscriptUrl, jsepUrl}) => {
   const bench = (fn) => {
