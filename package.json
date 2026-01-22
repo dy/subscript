@@ -30,7 +30,7 @@
   "scripts": {
     "build": "esbuild subscript.js --bundle --minify --format=esm --outfile=subscript.min.js && esbuild justin.js --bundle --minify --format=esm --outfile=justin.min.js && esbuild jessie.js --bundle --minify --format=esm --outfile=jessie.min.js",
     "prepublishOnly": "npm run build",
-    "test": "node test/test.js",
+    "test": "node --import ./test/https-loader.js test/test.js",
     "check-types": "tsc --noEmit subscript.d.ts"
   },
   "repository": {
@@ -77,6 +77,6 @@
     "@playwright/test": "^1.57.0",
     "esbuild": "^0.27.2",
     "terser": "^5.44.1",
-    "tst": "^9.2.0"
+    "tst": "^9.2.1"
   }
 }
