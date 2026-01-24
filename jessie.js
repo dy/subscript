@@ -19,6 +19,7 @@ import './feature/if.js';
 import './feature/loop.js';
 import './feature/try.js';
 import './feature/switch.js';
+import './feature/statement.js';  // debugger, with, labeled statements
 
 // Module system
 import './feature/module.js';

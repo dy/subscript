@@ -97,3 +97,30 @@ test('object: method shorthand', () => {
   const obj = compile(parse('{ double(x) { x * 2 } }'))();
   is(obj.double(5), 10);
 });
+
+// === Additional JS statements ===
+
+test('statement: debugger', () => {
+  is(parse('debugger'), ['debugger']);
+  is(parse('debugger;x'), [';', ['debugger'], 'x']);
+});
+
+test('statement: with', () => {
+  is(parse('with (obj) x'), ['with', 'obj', 'x']);
+  is(parse('with (a.b) { c }'), ['with', ['.', 'a', 'b'], 'c']);
+});
+
+test('statement: break/continue label', () => {
+  is(parse('break'), ['break']);
+  is(parse('break foo'), ['break', 'foo']);
+  is(parse('continue'), ['continue']);
+  is(parse('continue bar'), ['continue', 'bar']);
+  // break followed by keyword should not consume as label
+  is(parse('if (x) break else y'), ['if', 'x', ['break'], 'y']);
+});
+
+test('statement: label (via colon)', () => {
+  // Simple labels work via : binary operator
+  is(parse('foo: x'), [':', 'foo', 'x']);
+  is(parse('foo: { x }'), [':', 'foo', ['{}', 'x']]);
+});
