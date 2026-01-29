@@ -6,9 +6,6 @@ import { keyword, block } from './block.js';
 const TOKEN = 200, PREFIX = 140, COMP = 90;
 const STATIC = Symbol('static');
 
-// super → literal
-literal('super', Symbol.for('super'));
-
 // static member → ['static', member]
 unary('static', PREFIX);
 

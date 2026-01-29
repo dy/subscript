@@ -52,9 +52,9 @@ test('async/class: static', () => {
 });
 
 test('async/class: super', () => {
-  is(parse('super'), [, Symbol.for('super')]);
-  is(parse('super.x'), ['.', [, Symbol.for('super')], 'x']);
-  is(parse('super()'), ['()', [, Symbol.for('super')], null]);
+  is(parse('super'), 'super');
+  is(parse('super.x'), ['.', 'super', 'x']);
+  is(parse('super()'), ['()', 'super', null]);
 });
 
 test('async/class: private fields', () => {
