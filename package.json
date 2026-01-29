@@ -1,6 +1,6 @@
 {
   "name": "subscript",
-  "version": "10.1.2",
+  "version": "10.1.3",
   "description": "Tiny expression parser & evaluator",
   "main": "subscript.js",
   "module": "subscript.js",
