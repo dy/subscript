@@ -36,7 +36,7 @@ export let idx, cur,
   seek = n => idx = n,
 
   // a + b - c
-  expr = (prec = 0, end) => {
+  expr = (p = 0, end) => {
     let cc, token, newNode, fn, prevReserved = parse.reserved, nl;
     if (end) parse.asi && (parse.newline = false);
     parse.reserved = 0;
@@ -46,8 +46,8 @@ export let idx, cur,
       (nl = parse.newline, 1) &&
       cc !== end &&
       (newNode =
-        ((fn = lookup[cc]) && fn(token, prec)) ??
-        (token && nl && parse.asi?.(token, prec, expr)) ??
+        ((fn = lookup[cc]) && fn(token, p)) ??
+        (token && nl && parse.asi?.(token, p, expr)) ??
         (!token && !parse.reserved && next(parse.id))
       )
     ) token = newNode, parse.reserved = 0;
@@ -84,7 +84,7 @@ export let idx, cur,
   // operator lookup table
   lookup = [],
 
-  // precedence registry - features register, others can read/override
+  // precedence registry - features register via token(), others can read
   prec = {},
 
   // create operator checker/mapper
@@ -97,7 +97,7 @@ export let idx, cur,
     prev = lookup[c],
     word = op.toUpperCase() !== op,
     matched, r
-  ) => (prec[op] = p, lookup[c] = (a, curPrec, curOp, from = idx) =>
+  ) => (p = prec[op] = !prev && prec[op] || p, lookup[c] = (a, curPrec, curOp, from = idx) =>
     (matched = curOp,
       (curOp ?
         op == curOp :
@@ -108,16 +108,16 @@ export let idx, cur,
     ) ||
     prev?.(a, curPrec, matched)),
 
-  binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
+  binary = (op, p, right = false) => token(op, p, (a, b) => a && (b = expr(p - (right ? .5 : 0))) && [op, a, b]),
 
-  unary = (op, prec, post) => token(op, prec, a => post ? (a && [op, a]) : (!a && (a = expr(prec - .5)) && [op, a])),
+  unary = (op, p, post) => token(op, p, a => post ? (a && [op, a]) : (!a && (a = expr(p - .5)) && [op, a])),
 
   literal = (op, val) => token(op, 200, a => !a && [, val]),
 
-  nary = (op, prec, right) => {
-    token(op, prec,
+  nary = (op, p, right) => {
+    token(op, p,
       (a, b) => (
-        b = expr(prec - (right ? .5 : 0)),
+        b = expr(p - (right ? .5 : 0)),
         (
           (a?.[0] !== op) && (a = [op, a || null]),
           b?.[0] === op ? a.push(...b.slice(1)) : a.push(b || null),
@@ -126,9 +126,9 @@ export let idx, cur,
     )
   },
 
-  group = (op, prec) => token(op[0], prec, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
+  group = (op, p) => token(op[0], p, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
 
-  access = (op, prec) => token(op[0], prec, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]));
+  access = (op, p) => token(op[0], p, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]));
 
 // === Compile: AST → Evaluator ===
 
