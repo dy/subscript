@@ -397,11 +397,57 @@ test('jessie: ASI basic', () => {
   is(ast[2], 'b')
 })
 
+test('jessie: ASI flat arrays', () => {
+  // 2 stmts - both forms should be identical
+  is(parse('a;b'), [';', 'a', 'b'])
+  is(parse('a\nb'), [';', 'a', 'b'])
+
+  // 3 stmts - flat array, not nested
+  is(parse('a;b;c'), [';', 'a', 'b', 'c'])
+  is(parse('a\nb\nc'), [';', 'a', 'b', 'c'])
+  is(parse('a;b\nc'), [';', 'a', 'b', 'c'])
+  is(parse('a\nb;c'), [';', 'a', 'b', 'c'])
+
+  // 4 stmts - all variations flat
+  is(parse('a;b;c;d'), [';', 'a', 'b', 'c', 'd'])
+  is(parse('a\nb\nc\nd'), [';', 'a', 'b', 'c', 'd'])
+  is(parse('a;b\nc;d'), [';', 'a', 'b', 'c', 'd'])
+})
+
 test('jessie: ASI return', () => {
   const ast = parse('return\nx')
   is(ast[0], ';')
   is(ast[1][0], 'return')
   is(ast[2], 'x')
+})
+
+test('jessie: ASI custom precedence', async () => {
+  const { prec, parse } = await import('../parse.js')
+
+  // Default: ASI at statement level (prec[';'] = 5)
+  // Newline continues expression when inside higher-precedence context
+  is(parse('a + b\nc'), [';', ['+', 'a', 'b'], 'c'])
+  is(parse('a\n+ b'), ['+', 'a', 'b'], 'continuation token binds')
+
+  // Disable ASI and reimport feature fresh
+  prec.asi = 0
+  parse.asi = null
+  await import('../feature/asi.js?v=disabled')
+  let threw = false
+  try { parse('a\nb') } catch { threw = true }
+  is(threw, true, 'asi=0 disables ASI')
+
+  // High precedence: ASI triggers inside expressions
+  prec.asi = 150
+  parse.asi = null
+  await import('../feature/asi.js?v=high')
+  is(parse('a + b\nc'), ['+', 'a', [';', 'b', 'c']], 'ASI inside + rhs')
+
+  // Restore default
+  delete prec.asi
+  parse.asi = null
+  await import('../feature/asi.js?v=restore')
+  is(parse('a\nb'), [';', 'a', 'b'])
 })
 
 // === compile integration ===

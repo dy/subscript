@@ -163,7 +163,25 @@ jessie`
 `({})  // 120
 ```
 
+#### ASI (Automatic Semicolon Insertion)
 
+Jessie supports JS-style ASI – newlines at statement level act as semicolons:
+
+```js
+jessie('a = 1\nb = 2\na + b')({})  // 3
+```
+
+ASI precedence can be customized via `prec.asi`:
+
+```js
+import { prec } from 'subscript/parse.js'
+
+prec.asi = 0       // disable ASI (require explicit semicolons)
+prec.asi = 150     // ASI even inside expressions (newline always separates)
+delete prec.asi    // restore default (prec[';'])
+
+import 'subscript/feature/asi.js
+```
 
 
 ## Extend Parser

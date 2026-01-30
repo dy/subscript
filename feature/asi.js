@@ -1,15 +1,10 @@
-/**
- * Automatic Semicolon Insertion (ASI)
- *
- * JS-style ASI: insert virtual ; when newline precedes illegal token at statement level
- */
-import { parse } from '../parse.js';
+// ASI: newline at `;` precedence level triggers nary `;`
+import { parse, prec } from '../parse.js';
 
-const STATEMENT = 5;
+// Set prec.asi before importing to customize (default: prec[';'])
+const lvl = prec.asi ?? prec[';'];
 
-parse.asi = (token, prec, expr) => {
-  if (prec >= STATEMENT) return; // only at statement level
-  const next = expr(STATEMENT - .5);
-  if (!next) return;
-  return token?.[0] !== ';' ? [';', token, next] : (token.push(next), token);
-};
+parse.asi = (a, p, expr, b, items) => p < lvl && (b = expr(lvl - .5)) && (
+  items = b?.[0] === ';' ? b.slice(1) : [b],
+  a?.[0] === ';' ? (a.push(...items), a) : [';', a, ...items]
+);

@@ -181,6 +181,16 @@ Keywords are literals — they have no operator, only a value.
 Template literals contain string parts (as literals) interleaved with expression parts (as nodes).
 
 ### Statements (jessie)
+
+ASI (Automatic Semicolon Insertion) treats newlines as statement separators, producing flat `;` arrays:
+```
+a; b        → [';', 'a', 'b']
+a\nb        → [';', 'a', 'b']       (ASI inserts ;)
+a; b; c     → [';', 'a', 'b', 'c']
+a\nb\nc     → [';', 'a', 'b', 'c']  (flat, not nested)
+```
+
+Control flow:
 ```
 ['if', cond, then]            if (cond) then
 ['if', cond, then, else]      if (cond) then else alt

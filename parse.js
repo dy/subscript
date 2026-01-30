@@ -47,7 +47,7 @@ export let idx, cur,
       cc !== end &&
       (newNode =
         ((fn = lookup[cc]) && fn(token, prec)) ??
-        (parse.asi && token && nl && (newNode = parse.asi(token, prec, expr))) ??
+        (token && nl && parse.asi?.(token, prec, expr)) ??
         (!token && !parse.reserved && next(parse.id))
       )
     ) token = newNode, parse.reserved = 0;
@@ -84,26 +84,29 @@ export let idx, cur,
   // operator lookup table
   lookup = [],
 
+  // precedence registry - features register, others can read/override
+  prec = {},
+
   // create operator checker/mapper
   token = (
     op,
-    prec = SPACE,
+    p = SPACE,
     map,
     c = op.charCodeAt(0),
     l = op.length,
     prev = lookup[c],
     word = op.toUpperCase() !== op,
     matched, r
-  ) => lookup[c] = (a, curPrec, curOp, from = idx) =>
+  ) => (prec[op] = p, lookup[c] = (a, curPrec, curOp, from = idx) =>
     (matched = curOp,
       (curOp ?
         op == curOp :
         (l < 2 || (op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (l < 3 || cur.substr(idx, l) == op))) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op)
       ) &&
-      curPrec < prec &&
+      curPrec < p &&
       (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r)
     ) ||
-    prev?.(a, curPrec, matched),
+    prev?.(a, curPrec, matched)),
 
   binary = (op, prec, right = false) => token(op, prec, (a, b) => a && (b = expr(prec - (right ? .5 : 0))) && [op, a, b]),
 
