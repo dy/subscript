@@ -63,6 +63,45 @@ test('jessie: blocks', () => {
   is(parse('{ x; y }'), ['{}', [';', 'x', 'y']])
 })
 
+test('jessie: block vs object detection', () => {
+  // Blocks - detected by statement keywords
+  is(parse('{a;b}'), ['{}', [';', 'a', 'b']])
+  is(parse('{let x=1}'), ['{}', ['let', ['=', 'x', [, 1]]]])
+  is(parse('{return x}'), ['{}', ['return', 'x']])
+  is(parse('{if(1)2}'), ['{}', ['if', [, 1], [, 2]]])
+
+  // Objects - no statement keywords
+  is(parse('{}'), ['{}', null])
+  is(parse('{a}'), ['{}', 'a'])
+  is(parse('{a:1}'), ['{}', [':', 'a', [, 1]]])
+  is(parse('{a,b}'), ['{}', [',', 'a', 'b']])
+
+  // Block evaluation - creates scope, returns last value
+  is(run('{let x=1; x+1}'), 2)
+  is(run('{let x=1}; x', {x: 5}), 5)  // block scope doesn't leak
+
+  // Object evaluation
+  is(run('{}'), {})
+  is(run('{a}', {a: 5}), {a: 5})
+  is(run('{a:1}'), {a: 1})
+})
+
+test('jessie: arrow block vs object', () => {
+  // Arrow with block body - returns undefined unless explicit return
+  is(run('(()=>{1})()'), undefined)
+  is(run('(()=>{a})()'), undefined)
+  is(run('(()=>{return 1})()'), 1)
+  is(run('(()=>{let x=1; return x})()'), 1)
+
+  // Arrow with expression body - returns value
+  is(run('(()=>1)()'), 1)
+  is(run('(()=>a)()', {a: 5}), 5)
+
+  // Arrow returning object - needs parens
+  is(run('(()=>({a}))()', {a: 5}), {a: 5})
+  is(run('(()=>({a:1}))()'), {a: 1})
+})
+
 // === return/break/continue ===
 
 test('jessie: return/break/continue', () => {

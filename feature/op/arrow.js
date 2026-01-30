@@ -6,6 +6,7 @@
  * Common in: JS, TS, Java, C#, Kotlin, Scala
  */
 import { binary, operator, compile } from '../../parse.js';
+import { RETURN } from '../control.js';
 
 const ASSIGN = 20;
 
@@ -13,7 +14,7 @@ binary('=>', ASSIGN, true);
 
 // Compile
 operator('=>', (a, b) => {
-  a = a[0] === '()' ? a[1] : a;
+  a = a?.[0] === '()' ? a[1] : a;
   a = !a ? [] : a[0] === ',' ? a.slice(1) : [a];
   let restIdx = -1, restName = null;
   if (a.length && Array.isArray(a[a.length - 1]) && a[a.length - 1][0] === '...') {
@@ -21,13 +22,17 @@ operator('=>', (a, b) => {
     restName = a[restIdx][1];
     a = a.slice(0, -1);
   }
-  b = compile(b[0] === '{}' ? b[1] : b);
+  // Arrow body: {} is always block (need parens for object: ({...}))
+  // Block body returns undefined unless explicit return
+  const isBlock = b?.[0] === '{}';
+  b = compile(isBlock ? ['{', b[1]] : b);
   return (ctx = null) => {
     ctx = Object.create(ctx);
     return (...args) => {
       a.forEach((p, i) => ctx[p] = args[i]);
       if (restName) ctx[restName] = args.slice(restIdx);
-      return b(ctx);
+      try { const r = b(ctx); return isBlock ? undefined : r; }
+      catch (e) { if (e?.type === RETURN) return e.value; throw e; }
     };
   };
 });

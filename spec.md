@@ -161,7 +161,9 @@ Keywords are literals — they have no operator, only a value.
 ### Structures
 ```
 ['[]', [',', a, b]]           [a, b]
-['{}', [':', k1, v1, k2, v2]] {k1: v1, k2: v2}
+['{}', [':', k, v]]           {k: v} (object literal)
+['{}', 'a']                   {a} (object shorthand)
+['{', body]                   { body } (block statement)
 ```
 
 ### Functions
@@ -188,7 +190,6 @@ Template literals contain string parts (as literals) interleaved with expression
 ['for', ['of', ['const', 'x'], iter], body]  for (const x of iter) body
 ['for', ['in', 'x', obj], body]         for (x in obj) body
 ['for', [';', init, cond, step], body]  for (init; cond; step) body
-['{}', body]                  { body } (block)
 ['let', 'x']                  let x
 ['let', ['=', 'x', val]]      let x = val
 ['const', ['=', 'x', val]]    const x = val
