@@ -142,7 +142,7 @@ Extends Justin with statements — practical JS subset (inspired by [Jessie](htt
 + `let x`, `const x = 1`, `var x = 1`, `const {a, b} = x`
 + `break`, `continue`, `return x` (inside functions only)
 + `throw x`, `try { } catch (e) { } finally { }`
-+ `function f(a, b) { }`, `async function`, `function*`
++ `function f(a, b) { }`, `async function`, `function*`, `await`, `yield`
 + `class X { }`, `class X extends Y { }`
 + `typeof x`, `void x`, `delete x`, `x instanceof Y`
 + `new X()`, `new X(a, b)`
@@ -164,6 +164,18 @@ jessie`
 
 // Top-level return is invalid (same as JS) — use expressions:
 jessie`a + b`({ a: 1, b: 2 })  // 3
+```
+
+#### Async/Await
+
+Async functions return promises. `await` works in return position:
+
+```js
+// Works: await in return
+jessie`async function f() { return await Promise.resolve(42) }`({ Promise })
+
+// Limitation: await in assignment returns Promise, not value
+// let x = await y; x * 2  →  NaN (x is Promise)
 ```
 
 #### ASI (Automatic Semicolon Insertion)

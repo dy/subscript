@@ -19,6 +19,38 @@ test('async/class: await', () => {
   is(parse('await a.b'), ['await', ['.', 'a', 'b']]);
 });
 
+test('async/class: compile async function', async () => {
+  const ctx = { Promise };
+
+  // Basic async function
+  compile(parse('async function f() { return 1 }'))(ctx);
+  is(await ctx.f(), 1);
+
+  // Async with return await
+  compile(parse('async function g() { return await Promise.resolve(42) }'))(ctx);
+  is(await ctx.g(), 42);
+
+  // Async arrow
+  const fn = compile(parse('async () => 1'))(ctx);
+  is(await fn(), 1);
+
+  // Async arrow with await
+  const fn2 = compile(parse('async (x) => await x'))(ctx);
+  is(await fn2(Promise.resolve(99)), 99);
+});
+
+test.skip('async/class: compile await assignment (BROKEN)', async () => {
+  const ctx = { Promise };
+
+  // BUG: await in assignment doesn't work - x becomes Promise, not value
+  compile(parse('async function f() { let x = await Promise.resolve(5); return x * 2 }'))(ctx);
+  is(await ctx.f(), 10);  // Currently returns NaN
+
+  // BUG: multiple awaits don't work
+  compile(parse('async function g() { let a = await Promise.resolve(1); let b = await Promise.resolve(2); return a + b }'))(ctx);
+  is(await ctx.g(), 3);  // Currently returns "[object Promise][object Promise]"
+});
+
 test('async/class: yield', () => {
   is(parse('yield x'), ['yield', 'x']);
   is(parse('yield* g'), ['yield*', 'g']);
