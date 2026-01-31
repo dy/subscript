@@ -14,25 +14,31 @@ binary('=>', ASSIGN, true);
 
 // Compile
 operator('=>', (a, b) => {
+  // Normalize params: () → [], x → [x], (a, b) → [a, b]
   a = a?.[0] === '()' ? a[1] : a;
-  a = !a ? [] : a[0] === ',' ? a.slice(1) : [a];
+  const ps = !a ? [] : a[0] === ',' ? a.slice(1) : [a];
+  // Check for rest param
   let restIdx = -1, restName = null;
-  if (a.length && Array.isArray(a[a.length - 1]) && a[a.length - 1][0] === '...') {
-    restIdx = a.length - 1;
-    restName = a[restIdx][1];
-    a = a.slice(0, -1);
+  const last = ps[ps.length - 1];
+  if (Array.isArray(last) && last[0] === '...') {
+    restIdx = ps.length - 1;
+    restName = last[1];
+    ps.length--;
   }
   // Arrow body: {} is always block (need parens for object: ({...}))
   // Block body returns undefined unless explicit return
   const isBlock = b?.[0] === '{}';
   b = compile(isBlock ? ['{', b[1]] : b);
-  return (ctx = null) => {
-    ctx = Object.create(ctx);
-    return (...args) => {
-      a.forEach((p, i) => ctx[p] = args[i]);
-      if (restName) ctx[restName] = args.slice(restIdx);
-      try { const r = b(ctx); return isBlock ? undefined : r; }
-      catch (e) { if (e === RETURN) return e[0]; throw e; }
-    };
+  return ctx => (...args) => {
+    const l = {};
+    ps.forEach((p, i) => l[p] = args[i]);
+    if (restName) l[restName] = args.slice(restIdx);
+    const fnCtx = new Proxy(l, {
+      get: (l, k) => k in l ? l[k] : ctx?.[k],
+      set: (l, k, v) => ((k in l ? l : ctx)[k] = v, true),
+      has: (l, k) => k in l || (ctx ? k in ctx : false)
+    });
+    try { const r = b(fnCtx); return isBlock ? undefined : r; }
+    catch (e) { if (e === RETURN) return e[0]; throw e; }
   };
 });
