@@ -37,9 +37,8 @@ export let idx, cur,
 
   // a + b - c
   expr = (p = 0, end) => {
-    let cc, token, newNode, fn, prevReserved = parse.reserved, nl;
+    let cc, token, newNode, fn, nl;
     if (end) parse.asi && (parse.newline = false);
-    parse.reserved = 0;
 
     while (
       (cc = parse.space()) &&
@@ -48,10 +47,9 @@ export let idx, cur,
       (newNode =
         ((fn = lookup[cc]) && fn(token, p)) ??
         (token && nl && parse.asi?.(token, p, expr)) ??
-        (!token && !parse.reserved && next(parse.id))
+        (!token && next(parse.id))
       )
-    ) token = newNode, parse.reserved = 0;
-    parse.reserved = prevReserved;
+    ) token = newNode;
 
     if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
 
@@ -66,6 +64,9 @@ export let idx, cur,
     }
     return cc
   },
+
+  // peek at next non-space char without modifying idx
+  peek = (from = idx) => { while (cur.charCodeAt(from) <= SPACE) from++; return cur.charCodeAt(from); },
 
   // is char an id?
   id = parse.id = c =>
@@ -87,7 +88,8 @@ export let idx, cur,
   // precedence registry - features register via token(), others can read
   prec = {},
 
-  // create operator checker/mapper
+  // create operator checker/mapper - for symbols and special cases
+  // For prefix word operators, prefer keyword() from block.js
   token = (
     op,
     p = SPACE,
@@ -104,17 +106,17 @@ export let idx, cur,
         (l < 2 || (op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (l < 3 || cur.substr(idx, l) == op))) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op)
       ) &&
       curPrec < p &&
-      (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, word && r !== false && (parse.reserved = 1), !word && !prev && err()), r)
+      (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, !word && !prev && err()), r)
     ) ||
     prev?.(a, curPrec, matched)),
 
-  binary = (op, p, right = false) => token(op, p, (a, b) => a && (b = expr(p - (right ? .5 : 0))) && [op, a, b]),
+  binary = (op, p, right = false) => token(op, p, a => a && (b => b && [op, a, b])(expr(p - (right ? .5 : 0)))),
 
   unary = (op, p, post) => token(op, p, a => post ? (a && [op, a]) : (!a && (a = expr(p - .5)) && [op, a])),
 
   literal = (op, val) => token(op, 200, a => !a && [, val]),
 
-  nary = (op, p, right) => {
+  nary = (op, p, right) =>
     token(op, p,
       (a, b) => (
         b = expr(p - (right ? .5 : 0)),
@@ -124,7 +126,7 @@ export let idx, cur,
           a
         ))
     )
-  },
+  ,
 
   group = (op, p) => token(op[0], p, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
 

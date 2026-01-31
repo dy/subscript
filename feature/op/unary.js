@@ -8,17 +8,18 @@
  *
  * JS-specific keywords
  */
-import { unary, operator, compile, token, space, skip, expr, word } from '../../parse.js';
+import { unary, operator, compile, skip, expr, word } from '../../parse.js';
+import { keyword } from '../block.js';
 
 const PREFIX = 140;
 
 unary('typeof', PREFIX);
 unary('void', PREFIX);
 unary('delete', PREFIX);
-// new X() or new.target - can't use two unary() because both start with 'n' (lookup collision)
-token('new', PREFIX, a => !a && (
+// new X() or new.target
+keyword('new', PREFIX, () =>
   word('.target') ? (skip(7), ['new.target']) : ['new', expr(PREFIX)]
-));
+);
 
 // Compile
 operator('typeof', a => (a = compile(a), ctx => typeof a(ctx)));

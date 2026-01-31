@@ -17,8 +17,7 @@ keyword('for', STATEMENT + 1, () => {
   // for await (x of y)
   if (word('await')) {
     skip(5);
-    space();
-    return ['for await', parens(), body()];
+    return (space(), ['for await', parens(), body()]);
   }
   return ['for', parens(), body()];
 });
@@ -55,8 +54,7 @@ keyword('continue', STATEMENT + 1, () => {
 });
 keyword('return', STATEMENT + 1, () => {
   parse.asi && (parse.newline = false);
-  space();
-  const c = cur.charCodeAt(idx);
+  const c = space();
   return !c || c === CBRACE || c === SEMI || parse.newline ? ['return'] : ['return', expr(STATEMENT)];
 });
 

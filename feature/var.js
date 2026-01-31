@@ -8,7 +8,7 @@
  *   for (let x in o)  → ['for', ['in', ['let', 'x'], 'o'], body]
  *   var x             → ['var', 'x']   (acts as assignment target)
  */
-import { token, expr, space, operator, compile } from '../parse.js';
+import { expr, space, operator, compile } from '../parse.js';
 import { keyword } from './block.js';
 import { destructure } from './destruct.js';
 
@@ -28,8 +28,8 @@ const decl = keyword => {
   return [keyword, node];
 };
 
-token('let', STATEMENT + 1, a => !a && decl('let'));
-token('const', STATEMENT + 1, a => !a && decl('const'));
+keyword('let', STATEMENT + 1, () => decl('let'));
+keyword('const', STATEMENT + 1, () => decl('const'));
 
 // var: just declares identifier, assignment happens separately
 // var x = 5 → ['=', ['var', 'x'], 5]

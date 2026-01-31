@@ -7,11 +7,12 @@
  * [, undefined] serializes to [null, null] which would compile to null.
  * [] serializes to [] and compiles back to undefined.
  */
-import { literal, token } from '../parse.js';
+import { literal } from '../parse.js';
+import { keyword } from './block.js';
 
 literal('true', true);
 literal('false', false);
 literal('null', null);
-token('undefined', 200, a => !a && []);  // [] for JSON compatibility
+keyword('undefined', 200, () => []);  // [] for JSON compatibility
 literal('NaN', NaN);
 literal('Infinity', Infinity);

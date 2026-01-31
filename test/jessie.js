@@ -76,6 +76,15 @@ test('jessie: block vs object detection', () => {
   is(parse('{a:1}'), ['{}', [':', 'a', [, 1]]])
   is(parse('{a,b}'), ['{}', [',', 'a', 'b']])
 
+  // Objects - keyword property names
+  is(parse('{for:1}'), ['{}', [':', 'for', [, 1]]])
+  is(parse('{for:1, title:2}'), ['{}', [',', [':', 'for', [, 1]], [':', 'title', [, 2]]]])
+  is(parse('{let:1}'), ['{}', [':', 'let', [, 1]]])
+  is(parse('{new:1}'), ['{}', [':', 'new', [, 1]]])
+  is(parse('{undefined:1}'), ['{}', [':', 'undefined', [, 1]]])
+  is(parse('{if:1, while:2, for:3}'), ['{}', [',', [':', 'if', [, 1]], [':', 'while', [, 2]], [':', 'for', [, 3]]]])
+  is(run('{for:1, title:2}'), {for: 1, title: 2})
+
   // Block evaluation - creates scope, returns last value
   is(run('{let x=1; x+1}'), 2)
   is(run('{let x=1}; x', {x: 5}), 5)  // block scope doesn't leak

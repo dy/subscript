@@ -1,15 +1,18 @@
 // Switch/case/default
 // AST: ['switch', val, ['case', test, body], ['default', body], ...]
-import { expr, skip, space, parens, operator, compile, idx, err, seek, parse, lookup, word } from '../parse.js';
+import { expr, skip, space, parens, operator, compile, idx, err, seek, parse, lookup, word, cur } from '../parse.js';
 import { keyword } from './block.js';
 import { BREAK } from './control.js';
 
 const STATEMENT = 5, ASSIGN = 20, COLON = 58, SEMI = 59, CBRACE = 125;
 
+// Flag to track if we're inside switch body (case/default parsing)
+let inSwitch = 0;
+
 // Reserve 'case' and 'default' as keywords that fail outside switch body
-// This prevents them becoming identifiers for colon operator
-const reserve = (w, c = w.charCodeAt(0), prev = lookup[c]) =>
-  lookup[c] = (a, prec, op) => (word(w) && !a && (parse.reserved = 1)) || prev?.(a, prec, op);
+// Allows property names like {case:1} ONLY when not in switch context
+const reserve = (w, l = w.length, c = w.charCodeAt(0), prev = lookup[c]) =>
+  lookup[c] = (a, prec, op) => (word(w) && !a && inSwitch) || prev?.(a, prec, op);
 reserve('case');
 reserve('default');
 
@@ -26,24 +29,27 @@ const caseBody = (c) => {
 // switchBody() - parse case/default statements
 const switchBody = () => {
   space() === 123 || err('Expected {'); skip();
+  inSwitch++;
   const cases = [];
-  while (space() !== CBRACE) {
-    if (word('case')) {
-      seek(idx + 4); space();
-      const test = expr(ASSIGN - .5);
-      space() === COLON && skip();
-      cases.push(['case', test, caseBody()]);
-    } else if (word('default')) {
-      seek(idx + 7); space() === COLON && skip();
-      cases.push(['default', caseBody()]);
-    } else err('Expected case or default');
-  }
+  try {
+    while (space() !== CBRACE) {
+      if (word('case')) {
+        seek(idx + 4); space();
+        const test = expr(ASSIGN - .5);
+        space() === COLON && skip();
+        cases.push(['case', test, caseBody()]);
+      } else if (word('default')) {
+        seek(idx + 7); space() === COLON && skip();
+        cases.push(['default', caseBody()]);
+      } else err('Expected case or default');
+    }
+  } finally { inSwitch--; }
   skip();
   return cases;
 };
 
 // switch (x) { ... }
-keyword('switch', STATEMENT + 1, () => (space(), ['switch', parens(), ...switchBody()]));
+keyword('switch', STATEMENT + 1, () => space() === 40 && ['switch', parens(), ...switchBody()]);
 
 // Compile
 operator('switch', (val, ...cases) => {

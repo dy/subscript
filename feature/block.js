@@ -1,19 +1,20 @@
 // Block parsing helpers
-import { expr, skip, space, lookup, err, parse, seek, cur, idx, parens, loc, operator, compile } from '../parse.js';
+import { expr, skip, space, lookup, err, parse, seek, cur, idx, parens, loc, operator, compile, peek } from '../parse.js';
 
 const STATEMENT = 5, OBRACE = 123, CBRACE = 125;
 
-// keyword(op, prec, fn) - prefix-only word token
+// keyword(op, prec, fn) - prefix-only word token with object property support
 // keyword('while', 6, () => ['while', parens(), body()])
 // keyword('break', 6, () => ['break'])
-// attaches .loc to array results for source mapping
+// Allows property names: {while:1} won't match keyword, falls back to identifier
 export const keyword = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) =>
   lookup[c] = (a, curPrec, curOp, from = idx) =>
     !a &&
     (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
     curPrec < prec &&
     !parse.id(cur.charCodeAt(idx + l)) &&
-    (seek(idx + l), (r = map()) ? loc(r, from) : (seek(from), !prev && err()), r) ||
+    peek(idx + l) !== 58 &&  // allow {keyword:value}
+    (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
     prev?.(a, curPrec, curOp);
 
 // infix(op, prec, fn) - infix word token (requires left operand)
