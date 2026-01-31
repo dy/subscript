@@ -64,7 +64,7 @@ operator('switch', (val, ...cases) => {
       if (matched || test === null || test(ctx) === v)
         for (matched = true, i = 0; i < stmts.length; i++)
           try { r = stmts[i](ctx); }
-          catch (e) { if (e?.type === BREAK) return e.value ?? r; throw e; }
+          catch (e) { if (e === BREAK) return r; throw e; }
     var i;
     return r;
   };

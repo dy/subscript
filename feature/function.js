@@ -44,7 +44,7 @@ operator('function', (name, params, body) => {
         has: (l, k) => k in l || k in ctx
       });
       try { return body(fnCtx); }
-      catch (e) { if (e?.type === RETURN) return e.value; throw e; }
+      catch (e) { if (e === RETURN) return e[0]; throw e; }
     };
     if (name) ctx[name] = fn;
     return fn;

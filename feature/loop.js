@@ -6,17 +6,6 @@ import { BREAK, CONTINUE, RETURN } from './control.js';
 
 export { BREAK, CONTINUE, RETURN };
 
-// Loop body executor - catches control flow and returns status
-export const loop = (body, ctx) => {
-  try { return { v: body(ctx) }; }
-  catch (e) {
-    if (e?.type === BREAK) return { b: 1 };
-    if (e?.type === CONTINUE) return { c: 1 };
-    if (e?.type === RETURN) return { r: 1, v: e.value };
-    throw e;
-  }
-};
-
 const STATEMENT = 5, CBRACE = 125, SEMI = 59;
 
 keyword('while', STATEMENT + 1, () => (space(), ['while', parens(), body()]));
@@ -71,12 +60,17 @@ keyword('return', STATEMENT + 1, () => {
   return !c || c === CBRACE || c === SEMI || parse.newline ? ['return'] : ['return', expr(STATEMENT)];
 });
 
-// Compile
+// Compile - inline try/catch, use JS break/continue directly
 operator('while', (cond, body) => {
   cond = compile(cond); body = compile(body);
   return ctx => {
-    let r, res;
-    while (cond(ctx)) if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+    let res;
+    while (cond(ctx)) try { res = body(ctx); } catch (e) {
+      if (e === BREAK) break;
+      if (e === CONTINUE) continue;
+      if (e === RETURN) return e[0];
+      throw e;
+    }
     return res;
   };
 });
@@ -84,8 +78,13 @@ operator('while', (cond, body) => {
 operator('do', (body, cond) => {
   body = compile(body); cond = compile(cond);
   return ctx => {
-    let r, res;
-    do { if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v; } while (cond(ctx));
+    let res;
+    do try { res = body(ctx); } catch (e) {
+      if (e === BREAK) break;
+      if (e === CONTINUE) continue;
+      if (e === RETURN) return e[0];
+      throw e;
+    } while (cond(ctx));
     return res;
   };
 });
@@ -99,9 +98,13 @@ operator('for', (head, body) => {
     step = step ? compile(step) : null;
     body = compile(body);
     return ctx => {
-      let r, res;
-      for (init?.(ctx); cond(ctx); step?.(ctx))
-        if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+      let res;
+      for (init?.(ctx); cond(ctx); step?.(ctx)) try { res = body(ctx); } catch (e) {
+        if (e === BREAK) break;
+        if (e === CONTINUE) continue;
+        if (e === RETURN) return e[0];
+        throw e;
+      }
       return res;
     };
   }
@@ -119,11 +122,16 @@ const forOf = (name, iterable, body) => {
   iterable = compile(iterable); body = compile(body);
   const isPattern = Array.isArray(name);
   return ctx => {
-    let r, res;
+    let res;
     const prev = isPattern ? null : ctx[name];
     for (const val of iterable(ctx)) {
       if (isPattern) destructure(name, val, ctx); else ctx[name] = val;
-      if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+      try { res = body(ctx); } catch (e) {
+        if (e === BREAK) break;
+        if (e === CONTINUE) continue;
+        if (e === RETURN) return e[0];
+        throw e;
+      }
     }
     if (!isPattern) ctx[name] = prev;
     return res;
@@ -134,18 +142,23 @@ const forIn = (name, obj, body) => {
   obj = compile(obj); body = compile(body);
   const isPattern = Array.isArray(name);
   return ctx => {
-    let r, res;
+    let res;
     const prev = isPattern ? null : ctx[name];
     for (const key in obj(ctx)) {
       if (isPattern) destructure(name, key, ctx); else ctx[name] = key;
-      if ((r = loop(body, ctx)).b) break; else if (r.r) return r.v; else if (!r.c) res = r.v;
+      try { res = body(ctx); } catch (e) {
+        if (e === BREAK) break;
+        if (e === CONTINUE) continue;
+        if (e === RETURN) return e[0];
+        throw e;
+      }
     }
     if (!isPattern) ctx[name] = prev;
     return res;
   };
 };
 
-operator('break', () => () => { throw { type: BREAK }; });
-operator('continue', () => () => { throw { type: CONTINUE }; });
+operator('break', () => () => { throw BREAK; });
+operator('continue', () => () => { throw CONTINUE; });
 operator('return', val => (val = val !== undefined ? compile(val) : null,
-  ctx => { throw { type: RETURN, value: val?.(ctx) }; }));
+  ctx => { throw (RETURN[0] = val?.(ctx), RETURN); }));

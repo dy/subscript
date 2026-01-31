@@ -140,7 +140,7 @@ Extends Justin with statements — practical JS subset (inspired by [Jessie](htt
 + `for (init; cond; step) body`, `for (x of iter) body`, `for (x in obj) body`
 + `{ a; b }` — block scope
 + `let x`, `const x = 1`, `var x = 1`, `const {a, b} = x`
-+ `break`, `continue`, `return x`
++ `break`, `continue`, `return x` (inside functions only)
 + `throw x`, `try { } catch (e) { } finally { }`
 + `function f(a, b) { }`, `async function`, `function*`
 + `class X { }`, `class X extends Y { }`
@@ -161,6 +161,9 @@ jessie`
   };
   fac(5)
 `({})  // 120
+
+// Top-level return is invalid (same as JS) — use expressions:
+jessie`a + b`({ a: 1, b: 2 })  // 3
 ```
 
 #### ASI (Automatic Semicolon Insertion)

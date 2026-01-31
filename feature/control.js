@@ -1,2 +1,3 @@
 // Control flow symbols (shared by loop, group, switch, try, function)
-export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = Symbol('return');
+// RETURN is array to hold value - reused, no allocation per throw
+export const BREAK = Symbol('break'), CONTINUE = Symbol('continue'), RETURN = [];

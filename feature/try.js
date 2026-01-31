@@ -31,7 +31,7 @@ operator('catch', (tryNode, catchName, catchBody) => {
     try {
       result = tryBody?.(ctx);
     } catch (e) {
-      if (e?.type === BREAK || e?.type === CONTINUE || e?.type === RETURN) throw e;
+      if (e === BREAK || e === CONTINUE || e === RETURN) throw e;
       if (catchName !== null && catchBody) {
         const had = catchName in ctx, orig = ctx[catchName];
         ctx[catchName] = e;

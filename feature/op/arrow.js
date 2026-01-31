@@ -32,7 +32,7 @@ operator('=>', (a, b) => {
       a.forEach((p, i) => ctx[p] = args[i]);
       if (restName) ctx[restName] = args.slice(restIdx);
       try { const r = b(ctx); return isBlock ? undefined : r; }
-      catch (e) { if (e?.type === RETURN) return e.value; throw e; }
+      catch (e) { if (e === RETURN) return e[0]; throw e; }
     };
   };
 });
