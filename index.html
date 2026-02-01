@@ -70,7 +70,7 @@ h1 span { color: var(--accent); }
 #ast .node { cursor: pointer; position: relative; }
 #ast .node:hover:not(:has(.node:hover)) .bracket { color: var(--accent); }
 #ast .node:hover:not(:has(.node:hover)) > .line { background: var(--accent); }
-#ast .line { position: absolute; left: calc(0.25ch + 2px); top: 1.5em; bottom: calc(1.1em + 4px); width: 1px; background: var(--border); opacity: 0.4; pointer-events: none; }
+#ast .line { position: absolute; left: calc(0.5ch); top: 1.5em; bottom: calc(1.6em); width: 1px; background: var(--border); opacity: 0.4; pointer-events: none; }
 #ast .node.collapsed > .args { display: none; }
 #ast .node.collapsed > .line { display: none; }
 #ast .node.collapsed > .ellipsis { display: inline; }
@@ -465,7 +465,7 @@ const TIPS = {
 // Multiline example templates for different feature combinations
 const TEMPLATES = {
   full: {
-    code: `// Fibonacci with memoization
+    code: `// fibonacci
 function fib(n) {
   if (n <= 1) return n;
   return fib(n - 1) + fib(n - 2)
@@ -484,7 +484,7 @@ sum`,
   },
 
   justin: {
-    code: `// Functional pipeline
+    code: `// pipeline
 items
   .filter(x => x.value > threshold)
   .map(x => ({
