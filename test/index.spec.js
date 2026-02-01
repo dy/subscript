@@ -32,17 +32,21 @@ test.describe('Subscript REPL', () => {
   })
 
   test('runs expression with Run button', async ({ page }) => {
+    const evalTab = page.locator('.output-tab[data-tab="eval"]')
     const runBtn = page.locator('#runBtn')
     const result = page.locator('[data-testid="result"]')
 
+    await evalTab.click()
     await runBtn.click()
     await expect(result).not.toBeEmpty({ timeout: 2000 })
   })
 
   test('shows eval time after run', async ({ page }) => {
+    const evalTab = page.locator('.output-tab[data-tab="eval"]')
     const runBtn = page.locator('#runBtn')
     const evalTime = page.locator('#evalTime')
 
+    await evalTab.click()
     await runBtn.click()
     await expect(evalTime).toContainText('ms', { timeout: 2000 })
   })
@@ -64,11 +68,13 @@ test.describe('Subscript REPL', () => {
   })
 
   test('uses context in evaluation', async ({ page }) => {
+    const evalTab = page.locator('.output-tab[data-tab="eval"]')
     const input = page.locator('#input')
     const context = page.locator('#context')
     const result = page.locator('[data-testid="result"]')
     const runBtn = page.locator('#runBtn')
 
+    await evalTab.click()
     await input.fill('a + b')
     await context.fill('{"a": 5, "b": 3}')
     await runBtn.click()
@@ -93,6 +99,7 @@ test.describe('Subscript REPL', () => {
   })
 
   test('justin preset supports arrows', async ({ page }) => {
+    const evalTab = page.locator('.output-tab[data-tab="eval"]')
     const preset = page.locator('[data-testid="preset"]')
     const input = page.locator('#input')
     const ast = page.locator('#ast')
@@ -102,6 +109,7 @@ test.describe('Subscript REPL', () => {
     await preset.selectOption('justin')
     await input.fill('[1,2,3].map(x => x * 2)')
     await expect(ast).not.toBeEmpty({ timeout: 2000 })
+    await evalTab.click()
     await runBtn.click()
     await expect(result).toHaveText('[2,4,6]', { timeout: 2000 })
   })
@@ -136,20 +144,13 @@ test.describe('Subscript REPL', () => {
     expect(justinCode.length).toBeGreaterThan(0)
   })
 
-  test('tabs switch between Eval and Tree', async ({ page }) => {
+  test('tabs switch between Tree and Eval', async ({ page }) => {
     const evalTab = page.locator('.output-tab[data-tab="eval"]')
     const treeTab = page.locator('.output-tab[data-tab="tree"]')
     const evalPanel = page.locator('#evalPanel')
     const treePanel = page.locator('#treePanel')
 
-    // Eval tab active by default
-    await expect(evalTab).toHaveClass(/active/)
-    await expect(evalPanel).toHaveClass(/active/)
-    await expect(treeTab).not.toHaveClass(/active/)
-    await expect(treePanel).not.toHaveClass(/active/)
-
-    // Click Tree tab
-    await treeTab.click()
+    // Tree tab active by default
     await expect(treeTab).toHaveClass(/active/)
     await expect(treePanel).toHaveClass(/active/)
     await expect(evalTab).not.toHaveClass(/active/)
@@ -159,6 +160,13 @@ test.describe('Subscript REPL', () => {
     await evalTab.click()
     await expect(evalTab).toHaveClass(/active/)
     await expect(evalPanel).toHaveClass(/active/)
+    await expect(treeTab).not.toHaveClass(/active/)
+    await expect(treePanel).not.toHaveClass(/active/)
+
+    // Click Tree tab
+    await treeTab.click()
+    await expect(treeTab).toHaveClass(/active/)
+    await expect(treePanel).toHaveClass(/active/)
   })
 
   test('sidebar toggles', async ({ page }) => {

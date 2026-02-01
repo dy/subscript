@@ -65,6 +65,16 @@ h1 span { color: var(--accent); }
 .output-panel { display: none; padding: 0.5rem 0; }
 .output-panel.active { display: block; }
 #ast { font-size: 0.875rem; color: var(--muted); white-space: pre; line-height: 1.5; }
+#ast .op { color: #e3a857; }
+#ast .lit { color: #a5d6ff; }
+#ast .node { cursor: pointer; position: relative; }
+#ast .node:hover:not(:has(.node:hover)) .bracket { color: var(--accent); }
+#ast .node:hover:not(:has(.node:hover)) > .line { background: var(--accent); }
+#ast .line { position: absolute; left: calc(0.25ch + 2px); top: 1.5em; bottom: calc(1.1em + 4px); width: 1px; background: var(--border); opacity: 0.4; pointer-events: none; }
+#ast .node.collapsed > .args { display: none; }
+#ast .node.collapsed > .line { display: none; }
+#ast .node.collapsed > .ellipsis { display: inline; }
+#ast .ellipsis { display: none; color: var(--muted); }
 
 /* Eval section */
 .eval-content { padding: 0.5rem 0; display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.875rem; }
@@ -222,12 +232,17 @@ h1 span { color: var(--accent); }
 
     <div class="output-section">
       <div class="output-tabs">
-        <button class="output-tab active" data-tab="eval">Eval</button>
-        <button class="output-tab" data-tab="tree">Tree</button>
+        <button class="output-tab active" data-tab="tree">Tree</button>
+        <button class="output-tab" data-tab="eval">Eval</button>
+      </div>
+
+      <!-- Tree panel -->
+      <div class="output-panel active" id="treePanel">
+        <pre id="ast" data-testid="ast"></pre>
       </div>
 
       <!-- Eval panel -->
-      <div class="output-panel active" id="evalPanel">
+      <div class="output-panel" id="evalPanel">
         <div class="eval-content">
           <div class="eval-field">
             <span class="label">Context</span>
@@ -246,11 +261,6 @@ h1 span { color: var(--accent); }
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Tree panel -->
-      <div class="output-panel" id="treePanel">
-        <pre id="ast"></pre>
       </div>
     </div>
   </main>
@@ -942,7 +952,7 @@ function handleWorkerMsg(e) {
     editorEl.classList.remove('has-error')
     if (ast !== undefined) {
       currentAST = ast
-      astEl.textContent = formatAST(ast)
+      astEl.innerHTML = formatAST(ast)
       errorEl.textContent = ''
     }
     if (result !== undefined) {
@@ -974,27 +984,31 @@ function handleWorkerMsg(e) {
 
 // AST formatter
 function formatAST(node, depth = 0) {
-  if (node === undefined) return 'undefined'
-  if (node === null) return 'null'
-  if (!Array.isArray(node)) return JSON.stringify(node)
+  const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+  const cls = v => typeof v === 'string' && /^[+\-*\/%&|^~!<>=?.,:;@#()\[\]{}]|^(\|\||&&|\?\?|\*\*|=>|\.\.\.|if|else|for|while|do|switch|case|break|continue|return|throw|try|catch|finally|function|class|let|const|var|new|delete|typeof|void|in|of|instanceof|async|await|yield|import|export|default|extends|static|get|set)$/.test(v) ? 'op' : 'lit'
+  const fmt = v => `<span class="${cls(v)}">${esc(JSON.stringify(v))}</span>`
+  const stop = `onclick="event.stopPropagation()"`
+
+  if (node === undefined) return '<span class="lit">undefined</span>'
+  if (node === null) return '<span class="lit">null</span>'
+  if (!Array.isArray(node)) return fmt(node)
   if (node.length === 0) return '[]'
 
   const indent = '  '.repeat(depth)
   const inner = '  '.repeat(depth + 1)
 
-  if (node[0] === undefined && node.length === 2) return `[, ${JSON.stringify(node[1])}]`
+  if (node[0] === undefined && node.length === 2) return `<span class="node" ${stop}><span class="bracket">[</span>, ${fmt(node[1])}<span class="bracket">]</span></span>`
 
-  const simple = node.every((n, i) => !Array.isArray(n) || (i > 0 && JSON.stringify(n).length < 20))
-  if (simple) {
-    const inline = `[${node.map((n, i) => i === 0 && n === undefined ? '' : (Array.isArray(n) ? formatAST(n, 0) : JSON.stringify(n))).join(', ')}]`
-    if (inline.length < 60) return inline
+  // Inline if all args are plain (no nested arrays) or all nested are short
+  const short = n => !Array.isArray(n) || JSON.stringify(n).length < 30
+  if (node.every(short)) {
+    const parts = node.map((n, i) => i === 0 && n === undefined ? '' : (Array.isArray(n) ? formatAST(n, 0) : fmt(n))).join(', ')
+    return `<span class="node" ${stop}><span class="bracket">[</span>${parts}<span class="bracket">]</span></span>`
   }
 
-  const parts = node.map((n, i) => {
-    if (i === 0 && n === undefined) return ''
-    return Array.isArray(n) ? formatAST(n, depth + 1) : JSON.stringify(n)
-  })
-  return `[${parts[0]},\n${inner}${parts.slice(1).join(`,\n${inner}`)}\n${indent}]`
+  const op = node[0] !== undefined ? fmt(node[0]) : ''
+  const args = node.slice(1).map(n => Array.isArray(n) ? formatAST(n, depth + 1) : fmt(n))
+  return `<span class="node" onclick="this.classList.toggle('collapsed');event.stopPropagation()"><span class="bracket">[</span>${op}<span class="ellipsis">…</span><span class="args">,\n${inner}${args.join(`,\n${inner}`)}\n${indent}</span><span class="bracket">]</span><span class="line"></span></span>`
 }
 
 // Compact JSON formatter - multiline but minimal
