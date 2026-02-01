@@ -1,21 +1,14 @@
-# Expression Tree Format
-
-An universal expression tree notation.
+# Universal Expression Tree
 
 ## Overview
 
-Expressions parse to trees. This document describes a format for those trees — minimal, JSON-compatible, and portable across languages.
+Expressions parse to trees. Minimal, JSON-compatible, and portable across languages.
 
 ```
 [operator, ...operands]    operation
 "name"                     identifier (resolved from context)
 [, value]                  literal (returned as-is)
 ```
-
-That's the entire format.
-
-
-## Tree Structure
 
 An expression tree is one of three forms:
 
@@ -55,8 +48,7 @@ An array where the first element is the operator, followed by operands.
 ```
 
 
-
-## Operator Reference
+## Operators
 
 ### Arithmetic
 ```
