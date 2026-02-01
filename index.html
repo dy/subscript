@@ -353,6 +353,7 @@ const FEATURE_PATHS = {
   'function': 'feature/function.js',
   'throw': 'feature/try.js',              // throw is part of try.js
   'try': 'feature/try.js',
+  control: 'feature/control.js',           // BREAK, CONTINUE, RETURN symbols
   accessor: 'feature/accessor.js',
   async: 'feature/async.js',
   'class': 'feature/class.js',
@@ -366,15 +367,17 @@ const featureOrder = [
   'number', 'string',
   // Operators - order matters for token chain
   'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment',
+  // Control flow foundations (needed by group via loop)
+  'control', 'block', 'destruct', 'loop',
   // Expression features
   'group', 'access',
   // Justin additions
   'comment', 'identity', 'nullish', 'pow', 'unary',
   'literal', 'ternary', 'arrow', 'spread', 'optional',
-  'collection', 'template', 'regex', 'unit',
-  // Jessie additions (block before control flow)
-  'block', 'var', 'function', 'async', 'class', 'destruct',
-  'if', 'loop', 'try', 'switch', 'module', 'accessor', 'asi'
+  'accessor', 'collection', 'template', 'regex', 'unit',
+  // Jessie additions
+  'var', 'function', 'async', 'class',
+  'if', 'try', 'switch', 'module', 'asi'
 ]
 
 // UI feature groups (maps to internal IDs)
@@ -708,11 +711,14 @@ async function initTerser() {
 
 // Strip imports from source, replacing sibling imports with _ object references
 const stripImports = code => {
-  // First, handle sibling imports: import { X, Y } from './file.js' → const { X, Y } = _
-  code = code.replace(/^import\s+\{([^}]+)\}\s+from\s+['"]\.\/.+?['"];?\s*$/gm, (match, names) => {
+  // Handle feature-to-feature imports: import { X, Y } from './file.js' or '../file.js' → const { X, Y } = _
+  // But skip imports from parse.js (those are already global in bundled context)
+  code = code.replace(/^import\s+\{([^}]+)\}\s+from\s+['"](\.\.?\/[^'"]+?)['"];?\s*$/gm, (match, names, path) => {
+    // Skip parse.js imports - these are global
+    if (path.endsWith('parse.js')) return ''
     return `const { ${names} } = _;`
   })
-  // Remove remaining imports (from '../parse.js' etc) - these are global in bundled context
+  // Remove any remaining imports
   return code.replace(/^import\s+.*$/gm, '')
 }
 
@@ -739,8 +745,8 @@ function buildWorkerSrc() {
 
   // Features that export things used by other features
   const exports = {
+    control: ['BREAK', 'CONTINUE', 'RETURN'],
     block: ['keyword', 'infix', 'block', 'body'],
-    loop: ['BREAK', 'CONTINUE', 'RETURN', 'loop'],
     access: ['unsafe', 'isLval', 'prop'],
     destruct: ['destructure'],
     accessor: ['ACC'],
@@ -750,10 +756,12 @@ function buildWorkerSrc() {
   // Feature dependencies - these features import from other features
   // Includes transitive dependencies (e.g., group→loop→block means group needs block)
   const dependencies = {
+    // control exports BREAK, CONTINUE, RETURN - used by loop, function, try, switch, group
+    control: ['loop', 'function', 'try', 'switch', 'group'],
     // block exports keyword, infix, block, body - used by control flow features
     // Also needed transitively by: group (via loop)
     block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
-    // loop exports BREAK, CONTINUE, RETURN, loop - used by features that handle control flow
+    // loop exports loop - used by features that handle control flow
     loop: ['group', 'function', 'try', 'switch'],
     // destruct exports destructure - used by var and loop
     destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
@@ -1221,11 +1229,12 @@ toggleBtn.addEventListener('click', () => {
 // Feature dependencies - these features import from other features
 // Includes transitive dependencies (e.g., group→loop→block means group needs block)
 const DEPENDENCIES = {
+  // control exports BREAK, CONTINUE, RETURN - used by loop, function, try, switch, group
+  control: ['loop', 'function', 'try', 'switch', 'group'],
   // block exports keyword, infix, block, body - used by control flow features
   // Also needed transitively by: group (via loop)
   block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
-  // loop exports BREAK, CONTINUE, RETURN, loop - used by features that handle control flow
-  loop: ['group', 'function', 'try', 'switch'],
+  // loop - no longer exports anything needed by other features
   // destruct exports destructure - used by var and loop
   destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
   // access exports prop, unsafe, isLval - used by group
