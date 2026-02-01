@@ -24,7 +24,7 @@ fn({ a: 1, b: 3 })  // 7
 
 ## Presets
 
-[**Subscript**]() – common expressions:
+[**Subscript**](./docs.md#subscript) – common expressions:
 
 ```js
 import subscript from 'subscript'
@@ -32,7 +32,7 @@ import subscript from 'subscript'
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
-[**Justin**]() – JSON + expressions + templates + arrows:
+[**Justin**](./docs.md#justin) – JSON + expressions + templates + arrows:
 
 ```js
 import justin from 'subscript/justin.js'
@@ -41,7 +41,7 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 ```
 
-[**Jessie**]() – JSON + expressions + statements, functions (JS subset):
+[**Jessie**](./docs.md#jessie) – JSON + expressions + statements, functions (JS subset):
 
 ```js
 import jessie from 'subscript/jessie.js'
@@ -58,30 +58,8 @@ fn({})  // 120
 
 See [docs](./docs.md#presets) for full description.
 
-## Extension
 
-Add operators, literals or custom syntax:
-
-```js
-import { binary, operator, compile } from 'subscript/justin.js'
-
-// add intersection operator
-binary('∩', 80)  // register parser
-operator('∩', (a, b) => (  // register compiler
-  a = compile(a), b = compile(b),
-  ctx => a(ctx).filter(x => b(ctx).includes(x))
-))
-```
-
-```js
-import justin from 'subscript/justin.js'
-justin('[1,2,3] ∩ [2,3,4]')({})  // [2, 3]
-```
-
-See [docs.md](./docs.md) for full API.
-
-
-## Syntax Tree
+## Syntax format
 
 Expressions parse to a minimal JSON-compatible syntax tree:
 
@@ -101,6 +79,26 @@ Three forms:
 ```
 
 See [spec.md](./spec.md).
+
+
+## Extension
+
+Add operators, literals or custom syntax:
+
+```js
+import justin, { binary, operator, compile } from 'subscript/justin.js'
+
+// add intersection operator
+binary('∩', 80)  // register parser
+operator('∩', (a, b) => (  // register compiler
+  a = compile(a), b = compile(b),
+  ctx => a(ctx).filter(x => b(ctx).includes(x))
+))
+
+justin('[1,2,3] ∩ [2,3,4]')({})  // [2, 3]
+```
+
+See [docs.md](./docs.md) for full API.
 
 
 ## Safety
