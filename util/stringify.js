@@ -94,10 +94,20 @@ generator('break', () => 'break');
 generator('continue', () => 'continue');
 generator('throw', a => 'throw ' + codegen(a));
 
-// Try/Catch - nested structure
-generator('try', body => 'try { ' + codegen(body) + ' }');
-generator('catch', (tryExpr, param, body) => codegen(tryExpr) + ' catch (' + codegen(param) + ') { ' + codegen(body) + ' }');
-generator('finally', (expr, body) => codegen(expr) + ' finally { ' + codegen(body) + ' }');
+// Try/Catch - semi-faithful: ['try', body, ['catch', param, handler]?, ['finally', cleanup]?]
+generator('try', (body, ...clauses) => {
+  let result = 'try { ' + codegen(body) + ' }';
+  for (const clause of clauses) {
+    if (clause?.[0] === 'catch') {
+      result += ' catch (' + codegen(clause[1]) + ') { ' + codegen(clause[2]) + ' }';
+    } else if (clause?.[0] === 'finally') {
+      result += ' finally { ' + codegen(clause[1]) + ' }';
+    }
+  }
+  return result;
+});
+generator('catch', (param, body) => 'catch (' + codegen(param) + ') { ' + codegen(body) + ' }');
+generator('finally', body => 'finally { ' + codegen(body) + ' }');
 
 // Functions
 generator('function', (name, params, body) => {

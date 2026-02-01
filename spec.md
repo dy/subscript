@@ -174,15 +174,7 @@ Template literals contain string parts (as literals) interleaved with expression
 
 ### Statements (jessie)
 
-ASI (Automatic Semicolon Insertion) treats newlines as statement separators, producing flat `;` arrays:
-```
-a; b        → [';', 'a', 'b']
-a\nb        → [';', 'a', 'b']       (ASI inserts ;)
-a; b; c     → [';', 'a', 'b', 'c']
-a\nb\nc     → [';', 'a', 'b', 'c']  (flat, not nested)
-```
-
-Control flow:
+### Control flow
 ```
 ['if', cond, then]            if (cond) then
 ['if', cond, then, else]      if (cond) then else alt
@@ -203,10 +195,10 @@ Control flow:
 
 ### Exceptions (feature/throw.js, feature/try.js)
 ```
-['throw', val]                              throw val
-['catch', ['try', body], 'e', handler]      try { body } catch (e) { handler }
-['finally', ['try', body], handler]         try { body } finally { handler }
-['finally', ['catch', ...], handler]        try {...} catch {...} finally {...}
+['throw', val]                                  throw val
+['try', body, ['catch', 'e', handler]]          try { body } catch (e) { handler }
+['try', body, ['finally', cleanup]]             try { body } finally { cleanup }
+['try', body, ['catch', 'e', h], ['finally', c]] try {...} catch {...} finally {...}
 ```
 
 ### Function Declarations (feature/function.js)
@@ -256,7 +248,20 @@ Postfix operators use `null` to mark the absent second operand:
 
 This preserves structural consistency without inventing new node types.
 
-### 5. Flat Sequences
+
+### 5. AST, not CST
+
+This is an Abstract, not Concrete Syntax Tree.
+The parser normalizes syntax to semantic structure.
+Delimiters like `()` `{}` are stripped when purely syntactic; operators preserve meaning.
+
+| Type | Purpose | Example |
+|------|---------|---------|
+| CST | Preserve source exactly | Formatters, refactoring tools |
+| AST | Semantic structure | Compilers, evaluators |
+
+
+### 6. Flat Sequences
 
 Associative operators flatten:
 ```
@@ -265,7 +270,7 @@ a + b + c  →  ['+', 'a', 'b', 'c']    // not ['+', ['+', 'a', 'b'], 'c']
 
 This reflects execution semantics and enables SIMD-style optimization.
 
-### 6. Location Metadata
+### 7. Location Metadata
 
 Nodes may carry a `.loc` property indicating source position:
 ```js
@@ -340,11 +345,11 @@ for (x in obj) {}         → ['for', ['in', 'x', 'obj'], body]
 for (;;) {}               → ['for', [';', null, null, null], body]
 ```
 
-**Try/catch** — uses `catch`/`finally` as operators:
+**Try/catch** — keywords preserved as operators:
 ```
-try { a } catch (e) { b }     → ['catch', ['try', 'a'], 'e', 'b']
-try { a } finally { c }       → ['finally', ['try', 'a'], 'c']
-try { a } catch (e) { b } finally { c }  → ['finally', ['catch', ['try', 'a'], 'e', 'b'], 'c']
+try { a } catch (e) { b }                 → ['try', 'a', ['catch', 'e', 'b']]
+try { a } finally { c }                   → ['try', 'a', ['finally', 'c']]
+try { a } catch (e) { b } finally { c }   → ['try', 'a', ['catch', 'e', 'b'], ['finally', 'c']]
 ```
 
 **Functions** — name and params are tokens:

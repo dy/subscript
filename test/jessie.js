@@ -141,24 +141,30 @@ test('jessie: try basic', () => {
 
 test('jessie: try-catch', () => {
   const ast = parse('try { x } catch (e) { y }')
-  is(ast[0], 'catch')
-  is(ast[1][0], 'try')
-  is(ast[2], 'e')
-  is(ast[3], 'y')
+  is(ast[0], 'try')
+  is(ast[1], 'x')
+  is(ast[2][0], 'catch')
+  is(ast[2][1], 'e')
+  is(ast[2][2], 'y')
 })
 
 test('jessie: try-finally', () => {
   const ast = parse('try { x } finally { y }')
-  is(ast[0], 'finally')
-  is(ast[1][0], 'try')
-  is(ast[2], 'y')
+  is(ast[0], 'try')
+  is(ast[1], 'x')
+  is(ast[2][0], 'finally')
+  is(ast[2][1], 'y')
 })
 
 test('jessie: try-catch-finally', () => {
   const ast = parse('try { a } catch (e) { b } finally { c }')
-  is(ast[0], 'finally')
-  is(ast[1][0], 'catch')
-  is(ast[2], 'c')
+  is(ast[0], 'try')
+  is(ast[1], 'a')
+  is(ast[2][0], 'catch')
+  is(ast[2][1], 'e')
+  is(ast[2][2], 'b')
+  is(ast[3][0], 'finally')
+  is(ast[3][1], 'c')
 })
 
 test('jessie: throw', () => {
@@ -519,15 +525,15 @@ test('jessie: JSON roundtrip - for loops', () => {
 test('jessie: JSON roundtrip - try/catch', () => {
   let ast = parse('try { a } catch (e) { b }')
   let restored = JSON.parse(JSON.stringify(ast))
-  is(restored, ['catch', ['try', 'a'], 'e', 'b'])
+  is(restored, ['try', 'a', ['catch', 'e', 'b']])
 
   ast = parse('try { a } finally { c }')
   restored = JSON.parse(JSON.stringify(ast))
-  is(restored, ['finally', ['try', 'a'], 'c'])
+  is(restored, ['try', 'a', ['finally', 'c']])
 
   ast = parse('try { a } catch (e) { b } finally { c }')
   restored = JSON.parse(JSON.stringify(ast))
-  is(restored, ['finally', ['catch', ['try', 'a'], 'e', 'b'], 'c'])
+  is(restored, ['try', 'a', ['catch', 'e', 'b'], ['finally', 'c']])
 })
 
 test('jessie: JSON roundtrip - functions', () => {

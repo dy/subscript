@@ -1,14 +1,27 @@
 // try/catch/finally/throw statements
-// AST: ['catch', ['try', body], param, catchBody] or ['finally', inner, body]
-import { space, parse, parens, expr, operator, compile } from '../parse.js';
-import { keyword, infix, block } from './block.js';
+// AST (faithful): ['try', body, ['catch', param, handler]?, ['finally', cleanup]?]
+// Note: body/handler are raw block results, param is raw parens result
+import { space, parse, parens, expr, word, skip, operator, compile } from '../parse.js';
+import { keyword, block } from './block.js';
 import { BREAK, CONTINUE, RETURN } from './control.js';
 
 const STATEMENT = 5;
 
-keyword('try', STATEMENT + 1, () => ['try', block()]);
-infix('catch', STATEMENT + 1, a => (space(), ['catch', a, parens(), block()]));
-infix('finally', STATEMENT + 1, a => ['finally', a, block()]);
+// try { body } [catch (param) { handler }] [finally { cleanup }]
+keyword('try', STATEMENT + 1, () => {
+  const node = ['try', block()];
+  space();
+  if (word('catch')) {
+    skip(5); space();
+    node.push(['catch', parens(), block()]);
+  }
+  space();
+  if (word('finally')) {
+    skip(7);
+    node.push(['finally', block()]);
+  }
+  return node;
+});
 
 keyword('throw', STATEMENT + 1, () => {
   parse.asi && (parse.newline = false);
@@ -17,39 +30,33 @@ keyword('throw', STATEMENT + 1, () => {
   return ['throw', expr(STATEMENT)];
 });
 
-// Compile
-operator('try', tryBody => {
+// Compile try - normalize in compiler, not parser
+operator('try', (tryBody, ...clauses) => {
   tryBody = tryBody ? compile(tryBody) : null;
-  return ctx => tryBody?.(ctx);
-});
+  
+  let catchClause = clauses.find(c => c?.[0] === 'catch');
+  let finallyClause = clauses.find(c => c?.[0] === 'finally');
+  
+  const catchParam = catchClause?.[1];
+  const catchBody = catchClause?.[2] ? compile(catchClause[2]) : null;
+  const finallyBody = finallyClause?.[1] ? compile(finallyClause[1]) : null;
 
-operator('catch', (tryNode, catchName, catchBody) => {
-  const tryBody = tryNode?.[1] ? compile(tryNode[1]) : null;
-  catchBody = catchBody ? compile(catchBody) : null;
   return ctx => {
     let result;
     try {
       result = tryBody?.(ctx);
     } catch (e) {
       if (e === BREAK || e === CONTINUE || e === RETURN) throw e;
-      if (catchName !== null && catchBody) {
-        const had = catchName in ctx, orig = ctx[catchName];
-        ctx[catchName] = e;
+      if (catchParam !== null && catchParam !== undefined && catchBody) {
+        const had = catchParam in ctx, orig = ctx[catchParam];
+        ctx[catchParam] = e;
         try { result = catchBody(ctx); }
-        finally { had ? ctx[catchName] = orig : delete ctx[catchName]; }
-      } else if (catchName === null) throw e;
+        finally { had ? ctx[catchParam] = orig : delete ctx[catchParam]; }
+      } else if (!catchBody) throw e;
     }
-    return result;
-  };
-});
-
-operator('finally', (inner, finallyBody) => {
-  inner = inner ? compile(inner) : null;
-  finallyBody = finallyBody ? compile(finallyBody) : null;
-  return ctx => {
-    let result;
-    try { result = inner?.(ctx); }
-    finally { finallyBody?.(ctx); }
+    finally {
+      finallyBody?.(ctx);
+    }
     return result;
   };
 });

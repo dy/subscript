@@ -24,7 +24,7 @@ fn({ a: 1, b: 3 })  // 7
 
 ## Presets
 
-**Subscript** – common expressions:
+[**Subscript**]() – common expressions:
 
 ```js
 import subscript from 'subscript'
@@ -32,7 +32,7 @@ import subscript from 'subscript'
 subscript('a.b + c * 2')({ a: { b: 1 }, c: 3 })  // 7
 ```
 
-**Justin** – JSON + expressions + templates + arrows:
+[**Justin**]() – JSON + expressions + templates + arrows:
 
 ```js
 import justin from 'subscript/justin.js'
@@ -41,7 +41,7 @@ justin('{ x: a?.b ?? 0, y: [1, ...rest] }')({ a: null, rest: [2, 3] })
 // { x: 0, y: [1, 2, 3] }
 ```
 
-**Jessie** – JSON + expressions + statements, functions (JS subset):
+[**Jessie**]() – JSON + expressions + statements, functions (JS subset):
 
 ```js
 import jessie from 'subscript/jessie.js'
