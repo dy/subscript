@@ -326,6 +326,7 @@ const FEATURE_PATHS = {
   literal: 'feature/literal.js',
   access: 'feature/access.js',
   group: 'feature/group.js',
+  seq: 'feature/seq.js',
 
   // Operators (from subscript.js and justin.js)
   assign: 'feature/op/assignment.js',
@@ -380,7 +381,7 @@ const featureOrder = [
   // Control flow foundations (needed by group via loop)
   'control', 'block', 'destruct', 'loop',
   // Expression features
-  'group', 'access',
+  'seq', 'group', 'access',
   // Justin additions
   'comment', 'identity', 'nullish', 'pow', 'unary',
   'literal', 'ternary', 'arrow', 'spread', 'optional',
@@ -392,7 +393,7 @@ const featureOrder = [
 
 // UI feature groups (maps to internal IDs)
 const FEATURES = [
-  { cat: 'Core', items: ['number', 'string', 'group', 'access'] },
+  { cat: 'Core', items: ['number', 'string', 'group', 'seq', 'access'] },
   { cat: 'Operators', items: ['assign', 'arithmetic', 'logical', 'bit', 'cmp', 'equality', 'increment', 'pow'] },
   { cat: 'Advanced Ops', items: ['ternary', 'arrow', 'optional', 'spread', 'unary', 'identity', 'nullish'] },
   { cat: 'Literals', items: ['literal', 'collection', 'template', 'regex', 'unit', 'comment'] },
@@ -402,7 +403,7 @@ const FEATURES = [
 
 const DESC = {
   // Core
-  number: '123, 1.5', string: '"x", \'y\'', group: '()', access: 'a.b, a[i]',
+  number: '123, 1.5', string: '"x", \'y\'', group: '()', seq: ', ;', access: 'a.b, a[i]',
   // Operators
   assign: '=, +=', arithmetic: '+-*/%', logical: '&& || !', bit: '& | ^ ~',
   cmp: '< > <= >=', equality: '== !=', increment: '++ --', pow: '**',
@@ -424,7 +425,8 @@ const DESC = {
 const TIPS = {
   number: 'Decimal numbers<br><code>42</code> <code>3.14</code> <code>1e3</code> <code>0xFF</code> <code>0b101</code>',
   string: 'String literals<br><code>"hello"</code> <code>\'world\'</code> with escapes',
-  group: 'Grouping & sequences<br><code>(a + b)</code> <code>a, b</code> <code>a; b</code>',
+  group: 'Grouping<br><code>(a + b)</code>',
+  seq: 'Sequences<br><code>a, b</code> <code>a; b</code>',
   access: 'Property access<br><code>a.b</code> <code>a[i]</code> <code>fn()</code>',
   assign: 'Assignment operators<br><code>=</code> <code>+=</code> <code>-=</code> <code>*=</code> <code>/=</code>',
   arithmetic: 'Math operators<br><code>+ - * / %</code> unary: <code>+x</code> <code>-x</code>',
@@ -658,15 +660,15 @@ function generateExample() {
 
 const PRESETS = {
   // Minimal: just numbers and basic arithmetic
-  minimal: ['number', 'string', 'group', 'arithmetic'],
+  minimal: ['number', 'string', 'seq', 'group', 'arithmetic'],
   // Expressions: subscript.js features
-  expr: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access'],
+  expr: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'seq', 'group', 'access'],
   // Justin: JSON + expressions (no statements)
-  justin: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access',
+  justin: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'seq', 'group', 'access',
            'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
            'collection', 'template'],
   // Jessie: practical JS subset with statements
-  jessie: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'group', 'access',
+  jessie: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'seq', 'group', 'access',
            'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
            'collection', 'template', 'regex', 'block', 'var', 'function', 'destruct', 'if', 'loop', 'try', 'switch', 'asi'],
   // Full: all features

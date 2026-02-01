@@ -24,7 +24,8 @@ import './feature/op/equality.js';    // == !=
 import './feature/op/arithmetic.js';  // + - * / %
 import './feature/op/increment.js';   // ++ --
 
-import './feature/group.js';          // Grouping: (a), sequences: a, b; a; b
+import './feature/seq.js';            // Sequences: a, b; a; b
+import './feature/group.js';          // Grouping: (a)
 import './feature/access.js';         // Property access: a.b, a[b], f(), [a,b]
 
 import { parse, compile } from './parse.js';

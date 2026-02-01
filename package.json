@@ -29,8 +29,9 @@
   ],
   "scripts": {
     "build": "esbuild subscript.js --bundle --minify --format=esm --outfile=subscript.min.js && esbuild justin.js --bundle --minify --format=esm --outfile=justin.min.js && esbuild jessie.js --bundle --minify --format=esm --outfile=jessie.min.js",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "npm run build && npm run test:e2e",
     "test": "node --import ./test/https-loader.js test/test.js",
+    "test:e2e": "npx playwright test test/index.spec.js",
     "check-types": "tsc --noEmit subscript.d.ts"
   },
   "repository": {
