@@ -116,8 +116,18 @@ subscript('constructor.constructor("alert(1)")()')({})
 ## Performance
 
 ```
-Parse 30k:  subscript 150ms · justin 183ms · jsep 270ms · expr-eval 480ms · jexl 1056ms
-Eval 30k:   new Function 7ms · subscript 15ms · jsep+eval 30ms · expr-eval 72ms
+Parse 30k:
+  subscript 150ms
+  justin 183ms
+  jsep 270ms
+  expr-eval 480ms
+  jexl 1056ms
+
+Eval 30k:
+  new Function 7ms
+  subscript 15ms
+  jsep+eval 30ms
+  expr-eval 72ms
 ```
 
 ## Utils
