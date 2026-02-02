@@ -1,6 +1,6 @@
 <h1 align="center"><em>sub</em>script</h1>
 
-<p align="center">Modular expression parser & evaluator</p>
+<p align="center">Modular expression parser & microlanguage</p>
 <div align="center">
 
 [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript) [![microjs](https://img.shields.io/badge/µjs-subscript-darkslateblue)](http://microjs.com/#subscript) <!--[![demo](https://img.shields.io/badge/play-%F0%9F%9A%80-white)](https://dy.github.io/subscript/)-->
