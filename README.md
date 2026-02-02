@@ -15,9 +15,9 @@ let fn = subscript('a + b * 2')
 fn({ a: 1, b: 3 })  // 7
 ```
 
-* **Modular** — 40+ syntax features for building DSL, see [playground](https://dy.github.io/subscript/)
-* **Universal** — language-agnostic minimal syntax tree, see [spec](./spec.md)
-* **Fast** — single-pass Pratt parser, see [benchmarks](#performance)
+* **Modular** — 40+ pluggable syntax features, see [playground](https://dy.github.io/subscript/)
+* **Universal** — minimal syntax tree, see [spec](./spec.md)
+* **Fast** — efficient parser, see [benchmarks](#performance)
 * **Small** — ~2KB core, runs in browser/node
 * **Safe** — sandboxed, no prototype access
 * **Metacircular** — parses and compiles itself
