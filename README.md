@@ -22,6 +22,8 @@ fn({ a: 1, b: 3 })  // 7
 * **Safe** — sandboxed, no prototype access
 * **Metacircular** — parses and compiles itself
 
+_Useful for_: templates, calculators, sandboxes, safe eval, language subsets, custom DSLs, preprocessors.
+
 ## Presets
 
 [**Subscript**](./docs.md#subscript) – common expressions:
