@@ -1,6 +1,6 @@
 <h1 align="center"><em>sub</em>script</h1>
 
-<p align="center">Expression parser & evaluator</p>
+<p align="center">Modular expression parser & evaluator</p>
 <div align="center">
 
 [![build](https://github.com/dy/subscript/actions/workflows/node.js.yml/badge.svg)](https://github.com/dy/subscript/actions/workflows/node.js.yml) [![npm](https://img.shields.io/npm/v/subscript)](http://npmjs.org/subscript) [![size](https://img.shields.io/bundlephobia/minzip/subscript?label=size)](https://bundlephobia.com/package/subscript) [![microjs](https://img.shields.io/badge/µjs-subscript-darkslateblue)](http://microjs.com/#subscript) <!--[![demo](https://img.shields.io/badge/play-%F0%9F%9A%80-white)](https://dy.github.io/subscript/)-->
@@ -15,12 +15,12 @@ let fn = subscript('a + b * 2')
 fn({ a: 1, b: 3 })  // 7
 ```
 
-* **Fast** — pratt parser engine, see [benchmarks](#performance)
-* **Portable** — universal expression format, see [spec](./spec.md)
-* **Extensible** — pluggable syntax, see [playground](https://dy.github.io/subscript/)
+* **Modular** — 40+ syntax features for building DSL, see [playground](https://dy.github.io/subscript/)
+* **Universal** — language-agnostic minimal syntax tree, see [spec](./spec.md)
+* **Fast** — single-pass Pratt parser, see [benchmarks](#performance)
+* **Small** — ~2KB core, runs in browser/node
+* **Safe** — sandboxed, no prototype access
 * **Metacircular** — parses and compiles itself
-* **Safe** — sandboxed, blocks `__proto__`, `constructor`
-
 
 ## Presets
 
