@@ -1,8 +1,14 @@
 # Universal Expression Tree
 
-## Overview
+Expressions parse to minimal lispy tree. Opposed to [ESTree](https://github.com/estree/estree):
 
-Expressions parse to trees. Minimal, JSON-compatible, and portable across languages.
+- language-agnostic, can be compiled to different targets
+- reflects execution sequence, rather than code layout
+- has minimal overhead, directly maps to operators
+- simplifies manual evaluation and debugging
+- has conventional form and one-liner docs
+- JSON-compatible, sparse arrays
+
 
 ```
 [operator, ...operands]    operation
@@ -375,20 +381,14 @@ Implementations SHOULD accept both forms on input.
 
 
 
-## Acknowledgments
+## Inspiration 
 
-Inspiration:
-
-- **Pratt parsing** — Pratt, 1973. [Top Down Operator Precedence](https://tdop.github.io/). Elegant precedence-driven parsing.
-- **S-expressions** — McCarthy, 1960. Code as nested lists.
 - **[frisk](https://www.npmjs.com/package/frisk)** — Porsager. Evaluable arrays as function calls.
 - **[nisp](https://github.com/ysmood/nisp)** — Ysmood. JSON-compatible lisp.
+- **Pratt parsing** — Pratt, 1973. [Top Down Operator Precedence](https://tdop.github.io/). Elegant precedence-driven parsing.
+- **S-expressions** — McCarthy, 1960. Code as nested lists.
 - **JSON** — Crockford, 2001. Minimal format, universal adoption.
-
-Counter-examples:
-
-- **[ESTree](https://github.com/estree/estree)** — Verbose, JS-specific, layout-oriented rather than semantic. What not to do.
-
+- **[ESTree](https://github.com/estree/estree)** – opposite example
 
 
 ## License
