@@ -395,7 +395,4 @@ Implementations SHOULD accept both forms on input.
 
 This specification is released under [CC0](https://creativecommons.org/publicdomain/zero/1.0/). It belongs to no one and everyone.
 
-Use it freely.
-
-
 <p align="center">🕉</p>
