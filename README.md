@@ -61,26 +61,31 @@ fn({})  // 120
 See [docs](./docs.md#presets) for full description.
 
 
-## Syntax format
+## Syntax tree
 
-Expressions parse to a minimal JSON-compatible syntax tree:
+Expressions parse to simplified lispy tree structure, opposed to ESTree:
+
+- language-agnostic, can be compiled to different targets
+- reflects execution sequence, rather than code layout
+- has minimal overhead, directly maps to operators
+- simplifies manual evaluation and debugging
+- has conventional form and one-liner docs
+- JSON-compatible
 
 ```js
 import { parse } from 'subscript'
 
 parse('a + b * 2')
 // ['+', 'a', ['*', 'b', [, 2]]]
-```
 
-Three forms:
-
-```js
+// node kinds
 'x'             // identifier — resolve from context
 [, value]       // literal — return as-is (empty slot = data)
 [op, ...args]   // operation — apply operator
 ```
 
 See [spec.md](./spec.md).
+
 
 
 ## Extension
