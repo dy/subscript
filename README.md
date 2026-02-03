@@ -63,14 +63,7 @@ See [docs](./docs.md#presets) for full description.
 
 ## Syntax tree
 
-Expressions parse to simplified lispy tree structure, opposed to ESTree:
-
-- language-agnostic, can be compiled to different targets
-- reflects execution sequence, rather than code layout
-- has minimal overhead, directly maps to operators
-- simplifies manual evaluation and debugging
-- has conventional form and one-liner docs
-- JSON-compatible
+Expressions parse to minimal JSON-compatible tree structure:
 
 ```js
 import { parse } from 'subscript'
