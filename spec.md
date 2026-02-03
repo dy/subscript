@@ -1,6 +1,6 @@
 # Universal Expression Tree
 
-Expressions parse to minimal lispy tree. Opposed to [ESTree](https://github.com/estree/estree):
+Lisp-inspired syntax tree, opposed to [ESTree](https://github.com/estree/estree):
 
 - language-agnostic, can be compiled to different targets
 - reflects execution sequence, rather than code layout
