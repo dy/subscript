@@ -9,11 +9,12 @@ Lisp-inspired syntax tree, opposed to [ESTree](https://github.com/estree/estree)
 - has conventional form and one-liner docs
 - JSON-compatible, sparse arrays
 
+Kinds:
 
 ```
 [operator, ...operands]    operation
 "name"                     identifier (resolved from context)
-[, value]                  literal (returned as-is)
+[, value]                  literal
 ```
 
 An expression tree is one of three forms:
