@@ -13,6 +13,10 @@ const ctx = {
   f: { g: [x => x + 1] }, h: 10, i: { j: 20 }
 };
 
+// CEL-compatible expression (CEL uses BigInt, no function calls on array elements)
+const celExpr = `a + b * c - d / e + f.g[0] + i.j`;
+const celCtx = { a: 1n, b: 2n, c: 3n, d: 4n, e: 5n, f: { g: [11n] }, i: { j: 20n } };
+
 const bench = (name, fn) => {
   // Warmup
   for (let i = 0; i < 1000; i++) fn();
@@ -121,6 +125,13 @@ async function run() {
     results.parse['angular-expr'] = bench('angular-expr', () => ae.compile(expr));
   } catch (e) { console.log('angular-expr: SKIP -', e.message); }
 
+  // @marcbachmann/cel-js
+  try {
+    const { parse: celParse } = await cdn('@marcbachmann/cel-js');
+    celParse(celExpr);
+    results.parse['cel-js'] = bench('cel-js', () => celParse(celExpr));
+  } catch (e) { console.log('cel-js: SKIP -', e.message); }
+
   console.log('\n=== EVAL ===\n');
 
   // subscript compile (js)
@@ -187,6 +198,14 @@ async function run() {
     fn(ctx);
     results.eval['angular-expr'] = bench('angular-expr', () => fn(ctx));
   } catch (e) { console.log('angular-expr: SKIP -', e.message); }
+
+  // @marcbachmann/cel-js
+  try {
+    const { parse: celParse } = await cdn('@marcbachmann/cel-js');
+    const celFn = celParse(celExpr);
+    celFn(celCtx);
+    results.eval['cel-js'] = bench('cel-js', () => celFn(celCtx));
+  } catch (e) { console.log('cel-js: SKIP -', e.message); }
 
   // Summary
   console.log('\n=== SUMMARY ===\n');
