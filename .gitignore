@@ -107,3 +107,4 @@ dist
 .tern-port
 .DS_Store
 test-results/
+/.claude

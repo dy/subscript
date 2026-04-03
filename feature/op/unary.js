@@ -8,8 +8,7 @@
  *
  * JS-specific keywords
  */
-import { unary, operator, compile, skip, expr, word } from '../../parse.js';
-import { keyword } from '../block.js';
+import { unary, keyword, operator, compile, skip, expr, word } from '../../parse.js';
 
 const PREFIX = 140;
 

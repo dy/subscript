@@ -89,7 +89,6 @@ export let idx, cur,
   prec = {},
 
   // create operator checker/mapper - for symbols and special cases
-  // For prefix word operators, prefer keyword() from block.js
   token = (
     op,
     p = SPACE,
@@ -130,9 +129,22 @@ export let idx, cur,
 
   group = (op, p) => token(op[0], p, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
 
-  access = (op, p) => token(op[0], p, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null]));
+  access = (op, p) => token(op[0], p, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null])),
+
+  // keyword(op, prec, fn) - prefix word token with property name support
+  // parse.prop set by collection.js to prevent matching {keyword: value}
+  keyword = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) =>
+    lookup[c] = (a, curPrec, curOp, from = idx) =>
+      !a &&
+      (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
+      curPrec < prec &&
+      !parse.id(cur.charCodeAt(idx + l)) &&
+      (!parse.prop || parse.prop(idx + l)) &&
+      (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
+      prev?.(a, curPrec, curOp);
 
 // === Compile: AST → Evaluator ===
+
 
 // Operator registry
 export const operators = {};

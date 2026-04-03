@@ -7,8 +7,7 @@
  * [, undefined] serializes to [null, null] which would compile to null.
  * [] serializes to [] and compiles back to undefined.
  */
-import { literal } from '../parse.js';
-import { keyword } from './block.js';
+import { literal, keyword } from '../parse.js';
 
 literal('true', true);
 literal('false', false);

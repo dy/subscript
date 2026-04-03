@@ -8,11 +8,54 @@
  *   for (let x in o)  → ['for', ['in', ['let', 'x'], 'o'], body]
  *   var x             → ['var', 'x']   (acts as assignment target)
  */
-import { expr, space, operator, compile } from '../parse.js';
-import { keyword } from './block.js';
-import { destructure } from './destruct.js';
+import { expr, space, keyword, operator, compile } from '../parse.js';
 
 const STATEMENT = 5, SEQ = 10, ASSIGN = 20;
+
+// Flatten comma into array: [',', a, b, c] → [a, b, c]
+const flatten = items => items[0]?.[0] === ',' ? items[0].slice(1) : items;
+
+// Destructure value into context
+export const destructure = (pattern, value, ctx) => {
+  if (typeof pattern === 'string') { ctx[pattern] = value; return; }
+  const [op, ...raw] = pattern;
+  const items = flatten(raw);
+  if (op === '{}') {
+    const used = [];
+    for (const item of items) {
+      // Rest: {...rest}
+      if (Array.isArray(item) && item[0] === '...') {
+        const rest = {};
+        for (const k in value) if (!used.includes(k)) rest[k] = value[k];
+        ctx[item[1]] = rest;
+        break;
+      }
+      let key, binding, def;
+      // Shorthand: {x} → item is 'x'
+      // With default: {x = 1} → ['=', 'x', default]
+      // Rename: {x: y} → [':', 'x', 'y']
+      if (typeof item === 'string') { key = binding = item }
+      else if (item[0] === '=') { typeof item[1] === 'string' ? (key = binding = item[1]) : ([, key, binding] = item[1]); def = item[2] }
+      else { [, key, binding] = item }
+      used.push(key);
+      let val = value[key];
+      if (val === undefined && def) val = compile(def)(ctx);
+      destructure(binding, val, ctx);
+    }
+  }
+  else if (op === '[]') {
+    let i = 0;
+    for (const item of items) {
+      if (item === null) { i++; continue; }
+      if (Array.isArray(item) && item[0] === '...') { ctx[item[1]] = value.slice(i); break; }
+      let binding = item, def;
+      if (Array.isArray(item) && item[0] === '=') [, binding, def] = item;
+      let val = value[i++];
+      if (val === undefined && def) val = compile(def)(ctx);
+      destructure(binding, val, ctx);
+    }
+  }
+};
 
 // let/const: expr(SEQ-1) consumes assignment, stops before comma
 // For for-in/of, return ['in/of', ['let', x], iterable] not ['let', ['in', x, it]]

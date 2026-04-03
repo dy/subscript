@@ -12,10 +12,13 @@
  *   ['{}', 'a']            → ['{}', 'a']     object shorthand {a}
  *   ['{}', [':', k, v]]    → ['{}', ...]     object literal
  */
-import { group, binary, operator, compile } from '../parse.js';
+import { group, binary, operator, compile, parse, peek } from '../parse.js';
 import { ACC } from './accessor.js';
 
 const ASSIGN = 20, TOKEN = 200;
+
+// Allow {keyword: value} - prevent keyword match before colon
+parse.prop = pos => peek(pos) !== 58;
 
 // Object inner: null, string, or array starting with : , ... get set
 const isObject = a => a == null || typeof a === 'string' || [':', ',', '...', 'get', 'set'].includes(a[0]);

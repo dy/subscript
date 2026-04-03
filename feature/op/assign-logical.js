@@ -4,7 +4,7 @@
  * ||= &&= ??= + destructuring support for let/const/var
  */
 import { binary, operator, compile } from '../../parse.js';
-import { destructure } from '../destruct.js';
+import { destructure } from '../var.js';
 import { isLval, prop } from '../access.js';
 
 const ASSIGN = 20;

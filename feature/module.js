@@ -9,8 +9,7 @@
  *   export { a } from './x'      → ['export', ['from', ['{}', ...], path]]
  *   export const x = 1           → ['export', decl]
  */
-import { token, expr, space, lookup, skip, word } from '../parse.js';
-import { keyword } from './block.js';
+import { token, expr, space, keyword, lookup, skip, word } from '../parse.js';
 
 const STATEMENT = 5, SEQ = 10, STAR = 42;
 

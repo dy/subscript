@@ -1,7 +1,7 @@
 // Function declarations and expressions
-import { space, next, parse, parens, expr, operator, compile, cur, idx, skip } from '../parse.js';
-import { RETURN } from './control.js';
-import { keyword, block } from './block.js';
+import { space, next, parse, keyword, parens, expr, operator, compile, cur, idx, skip } from '../parse.js';
+import { block } from './if.js';
+import { RETURN } from './op/arrow.js';
 
 const TOKEN = 200;
 

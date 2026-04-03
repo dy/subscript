@@ -6,7 +6,9 @@
  * Common in: JS, TS, Java, C#, Kotlin, Scala
  */
 import { binary, operator, compile } from '../../parse.js';
-import { RETURN } from '../control.js';
+
+// RETURN: array to hold value - reused, no allocation per throw
+export const RETURN = [];
 
 const ASSIGN = 20;
 

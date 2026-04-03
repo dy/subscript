@@ -1,8 +1,8 @@
 // Additional JS statements: debugger, with (parse-only)
 // debugger → ['debugger']
 // with (obj) body → ['with', obj, body]
-import { space, parens } from '../parse.js';
-import { keyword, body } from './block.js';
+import { space, keyword, parens } from '../parse.js';
+import { body } from './if.js';
 
 const STATEMENT = 5;
 

@@ -382,7 +382,7 @@ Implementations SHOULD accept both forms on input.
 
 
 
-## Inspiration 
+## Inspiration
 
 - **[frisk](https://www.npmjs.com/package/frisk)** — Porsager. Evaluable arrays as function calls.
 - **[nisp](https://github.com/ysmood/nisp)** — Ysmood. JSON-compatible lisp.

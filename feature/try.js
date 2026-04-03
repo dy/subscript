@@ -1,9 +1,9 @@
 // try/catch/finally/throw statements
 // AST (faithful): ['try', body, ['catch', param, handler]?, ['finally', cleanup]?]
 // Note: body/handler are raw block results, param is raw parens result
-import { space, parse, parens, expr, word, skip, operator, compile } from '../parse.js';
-import { keyword, block } from './block.js';
-import { BREAK, CONTINUE, RETURN } from './control.js';
+import { space, parse, keyword, parens, expr, word, skip, operator, compile } from '../parse.js';
+import { block } from './if.js';
+import { RETURN } from './op/arrow.js';import { BREAK, CONTINUE } from './loop.js';
 
 const STATEMENT = 5;
 
@@ -33,10 +33,10 @@ keyword('throw', STATEMENT + 1, () => {
 // Compile try - normalize in compiler, not parser
 operator('try', (tryBody, ...clauses) => {
   tryBody = tryBody ? compile(tryBody) : null;
-  
+
   let catchClause = clauses.find(c => c?.[0] === 'catch');
   let finallyClause = clauses.find(c => c?.[0] === 'finally');
-  
+
   const catchParam = catchClause?.[1];
   const catchBody = catchClause?.[2] ? compile(catchClause[2]) : null;
   const finallyBody = finallyClause?.[1] ? compile(finallyClause[1]) : null;

@@ -1,6 +1,5 @@
 // Async/await/yield: async function, async arrow, await, yield expressions
-import { unary, expr, skip, space, cur, idx, word, operator, compile } from '../parse.js';
-import { keyword } from './block.js';
+import { unary, expr, skip, space, keyword, cur, idx, word, operator, compile } from '../parse.js';
 
 const PREFIX = 140, ASSIGN = 20;
 

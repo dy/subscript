@@ -1,10 +1,10 @@
 // Loops: while, do-while, for, for await, break, continue, return
-import { expr, skip, space, parse, word, parens, cur, idx, operator, compile, next, seek } from '../parse.js';
-import { body, keyword } from './block.js';
-import { destructure } from './destruct.js';
-import { BREAK, CONTINUE, RETURN } from './control.js';
+import { expr, skip, space, parse, word, keyword, parens, cur, idx, operator, compile, next, seek } from '../parse.js';
+import { RETURN } from './op/arrow.js';
+import { body } from './if.js';
+import { destructure } from './var.js';
 
-export { BREAK, CONTINUE, RETURN };
+export const BREAK = Symbol('break'), CONTINUE = Symbol('continue');
 
 const STATEMENT = 5, CBRACE = 125, SEMI = 59;
 

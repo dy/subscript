@@ -1,7 +1,7 @@
 // Class declarations and expressions
 // class A extends B { ... }
-import { binary, unary, token, expr, space, next, parse, literal, word, operator, compile, skip, cur, idx } from '../parse.js';
-import { keyword, block } from './block.js';
+import { binary, unary, token, expr, space, next, parse, keyword, literal, word, operator, compile, skip, cur, idx } from '../parse.js';
+import { block } from './if.js';
 
 const TOKEN = 200, PREFIX = 140, COMP = 90;
 const STATIC = Symbol('static');

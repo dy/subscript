@@ -6,13 +6,12 @@
  */
 import './justin.js';
 
-// Statement features (var.js must come before destruct.js)
+// Statement features
 import './feature/var.js';
 import './feature/function.js';
 import './feature/async.js';
 import './feature/class.js';
 import './feature/regex.js';
-import './feature/destruct.js';
 
 // Control flow
 import './feature/if.js';
