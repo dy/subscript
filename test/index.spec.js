@@ -334,7 +334,7 @@ export default subscript;
       // Literals
       'literal', 'collection', 'template', 'regex', 'unit', 'comment',
       // Control
-      'block', 'if', 'loop', 'switch', 'var', 'destruct', 'try',
+      'if', 'loop', 'switch', 'var', 'try',
       // Functions
       'function', 'async', 'class', 'accessor', 'module', 'asi'
     ]

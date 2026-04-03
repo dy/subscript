@@ -355,16 +355,13 @@ const FEATURE_PATHS = {
   unit: 'feature/unit.js',
 
   // Control flow (from jessie.js)
-  block: 'feature/block.js',
   'if': 'feature/if.js',
   loop: 'feature/loop.js',
   'var': 'feature/var.js',
   'switch': 'feature/switch.js',
-  destruct: 'feature/destruct.js',
   'function': 'feature/function.js',
   'throw': 'feature/try.js',              // throw is part of try.js
   'try': 'feature/try.js',
-  control: 'feature/control.js',           // BREAK, CONTINUE, RETURN symbols
   accessor: 'feature/accessor.js',
   async: 'feature/async.js',
   'class': 'feature/class.js',
@@ -379,7 +376,7 @@ const featureOrder = [
   // Operators - order matters for token chain
   'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment',
   // Control flow foundations (needed by group via loop)
-  'control', 'block', 'destruct', 'loop',
+  'loop',
   // Expression features
   'seq', 'group', 'access',
   // Justin additions
@@ -397,7 +394,7 @@ const FEATURES = [
   { cat: 'Operators', items: ['assign', 'arithmetic', 'logical', 'bit', 'cmp', 'equality', 'increment', 'pow'] },
   { cat: 'Advanced Ops', items: ['ternary', 'arrow', 'optional', 'spread', 'unary', 'identity', 'nullish'] },
   { cat: 'Literals', items: ['literal', 'collection', 'template', 'regex', 'unit', 'comment'] },
-  { cat: 'Control', items: ['block', 'if', 'loop', 'switch', 'var', 'destruct', 'try'] },
+  { cat: 'Control', items: ['if', 'loop', 'switch', 'var', 'try'] },
   { cat: 'Functions', items: ['function', 'async', 'class', 'accessor', 'module', 'asi'] },
 ]
 
@@ -414,8 +411,8 @@ const DESC = {
   literal: 'true/false/null', collection: '[1,2], {a:1}', template: '`${}`',
   regex: '/re/', unit: '5px', comment: '//',
   // Control
-  block: '{...}', 'if': 'if/else', loop: 'for/while', 'switch': 'switch',
-  'var': 'let/const', destruct: '{a,b}=', 'try': 'try/catch',
+  'if': 'if/else', loop: 'for/while', 'switch': 'switch',
+  'var': 'let/const', 'try': 'try/catch',
   // Functions
   'function': 'fn(){}', async: 'async/await', 'class': 'class X {}',
   accessor: 'get/set', module: 'import/export', asi: 'auto semicolons'
@@ -449,12 +446,10 @@ const TIPS = {
   regex: 'Regular expressions<br><code>/pattern/</code> <code>/\\d+/g</code>',
   unit: 'Unit suffixes<br><code>5px</code> <code>10rem</code> <code>2s</code>',
   comment: 'Comments (ignored)<br><code>// line</code> <code>/* block */</code>',
-  block: 'Statement block<br><code>if (x) { a; b }</code>',
   'if': 'Conditionals<br><code>if (c) x</code> <code>if (c) x else y</code>',
   loop: 'Loops<br><code>while (c) body</code> <code>for (;;) body</code> <code>for (x of arr)</code>',
   'switch': 'Switch statement<br><code>switch (x) { case 1: ... }</code>',
   'var': 'Variable declaration<br><code>let x = 1</code> <code>const y = 2</code>',
-  destruct: 'Destructuring<br><code>const {a, b} = obj</code> <code>const [x, y] = arr</code>',
   'try': 'Try/catch/finally<br><code>try { ... } catch (e) { ... }</code>',
   'function': 'Function declaration<br><code>function f(a, b) { }</code>',
   async: 'Async/await<br><code>async function f() { await x }</code>',
@@ -670,7 +665,7 @@ const PRESETS = {
   // Jessie: practical JS subset with statements
   jessie: ['number', 'string', 'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment', 'seq', 'group', 'access',
            'comment', 'identity', 'nullish', 'pow', 'unary', 'literal', 'ternary', 'arrow', 'spread', 'optional',
-           'collection', 'template', 'regex', 'block', 'var', 'function', 'destruct', 'if', 'loop', 'try', 'switch', 'asi'],
+           'collection', 'template', 'regex', 'var', 'function', 'if', 'loop', 'try', 'switch', 'asi'],
   // Full: all features
   full: FEATURES.flatMap(c => c.items),
 }
@@ -683,9 +678,8 @@ let evalId = 0
 let currentWorker = null
 
 // Fetch all feature sources upfront (using mapped paths)
-// Include control.js which is imported by function/loop/switch/try
 const featureSources = {}
-const uniquePaths = [...new Set([...Object.values(FEATURE_PATHS), 'feature/control.js'])]
+const uniquePaths = [...new Set(Object.values(FEATURE_PATHS))]
 await Promise.all(uniquePaths.map(async path => {
   const res = await fetch('./' + path)
   if (res.ok) featureSources[path] = await res.text()
@@ -757,26 +751,25 @@ function buildWorkerSrc() {
 
   // Features that export things used by other features
   const exports = {
-    control: ['BREAK', 'CONTINUE', 'RETURN'],
-    block: ['keyword', 'infix', 'block', 'body'],
+    'if': ['block', 'body'],                // block/body parsing helpers
+    loop: ['BREAK', 'CONTINUE'],            // control flow symbols
+    arrow: ['RETURN'],                       // return symbol
+    'var': ['destructure'],                  // destructuring
     access: ['unsafe', 'isLval', 'prop'],
-    destruct: ['destructure'],
     accessor: ['ACC'],
     unit: ['unit']
   }
 
   // Feature dependencies - these features import from other features
-  // Includes transitive dependencies (e.g., group→loop→block means group needs block)
   const dependencies = {
-    // control exports BREAK, CONTINUE, RETURN - used by loop, function, try, switch, group
-    control: ['loop', 'function', 'try', 'switch', 'group'],
-    // block exports keyword, infix, block, body - used by control flow features
-    // Also needed transitively by: group (via loop)
-    block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
-    // loop exports loop - used by features that handle control flow
+    // if exports block, body - used by control flow features
+    'if': ['loop', 'switch', 'function', 'try', 'group'],
+    // loop exports BREAK, CONTINUE - used by try, switch
     loop: ['group', 'function', 'try', 'switch'],
-    // destruct exports destructure - used by var and loop
-    destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
+    // arrow exports RETURN - used by function, loop, try
+    arrow: ['function', 'loop', 'try'],
+    // var exports destructure - used by loop
+    'var': ['loop', 'group'],
     // access exports prop, unsafe, isLval - used by group
     access: ['group'],
     // accessor exports ACC - used by collection
@@ -1160,7 +1153,7 @@ function updateExample() {
 // Render features
 let programmaticChange = false
 const featuresEl = document.getElementById('features')
-const DEPS = { 'if': ['block'], loop: ['block'], 'switch': ['block'], 'function': ['block'], 'try': ['block'], destruct: ['var'] } // Hidden dependencies
+const DEPS = {} // Hidden dependencies
 
 // Tooltip element for features
 const featTip = document.createElement('div')
@@ -1245,17 +1238,11 @@ toggleBtn.addEventListener('click', () => {
 // Feature dependencies - these features import from other features
 // Includes transitive dependencies (e.g., group→loop→block means group needs block)
 const DEPENDENCIES = {
-  // control exports BREAK, CONTINUE, RETURN - used by loop, function, try, switch, group
-  control: ['loop', 'function', 'try', 'switch', 'group'],
-  // block exports keyword, infix, block, body - used by control flow features
-  // Also needed transitively by: group (via loop)
-  block: ['if', 'loop', 'switch', 'function', 'try', 'var', 'async', 'class', 'module', 'group'],
-  // loop - no longer exports anything needed by other features
-  // destruct exports destructure - used by var and loop
-  destruct: ['var', 'loop', 'group'],  // group needs loop which needs destruct
-  // access exports prop, unsafe, isLval - used by group
+  'if': ['loop', 'switch', 'function', 'try', 'group'],
+  loop: ['group', 'function', 'try', 'switch'],
+  arrow: ['function', 'loop', 'try'],
+  'var': ['loop', 'group'],
   access: ['group'],
-  // accessor exports ACC - used by collection
   accessor: ['collection']
 }
 
