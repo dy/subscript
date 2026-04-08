@@ -15,4 +15,9 @@ export default defineConfig({
   projects: [
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
+  webServer: {
+    command: 'npx serve -l 8765 --no-clipboard',
+    port: 8765,
+    reuseExistingServer: true,
+  },
 })

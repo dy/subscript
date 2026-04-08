@@ -269,8 +269,8 @@ test.describe('Subscript REPL', () => {
     const input = page.locator('#input')
     const error = page.locator('#error')
 
-    // 'const' requires var feature (jessie preset)
-    await input.fill('const x = 1')
+    // '#' is not a valid token in any preset
+    await input.fill('#invalid')
     await expect(error).toContainText('Unexpected', { timeout: 2000 })
 
     // Error should show position indicator

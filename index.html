@@ -375,17 +375,16 @@ const featureOrder = [
   'number', 'string',
   // Operators - order matters for token chain
   'assign', 'logical', 'bit', 'cmp', 'equality', 'arithmetic', 'increment',
-  // Control flow foundations (needed by group via loop)
-  'loop',
   // Expression features
-  'seq', 'group', 'access',
+  'seq', 'access',
   // Justin additions
   'comment', 'identity', 'nullish', 'pow', 'unary',
   'literal', 'ternary', 'arrow', 'spread', 'optional',
   'accessor', 'collection', 'template', 'regex', 'unit',
-  // Jessie additions
-  'var', 'function', 'async', 'class',
-  'if', 'try', 'switch', 'module', 'asi'
+  // Jessie additions - dependency order: if → loop/function/try/class/switch, arrow/var → loop, loop → try/switch
+  'var', 'if', 'loop', 'group',
+  'function', 'async', 'class',
+  'try', 'switch', 'module', 'asi'
 ]
 
 // UI feature groups (maps to internal IDs)
