@@ -1,5 +1,5 @@
 // If/else statement - else consumed internally
-import { space, skip, expr, err, keyword, parens, word, idx, seek, operator, compile } from '../parse.js';
+import { parse, space, skip, expr, err, keyword, parens, word, idx, seek, operator, compile } from '../parse.js';
 
 const STATEMENT = 5, SEMI = 59;
 
@@ -11,11 +11,12 @@ export const block = () =>
 export const body = () =>
   space() !== 123 ? expr(STATEMENT + .5) : (skip(), expr(STATEMENT - .5, 125) || null);
 
-// Check for `else` after optional semicolon
+// Check for `else` after optional semicolon (use parse.space to consume comments)
 const checkElse = () => {
   const from = idx;
-  if (space() === SEMI) skip();
-  space();
+  const sp = parse.space || space;
+  if (sp() === SEMI) skip();
+  sp();
   if (word('else')) return skip(4), true;
   return seek(from), false;
 };

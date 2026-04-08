@@ -48,7 +48,9 @@ lookup[_0] = a => {
     for (const [pre, base] of Object.entries(cfg)) {
       if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
         skip(2);
-        return [, parseInt(strip(next(charTest[base])), base)];
+        const str = strip(next(charTest[base]));
+        if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt('0' + pre[1] + str)]; }
+        return [, parseInt(str, base)];
       }
     }
   }

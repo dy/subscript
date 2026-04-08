@@ -13,6 +13,9 @@ test('control: if', t => {
   is(run('if (x) 1 else 2', { x: false }), 2)
   // nested else if
   is(run('if (a) 1 else if (b) 2 else 3', { a: false, b: true }), 2)
+  // comment before else
+  is(parse('if (a) {} // comment\nelse {}'), ['if', 'a', null, null]);
+  is(parse('if (a) {} /* comment */ else {}'), ['if', 'a', null, null]);
 })
 
 test('control: while', t => {
