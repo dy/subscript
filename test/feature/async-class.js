@@ -110,6 +110,11 @@ test('numbers: bigint', () => {
   is(parse('123n'), [, 123n]);
   is(parse('1_000n'), [, 1000n]);
   is(parse('0n'), [, 0n]);
+  // prefixed bigint
+  is(parse('0xFFn'), [, 0xFFn]);
+  is(parse('0o77n'), [, 0o77n]);
+  is(parse('0b101n'), [, 0b101n]);
+  is(parse('0x1_ABCn'), [, 0x1ABCn]);
 });
 
 test('meta: import.meta', () => {

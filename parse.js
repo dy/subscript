@@ -51,13 +51,13 @@ export let idx, cur,
       )
     ) token = newNode;
 
-    if (end) cc == end ? idx++ : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
+    if (end) cc == end ? (idx++, end === 125 && parse.asi && (parse.newline = true)) : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
 
     return token;
   },
 
   // skip space chars, return first non-space character
-  space = parse.space = (cc, from = idx) => {
+  space = (cc, from = idx) => {
     while ((cc = cur.charCodeAt(idx)) <= SPACE) {
       if (parse.asi && cc === 10) parse.newline = true
       idx++
@@ -142,6 +142,14 @@ export let idx, cur,
       (!parse.prop || parse.prop(idx + l)) &&
       (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
       prev?.(a, curPrec, curOp);
+
+// Keep parse.space overrides in sync with the exported binding used by features.
+Object.defineProperty(parse, 'space', {
+  configurable: true,
+  enumerable: true,
+  get: () => space,
+  set: fn => (space = fn)
+});
 
 // === Compile: AST → Evaluator ===
 

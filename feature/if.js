@@ -11,12 +11,11 @@ export const block = () =>
 export const body = () =>
   space() !== 123 ? expr(STATEMENT + .5) : (skip(), expr(STATEMENT - .5, 125) || null);
 
-// Check for `else` after optional semicolon (use parse.space to consume comments)
+// Check for `else` after optional semicolon
 const checkElse = () => {
   const from = idx;
-  const sp = parse.space || space;
-  if (sp() === SEMI) skip();
-  sp();
+  if (space() === SEMI) skip();
+  space();
   if (word('else')) return skip(4), true;
   return seek(from), false;
 };

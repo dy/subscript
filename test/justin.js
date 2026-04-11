@@ -3,7 +3,7 @@
 
 import test, { is, throws } from 'tst'
 import { parse, nary, binary, unary } from '../justin.js'
-import { compile, operator } from '../parse.js'
+import { compile, operator, cur, idx, seek } from '../parse.js'
 
 const justin = s => compile(parse(s))
 
@@ -119,6 +119,27 @@ test('justin: optional chaining', () => {
   is(justin('a?.()')({ a: v => 1 }), 1)
   is(justin('a?.(1)')({}), undefined)
   is(justin('a?.b?.(arg)?.[c] ?. d')({ a: { b: d => [, , { d }] }, arg: 1, c: 2 }), 1)
+})
+
+test('justin: parse.space override reaches feature handlers', () => {
+  const prevSpace = parse.space
+
+  parse.space = () => {
+    for (let cc; (cc = prevSpace()); ) {
+      if (cc !== 35) return cc
+      let i = idx + 1
+      while (cur[i] && cur.charCodeAt(i) !== 10) i++
+      seek(i)
+    }
+    return 0
+  }
+
+  try {
+    is(parse('a?.# custom\n[1]'), ['?.[]', 'a', [, 1]])
+    is(justin('a?.# custom\n[1]')({ a: [, 2] }), 2)
+  } finally {
+    parse.space = prevSpace
+  }
 })
 
 test('justin: nullish coalescing', () => {
