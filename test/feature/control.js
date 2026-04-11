@@ -16,6 +16,9 @@ test('control: if', t => {
   // comment before else
   is(parse('if (a) {} // comment\nelse {}'), ['if', 'a', null, null]);
   is(parse('if (a) {} /* comment */ else {}'), ['if', 'a', null, null]);
+  is(run('if (x) 1 /* comment */ else 2', { x: true }), 1)
+  is(run('if (x) 1 /* comment */ else 2', { x: false }), 2)
+  is(run('if (x) 1 // comment\nelse 2', { x: false }), 2)
 })
 
 test('control: while', t => {
