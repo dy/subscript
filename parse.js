@@ -2,6 +2,8 @@
 // Character codes
 const SPACE = 32;
 
+let lineBreak;
+
 // current string, index
 export let idx, cur,
 
@@ -45,6 +47,8 @@ export let idx, cur,
       (nl = parse.newline, 1) &&
       cc !== end &&
       (newNode =
+        // ASI before [ on new line (access handler would consume it; lineBreak distinguishes real \n from synthetic } flag)
+        ((token && cc === 91 && lineBreak && parse.asi?.(token, p, expr)) || null) ??
         ((fn = lookup[cc]) && fn(token, p)) ??
         (token && nl && parse.asi?.(token, p, expr)) ??
         (!token && next(parse.id))
@@ -58,8 +62,9 @@ export let idx, cur,
 
   // skip space chars, return first non-space character
   space = (cc, from = idx) => {
+    lineBreak = false
     while ((cc = cur.charCodeAt(idx)) <= SPACE) {
-      if (parse.asi && cc === 10) parse.newline = true
+      if (parse.asi && cc === 10) parse.newline = lineBreak = true
       idx++
     }
     return cc
@@ -105,7 +110,7 @@ export let idx, cur,
         (l < 2 || (op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (l < 3 || cur.substr(idx, l) == op))) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op)
       ) &&
       curPrec < p &&
-      (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, !word && !prev && err()), r)
+      (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, !word && !prev && !a && err()), r)
     ) ||
     prev?.(a, curPrec, matched)),
 

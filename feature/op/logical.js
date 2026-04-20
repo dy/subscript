@@ -8,8 +8,7 @@ import { binary, unary, operator, compile } from '../../parse.js';
 
 const LOR = 30, LAND = 40, PREFIX = 140;
 
-// ! must be registered before != and !==
-binary('!', PREFIX);
+// ! registered before != and !== (chain order matters)
 unary('!', PREFIX);
 
 binary('||', LOR);

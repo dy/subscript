@@ -584,3 +584,39 @@ test('jessie: compile from JSON-restored AST', () => {
     }
   }
 })
+
+// === ASI with prefix-only operators ===
+
+test('jessie: ASI before ! on new line', () => {
+  is(parse('x\n!y'), [';', 'x', ['!', 'y']])
+  is(parse('foo()\n!bar'), [';', ['()', 'foo', null], ['!', 'bar']])
+  is(parse('let x = 1\n!y'), [';', ['let', ['=', 'x', [, 1]]], ['!', 'y']])
+})
+
+test('jessie: ASI before ~ on new line', () => {
+  is(parse('x\n~y'), [';', 'x', ['~', 'y']])
+})
+
+test('jessie: ! and ~ still work normally', () => {
+  is(parse('!x'), ['!', 'x'])
+  is(parse('!!x'), ['!', ['!', 'x']])
+  is(parse('~x'), ['~', 'x'])
+  is(parse('x != y'), ['!=', 'x', 'y'])
+  is(parse('x !== y'), ['!==', 'x', 'y'])
+})
+
+test('jessie: ASI before [ on new line', () => {
+  is(parse('x\n[0]'), [';', 'x', ['[]', [, 0]]])
+  is(parse('foo()\n[0]'), [';', ['()', 'foo', null], ['[]', [, 0]]])
+})
+
+test('jessie: no ASI before [ on same line or inside expression', () => {
+  is(parse('x[0]'), ['[]', 'x', [, 0]])
+  is(parse('x ["a"]'), ['[]', 'x', [, 'a']])
+  is(parse('{x:1}["x"]'), ['[]', ['{}', [':', 'x', [, 1]]], [, 'x']])
+})
+
+test('jessie: no ASI before + on new line (continuation)', () => {
+  is(parse('x\n+ y'), ['+', 'x', 'y'])
+  is(parse('x\n- y'), ['-', 'x', 'y'])
+})
