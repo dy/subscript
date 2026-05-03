@@ -8,7 +8,7 @@
  *   for (let x in o)  → ['for', ['in', ['let', 'x'], 'o'], body]
  *   var x             → ['var', 'x']   (acts as assignment target)
  */
-import { expr, space, keyword, operator, compile } from '../parse.js';
+import { expr, space, keyword, operator, compile, seek, word, idx } from '../parse.js';
 
 const STATEMENT = 5, SEQ = 10, ASSIGN = 20;
 
@@ -61,6 +61,13 @@ export const destructure = (pattern, value, ctx) => {
 // For for-in/of, return ['in/of', ['let', x], iterable] not ['let', ['in', x, it]]
 // For comma, return ['let', decl1, decl2, ...] not ['let', [',', ...]]
 const decl = keyword => {
+  // let as identifier in for-in: for (let in obj)
+  if (keyword === 'let') {
+    const from = idx;
+    space();
+    if (word('in')) { seek(from); return; }
+    seek(from);
+  }
   let node = expr(SEQ - 1);
   // for (let x in obj) - restructure so for-loop sees in/of at top
   if (node?.[0] === 'in' || node?.[0] === 'of')

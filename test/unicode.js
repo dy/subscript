@@ -1,13 +1,8 @@
 // Unicode identifier tests — reproducing test262 failures
-//
-// State:
-//   - Non-ASCII identifier chars (ࡠ, Ω, etc.) → work fine
-//   - \u{XXXX} escape syntax → NOT supported (real gap)
-//   - \uXXXX legacy escape syntax → NOT supported
-//   - test262 files with 8000+ identifiers → stack overflow (scaling, not correctness)
+// All tests here FAIL on current subscript and should PASS once fixed.
 
-import test, { is, ok, throws } from 'tst'
-import { parse, compile } from '../subscript.js'
+import test, { is, throws } from 'tst'
+import { parse } from '../subscript.js'
 import '../jessie.js'
 
 // ============================================================================
@@ -16,59 +11,67 @@ import '../jessie.js'
 // ============================================================================
 
 test('unicode: \\u{XXXX} escape in identifier (BMP)', () => {
-  // \u{0860} should be equivalent to ࡠ
-  let err
-  try { parse('let \\u{0860} = 1') } catch (e) { err = e }
-  // Currently fails with "Unexpected token" — subscript doesn't handle \u{} escapes
-  ok(err, `\\u{} escape not supported: ${err?.message?.slice(0, 60)}`)
+  const result = parse('let \\u{0860} = 1')
+  is(result[0], 'let')
+  is(result[1][1], '\\u{0860}')
 })
 
-test('unicode: \\uXXXX escape in identifier (legacy)', () => {
-  // \u0041 should be 'A' — legacy 4-digit escape
-  let err
-  try { parse('let \\u0041 = 1') } catch (e) { err = e }
-  ok(err, `\\uXXXX escape not supported: ${err?.message?.slice(0, 60)}`)
+test('unicode: \\u{XXXX} escape in identifier (astral)', () => {
+  const result = parse('let \\u{1F600} = 1')
+  is(result[0], 'let')
+  is(result[1][1], '\\u{1F600}')
+})
+
+test('unicode: \\uXXXX legacy 4-digit escape in identifier', () => {
+  const result = parse('let \\u0041 = 1')
+  is(result[0], 'let')
+  is(result[1][1], '\\u0041')
+})
+
+test('unicode: invalid identifier escapes reject', () => {
+  throws(() => parse('let \\u{} = 1'))
+  throws(() => parse('let \\u{XYZ} = 1'))
+  throws(() => parse('let \\u{110000} = 1'))
+  throws(() => parse('let \\u00_G = 1'))
 })
 
 // ============================================================================
-// Non-ASCII identifier characters
+// Non-ASCII identifier characters — correctness (these PASS already)
 // ============================================================================
 
 test('unicode: single non-ASCII identifier', () => {
-  // Individual non-ASCII chars should parse fine
   const result = parse('let ࡠ = 1')
-  is(result[0], 'let', 'non-ASCII identifier parses')
+  is(result[0], 'let')
 })
 
 test('unicode: non-ASCII identifier in expression', () => {
   const result = parse('ࡠ + ࡡ')
-  is(result[0], '+', 'non-ASCII identifiers in expression')
+  is(result[0], '+')
+})
+
+// ============================================================================
+// Scaling: many non-ASCII identifier declarations
+// test262 files with 5000+ identifiers blow the parser stack.
+// ============================================================================
+
+test('unicode: many non-ASCII identifiers (scaling)', () => {
+  const ids = Array.from({ length: 5000 }, (_, i) => String.fromCharCode(0x0860 + i % 64))
+  const code = ids.map(id => `let ${id} = 1`).join('\n')
+  const result = parse(code)
+  is(result[0], ';')
+  is(result.length, 5001)
+  is(result[1][0], 'let')
+  is(result[5000][0], 'let')
 })
 
 // ============================================================================
 // for-in with let as identifier (non-strict)
 // `for (let in {})` — `let` used as identifier, not declaration
-// Currently fails with parse error
 // ============================================================================
 
 test('for-in: let as identifier (non-strict)', () => {
-  let err
-  try { parse('for (let in {}) {}') } catch (e) { err = e }
-  ok(err, `for (let in {}) should fail currently: ${err?.message?.slice(0, 60)}`)
-})
-
-// ============================================================================
-// Scaling: many non-ASCII identifier declarations
-// test262 files with 8000+ identifiers blow the parser stack.
-// This is a scaling issue, not a correctness bug.
-// ============================================================================
-
-test('unicode: many non-ASCII identifiers (scaling)', () => {
-  // 5000 non-ASCII identifier declarations blow the parser stack.
-  // This reproduces the test262 failures (files with 8000+ identifiers).
-  const ids = Array.from({ length: 5000 }, (_, i) => String.fromCharCode(0x0860 + i % 64))
-  const code = ids.map(id => `let ${id} = 1`).join('\n')
-  let err
-  try { parse(code) } catch (e) { err = e }
-  ok(err?.message.includes('Maximum call stack'), `5000 non-ASCII ids should overflow: ${err?.message?.slice(0, 60)}`)
+  const result = parse('for (let in {}) {}')
+  is(result[0], 'for')
+  is(result[1][0], 'in')
+  is(result[1][1], 'let')
 })

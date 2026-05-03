@@ -165,6 +165,7 @@ console.log(await bundle('main.js', {
 ## Used by
 
 * [jz](https://github.com/dy/jz) — JS subset → WASM compiler
+* [sprae](https://github.com/dy/jz) — DOM framework
 <!-- * [prepr](https://github.com/dy/prepr) -->
 <!-- * [glsl-transpiler](https://github.com/stackgl/glsl-transpiler) -->
 <!-- * [piezo](https://github.com/dy/piezo) -->
