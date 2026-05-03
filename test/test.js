@@ -19,6 +19,9 @@ import './feature/unit.js'
 import './feature/async-class.js'
 
 
+// Unicode tests
+import './unicode.js'
+
 // Integration tests
 import './subscript.js'
 
