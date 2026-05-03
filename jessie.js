@@ -6,6 +6,9 @@
  */
 import './justin.js';
 
+// JS source compatibility
+import './feature/unicode.js';
+
 // Statement features
 import './feature/var.js';
 import './feature/function.js';

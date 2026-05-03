@@ -1,5 +1,5 @@
-// Unicode identifier tests — reproducing test262 failures
-// All tests here FAIL on current subscript and should PASS once fixed.
+// Unicode identifier tests — reproducing test262 failures.
+// Some are fixed regressions; the final section tracks current parser gaps.
 
 import test, { is, throws } from 'tst'
 import { parse } from '../subscript.js'
@@ -49,6 +49,13 @@ test('unicode: non-ASCII identifier in expression', () => {
   is(result[0], '+')
 })
 
+test('unicode: Other_ID_Continue middle dot in identifier', () => {
+  // test262/language/identifiers/other_id_continue.js: `var a·;`
+  const result = parse('let a· = 1')
+  is(result[0], 'let')
+  is(result[1][1], 'a·')
+})
+
 // ============================================================================
 // Scaling: many non-ASCII identifier declarations
 // test262 files with 5000+ identifiers blow the parser stack.
@@ -62,6 +69,18 @@ test('unicode: many non-ASCII identifiers (scaling)', () => {
   is(result.length, 5001)
   is(result[1][0], 'let')
   is(result[5000][0], 'let')
+})
+
+test('unicode: many test262-style var identifiers (scaling)', () => {
+  // test262 generated identifier files use thousands of `var X;` statements.
+  const ids = Array.from({ length: 5000 }, (_, i) => String.fromCharCode(0x4e00 + i))
+  const code = ids.map(id => `var ${id};`).join('\n')
+  const result = parse(code)
+  is(result[0], ';')
+  is(result.length, 5002)
+  is(result[1][0], 'var')
+  is(result[5000][0], 'var')
+  is(result[5001], null)
 })
 
 // ============================================================================

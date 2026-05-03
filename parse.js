@@ -1,21 +1,6 @@
 // Pratt parser core + operator registry + compile
 // Character codes
-const SPACE = 32, BSLASH = 92, U = 117, LBRACE = 123, RBRACE = 125;
-
-const hex = c =>
-    (c >= 48 && c <= 57) ||
-    (c >= 65 && c <= 70) ||
-    (c >= 97 && c <= 102),
-
-  uesc = (n = idx + 2, c, cp = 0, i = 0) => {
-    if (cur.charCodeAt(idx) !== BSLASH || cur.charCodeAt(idx + 1) !== U) return 0;
-    if (cur.charCodeAt(n) === LBRACE) {
-      while (hex(c = cur.charCodeAt(++n))) cp = cp * 16 + (c <= 57 ? c - 48 : (c & 31) + 9);
-      return n > idx + 3 && cp <= 0x10ffff && cur.charCodeAt(n) === RBRACE ? n - idx + 1 : 0;
-    }
-    while (i < 4 && hex(cur.charCodeAt(n + i))) i++;
-    return i === 4 ? 6 : 0;
-  };
+const SPACE = 32;
 
 let lineBreak;
 
@@ -42,7 +27,7 @@ export let idx, cur,
 
   // advance until condition meets
   next = (is, from = idx, l) => {
-    while (l = is(cur.charCodeAt(idx)) || (is === parse.id && uesc())) idx += l;
+    while (l = is(cur.charCodeAt(idx))) idx += l;
     return cur.slice(from, idx);
   },
 

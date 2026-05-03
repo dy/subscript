@@ -1,8 +1,26 @@
 // ASI: newline at `;` precedence level triggers nary `;`
-import { parse, prec } from '../parse.js';
+import { parse, prec, cur, idx, seek } from '../parse.js';
 
 // Set prec.asi before importing to customize (default: prec[';'])
 const lvl = prec.asi ?? prec[';'];
+
+const SPACE = 32, LF = 10, SEMI = 59, space = parse.space;
+
+const lineBreak = (i = idx, c) => {
+  while ((c = cur.charCodeAt(i)) <= SPACE) {
+    if (c === LF) return true;
+    i++;
+  }
+};
+
+parse.space = () => {
+  let cc;
+  while ((cc = space()) === SEMI && lineBreak(idx + 1)) {
+    seek(idx + 1);
+    parse.newline = true;
+  }
+  return cc;
+};
 
 let asiDepth = 0;
 const MAX_ASI_DEPTH = 100;
