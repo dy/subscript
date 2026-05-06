@@ -155,6 +155,21 @@ test('control: switch basic', t => {
   is(ast[3][0], 'case')
 })
 
+// ASI inside a switch body: when an inner expr() call hits a reserved
+// keyword that signals "matched but did not consume" (e.g. case/default
+// while inSwitch), the ASI loop must stop. Without the no-progress guard,
+// the recursion appended to its semicolon-list until the array exceeded
+// its max length and threw `Invalid array length`.
+test('control: switch with multi-statement case bodies parses without ASI loop', t => {
+  is(parse(`switch (x) {
+    case 1:
+      a
+      b
+    case 2:
+      c
+  }`)[0], 'switch')
+})
+
 test('control: switch compile', t => {
   // Basic case match
   let ctx = { x: 1, y: 0 }
