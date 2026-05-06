@@ -27,10 +27,16 @@ const MAX_ASI_DEPTH = 100;
 
 parse.asi = (a, p, expr, b, items) => {
   if (p >= lvl || asiDepth >= MAX_ASI_DEPTH) return;
+  // Bail if the inner expr didn't actually consume anything. Without this, a
+  // lookup handler that returns a non-array sentinel (e.g. switch.js's
+  // `reserve` flagging `case`/`default` inside a switch body) lets expr return
+  // a truthy token without advancing idx, and the outer ASI loop appends to its
+  // semicolon-list forever.
+  const beforeIdx = idx;
   asiDepth++;
   try { b = expr(lvl - .5); }
   finally { asiDepth--; }
-  if (!b) return;
+  if (!b || idx === beforeIdx) return;
   items = b?.[0] === ';' ? b.slice(1) : [b];
   return a?.[0] === ';' ? (a.push(...items), a) : [';', a, ...items];
 };
