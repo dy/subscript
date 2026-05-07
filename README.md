@@ -58,28 +58,7 @@ let fn = jessie(`
 fn({})  // 120
 ```
 
-See [docs](./docs.md#presets) for full description.
-
-
-## Parse-only
-
-Each preset is split into a **parse half** (`feature/`) and an **eval half** (`eval/`). When you only need an AST (e.g. compiling to WASM, source-to-source transforms), import from `feature/` to skip the runtime:
-
-```js
-// parse only — no eval bundle weight
-import { parse } from 'subscript/feature/jessie.js'
-
-parse('let x = 1; x * 2')
-// [';', ['let', ['=', 'x', [, 1]]], ['*', 'x', [, 2]]]
-```
-
-| Entry | Parse + eval | Parse only (`feature/*`) |
-|---|---|---|
-| `subscript` | 7.5kb | 4.1kb |
-| `justin` | 14.0kb | 5.8kb |
-| `jessie` | 23.1kb | 11.1kb |
-
-Mix and match individual halves directly: `subscript/feature/loop.js` (parse), `subscript/eval/loop.js` (eval).
+Each preset has a parse-only entry — `subscript/feature/{subscript,justin,jessie}` — that drops the runtime (~50% smaller) for consumers that only need the AST. See [docs](./docs.md#presets) for full description.
 
 
 ## Syntax tree
