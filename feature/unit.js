@@ -1,5 +1,5 @@
 /**
- * Unit suffixes: 5px, 10rem, 2s, 500ms
+ * Unit suffixes - parse half: 5px, 10rem, 2s, 500ms
  *
  * AST:
  *   5px   → ['px', [,5]]
@@ -9,14 +9,11 @@
  *   import { unit } from 'subscript/feature/unit.js'
  *   unit('px', 'em', 'rem', 's', 'ms')
  */
-import { lookup, next, parse, idx, seek, operator, compile } from '../parse.js';
+import { lookup, next, parse, idx, seek } from '../parse.js';
 
-const units = {};
+export const units = {};
 
-export const unit = (...names) => names.forEach(name => {
-  units[name] = 1;
-  operator(name, val => (val = compile(val), ctx => ({ value: val(ctx), unit: name })));
-});
+export const unit = (...names) => names.forEach(name => { units[name] = 1; });
 
 // Wrap number handler to check for unit suffix
 const wrapNum = cc => {

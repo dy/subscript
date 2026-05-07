@@ -9,24 +9,15 @@
  * For more features:
  *   import { parse, compile } from 'subscript/justin.js'  // + JSON, arrows, templates
  *   import { parse, compile } from 'subscript/jessie.js'  // + statements, functions
+ *
+ * For parse-only (no eval bundle weight):
+ *   import { parse } from 'subscript/feature/subscript.js'
+ *   import { parse } from 'subscript/feature/justin.js'
+ *   import { parse } from 'subscript/feature/jessie.js'
  */
 
-// Expression features
-import './feature/number.js';       // Decimal numbers: 123, 1.5, 1e3
-import './feature/string.js';       // Double-quoted strings with escapes
-
-// Operators (C-family common set) - order matters for token chain performance
-import './feature/op/assignment.js';  // = += -= *= /= %= |= &= ^= >>= <<=
-import './feature/op/logical.js';     // ! && ||
-import './feature/op/bitwise.js';     // ~ | & ^ >> <<
-import './feature/op/comparison.js';  // < > <= >=
-import './feature/op/equality.js';    // == !=
-import './feature/op/arithmetic.js';  // + - * / %
-import './feature/op/increment.js';   // ++ --
-
-import './feature/seq.js';            // Sequences: a, b; a; b
-import './feature/group.js';          // Grouping: (a)
-import './feature/access.js';         // Property access: a.b, a[b], f(), [a,b]
+import './feature/subscript.js';
+import './eval/subscript.js';
 
 import { parse, compile } from './parse.js';
 export * from './parse.js';

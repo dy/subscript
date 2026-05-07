@@ -1,7 +1,6 @@
 /**
- * Import/Export with contextual 'from' operator
+ * Import/Export with contextual 'from' operator - parse half
  *
- * AST:
  *   import './x.js'              → ['import', path]
  *   import X from './x.js'       → ['import', ['from', 'X', path]]
  *   import { a, b } from './x'   → ['import', ['from', ['{}', ...], path]]
@@ -34,11 +33,3 @@ keyword('export', STATEMENT, () => (space(), ['export', expr(STATEMENT)]));
 
 // default: prefix for export default (NOT switch default: which has colon)
 keyword('default', SEQ + 1, () => space() !== 58 && (space(), ['default', expr(SEQ)]));
-
-// Compile stubs - import/export are parse-only (no runtime semantics)
-import { operator, compile } from '../parse.js';
-operator('import', () => () => undefined);
-operator('export', () => () => undefined);
-operator('from', (a, b) => () => undefined);
-operator('as', (a, b) => () => undefined);
-operator('default', (a) => compile(a));

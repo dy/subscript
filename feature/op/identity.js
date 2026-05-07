@@ -1,15 +1,11 @@
 /**
- * Identity operators
+ * Identity operators - parse half
  *
  * === !==
  */
-import { binary, operator, compile } from '../../parse.js';
+import { binary } from '../../parse.js';
 
 const EQ = 80;
 
 binary('===', EQ);
 binary('!==', EQ);
-
-// Compile
-operator('===', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) === b(ctx)));
-operator('!==', (a, b) => (a = compile(a), b = compile(b), ctx => a(ctx) !== b(ctx)));
