@@ -677,9 +677,20 @@ let evalId = 0
 let currentWorker = null
 
 // Fetch all feature sources upfront (using mapped paths)
+// After parse/eval split, each feature has up to two halves: feature/X.js + eval/X.js
+// Pure-parse features (no runtime) — skip fetching their eval/ variant
+const PURE_PARSE = new Set([
+  'feature/number.js', 'feature/string.js', 'feature/literal.js',
+  'feature/group.js', 'feature/comment.js', 'feature/asi.js'
+])
+const evalPath = p => p.replace(/^feature\//, 'eval/')
 const featureSources = {}
 const uniquePaths = [...new Set(Object.values(FEATURE_PATHS))]
-await Promise.all(uniquePaths.map(async path => {
+const allPaths = [
+  ...uniquePaths,
+  ...uniquePaths.filter(p => !PURE_PARSE.has(p)).map(evalPath)
+]
+await Promise.all(allPaths.map(async path => {
   const res = await fetch('./' + path)
   if (res.ok) featureSources[path] = await res.text()
   else console.warn('Failed to fetch:', path)
@@ -721,7 +732,9 @@ const stripImports = code => {
   code = code.replace(/^import\s+\{([^}]+)\}\s+from\s+['"](\.\.?\/[^'"]+?)['"];?\s*$/gm, (match, names, path) => {
     // Skip parse.js imports - these are global
     if (path.endsWith('parse.js')) return ''
-    return `const { ${names} } = _;`
+    // Convert `name as alias` (import syntax) to `name: alias` (destructure syntax)
+    const destructured = names.split(',').map(n => n.trim().replace(/\s+as\s+/, ': ')).join(', ')
+    return `const { ${destructured} } = _;`
   })
   // Remove any remaining imports
   return code.replace(/^import\s+.*$/gm, '')
@@ -748,15 +761,19 @@ function buildWorkerSrc() {
   // Track which file paths have been included to avoid duplicates
   const includedPaths = new Set()
 
-  // Features that export things used by other features
-  const exports = {
-    'if': ['block', 'body'],                // block/body parsing helpers
+  // Cross-feature exports — symbols other features import.
+  // Split by half: parse-side lives in feature/X.js, eval-side in eval/X.js
+  const parseExports = {
+    'if': ['block', 'body'],                 // block/body parsing helpers
+    unit: ['unit']                           // bare unit() (registers parse only) — eval half wraps it
+  }
+  const evalExports = {
     loop: ['BREAK', 'CONTINUE'],            // control flow symbols
-    arrow: ['RETURN'],                       // return symbol
+    arrow: ['RETURN'],                       // return symbol (in eval/op/arrow.js)
     'var': ['destructure'],                  // destructuring
     access: ['unsafe', 'isLval', 'prop'],
     accessor: ['ACC'],
-    unit: ['unit']
+    unit: ['unit']                           // wrapped unit() that registers parse + eval (overrides parse-side)
   }
 
   // Feature dependencies - these features import from other features
@@ -775,7 +792,16 @@ function buildWorkerSrc() {
     accessor: ['collection']
   }
 
-  // Include features in order, resolving to actual paths
+  // Helper: emit a single half (parse or eval) wrapped in IIFE
+  const emitHalf = (path, code, exportNames) => {
+    let processed = stripImports(code)
+    processed = stripExports(processed)
+    const exportAssigns = (exportNames || []).map(n => `_.${n} = ${n};`).join('\n')
+    src += `\n// === ${path} ===\n;(function(){\n${processed}\n${exportAssigns}\n})();\n`
+  }
+
+  // Include features in order, resolving to actual paths.
+  // Each feature has up to two halves: feature/X.js (parse) and eval/X.js (eval).
   for (const featureId of featureOrder) {
     // Check if feature should be included (either selected, or needed by a selected feature)
     let shouldInclude = selected.has(featureId)
@@ -792,28 +818,15 @@ function buildWorkerSrc() {
     if (includedPaths.has(path)) continue
     includedPaths.add(path)
 
-    // Get source code
-    const code = featureSources[path]
-    if (!code) {
-      console.warn('Missing source for feature:', featureId, path)
-      continue
-    }
+    // Parse half — registers tokens/operators
+    const parseCode = featureSources[path]
+    if (parseCode) emitHalf(path, parseCode, parseExports[featureId])
+    else console.warn('Missing parse source for feature:', featureId, path)
 
-    // Process the code
-    let processed = stripImports(code)
-    processed = stripExports(processed)
-
-    // Check if this feature has exports that other features need
-    const featureExports = exports[featureId]
-
-    // Build export assignments (assign exported vars to shared object)
-    let exportAssigns = ''
-    if (featureExports) {
-      exportAssigns = featureExports.map(name => `_.${name} = ${name};`).join('\n')
-    }
-
-    // Always wrap in IIFE to avoid naming conflicts
-    src += `\n// === ${path} ===\n;(function(){\n${processed}\n${exportAssigns}\n})();\n`
+    // Eval half — registers operator handlers (optional; pure-parse features have no eval/)
+    const ePath = evalPath(path)
+    const evalCode = featureSources[ePath]
+    if (evalCode) emitHalf(ePath, evalCode, evalExports[featureId])
   }
 
   // Enable single quotes for string parsing (justin/jessie compatibility)
@@ -1251,6 +1264,7 @@ function generateImportBundle() {
   const imports = []
   const includedPaths = new Set()
 
+  const evalPath = p => p.replace(/^feature\//, 'eval/')
   for (const featureId of featureOrder) {
     // Check if feature should be included (either selected, or needed by a selected feature)
     let shouldInclude = selected.has(featureId)
@@ -1263,8 +1277,11 @@ function generateImportBundle() {
     if (!path || includedPaths.has(path)) continue
     includedPaths.add(path)
 
-    // Convert feature/X.js to subscript/feature/X.js
+    // Parse half
     imports.push(`import 'subscript/${path}'`)
+    // Eval half (if it exists in fetched sources)
+    const ePath = evalPath(path)
+    if (featureSources[ePath]) imports.push(`import 'subscript/${ePath}'`)
   }
 
   return `// subscript dialect (${selected.size} features)
@@ -1286,6 +1303,7 @@ async function generateSelfContainedBundle() {
   const featurePaths = [];
   const includedPaths = new Set();
 
+  const evalPath = p => p.replace(/^feature\//, 'eval/');
   for (const featureId of featureOrder) {
     let shouldInclude = selected.has(featureId);
     if (!shouldInclude && DEPENDENCIES[featureId]) {
@@ -1297,6 +1315,9 @@ async function generateSelfContainedBundle() {
     if (!path || includedPaths.has(path)) continue;
     includedPaths.add(path);
     featurePaths.push(path);
+    // Eval half (if it exists in fetched sources)
+    const ePath = evalPath(path);
+    if (featureSources[ePath]) featurePaths.push(ePath);
   }
 
   // Build virtual entry that imports parse + features
