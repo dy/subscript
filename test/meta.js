@@ -13,11 +13,17 @@ function testFile(file) {
   }
 }
 
+const walk = dir => fs.readdirSync(dir, { withFileTypes: true }).flatMap(d =>
+  d.isDirectory() ? walk(dir + '/' + d.name) :
+  d.name.endsWith('.js') ? [dir + '/' + d.name] : []
+);
+
 const files = [
   'subscript.js',
   'parse.js', 'justin.js', 'jessie.js',
   'util/bundle.js', 'util/stringify.js',
-  ...fs.readdirSync('feature').filter(f => f.endsWith('.js')).map(f => 'feature/' + f),
+  ...walk('feature'),
+  ...walk('eval'),
 ];
 
 // Test that all source files parse

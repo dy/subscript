@@ -647,3 +647,32 @@ test('jessie: no ASI before + on new line (continuation)', () => {
   is(parse('x\n+ y'), ['+', 'x', 'y'])
   is(parse('x\n- y'), ['-', 'x', 'y'])
 })
+
+test('jessie: no ASI before . on new line (continuation)', () => {
+  is(parse('a\n.b'), ['.', 'a', 'b'])
+})
+
+test('jessie: ASI after `}` of statement block before `[` / `(`', () => {
+  is(parse('if (x) { y }\n[a]'), [';', ['if', 'x', 'y'], ['[]', 'a']])
+  is(parse('if (x) { y }\n(z)'), [';', ['if', 'x', 'y'], ['()', 'z']])
+  is(parse('a\n(b)'), [';', 'a', ['()', 'b']])
+})
+
+test('jessie: ASI after arrow block body before next let', () => {
+  is(
+    parse('let f = () => { return 1 }\nlet a = [1, 2]'),
+    [';',
+      ['let', ['=', 'f', ['=>', ['()', null], ['{}', ['return', [, 1]]]]]],
+      ['let', ['=', 'a', ['[]', [',', [, 1], [, 2]]]]]
+    ]
+  )
+})
+
+test('jessie: if with bracket body (no block)', () => {
+  is(parse('if (x) [a]'), ['if', 'x', ['[]', 'a']])
+})
+
+test('jessie: for-of array destructure', () => {
+  is(parse('for (let [a, b] of arr) { }'),
+    ['for', ['of', ['let', ['[]', [',', 'a', 'b']]], 'arr'], null])
+})

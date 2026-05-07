@@ -79,6 +79,31 @@ test('bundle: feature/accessor.js', () => bundleAndVerifySyntax('feature/accesso
 test('bundle: feature/template.js', () => bundleAndVerifySyntax('feature/template.js'))
 test('bundle: feature/regex.js', () => bundleAndVerifySyntax('feature/regex.js'))
 
+// Parse-only aggregators (feature/<dialect>.js — no eval bundle weight)
+test('bundle: feature/subscript.js (parse-only)', async () => {
+  await bundleAndRun('feature/subscript.js', async ({ parse }) => {
+    is(typeof parse, 'function')
+    is(parse('1 + 2')[0], '+')
+  })
+})
+test('bundle: feature/justin.js (parse-only)', async () => {
+  await bundleAndRun('feature/justin.js', async ({ parse }) => {
+    is(parse('x => x * 2')[0], '=>')
+    is(parse('a?.b')[0], '?.')
+  })
+})
+test('bundle: feature/jessie.js (parse-only)', async () => {
+  await bundleAndRun('feature/jessie.js', async ({ parse }) => {
+    is(parse('let x = 1')[0], 'let')
+    is(parse('if (a) b')[0], 'if')
+  })
+})
+
+// Eval aggregators
+test('bundle: eval/subscript.js', () => bundleAndVerifySyntax('eval/subscript.js'))
+test('bundle: eval/justin.js', () => bundleAndVerifySyntax('eval/justin.js'))
+test('bundle: eval/jessie.js', () => bundleAndVerifySyntax('eval/jessie.js'))
+
 // === Dogfooding: Bundle subscript.js and verify parse + compile + eval ===
 
 test('dogfood: subscript.js exports', async () => {
