@@ -27,7 +27,8 @@ import './feature/statement.js';  // debugger, with, labeled statements
 import './feature/module.js';
 import './feature/accessor.js';
 
-// Automatic Semicolon Insertion
+// Shebang line + Automatic Semicolon Insertion
+import './feature/shebang.js';
 import './feature/asi.js';
 
 export * from './parse.js';

@@ -1,7 +1,7 @@
 // try/catch/finally/throw statements
 // AST (faithful): ['try', body, ['catch', param, handler]?, ['finally', cleanup]?]
 // Note: body/handler are raw block results, param is raw parens result
-import { space, parse, keyword, parens, expr, word, skip, operator, compile } from '../parse.js';
+import { space, parse, keyword, parens, expr, word, skip, operator, compile, peek } from '../parse.js';
 import { block } from './if.js';
 import { RETURN } from './op/arrow.js';import { BREAK, CONTINUE } from './loop.js';
 
@@ -13,7 +13,8 @@ keyword('try', STATEMENT + 1, () => {
   space();
   if (word('catch')) {
     skip(5); space();
-    node.push(['catch', parens(), block()]);
+    // ES2019 optional catch binding: `catch { ... }` (no parameter)
+    node.push(['catch', peek() === 40 ? parens() : null, block()]);
   }
   space();
   if (word('finally')) {

@@ -173,6 +173,33 @@ test('jessie: throw', () => {
   is(parse('throw new Error()')[0], 'throw')
 })
 
+// ES2019 optional catch binding: `catch { ... }` (no parameter)
+test('jessie: optional catch binding `catch { }`', () => {
+  const ast = parse('try { x } catch { y }')
+  is(ast[0], 'try')
+  is(ast[1], 'x')
+  is(ast[2][0], 'catch')
+  is(ast[2][1], null) // no binding
+  is(ast[2][2], 'y')
+})
+
+// Shebang line at file start - skipped to allow `#!/usr/bin/env node` style scripts
+test('jessie: shebang `#!` line at file start', () => {
+  is(parse('#!/usr/bin/env node\nconst x = 1')[0], 'const')
+})
+
+// ASI inserts statement break before `(` after `;\n` so a parenthesized
+// expression on a new line starts a new statement rather than being absorbed
+// as a call on the previous value.
+test('jessie: ASI inserts statement break before `(` after `;\\n`', () => {
+  // `let a = 1;\n(1+2)` should parse as two statements, NOT as `let a = 1(1+2)`
+  is(parse('let a = 1;\n(1+2)'),
+    [';', ['let', ['=', 'a', [, 1]]], ['()', ['+', [, 1], [, 2]]]])
+  // `foo();\n(1+2)` should be two statements, NOT `foo()(1+2)`
+  is(parse('foo();\n(1+2)'),
+    [';', ['()', 'foo', null], ['()', ['+', [, 1], [, 2]]]])
+})
+
 test('jessie: try-catch compile', () => {
   let ctx = { r: 0 }
   run('try { r = 1 } catch (e) { r = 2 }', ctx)

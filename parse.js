@@ -2,13 +2,11 @@
 // Character codes
 const SPACE = 32;
 
-let lineBreak;
-
 // current string, index
 export let idx, cur,
 
   // parse input string to AST
-  parse = s => (idx = 0, cur = s, parse.newline = false, s = expr(), cur[idx] ? err() : s || ''),
+  parse = s => (idx = 0, cur = s, parse.enter?.(), s = expr(), cur[idx] ? err() : s || ''),
 
   // display error with context
   err = (msg = 'Unexpected token', at = idx,
@@ -37,37 +35,30 @@ export let idx, cur,
   // set position (for backtracking)
   seek = n => idx = n,
 
-  // a + b - c
+  // a + b - c. Pratt loop. Each iteration tries operator handlers via lookup,
+  // then identifier (when no token yet). Dialect layers (e.g. ASI) override
+  // step() to inject pre-empt or post-step decisions; default just inlines the
+  // op-then-id rule.
   expr = (p = 0, end) => {
-    let cc, token, newNode, fn, nl;
-    if (end) parse.asi && (parse.newline = false);
+    let cc, token, newNode;
+    if (end) parse.enter?.(p, end);
 
-    while (
-      (cc = parse.space()) &&
-      (nl = parse.newline, 1) &&
-      cc !== end &&
-      (newNode =
-        // ASI before [ on new line (access handler would consume it; lineBreak distinguishes real \n from synthetic } flag)
-        ((token && cc === 91 && lineBreak && parse.asi?.(token, p, expr)) || null) ??
-        ((fn = lookup[cc]) && fn(token, p)) ??
-        (token && nl && parse.asi?.(token, p, expr)) ??
-        (!token && next(parse.id))
-      )
-    ) token = newNode;
+    while ((cc = space()) && cc !== end && (newNode = step(token, p, cc, expr))) token = newNode;
 
-    if (end) cc == end ? (idx++, end === 125 && parse.asi && (parse.newline = true)) : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
+    if (end) cc == end ? (idx++, parse.exit?.(p, end)) : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
 
     return token;
   },
 
+  // one Pratt iteration: try operator, else identifier (only at start). Returns
+  // truthy node or null (never `false`/`undefined`, so wrapper overrides can
+  // chain via `??`).
+  step = (a, p, cc, expr, fn) => ((fn = lookup[cc]) && fn(a, p)) || (a ? null : next(parse.id) || null),
+
   // skip space chars, return first non-space character
-  space = (cc, from = idx) => {
-    lineBreak = false
-    while ((cc = cur.charCodeAt(idx)) <= SPACE) {
-      if (parse.asi && cc === 10) parse.newline = lineBreak = true
-      idx++
-    }
-    return cc
+  space = (cc) => {
+    while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++;
+    return cc;
   },
 
   // peek at next non-space char without modifying idx
@@ -148,12 +139,19 @@ export let idx, cur,
       (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
       prev?.(a, curPrec, curOp);
 
-// Keep parse.space overrides in sync with the exported binding used by features.
+// Keep parse.space / parse.step overrides in sync with the exported bindings,
+// so wrappers installed via parse.X = ... are picked up by the hot loops here.
 Object.defineProperty(parse, 'space', {
   configurable: true,
   enumerable: true,
   get: () => space,
   set: fn => (space = fn)
+});
+Object.defineProperty(parse, 'step', {
+  configurable: true,
+  enumerable: true,
+  get: () => step,
+  set: fn => (step = fn)
 });
 
 // === Compile: AST → Evaluator ===
