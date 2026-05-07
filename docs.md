@@ -79,6 +79,20 @@ fn({ a: 1, b: 2 })  // 3
 ```
 
 
+## Parse-only entry
+
+Each preset is split into a **parse half** (`feature/`) and an **eval half** (`eval/`). To skip the runtime, import only the parse half:
+
+```js
+// just the parser — no compile / operator handlers
+import { parse } from 'subscript/feature/jessie.js'
+
+parse('let x = 1; x * 2')
+```
+
+Top-level `subscript`, `justin`, `jessie` import both halves; mix individual halves directly when you want a custom subset (`subscript/feature/loop.js` + `subscript/eval/loop.js`).
+
+
 ## Presets
 
 ### Subscript
@@ -317,10 +331,11 @@ operators['+']  // current handler
 
 ### `prop(node, fn)`
 
-Helper for property access patterns:
+Helper for property access patterns. Lives in `eval/access.js` since it's runtime-only:
 
 ```js
-import { prop, compile } from 'subscript'
+import { compile, operator } from 'subscript'
+import { prop } from 'subscript/eval/access.js'
 
 operator('delete', a => prop(a, (obj, key) => delete obj[key]))
 ```
