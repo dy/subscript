@@ -200,6 +200,26 @@ test('jessie: ASI inserts statement break before `(` after `;\\n`', () => {
     [';', ['()', 'foo', null], ['()', ['+', [, 1], [, 2]]]])
 })
 
+// Regression: ASI must fire after a bare let/var/const declaration when the
+// next line begins with `(`. Otherwise the call/group operator inside the
+// decl initializer's expression-precedence recursion swallows the paren as a
+// call on the declarator. Standard JS treats `let a\n(...)` as two
+// statements: a declaration and a parenthesized expression statement.
+test('jessie: ASI fires after let/var/const decl before `\\n(`', () => {
+  // bare `let a` then `(...)` — must be two statements, not `(let a)(...)`
+  is(parse('let a\n(1+2)'),
+    [';', ['let', 'a'], ['()', ['+', [, 1], [, 2]]]])
+  // `let a = 1` (with init) then `(...)` — must NOT eat paren as a call
+  is(parse('let a = 1\n(1+2)'),
+    [';', ['let', ['=', 'a', [, 1]]], ['()', ['+', [, 1], [, 2]]]])
+  // var
+  is(parse('var a\n(1+2)'),
+    [';', ['var', 'a'], ['()', ['+', [, 1], [, 2]]]])
+  // const
+  is(parse('const a = 1\n(1+2)'),
+    [';', ['const', ['=', 'a', [, 1]]], ['()', ['+', [, 1], [, 2]]]])
+})
+
 test('jessie: try-catch compile', () => {
   let ctx = { r: 0 }
   run('try { r = 1 } catch (e) { r = 2 }', ctx)

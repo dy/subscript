@@ -13,7 +13,6 @@ const lvl = prec.asi ?? prec[';'];
 // would leave previous ASI layers active.
 const baseSpace = parse._baseSpace ??= parse.space;
 const baseStep = parse._baseStep ??= parse.step;
-let lineBreak = false;
 
 // LF immediately preceding the next non-space at i (used to detect `;\n`).
 const hasLineBreak = (i, c) => {
@@ -24,19 +23,25 @@ const hasLineBreak = (i, c) => {
   return false;
 };
 
+// True iff an LF immediately precedes idx (only whitespace between).
+// Computed on demand — robust against nested expr() calls eating the LF.
+const lineBreak = (i = idx, c) => {
+  while (i-- > 0 && (c = cur.charCodeAt(i)) <= SPACE) if (c === LF) return true;
+  return false;
+};
+
 // Override space: scan whitespace region for LFs (parse.js's space is
 // LF-agnostic), and swallow `;\n` runs into ASI machinery (avoids deep nary `;`
 // recursion on long files). parse.semi records that a hard terminator was
 // consumed, so the surrounding expression knows to terminate.
 parse.space = (cc, from) => {
-  lineBreak = false;
   for (;;) {
     from = idx;
     cc = baseSpace();
-    while (from < idx) if (cur.charCodeAt(from++) === LF) { parse.newline = lineBreak = true; break; }
+    while (from < idx) if (cur.charCodeAt(from++) === LF) { parse.newline = true; break; }
     if (cc === SEMI && hasLineBreak(idx + 1)) {
       seek(idx + 1);
-      parse.newline = parse.semi = lineBreak = true;
+      parse.newline = parse.semi = true;
       continue;
     }
     return cc;
@@ -55,7 +60,7 @@ parse.exit = (p, end) => { if (end === BLOCK_END) parse.newline = true; };
 // `[`/`(` on a new line; fire ASI when no operator continues across newline.
 parse.step = (a, p, cc, expr) => {
   if (parse.semi && p >= lvl) return false;
-  if (a && (parse.semi || ((cc === BRACKET || cc === PAREN) && lineBreak))) return asi(a, p, expr) ?? null;
+  if (a && (parse.semi || ((cc === BRACKET || cc === PAREN) && lineBreak()))) return asi(a, p, expr) ?? null;
   const nl = parse.newline;
   return baseStep(a, p, cc, expr) ?? (a && nl ? asi(a, p, expr) ?? null : null);
 };
