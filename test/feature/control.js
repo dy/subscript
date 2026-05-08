@@ -100,10 +100,9 @@ test('control: const', t => {
 })
 
 test('control: var', t => {
-  is(parse('var x')[0], 'var')
-  // var x = 5 becomes assignment to var declaration (different from let/const)
-  is(parse('var x = 5')[0], '=')
-  is(parse('var x = 5')[1][0], 'var')
+  is(parse('var x'), ['var', 'x'])
+  is(parse('var x = 5'), ['var', ['=', 'x', [, 5]]])
+  is(parse('var x = 1, y = 2'), ['var', ['=', 'x', [, 1]], ['=', 'y', [, 2]]])
 })
 
 test('control: do-while', t => {
@@ -136,7 +135,8 @@ test('control: for with var multi-decl', t => {
   const ast = parse('for (var i = 0, j = 1; i < 3; i++) {}')
   is(ast[0], 'for')
   is(ast[1][0], ';')
-  is(ast[1][1][0], ',', 'multi-var uses comma operator')
+  is(ast[1][1][0], 'var', 'multi-var declarators wrapped in single var')
+  is(ast[1][1].length, 3, 'two declarators')
 })
 
 test('control: switch basic', t => {

@@ -63,7 +63,4 @@ const varOp = (...decls) => {
 };
 operator('let', varOp);
 operator('const', varOp);
-// var just declares the variable (assignment handled by = operator)
-operator('var', name => (typeof name === 'string'
-  ? ctx => { ctx[name] = undefined; }
-  : () => {}));
+operator('var', varOp);

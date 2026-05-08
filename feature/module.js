@@ -28,8 +28,11 @@ keyword('import', STATEMENT, () => (
   word('.meta') ? (skip(5), ['import.meta']) : ['import', expr(SEQ)]
 ));
 
-// export: prefix for declarations or re-exports (use STATEMENT to capture const/let/function)
-keyword('export', STATEMENT, () => (space(), ['export', expr(STATEMENT)]));
-
-// default: prefix for export default (NOT switch default: which has colon)
-keyword('default', SEQ + 1, () => space() !== 58 && (space(), ['default', expr(SEQ)]));
+// export: prefix for declarations or re-exports (use STATEMENT to capture const/let/function).
+// `export default X` is recognized inline; outside `export`, `default` stays an identifier.
+keyword('export', STATEMENT, () => (
+  space(),
+  word('default')
+    ? (skip(7), ['export', ['default', expr(SEQ)]])
+    : ['export', expr(STATEMENT)]
+));
