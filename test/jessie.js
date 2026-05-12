@@ -694,6 +694,19 @@ test('jessie: ASI after arrow block body before next let', () => {
   )
 })
 
+test('jessie: ASI stops before switch case boundary', () => {
+  is(
+    parse(`switch (x) {
+      case 1:
+        a
+        b
+      case 2:
+        c
+    }`),
+    ['switch', 'x', ['case', [, 1], [';', 'a', 'b']], ['case', [, 2], 'c']]
+  )
+})
+
 test('jessie: if with bracket body (no block)', () => {
   is(parse('if (x) [a]'), ['if', 'x', ['[]', 'a']])
 })
