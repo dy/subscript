@@ -5,6 +5,6 @@
  */
 import { unary } from '../../parse.js';
 
-const PREFIX = 140;
+const ASSIGN = 20;
 
-unary('...', PREFIX);
+unary('...', ASSIGN);
