@@ -65,8 +65,11 @@ parse.step = (a, p, cc, expr) => {
   return baseStep(a, p, cc, expr) ?? (a && nl ? asi(a, p, expr) ?? null : null);
 };
 
+// Runaway-recursion guard: asi recurses once per consecutive statement in a
+// block, so depth ~ statement count. Cap well below the JS call-stack limit
+// (which blows ~5–10k statements) but high enough for realistic generated code.
 let asiDepth = 0;
-const MAX_ASI_DEPTH = 100;
+const MAX_ASI_DEPTH = 2000;
 
 const asi = parse.asi = (a, p, expr, b, items) => {
   if (p >= lvl || asiDepth >= MAX_ASI_DEPTH) return;
