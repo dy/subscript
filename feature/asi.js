@@ -13,6 +13,7 @@ const lvl = prec.asi ?? prec[';'];
 // would leave previous ASI layers active.
 const baseSpace = parse._baseSpace ??= parse.space;
 const baseStep = parse._baseStep ??= parse.step;
+const isNode = a => Array.isArray(a) || typeof a === 'string';
 
 // LF immediately preceding the next non-space at i (used to detect `;\n`).
 const hasLineBreak = (i, c) => {
@@ -61,9 +62,10 @@ parse.exit = (p, end) => { if (end === BLOCK_END) parse.newline = true, parse.se
 // `[`/`(` on a new line; fire ASI when no operator continues across newline.
 parse.step = (a, p, cc, expr) => {
   if (parse.semi && p >= lvl) return false;
-  if (a && (parse.semi || ((cc === BRACKET || cc === PAREN) && lineBreak()))) return asi(a, p, expr) ?? null;
+  if (a && !isNode(a)) return null;
+  if (isNode(a) && (parse.semi || ((cc === BRACKET || cc === PAREN) && lineBreak()))) return asi(a, p, expr) ?? null;
   const nl = parse.newline;
-  return baseStep(a, p, cc, expr) ?? (a && nl ? asi(a, p, expr) ?? null : null);
+  return baseStep(a, p, cc, expr) ?? (isNode(a) && nl ? asi(a, p, expr) ?? null : null);
 };
 
 // Runaway-recursion guard: asi recurses once per consecutive statement in a
