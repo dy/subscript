@@ -53,8 +53,9 @@ parse.space = (cc, from) => {
 // this with no args.
 parse.enter = () => parse.newline = parse.semi = false;
 
-// `}` closes a block — outer context sees an implicit newline.
-parse.exit = (p, end) => { if (end === BLOCK_END) parse.newline = true; };
+// `}` closes a block — outer context sees an implicit newline. A hard semicolon
+// consumed inside the block belongs to that block.
+parse.exit = (p, end) => { if (end === BLOCK_END) parse.newline = true, parse.semi = false; };
 
 // Wrap iteration step: bail at high prec when `;\n` consumed; fire ASI before
 // `[`/`(` on a new line; fire ASI when no operator continues across newline.
