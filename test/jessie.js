@@ -483,6 +483,12 @@ test('jessie: ASI return', () => {
   is(ast[2], 'x')
 })
 
+test('jessie: no ASI before . after block expression with semicolon', () => {
+  is(parse(`f(() => {
+    x;
+  }).g`), ['.', ['()', 'f', ['=>', ['()', null], ['{}', 'x']]], 'g'])
+})
+
 test('jessie: ASI custom precedence', async () => {
   const { prec, parse } = await import('../parse.js')
 
