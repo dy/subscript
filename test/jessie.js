@@ -483,6 +483,13 @@ test('jessie: ASI return', () => {
   is(ast[2], 'x')
 })
 
+test('jessie: ASI separates returned accessor keyword identifiers', () => {
+  is(parse('return set;\nfor (const x of xs) { y(x) }'),
+    [';', ['return', 'set'], ['for', ['of', ['const', 'x'], 'xs'], ['()', 'y', 'x']]])
+  is(parse('return get;\nwhile (x) { y }'),
+    [';', ['return', 'get'], ['while', 'x', 'y']])
+})
+
 test('jessie: no ASI before . after block expression with semicolon', () => {
   is(parse(`f(() => {
     x;

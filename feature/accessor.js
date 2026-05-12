@@ -7,13 +7,24 @@
 import { token, expr, skip, space, next, parse, cur, idx } from '../parse.js';
 
 const ASSIGN = 20;
+const LF = 10, CR = 13;
 const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;
+
+const hasLineTerminator = (from, to) => {
+  while (from < to) {
+    const c = cur.charCodeAt(from++);
+    if (c === LF || c === CR) return true;
+  }
+  return false;
+};
 
 // Shared parser for get/set — returns false if not valid accessor pattern (falls through to identifier)
 // Returns false (not undefined) to signal "fall through without setting reserved"
 const accessor = (kind) => a => {
   if (a) return; // not prefix
+  const from = idx;
   space();
+  if (parse.semi || hasLineTerminator(from, idx)) return false;
   const name = next(parse.id);
   if (!name) return false; // no property name = not accessor (e.g. `{ get: 1 }`)
   space();
