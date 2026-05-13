@@ -40,11 +40,13 @@ const accessor = (kind) => a => {
 token('get', ASSIGN - 1, accessor('get'));
 token('set', ASSIGN - 1, accessor('set'));
 
-// Method shorthand: { foo() {} } → [':', 'foo', ['=>', ['()', params], body]]
+// Method shorthand: { foo() {} } / { "foo"() {} } → [':', 'foo', ['=>', ['()', params], body]]
 // Uses token() infix handler - returns undefined to fall through to function call
 token('(', ASSIGN - 1, a => {
-  // Only handle infix position with plain identifier in low-precedence context (object literal)
-  if (!a || typeof a !== 'string') return;
+  // Only handle infix position with a static property key in low-precedence context (object literal)
+  if (!a) return;
+  if (Array.isArray(a) && a[0] === undefined) a = a[1];
+  if (typeof a !== 'string') return;
   const params = expr(0, CPAREN) || null;
   space();
   // Not followed by { - not method shorthand, fall through

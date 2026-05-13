@@ -1,12 +1,26 @@
 // Class declarations and expressions - parse half
 // class A extends B { ... }
-import { binary, unary, token, expr, space, next, parse, keyword, word, skip } from '../parse.js';
+import { binary, token, expr, space, next, parse, keyword, word, skip, cur, idx } from '../parse.js';
 import { block } from './if.js';
 
 const TOKEN = 200, PREFIX = 140, COMP = 90;
+const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;
 
 // static member → ['static', member]
-unary('static', PREFIX);
+token('static', PREFIX, a => {
+  if (a) return;
+  space();
+  const name = next(parse.id);
+  if (!name) return;
+  space();
+  if (cur.charCodeAt(idx) !== OPAREN) return ['static', name];
+  skip();
+  const params = expr(0, CPAREN) || null;
+  space();
+  if (cur.charCodeAt(idx) !== OBRACE) return ['static', ['()', name, params]];
+  skip();
+  return ['static', [':', name, ['=>', ['()', params], expr(0, CBRACE) || null]]];
+});
 
 // instanceof: object instanceof Constructor
 binary('instanceof', COMP);
