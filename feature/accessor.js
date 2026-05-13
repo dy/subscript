@@ -40,15 +40,21 @@ const accessor = (kind) => a => {
 token('get', ASSIGN - 1, accessor('get'));
 token('set', ASSIGN - 1, accessor('set'));
 
-// Method shorthand: { foo() {} } → [':', 'foo', ['=>', ['()', params], body]]
-// Uses token() infix handler - returns undefined to fall through to function call
+// Method shorthand: { foo() {} } / { "foo"() {} } / class { static foo() {} }
+//   → [':', key, ['=>', ['()', params], body]]
+// Accepts identifier, string-literal node [, "..."], or ['static', key] from unary('static').
 token('(', ASSIGN - 1, a => {
-  // Only handle infix position with plain identifier in low-precedence context (object literal)
-  if (!a || typeof a !== 'string') return;
+  if (!a) return;
+  // ['static', key] from unary('static'): unwrap, re-wrap the resulting method node.
+  let wrap;
+  if (Array.isArray(a) && a[0] === 'static') wrap = 'static', a = a[1];
+  // Accept identifier or string-literal node as key
+  if (typeof a !== 'string' && !(Array.isArray(a) && a[0] === undefined)) return;
   const params = expr(0, CPAREN) || null;
   space();
   // Not followed by { - not method shorthand, fall through
   if (cur.charCodeAt(idx) !== OBRACE) return;
   skip();
-  return [':', a, ['=>', ['()', params], expr(0, CBRACE) || null]];
+  const node = [':', a, ['=>', ['()', params], expr(0, CBRACE) || null]];
+  return wrap ? [wrap, node] : node;
 });

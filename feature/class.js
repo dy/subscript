@@ -3,10 +3,12 @@
 import { binary, unary, token, expr, space, next, parse, keyword, word, skip } from '../parse.js';
 import { block } from './if.js';
 
-const TOKEN = 200, PREFIX = 140, COMP = 90;
+const TOKEN = 200, PREFIX = 140, COMP = 90, STATIC = 175;
 
 // static member → ['static', member]
-unary('static', PREFIX);
+// STATIC > ACCESS (170) so `static m` doesn't pull `(` into the operand as a
+// function call — leaves the `(` for the outer method-shorthand handler.
+unary('static', STATIC);
 
 // instanceof: object instanceof Constructor
 binary('instanceof', COMP);

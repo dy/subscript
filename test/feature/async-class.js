@@ -81,6 +81,12 @@ test('async/class: anonymous class', () => {
 test('async/class: static', () => {
   is(parse('static x'), ['static', 'x']);
   is(parse('static x = 1'), ['=', ['static', 'x'], [, 1]]);
+  is(parse('class A { static m(a) { return a } }'), [
+    'class', 'A', null,
+    ['static', [':', 'm', ['=>', ['()', 'a'], ['return', 'a']]]]
+  ]);
+  // private static field still works (regression guard)
+  is(parse('static #x'), ['static', '#x']);
 });
 
 test('async/class: super', () => {
@@ -130,6 +136,11 @@ test('meta: new.target', () => {
 test('object: method shorthand', () => {
   is(parse('{ foo() {} }'), ['{}', [':', 'foo', ['=>', ['()', null], null]]]);
   is(parse('{ add(a, b) { a + b } }'), ['{}', [':', 'add', ['=>', ['()', [',', 'a', 'b']], ['+', 'a', 'b']]]]);
+  // String-literal key — kept as literal node, consistent with `{ "y": 2 }` → [':', [, 'y'], ...]
+  is(parse('{ "x/y.js"(exports, module) { module.exports = {} } }'), [
+    '{}',
+    [':', [, 'x/y.js'], ['=>', ['()', [',', 'exports', 'module']], ['=', ['.', 'module', 'exports'], ['{}', null]]]]
+  ]);
   // Evaluation
   const obj = compile(parse('{ double(x) { x * 2 } }'))();
   is(obj.double(5), 10);
