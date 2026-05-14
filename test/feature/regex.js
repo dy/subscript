@@ -28,6 +28,11 @@ test('regex: eval', t => {
   is(run('"hello world".match(/\\w+/g)'), ['hello', 'world'])
 })
 
+test('regex: left brace source', t => {
+  is(parse('/a{/'), ['//', 'a{'])
+  is(parse('/a{2}/'), ['//', 'a{2}'])
+})
+
 test('regex: division disambiguation', t => {
   // Division when left operand exists
   is(run('4 / 2'), 2)
