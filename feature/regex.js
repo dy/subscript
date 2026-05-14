@@ -11,26 +11,15 @@
  */
 import { token, skip, err, next, idx, cur } from '../parse.js';
 
-const PREFIX = 140, SLASH = 47, BSLASH = 92;
+const SLASH = 47, BSLASH = 92;
 
-const regexChar = c => c === BSLASH ? 2 : c && c !== SLASH;  // \x = 2 chars, else 1 until /
-const regexFlag = c => c === 103 || c === 105 || c === 109 || c === 115 || c === 117 || c === 121; // g i m s u y
-
-token('/', PREFIX, a => {
-  if (a) return; // has left operand = division, fall through
-
-  // Invalid regex start (quantifiers) or /= - fall through
-  const first = cur.charCodeAt(idx);
-  if (first === SLASH || first === 42 || first === 43 || first === 63 || first === 61) return;
-
-  const pattern = next(regexChar);
+token('/', 140, a => {
+  // left operand = division; `//` `/*` `/?` `/+` `/=` = not a regex start
+  const c = cur.charCodeAt(idx);
+  if (a || c === SLASH || c === 42 || c === 43 || c === 63 || c === 61) return;
+  const pattern = next(c => c === BSLASH ? 2 : c && c !== SLASH); // \x = 2 chars, else 1 until /
   cur.charCodeAt(idx) === SLASH || err('Unterminated regex');
-  skip(); // consume closing /
-
-  const flags = next(regexFlag);
-  // Validate regex syntax
-  try { new RegExp(pattern, flags); }
-  catch (e) { err('Invalid regex: ' + e.message); }
-
+  skip();
+  const flags = next(c => c === 103 || c === 105 || c === 109 || c === 115 || c === 117 || c === 121); // gimsuy
   return flags ? ['//', pattern, flags] : ['//', pattern];
 });

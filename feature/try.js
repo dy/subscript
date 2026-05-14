@@ -1,6 +1,6 @@
 // try/catch/finally/throw statements - parse half
 // AST (faithful): ['try', body, ['catch', param, handler]?, ['finally', cleanup]?]
-import { space, parse, keyword, parens, expr, word, skip, peek } from '../parse.js';
+import { parse, keyword, parens, expr, word, skip, peek } from '../parse.js';
 import { block } from './if.js';
 
 const STATEMENT = 5;
@@ -8,13 +8,13 @@ const STATEMENT = 5;
 // try { body } [catch (param) { handler }] [finally { cleanup }]
 keyword('try', STATEMENT + 1, () => {
   const node = ['try', block()];
-  space();
+  parse.space();
   if (word('catch')) {
-    skip(5); space();
+    skip(5); parse.space();
     // ES2019 optional catch binding: `catch { ... }` (no parameter)
     node.push(['catch', peek() === 40 ? parens() : null, block()]);
   }
-  space();
+  parse.space();
   if (word('finally')) {
     skip(7);
     node.push(['finally', block()]);
@@ -24,7 +24,7 @@ keyword('try', STATEMENT + 1, () => {
 
 keyword('throw', STATEMENT + 1, () => {
   parse.asi && (parse.newline = false);
-  space();
+  parse.space();
   if (parse.newline) throw SyntaxError('Unexpected newline after throw');
   return ['throw', expr(STATEMENT)];
 });

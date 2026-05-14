@@ -76,6 +76,7 @@
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "esbuild": "^0.27.2",
+    "oxc-parser": "^0.130.0",
     "terser": "^5.44.1",
     "tst": "^9.2.1"
   }

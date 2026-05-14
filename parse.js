@@ -43,22 +43,11 @@ export let idx, cur,
     let cc, token, newNode;
     if (end) parse.enter?.(p, end);
 
-    while ((cc = space()) && cc !== end && (newNode = step(token, p, cc, expr))) token = newNode;
+    while ((cc = parse.space()) && cc !== end && (newNode = parse.step(token, p, cc, expr))) token = newNode;
 
     if (end) cc == end ? (idx++, parse.exit?.(p, end)) : err('Unclosed ' + String.fromCharCode(end - (end > 42 ? 2 : 1)));
 
     return token;
-  },
-
-  // one Pratt iteration: try operator, else identifier (only at start). Returns
-  // truthy node or null (never `false`/`undefined`, so wrapper overrides can
-  // chain via `??`).
-  step = (a, p, cc, expr, fn) => ((fn = lookup[cc]) && fn(a, p)) || (a ? null : next(parse.id) || null),
-
-  // skip space chars, return first non-space character
-  space = (cc) => {
-    while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++;
-    return cc;
   },
 
   // peek at next non-space char without modifying idx
@@ -139,20 +128,17 @@ export let idx, cur,
       (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
       prev?.(a, curPrec, curOp);
 
-// Keep parse.space / parse.step overrides in sync with the exported bindings,
-// so wrappers installed via parse.X = ... are picked up by the hot loops here.
-Object.defineProperty(parse, 'space', {
-  configurable: true,
-  enumerable: true,
-  get: () => space,
-  set: fn => (space = fn)
-});
-Object.defineProperty(parse, 'step', {
-  configurable: true,
-  enumerable: true,
-  get: () => step,
-  set: fn => (step = fn)
-});
+// Skip space chars, return first non-space character.
+// Wrappers (comment, asi) compose by reading the previous parse.space first.
+parse.space = (cc) => {
+  while ((cc = cur.charCodeAt(idx)) <= SPACE) idx++;
+  return cc;
+};
+
+// One Pratt iteration: try operator, else identifier (only at start).
+// Returns truthy node or null so wrapper overrides can chain via `??`.
+parse.step = (a, p, cc, expr, fn) =>
+  ((fn = lookup[cc]) && fn(a, p)) || (a ? null : next(parse.id) || null);
 
 // === Compile: AST → Evaluator ===
 

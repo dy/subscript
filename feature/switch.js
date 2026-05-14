@@ -1,6 +1,6 @@
 // Switch/case/default - parse half
 // AST: ['switch', val, ['case', test, body], ['default', body], ...]
-import { expr, skip, space, keyword, parens, idx, err, seek, lookup, word } from '../parse.js';
+import { parse, expr, skip, keyword, parens, idx, err, seek, lookup, word } from '../parse.js';
 
 const STATEMENT = 5, ASSIGN = 20, COLON = 58, SEMI = 59, CBRACE = 125;
 
@@ -17,7 +17,7 @@ reserve('default');
 // caseBody() - parse statements until next case/default/}
 const caseBody = (c) => {
   const stmts = [];
-  while ((c = space()) !== CBRACE && !word('case') && !word('default')) {
+  while ((c = parse.space()) !== CBRACE && !word('case') && !word('default')) {
     if (c === SEMI) { skip(); continue; }
     stmts.push(expr(STATEMENT - .5)) || err();
   }
@@ -26,18 +26,18 @@ const caseBody = (c) => {
 
 // switchBody() - parse case/default statements
 const switchBody = () => {
-  space() === 123 || err('Expected {'); skip();
+  parse.space() === 123 || err('Expected {'); skip();
   inSwitch++;
   const cases = [];
   try {
-    while (space() !== CBRACE) {
+    while (parse.space() !== CBRACE) {
       if (word('case')) {
-        seek(idx + 4); space();
+        seek(idx + 4); parse.space();
         const test = expr(ASSIGN - .5);
-        space() === COLON && skip();
+        parse.space() === COLON && skip();
         cases.push(['case', test, caseBody()]);
       } else if (word('default')) {
-        seek(idx + 7); space() === COLON && skip();
+        seek(idx + 7); parse.space() === COLON && skip();
         cases.push(['default', caseBody()]);
       } else err('Expected case or default');
     }
@@ -47,4 +47,4 @@ const switchBody = () => {
 };
 
 // switch (x) { ... }
-keyword('switch', STATEMENT + 1, () => space() === 40 && ['switch', parens(), ...switchBody()]);
+keyword('switch', STATEMENT + 1, () => parse.space() === 40 && ['switch', parens(), ...switchBody()]);

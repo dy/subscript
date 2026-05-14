@@ -5,13 +5,13 @@
  * a?.[x] → optional computed access
  * a?.() → optional call
  */
-import { token, expr, skip, space } from '../../parse.js';
+import { parse, token, expr, skip } from '../../parse.js';
 
 const ACCESS = 170;
 
 token('?.', ACCESS, (a, b) => {
   if (!a) return;
-  const cc = space();
+  const cc = parse.space();
   // Optional call: a?.()
   if (cc === 40) { skip(); return ['?.()', a, expr(0, 41) || null]; }
   // Optional computed: a?.[x]

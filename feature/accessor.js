@@ -4,7 +4,7 @@
  *   { get x() { body } }         → ['{}', ['get', 'x', body]]
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
  */
-import { token, expr, skip, space, next, parse, cur, idx } from '../parse.js';
+import { token, expr, skip, next, parse, cur, idx } from '../parse.js';
 
 const ASSIGN = 20;
 const LF = 10, CR = 13;
@@ -23,15 +23,15 @@ const hasLineTerminator = (from, to) => {
 const accessor = (kind) => a => {
   if (a) return; // not prefix
   const from = idx;
-  space();
+  parse.space();
   if (parse.semi || hasLineTerminator(from, idx)) return false;
   const name = next(parse.id);
   if (!name) return false; // no property name = not accessor (e.g. `{ get: 1 }`)
-  space();
+  parse.space();
   if (cur.charCodeAt(idx) !== OPAREN) return false; // not followed by ( = not accessor
   skip();
   const params = expr(0, CPAREN);
-  space();
+  parse.space();
   if (cur.charCodeAt(idx) !== OBRACE) return false;
   skip();
   return [kind, name, params, expr(0, CBRACE)];
@@ -51,7 +51,7 @@ token('(', ASSIGN - 1, a => {
   // Accept identifier or string-literal node as key
   if (typeof a !== 'string' && !(Array.isArray(a) && a[0] === undefined)) return;
   const params = expr(0, CPAREN) || null;
-  space();
+  parse.space();
   // Not followed by { - not method shorthand, fall through
   if (cur.charCodeAt(idx) !== OBRACE) return;
   skip();

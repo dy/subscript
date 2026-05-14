@@ -132,6 +132,13 @@ async function run() {
     results.parse['cel-js'] = bench('cel-js', () => celParse(celExpr));
   } catch (e) { console.log('cel-js: SKIP -', e.message); }
 
+  // oxc-parser (full JS parser, native Rust)
+  try {
+    const { parseSync } = await import('oxc-parser');
+    parseSync('b.js', expr);
+    results.parse['oxc'] = bench('oxc', () => parseSync('b.js', expr));
+  } catch (e) { console.log('oxc: SKIP -', e.message); }
+
   console.log('\n=== EVAL ===\n');
 
   // subscript compile (js)

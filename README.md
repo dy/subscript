@@ -122,20 +122,32 @@ subscript('constructor.constructor("alert(1)")()')({})
 
 ## Performance
 
-```
-Parse 30k:
-  subscript 150ms
-  justin 183ms
-  jsep 270ms
-  expr-eval 480ms
-  jexl 1056ms
+Parsing `a + b * c - d / e + f.g[0](h) + i.j`, 30k iterations:
 
-Eval 30k:
-  new Function 7ms
-  subscript 15ms
-  jsep+eval 30ms
-  expr-eval 72ms
 ```
+Parse:
+  new Function   8ms
+  subscript     34ms
+  cel-js        39ms
+  angular-expr  42ms
+  justin        51ms
+  jsep          54ms
+  jessie        76ms   ← JS subset (statements + functions)
+  expr-eval     81ms
+  oxc           84ms   ← full JS parser (native Rust)
+  mathjs       185ms
+  jexl         403ms
+
+Eval:
+  subscript      3ms
+  new Function   4ms
+  cel-js        13ms
+  expression-eval 14ms
+  mathjs        17ms
+  angular-expr  62ms
+```
+
+Run via `node --import ./test/https-loader.js test/benchmark.js`.
 
 ## Utils
 

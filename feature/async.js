@@ -1,5 +1,5 @@
 // Async/await/yield: async function, async arrow, await, yield expressions - parse half
-import { unary, expr, skip, space, keyword, cur, idx, word } from '../parse.js';
+import { parse, unary, expr, skip, keyword, cur, idx, word } from '../parse.js';
 
 const PREFIX = 140, ASSIGN = 20;
 
@@ -9,10 +9,10 @@ unary('await', PREFIX);
 // yield expr → ['yield', expr]
 // yield* expr → ['yield*', expr]
 keyword('yield', PREFIX, () => {
-  space();
+  parse.space();
   if (cur[idx] === '*') {
     skip();
-    space();
+    parse.space();
     return ['yield*', expr(ASSIGN)];
   }
   return ['yield', expr(ASSIGN)];
@@ -22,7 +22,7 @@ keyword('yield', PREFIX, () => {
 // async () => {} → ['async', ['=>', params, body]]
 // async x => {} → ['async', ['=>', x, body]]
 keyword('async', PREFIX, () => {
-  space();
+  parse.space();
   // async function - check for 'function' word
   if (word('function')) return ['async', expr(PREFIX)];
   // async arrow: async () => or async x =>
