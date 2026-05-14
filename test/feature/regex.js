@@ -1,6 +1,7 @@
 import test, { is, throws } from 'tst'
 import { parse, compile } from '../../subscript.js'
 import '../../feature/regex.js'
+import '../../eval/regex.js'
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)
 
@@ -40,6 +41,8 @@ test('regex: division disambiguation', t => {
 test('regex: in expressions', t => {
   is(run('x.match(/\\d+/)', { x: 'abc123def' })[0], '123')
   is(run('x.replace(/a/g, "b")', { x: 'aaa' }), 'bbb')
+  is(run('x.replace(/=/g, "")', { x: 'a=b=c' }), 'abc')
+  is(run('x.replace(/=>/g, ":")', { x: 'a=>b=>c' }), 'a:b:c')
 })
 
 test('regex: JSON serializable', t => {
