@@ -19,9 +19,12 @@ const parseBody = () => {
   return skip(), parts;
 };
 
+// Collapse a single-part body to that part (string or expression); else keep as ['`', ...parts]
+const wrapBody = p => p.length < 2 && p[0]?.[0] === undefined ? p[0] || [,''] : ['`', ...p];
+
 const prev = lookup[BACKTICK];
 // Tagged templates: decline when ASI with newline (return undefined to let ASI handle)
 lookup[BACKTICK] = (a, prec) =>
   a && prec < ACCESS ? (parse.asi && parse.newline ? void 0 : (skip(), ['``', a, ...parseBody()])) : // tagged
-  !a ? (skip(), (p => p.length < 2 && p[0]?.[0] === undefined ? p[0] || [,''] : ['`', ...p])(parseBody())) : // plain
+  !a ? (skip(), wrapBody(parseBody())) : // plain
   prev?.(a, prec);

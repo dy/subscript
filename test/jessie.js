@@ -57,6 +57,41 @@ test('jessie: standalone if statement', () => {
   is(ctx.y, 0, 'false condition skips body')
 })
 
+// Bracketless nested if/else with body-terminating `;\n` used to lose the
+// inner else: ASI set `parse.semi=true` from the `;\n` after `x=1`, and the
+// upcoming else-body's parse.step bailed at statement precedence. Regression
+// test for that specific dangling-else parse path.
+test('jessie: bracketless nested if/else with newlines', () => {
+  const src = `if (a)
+  if (b) x=1;
+  else x=2;
+else
+  if (b) x=3;
+  else x=4;`
+  is(parse(src), [';',
+    ['if', 'a',
+      ['if', 'b', ['=', 'x', [, 1]], ['=', 'x', [, 2]]],
+      ['if', 'b', ['=', 'x', [, 3]], ['=', 'x', [, 4]]]],
+    null])
+
+  // Same logic, runtime check across all four (a,b) inputs
+  const fn = `(a, b) => {
+    let res = 0;
+    if (a)
+      if (b) res = 1;
+      else res = 2;
+    else
+      if (b) res = 3;
+      else res = 4;
+    return res;
+  }`
+  const f = run(fn)
+  is(f(1, 1), 1, '1,1 → inner-then')
+  is(f(1, 0), 2, '1,0 → inner-else')
+  is(f(0, 1), 3, '0,1 → outer-else inner-then')
+  is(f(0, 0), 4, '0,0 → outer-else inner-else')
+})
+
 // === blocks ===
 
 test('jessie: blocks', () => {

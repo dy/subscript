@@ -11,12 +11,16 @@ export const block = () =>
 export const body = () =>
   parse.space() !== 123 ? expr(STATEMENT + .5) : (skip(), expr(STATEMENT - .5, 125) || null);
 
-// Check for `else` after optional semicolon
+// Check for `else` after optional semicolon. The preceding body may have
+// triggered ASI (`x=1;\n`), leaving `parse.semi=true`. That sticky flag
+// would cause the upcoming else-body's parse.step to bail at the first
+// token (statement-precedence boundary), so we clear it once we've confirmed
+// `else` — the else opens a fresh sub-statement.
 const checkElse = () => {
   const from = idx;
   if (parse.space() === SEMI) skip();
   parse.space();
-  if (word('else')) return skip(4), true;
+  if (word('else')) return skip(4), parse.semi = false, true;
   return seek(from), false;
 };
 
