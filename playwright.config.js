@@ -16,8 +16,8 @@ export default defineConfig({
     { name: 'chromium', use: { browserName: 'chromium' } },
   ],
   webServer: {
-    command: 'npx serve -l 8765 --no-clipboard',
-    port: 8765,
+    command: 'npx serve -l 8769 --no-clipboard',
+    port: 8769,
     reuseExistingServer: true,
   },
 })
