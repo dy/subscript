@@ -5,7 +5,7 @@
  * a?.[x] → optional computed access
  * a?.() → optional call
  */
-import { parse, token, expr, skip } from '../../parse.js';
+import { parse, token, expr, skip, propName } from '../../parse.js';
 
 const ACCESS = 170;
 
@@ -16,7 +16,7 @@ token('?.', ACCESS, (a, b) => {
   if (cc === 40) { skip(); return ['?.()', a, expr(0, 41) || null]; }
   // Optional computed: a?.[x]
   if (cc === 91) { skip(); return ['?.[]', a, expr(0, 93)]; }
-  // Optional member: a?.b
-  b = expr(ACCESS);
+  // Optional member: a?.b - property name is an IdentifierName
+  b = propName(ACCESS);
   return b ? ['?.', a, b] : void 0;
 });

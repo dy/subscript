@@ -1,4 +1,12 @@
-// Pratt parser core + operator registry + compile
+// Pratt parser core + operator registry + compile.
+//
+// Language-agnostic by design: the core (token / lookup / prec / the expr loop)
+// assumes no particular language. The registrars below — binary, unary, nary,
+// literal, group, access, member, keyword — are a shared toolkit of common
+// operator *shapes*; each is parameterized by operator string + precedence, so a
+// dialect composes its grammar from them. Keep language-specific rules in
+// feature/*, not here.
+
 // Character codes
 const SPACE = 32;
 
@@ -115,6 +123,16 @@ export let idx, cur,
   group = (op, p) => token(op[0], p, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
 
   access = (op, p) => token(op[0], p, a => (a && [op, a, expr(0, op.charCodeAt(1)) || null])),
+
+  // propName(p) - parse the right side of a name-access operator. A bare name
+  // beats keyword/operator matching, so reserved words read as plain identifiers
+  // (a.class). Non-name starts (digit, #, ...) fall back to expr(p), keeping the
+  // door open for any dialect-defined token there. Uses the live parse.id.
+  propName = (p, c) => (parse.space(), c = cur.charCodeAt(idx), parse.id(c) && (c < 48 || c > 57) ? next(parse.id) : expr(p)),
+
+  // member(op, p) - binary operator whose right side is a name, not an expression
+  // (a.b, a::b, a->b). Same [op, a, b] shape as binary().
+  member = (op, p) => token(op, p, a => a && (b => b && [op, a, b])(propName(p))),
 
   // keyword(op, prec, fn) - prefix word token with property name support
   // parse.prop set by collection.js to prevent matching {keyword: value}

@@ -28,6 +28,8 @@ export function literal(op: string, val: any): void;
 export function nary(op: string, prec: number, right?: boolean): void;
 export function group(op: string, prec: number): void;
 export function access(op: string, prec: number): void;
+export function member(op: string, prec: number): void;
+export function propName(prec: number): AST;
 
 // Compile exports
 export const operators: Record<string, Operator>;

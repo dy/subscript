@@ -24,6 +24,21 @@ test('jessie: inherits justin', () => {
   is(parse('{a: 1}'), ['{}', [':', 'a', [, 1]]])
 })
 
+// === reserved words as member property names ===
+// After `.`/`?.` the grammar is an IdentifierName - reserved words are plain names.
+
+test('jessie: reserved words in member access', () => {
+  is(parse('record.class.name'), ['.', ['.', 'record', 'class'], 'name'])
+  is(parse('record.function.kind'), ['.', ['.', 'record', 'function'], 'kind'])
+  is(parse('a.if.else'), ['.', ['.', 'a', 'if'], 'else'])
+  is(parse('a?.class'), ['?.', 'a', 'class'])
+  is(parse('a?.function'), ['?.', 'a', 'function'])
+  is(parse('a. class'), ['.', 'a', 'class'])  // whitespace before name
+  is(parse('a.#x'), ['.', 'a', '#x'])         // private name still works
+  is(parse('a.b(class X{})'), ['()', ['.', 'a', 'b'], ['class', 'X', null, null]])  // class arg unaffected
+  is(run('o.class + o.function', { o: { class: 2, function: 3 } }), 5)
+})
+
 // === variables ===
 
 test('jessie: variables', () => {
