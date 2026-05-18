@@ -24,6 +24,11 @@ test('jessie: inherits justin', () => {
   is(parse('{a: 1}'), ['{}', [':', 'a', [, 1]]])
 })
 
+test('jessie: reserved words in member access', () => {
+  is(parse('record.function.kind'), ['.', ['.', 'record', 'function'], 'kind'])
+  is(parse('record.class.name'), ['.', ['.', 'record', 'class'], 'name'])
+})
+
 // === variables ===
 
 test('jessie: variables', () => {
