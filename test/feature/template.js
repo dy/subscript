@@ -11,6 +11,7 @@ test('template: basic', t => {
 
 test('template: interpolation', t => {
   is(parse('`a ${x} b`'), ['`', [, 'a '], 'x', [, ' b']])
+  is(parse('`${x}${y}`'), ['`', [, ''], 'x', [, ''], 'y', [, '']])
   is(run('`hello ${name}!`', { name: 'world' }), 'hello world!')
   is(run('`${a} + ${b} = ${a + b}`', { a: 2, b: 3 }), '2 + 3 = 5')
 })
@@ -38,6 +39,7 @@ test('template: nested', t => {
 test('template: tagged', t => {
   is(parse('tag`hello`'), ['``', 'tag', [, 'hello']])
   is(parse('tag`a ${x} b`'), ['``', 'tag', [, 'a '], 'x', [, ' b']])
+  is(parse('tag`${x}${y}`'), ['``', 'tag', [, ''], 'x', [, ''], 'y', [, '']])
 
   // Test tagged template execution
   const upper = (strings, ...values) =>

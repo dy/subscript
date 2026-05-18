@@ -108,16 +108,21 @@ export let idx, cur,
 
   literal = (op, val) => token(op, 200, a => !a && [, val]),
 
-  nary = (op, p, right) =>
+  // nary list (`,` `;`). With no rhs after a separator, the empty slot is a
+  // hole only when another separator follows (`[1,,2]`); a separator with
+  // nothing else after it is trailing, and its slot is dropped (`[1,2,]` is
+  // `[1,2]`). `trail` keeps that trailing slot, for separators whose positions
+  // are significant (`;` → `for(;;)` is [;,null,null,null]).
+  nary = (op, p, right, trail) =>
     token(op, p,
       (a, b) => (
         b = expr(p - (right ? .5 : 0)),
-        (
-          (a?.[0] !== op) && (a = [op, a || null]),
-          b?.[0] === op ? a.push(...b.slice(1)) : a.push(b || null),
-          a
-        ))
-    )
+        (a?.[0] !== op) && (a = [op, a || null]),
+        b?.[0] === op ? a.push(...b.slice(1)) :
+        b ? a.push(b) :
+        (trail || peek() === op.charCodeAt(0)) && a.push(null),
+        a
+      ))
   ,
 
   group = (op, p) => token(op[0], p, a => (!a && [op, expr(0, op.charCodeAt(1)) || null])),
@@ -134,17 +139,21 @@ export let idx, cur,
   // (a.b, a::b, a->b). Same [op, a, b] shape as binary().
   member = (op, p) => token(op, p, a => a && (b => b && [op, a, b])(propName(p))),
 
-  // keyword(op, prec, fn) - prefix word token with property name support
-  // parse.prop set by collection.js to prevent matching {keyword: value}
-  keyword = (op, prec, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) =>
+  // keyword(op, p, fn) - prefix word token with property name support.
+  // Records p in the prec registry (like token does) so dialects can
+  // introspect keyword precedence. parse.prop set by collection.js to
+  // prevent matching {keyword: value}.
+  keyword = (op, p, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) => (
+    prec[op] ??= p,
     lookup[c] = (a, curPrec, curOp, from = idx) =>
       !a &&
       (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
-      curPrec < prec &&
+      curPrec < p &&
       !parse.id(cur.charCodeAt(idx + l)) &&
       (!parse.prop || parse.prop(idx + l)) &&
       (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
-      prev?.(a, curPrec, curOp);
+      prev?.(a, curPrec, curOp)
+  );
 
 // Skip space chars, return first non-space character.
 // Wrappers (comment, asi) compose by reading the previous parse.space first.

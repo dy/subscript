@@ -15,6 +15,15 @@ const baseSpace = parse._baseSpace ??= parse.space;
 const baseStep = parse._baseStep ??= parse.step;
 const isNode = a => Array.isArray(a) || typeof a === 'string';
 
+// A node is a *statement* (vs an expression) when its operator sits at
+// statement precedence — `;` and the statement keywords register at or just
+// above prec[';']. A bare `{…}` is a block statement when its body is one.
+// Used to decide ASI before `[`/`(`: a statement can't be indexed or called,
+// so `{a;b}[x]` and `if(c){}\n(x)` split, while `a\n(b)` stays a call.
+const STMT = (prec[';'] ?? 5) + 1;
+const isStmt = n => Array.isArray(n) &&
+  (prec[n[0]] <= STMT || (n[0] === '{}' && isStmt(n[1])));
+
 // LF immediately preceding the next non-space at i (used to detect `;\n`).
 const hasLineBreak = (i, c) => {
   while ((c = cur.charCodeAt(i)) <= SPACE) {
@@ -59,11 +68,22 @@ parse.enter = () => parse.newline = parse.semi = false;
 parse.exit = (p, end) => { if (end === BLOCK_END) parse.newline = true, parse.semi = false; };
 
 // Wrap iteration step: bail at high prec when `;\n` consumed; fire ASI before
-// `[`/`(` on a new line; fire ASI when no operator continues across newline.
+// `[`/`(` that begin a new statement; fire ASI when no operator continues
+// across a newline.
 parse.step = (a, p, cc, expr) => {
   if (parse.semi && p >= lvl) return false;
   if (a && !isNode(a)) return null;
-  if (isNode(a) && (parse.semi || ((cc === BRACKET || cc === PAREN) && lineBreak()))) return asi(a, p, expr) ?? null;
+  if (isNode(a)) {
+    // `[` continues an expression as a member index, but on a new line or
+    // after a statement it starts one. `(` continues an expression as a call;
+    // it only starts a new statement after a statement node, or — at
+    // sub-expression precedence — acts as a boundary on a new line (`let a\n(x)`).
+    const brk = (cc === BRACKET || cc === PAREN) && lineBreak();
+    if (parse.semi ||
+      (cc === BRACKET && (brk || isStmt(a))) ||
+      (cc === PAREN && (isStmt(a) || (brk && p >= lvl))))
+      return asi(a, p, expr) ?? null;
+  }
   const nl = parse.newline;
   return baseStep(a, p, cc, expr) ?? (isNode(a) && nl ? asi(a, p, expr) ?? null : null);
 };

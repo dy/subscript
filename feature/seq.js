@@ -8,5 +8,5 @@ import { nary } from '../parse.js';
 const STATEMENT = 5, SEQ = 10;
 
 // Sequences
-nary(',', SEQ);
-nary(';', STATEMENT, true);  // right-assoc to allow same-prec statements
+nary(',', SEQ);                    // list separator: trailing comma drops the slot
+nary(';', STATEMENT, true, true);  // statement separator: right-assoc, every slot kept

@@ -151,6 +151,7 @@ test('justin: nullish coalescing', () => {
 test('justin: arrays', () => {
   is(parse('[]')[0], '[]')
   is(parse('[1, 2]'), ['[]', [',', [, 1], [, 2]]])
+  is(parse('[1, 2,]'), ['[]', [',', [, 1], [, 2]]])
   is(justin('[]')(), [])
   is(justin('[a]')({ a: 1 }), [1])
   is(justin('[1, 2, 3]')(), [1, 2, 3])
@@ -159,6 +160,7 @@ test('justin: arrays', () => {
 test('justin: objects', () => {
   is(parse('{}'), ['{}', null])
   is(parse('{a: 1}'), ['{}', [':', 'a', [, 1]]])
+  is(parse('{a: 1,}'), ['{}', [',', [':', 'a', [, 1]]]])
   is(justin('{}')(), {})
   is(justin('{a: 1}')().a, 1)
   is(justin('{a: 1, b: 2}')().b, 2)
@@ -238,7 +240,7 @@ test('justin: missing arguments', () => {
   throws(() => is(justin('check(,)'), ['check', null, null]))
   throws(() => is(justin('check(,1,2)'), ['check', null, 1, 2]))
   throws(() => is(justin('check(1,,2)'), ['check', 1, null, 2]))
-  throws(() => is(justin('check(1,2,)'), ['check', 1, 2, null]))
+  is(parse('check(1,2,)'), ['()', 'check', [',', [, 1], [, 2]]])
   throws(() => justin('check(a, b c d) '), 'spaced arg after 1 comma')
   throws(() => justin('check(a, b, c d)'), 'spaced arg at end')
   throws(() => justin('check(a b, c, d)'), 'spaced arg first')

@@ -146,6 +146,8 @@ test('jessie: block vs object detection', () => {
 })
 
 test('jessie: arrow block vs object', () => {
+  is(parse('x => { y }'), ['=>', 'x', ['{}', 'y']])
+
   // Arrow with block body - returns undefined unless explicit return
   is(run('(()=>{1})()'), undefined)
   is(run('(()=>{a})()'), undefined)
@@ -180,6 +182,7 @@ test('jessie: new', () => {
   is(parse('new X()')[0], 'new')
   is(parse('new X(a, b)')[1][0], '()')
   is(parse('new a.b.C()')[0], 'new')
+  is(parse('new X(a).m(b)'), ['()', ['.', ['new', ['()', 'X', 'a']], 'm'], 'b'])
 })
 
 // === try/catch/finally/throw ===
@@ -736,9 +739,19 @@ test('jessie: no ASI before . on new line (continuation)', () => {
 })
 
 test('jessie: ASI after `}` of statement block before `[` / `(`', () => {
+  is(parse('{x;y}[a,b]=rhs'), [';', ['{}', [';', 'x', 'y']], ['=', ['[]', [',', 'a', 'b']], 'rhs']])
   is(parse('if (x) { y }\n[a]'), [';', ['if', 'x', 'y'], ['[]', 'a']])
   is(parse('if (x) { y }\n(z)'), [';', ['if', 'x', 'y'], ['()', 'z']])
-  is(parse('a\n(b)'), [';', 'a', ['()', 'b']])
+})
+
+test('jessie: no ASI before `(` after expression continuation', () => {
+  is(parse('a\n(b)'), ['()', 'a', 'b'])
+  is(parse('(function name(){\n  return 1\n})\n()'),
+    ['()', ['()', ['function', 'name', null, ['return', [, 1]]]], null])
+})
+
+test('jessie: labeled control statements preserve control node shape', () => {
+  is(parse('outer: while(c){ body }'), [':', 'outer', ['while', 'c', 'body']])
 })
 
 test('jessie: ASI after arrow block body before next let', () => {

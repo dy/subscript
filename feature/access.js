@@ -4,7 +4,9 @@
  */
 import { access, member } from '../parse.js';
 
-const ACCESS = 170;
+// A call binds looser than member access (`.` `[]`): the JS grammar puts them
+// on separate levels so `new` can sit between — see feature/op/unary.js.
+const ACCESS = 170, CALL = 160;
 
 // a[b]
 access('[]', ACCESS);
@@ -13,4 +15,4 @@ access('[]', ACCESS);
 member('.', ACCESS);
 
 // a(b,c,d), a()
-access('()', ACCESS);
+access('()', CALL);
