@@ -11,13 +11,19 @@
  */
 import { token, skip, err, next, idx, cur } from '../parse.js';
 
-const SLASH = 47, BSLASH = 92;
+const SLASH = 47, BSLASH = 92, LBRACK = 91, RBRACK = 93;
 
 token('/', 140, a => {
   // left operand = division; `//` `/*` `/?` `/+` `/=` = not a regex start
   const c = cur.charCodeAt(idx);
   if (a || c === SLASH || c === 42 || c === 43 || c === 63 || c === 61) return;
-  const pattern = next(c => c === BSLASH ? 2 : c && c !== SLASH); // \x = 2 chars, else 1 until /
+  let cls = false;
+  const pattern = next(c =>
+    c === BSLASH ? 2 :
+    c === LBRACK ? (cls = true, 1) :
+    c === RBRACK ? (cls = false, 1) :
+    c && (cls || c !== SLASH)
+  );
   cur.charCodeAt(idx) === SLASH || err('Unterminated regex');
   skip();
   const flags = next(c => c === 103 || c === 105 || c === 109 || c === 115 || c === 117 || c === 121); // gimsuy

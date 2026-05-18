@@ -1,6 +1,7 @@
 import test, { is, throws } from 'tst'
 import { parse, compile } from '../../subscript.js'
 import '../../feature/regex.js'
+import '../../eval/regex.js'
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)
 
@@ -20,6 +21,12 @@ test('regex: flags', t => {
 test('regex: escapes', t => {
   is(parse('/a\\/b/')[1], 'a\\/b')
   is(parse('/a\\nb/')[1], 'a\\nb')
+})
+
+test('regex: character classes', t => {
+  is(parse('/[^/]+$/'), ['//', '[^/]+$'])
+  is(parse('/[\\]/]/')[1], '[\\]/]')
+  is(run('"a/b".match(/([^/]+)$/)')[1], 'b')
 })
 
 test('regex: eval', t => {
