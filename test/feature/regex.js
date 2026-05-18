@@ -45,6 +45,13 @@ test('regex: in expressions', t => {
   is(run('x.replace(/=>/g, ":")', { x: 'a=>b=>c' }), 'a:b:c')
 })
 
+test('regex: character classes', t => {
+  // `/` inside [...] is literal, not a terminator
+  is(parse('/[^/]+$/'), ['//', '[^/]+$'])
+  is(parse('/[\\]/]/')[1], '[\\]/]')
+  is(run('"a/b".match(/([^/]+)$/)')[1], 'b')
+})
+
 test('regex: JSON serializable', t => {
   const ast = parse('/abc/gi')
   const json = JSON.stringify(ast)
