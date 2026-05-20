@@ -28,6 +28,12 @@ test('unicode: \\uXXXX legacy 4-digit escape in identifier', () => {
   is(result[1][1], '\\u0041')
 })
 
+test('unicode: \\uXXXX legacy escape inside identifier spelling', () => {
+  const result = parse('let \\u0041BC = 1')
+  is(result[0], 'let')
+  is(result[1][1], '\\u0041BC')
+})
+
 test('unicode: invalid identifier escapes reject', () => {
   throws(() => parse('let \\u{} = 1'))
   throws(() => parse('let \\u{XYZ} = 1'))

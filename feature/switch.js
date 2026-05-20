@@ -19,7 +19,7 @@ const caseBody = (c) => {
   const stmts = [];
   while ((c = parse.space()) !== CBRACE && !word('case') && !word('default')) {
     if (c === SEMI) { skip(); continue; }
-    stmts.push(expr(STATEMENT - .5)) || err();
+    stmts.push(expr(STATEMENT + .5)) || err();
   }
   return stmts.length > 1 ? [';', ...stmts] : stmts[0] || null;
 };

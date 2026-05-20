@@ -5,6 +5,7 @@ import './expr.js'
 
 import './justin.js'
 import './jessie.js'
+import './jz.js'
 
 // Compile tests
 import './compile.js'

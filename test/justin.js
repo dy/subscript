@@ -160,7 +160,9 @@ test('justin: arrays', () => {
 test('justin: objects', () => {
   is(parse('{}'), ['{}', null])
   is(parse('{a: 1}'), ['{}', [':', 'a', [, 1]]])
-  is(parse('{a: 1,}'), ['{}', [',', [':', 'a', [, 1]]]])
+  is(parse('{a: 1,}'), ['{}', [':', 'a', [, 1]]])
+  is(parse('{a,}'), ['{}', 'a'])
+  is(parse('({a,})'), ['()', ['{}', 'a']])
   is(justin('{}')(), {})
   is(justin('{a: 1}')().a, 1)
   is(justin('{a: 1, b: 2}')().b, 2)
@@ -240,6 +242,7 @@ test('justin: missing arguments', () => {
   throws(() => is(justin('check(,)'), ['check', null, null]))
   throws(() => is(justin('check(,1,2)'), ['check', null, 1, 2]))
   throws(() => is(justin('check(1,,2)'), ['check', 1, null, 2]))
+  is(parse('f(a,b,)'), ['()', 'f', [',', 'a', 'b']])
   is(parse('check(1,2,)'), ['()', 'check', [',', [, 1], [, 2]]])
   throws(() => justin('check(a, b c d) '), 'spaced arg after 1 comma')
   throws(() => justin('check(a, b, c d)'), 'spaced arg at end')

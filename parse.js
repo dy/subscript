@@ -120,7 +120,8 @@ export let idx, cur,
         (a?.[0] !== op) && (a = [op, a || null]),
         b?.[0] === op ? a.push(...b.slice(1)) :
         b ? a.push(b) :
-        (trail || peek() === op.charCodeAt(0)) && a.push(null),
+        (trail || peek() === op.charCodeAt(0)) ? a.push(null) :
+        a.length === 2 && (a = a[1]),
         a
       ))
   ,
