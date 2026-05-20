@@ -50,6 +50,52 @@ test('jz: switch case boundaries terminate case bodies', () => {
     ['switch', 'x', ['case', [, 1], 'a'], ['case', [, 2], [';', 'b', ['break']]]])
 })
 
+test('jz: ASI inside case body does not leak into the next case test', () => {
+  // case 0 body ends with `;\n` (ASI sets parse.semi=true). The next case test
+  // (`1`) and body (`x = 2`) must each start as a fresh expression — without
+  // an explicit clear, parse.step's `parse.semi && p >= lvl` short-circuit
+  // would refuse to consume them and the case-body loop would spin pushing
+  // nulls until RangeError.
+  is(parse(`switch (n) {
+      case 0: x = 1;
+      case 1: x = 2; break;
+    }`),
+    ['switch', 'n',
+      ['case', [, 0], ['=', 'x', [, 1]]],
+      ['case', [, 1], [';', ['=', 'x', [, 2]], ['break']]]])
+})
+
+test('jz: switch followed by another statement parses both', () => {
+  // The original jz repro: an arrow body with `let`/`switch`/`return` where
+  // the `;\n` inside the switch's last case leaves parse.semi sticky and
+  // breaks subsequent test parsing.
+  is(parse(`(n) => {
+      let x = 0;
+      switch (n) {
+        case 0: x = 1;
+        case 1: x = 2; break;
+      }
+      return x;
+    }`),
+    ['=>', ['()', 'n'], ['{}', [';',
+      ['let', ['=', 'x', [, 0]]],
+      ['switch', 'n',
+        ['case', [, 0], ['=', 'x', [, 1]]],
+        ['case', [, 1], [';', ['=', 'x', [, 2]], ['break']]]],
+      ['return', 'x']]]])
+})
+
+test('jz: multiple statements separated by `;\\n` inside one case body', () => {
+  is(parse(`switch (n) {
+      case 0:
+        a;
+        b;
+        break;
+    }`),
+    ['switch', 'n',
+      ['case', [, 0], [';', 'a', 'b', ['break']]]])
+})
+
 test('jz: labeled control statements preserve the control node', () => {
   is(parse('outer: while(c){ body }'), [':', 'outer', ['while', 'c', 'body']])
   is(parse('outer: while(c) body'), [':', 'outer', ['while', 'c', 'body']])
@@ -61,6 +107,18 @@ test('jz: trailing commas do not create phantom operands', () => {
   is(parse('({a,})'), ['()', ['{}', 'a']])
   is(parse('f(a,b,)'), ['()', 'f', [',', 'a', 'b']])
   is(parse('check(1,2,)'), ['()', 'check', [',', [, 1], [, 2]]])
+})
+
+test('jz: leading-elision array literals preserve the hole', () => {
+  // `[,]` is a 1-element array with a hole (per ES grammar `[Elision]`);
+  // without a real lhs, the comma-list shape `[',', null]` must survive
+  // rather than collapsing to plain null (which would error in expr).
+  is(parse('[,]'), ['[]', [',', null]])
+  is(parse('var a = [,]'), ['var', ['=', 'a', ['[]', [',', null]]]])
+  is(parse('[,,]'), ['[]', [',', null, null]])
+  is(parse('[,1]'), ['[]', [',', null, [, 1]]])
+  // Trailing comma after a real value still collapses (`[1,]` is `[1]`).
+  is(parse('[1,]'), ['[]', [, 1]])
 })
 
 test('jz: escaped identifier spelling survives tokenization', () => {

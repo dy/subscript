@@ -14,11 +14,16 @@ const reserve = (w, l = w.length, c = w.charCodeAt(0), prev = lookup[c]) =>
 reserve('case');
 reserve('default');
 
-// caseBody() - parse statements until next case/default/}
+// caseBody() - parse statements until next case/default/}.
+// Each iteration clears parse.semi: a preceding `;\n` sets the ASI sticky
+// flag, which would otherwise make parse.step bail (`parse.semi && p >= lvl`)
+// at the very first token of the next statement — the loop would then push
+// nulls forever (see if.js's `else` body for the same pattern).
 const caseBody = (c) => {
   const stmts = [];
   while ((c = parse.space()) !== CBRACE && !word('case') && !word('default')) {
     if (c === SEMI) { skip(); continue; }
+    parse.semi = false;
     stmts.push(expr(STATEMENT + .5)) || err();
   }
   return stmts.length > 1 ? [';', ...stmts] : stmts[0] || null;
@@ -33,6 +38,7 @@ const switchBody = () => {
     while (parse.space() !== CBRACE) {
       if (word('case')) {
         seek(idx + 4); parse.space();
+        parse.semi = false;
         const test = expr(ASSIGN - .5);
         parse.space() === COLON && skip();
         cases.push(['case', test, caseBody()]);

@@ -110,18 +110,21 @@ export let idx, cur,
 
   // nary list (`,` `;`). With no rhs after a separator, the empty slot is a
   // hole only when another separator follows (`[1,,2]`); a separator with
-  // nothing else after it is trailing, and its slot is dropped (`[1,2,]` is
-  // `[1,2]`). `trail` keeps that trailing slot, for separators whose positions
-  // are significant (`;` → `for(;;)` is [;,null,null,null]).
+  // nothing else after it after a real lhs is trailing, and its slot is
+  // dropped (`[1,2,]` is `[1,2]`). With no lhs either (leading elision like
+  // `[,]`), the `[op, null]` shape is kept so the caller sees a single-hole
+  // list rather than a parse failure. `trail` keeps the trailing slot
+  // unconditionally, for separators whose positions are significant
+  // (`;` → `for(;;)` is [;,null,null,null]).
   nary = (op, p, right, trail) =>
     token(op, p,
-      (a, b) => (
+      (a, b, lhs = a) => (
         b = expr(p - (right ? .5 : 0)),
         (a?.[0] !== op) && (a = [op, a || null]),
         b?.[0] === op ? a.push(...b.slice(1)) :
         b ? a.push(b) :
         (trail || peek() === op.charCodeAt(0)) ? a.push(null) :
-        a.length === 2 && (a = a[1]),
+        lhs && a.length === 2 && (a = a[1]),
         a
       ))
   ,
