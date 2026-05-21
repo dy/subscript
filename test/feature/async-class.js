@@ -71,6 +71,9 @@ test('async/class: class declaration', () => {
 test('async/class: class extends', () => {
   is(parse('class A extends B {}'), ['class', 'A', 'B', null]);
   is(parse('class A extends B { x }'), ['class', 'A', 'B', 'x']);
+  is(parse('class A extends ns.B {}'), ['class', 'A', ['.', 'ns', 'B'], null]);
+  is(parse('class A extends pick() {}'), ['class', 'A', ['()', 'pick', null], null]);
+  is(parse('class A extends (pick()) {}'), ['class', 'A', ['()', ['()', 'pick', null]], null]);
 });
 
 test('async/class: anonymous class', () => {
@@ -85,8 +88,31 @@ test('async/class: static', () => {
     'class', 'A', null,
     ['static', [':', 'm', ['=>', ['()', 'a'], ['return', 'a']]]]
   ]);
+  is(parse('class A { static ["m"]() { return 1 } }'), [
+    'class', 'A', null,
+    ['static', [':', ['[]', [, 'm']], ['=>', ['()', null], ['return', [, 1]]]]]
+  ]);
   // private static field still works (regression guard)
   is(parse('static #x'), ['static', '#x']);
+});
+
+test('async/class: computed members', () => {
+  is(parse('class A { ["x"] = 1 }'), [
+    'class', 'A', null,
+    ['=', ['[]', [, 'x']], [, 1]]
+  ]);
+  is(parse('class A { ["x"]() { return 1 } }'), [
+    'class', 'A', null,
+    [':', ['[]', [, 'x']], ['=>', ['()', null], ['return', [, 1]]]]
+  ]);
+  is(parse('class A { get ["x"]() { return 1 } }'), [
+    'class', 'A', null,
+    ['get', ['[]', [, 'x']], undefined, ['return', [, 1]]]
+  ]);
+  is(parse('class A { set ["x"](v) { this.x = v } }'), [
+    'class', 'A', null,
+    ['set', ['[]', [, 'x']], 'v', ['=', ['.', 'this', 'x'], 'v']]
+  ]);
 });
 
 test('async/class: super', () => {

@@ -3,7 +3,8 @@
 import { binary, unary, token, expr, next, parse, keyword, word, skip } from '../parse.js';
 import { block } from './if.js';
 
-const TOKEN = 200, PREFIX = 140, COMP = 90, STATIC = 175;
+const TOKEN = 200, PREFIX = 140, COMP = 90, STATIC = 175, CALL = 160;
+const HERITAGE = CALL - .5;
 
 // static member → ['static', member]
 // STATIC > ACCESS (170) so `static m` doesn't pull `(` into the operand as a
@@ -34,5 +35,5 @@ keyword('class', TOKEN, () => {
     skip(7); // skip 'extends'
     parse.space();
   }
-  return ['class', name, expr(TOKEN), block()];
+  return ['class', name, expr(HERITAGE), block()];
 });

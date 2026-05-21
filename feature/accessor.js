@@ -6,9 +6,9 @@
  */
 import { token, expr, skip, next, parse, cur, idx } from '../parse.js';
 
-const ASSIGN = 20;
+const ASSIGN = 20, TOKEN = 200;
 const LF = 10, CR = 13;
-const OPAREN = 40, CPAREN = 41, OBRACE = 123, CBRACE = 125;
+const DQUOTE = 34, HASH = 35, SQUOTE = 39, OPAREN = 40, CPAREN = 41, OBRACKET = 91, OBRACE = 123, CBRACE = 125;
 
 const hasLineTerminator = (from, to) => {
   while (from < to) {
@@ -18,6 +18,13 @@ const hasLineTerminator = (from, to) => {
   return false;
 };
 
+const computedKeyStart = c => c === DQUOTE || c === SQUOTE || c === OBRACKET || c === HASH;
+const propertyKey = () => next(parse.id) || (computedKeyStart(cur.charCodeAt(idx)) ? expr(TOKEN - .5) : null);
+
+const isMethodKey = a =>
+  typeof a === 'string' ||
+  (Array.isArray(a) && (a[0] === undefined || a[0] === '[]'));
+
 // Shared parser for get/set — returns false if not valid accessor pattern (falls through to identifier)
 // Returns false (not undefined) to signal "fall through without setting reserved"
 const accessor = (kind) => a => {
@@ -25,7 +32,7 @@ const accessor = (kind) => a => {
   const from = idx;
   parse.space();
   if (parse.semi || hasLineTerminator(from, idx)) return false;
-  const name = next(parse.id);
+  const name = propertyKey();
   if (!name) return false; // no property name = not accessor (e.g. `{ get: 1 }`)
   parse.space();
   if (cur.charCodeAt(idx) !== OPAREN) return false; // not followed by ( = not accessor
@@ -49,7 +56,7 @@ token('(', ASSIGN - 1, a => {
   let wrap;
   if (Array.isArray(a) && a[0] === 'static') wrap = 'static', a = a[1];
   // Accept identifier or string-literal node as key
-  if (typeof a !== 'string' && !(Array.isArray(a) && a[0] === undefined)) return;
+  if (!isMethodKey(a)) return;
   const params = expr(0, CPAREN) || null;
   parse.space();
   // Not followed by { - not method shorthand, fall through
