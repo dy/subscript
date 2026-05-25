@@ -47,14 +47,16 @@ const accessor = (kind) => a => {
 token('get', ASSIGN - 1, accessor('get'));
 token('set', ASSIGN - 1, accessor('set'));
 
-// Method shorthand: { foo() {} } / { "foo"() {} } / class { static foo() {} }
+// Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }
 //   → [':', key, ['=>', ['()', params], body]]
-// Accepts identifier, string-literal node [, "..."], or ['static', key] from unary('static').
+// Accepts identifier, string-literal node [, "..."], ['async', key] from
+// async.js, or ['static', key] from unary('static').
 token('(', ASSIGN - 1, a => {
   if (!a) return;
   // ['static', key] from unary('static'): unwrap, re-wrap the resulting method node.
-  let wrap;
+  let wrap, isAsync;
   if (Array.isArray(a) && a[0] === 'static') wrap = 'static', a = a[1];
+  if (Array.isArray(a) && a[0] === 'async') isAsync = true, a = a[1];
   // Accept identifier or string-literal node as key
   if (!isMethodKey(a)) return;
   const params = expr(0, CPAREN) || null;
@@ -62,6 +64,8 @@ token('(', ASSIGN - 1, a => {
   // Not followed by { - not method shorthand, fall through
   if (cur.charCodeAt(idx) !== OBRACE) return;
   skip();
-  const node = [':', a, ['=>', ['()', params], expr(0, CBRACE) || null]];
+  let value = ['=>', ['()', params], expr(0, CBRACE) || null];
+  if (isAsync) value = ['async', value];
+  const node = [':', a, value];
   return wrap ? [wrap, node] : node;
 });

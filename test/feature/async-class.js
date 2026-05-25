@@ -13,6 +13,17 @@ test('async/class: async arrow', () => {
   is(parse('async (a, b) => a + b'), ['async', ['=>', ['()', [',', 'a', 'b']], ['+', 'a', 'b']]]);
 });
 
+test('async/class: async method shorthand', () => {
+  is(parse('class A { async m(a) { await a } }'), [
+    'class', 'A', null,
+    [':', 'm', ['async', ['=>', ['()', 'a'], ['await', 'a']]]]
+  ]);
+  is(parse('{ async m(a) { await a } }'), [
+    '{}',
+    [':', 'm', ['async', ['=>', ['()', 'a'], ['await', 'a']]]]
+  ]);
+});
+
 test('async/class: await', () => {
   is(parse('await x'), ['await', 'x']);
   is(parse('await f()'), ['await', ['()', 'f', null]]);
