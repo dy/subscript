@@ -7,10 +7,10 @@ const STATEMENT = 5, ASSIGN = 20, COLON = 58, SEMI = 59, CBRACE = 125;
 // Flag to track if we're inside switch body (case/default parsing)
 let inSwitch = 0;
 
-// Reserve 'case' and 'default' as keywords that fail outside switch body
-// Allows property names like {case:1} ONLY when not in switch context
+// Reserve 'case' and 'default' as case-body boundaries, while still allowing
+// object properties like {case: 1} and {default: 1} inside switch bodies.
 const reserve = (w, l = w.length, c = w.charCodeAt(0), prev = lookup[c]) =>
-  lookup[c] = (a, prec, op) => (word(w) && !a && inSwitch) || prev?.(a, prec, op);
+  lookup[c] = (a, prec, op) => (word(w) && !a && inSwitch && (!parse.prop || parse.prop(idx + l))) || prev?.(a, prec, op);
 reserve('case');
 reserve('default');
 
