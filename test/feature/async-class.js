@@ -138,6 +138,10 @@ test('numbers: numeric separators', () => {
   is(compile(parse('1_000 + 2_000'))(), 3000);
 });
 
+test('numbers: decimal literal member access', () => {
+  is(parse('0.95.toFixed(2)'), ['()', ['.', [, 0.95], 'toFixed'], [, 2]]);
+});
+
 test('numbers: bigint', () => {
   is(parse('123n'), [, 123n]);
   is(parse('1_000n'), [, 1000n]);
