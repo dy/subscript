@@ -148,6 +148,9 @@ test('control: switch basic', t => {
   is(parse('switch (x) { case 1: a }')[2][2], 'a')
   is(parse('switch (x) { default: a }')[2][0], 'default')
   is(parse('switch (x) { default: a }')[2][1], 'a')
+  // object property names inside switch case bodies
+  is(parse('switch (x) { case 1: ({ default: a }) }')[2][2],
+    ['()', ['{}', [':', 'default', 'a']]])
 
   // Multiple cases
   const ast = parse('switch (x) { case 1: a; case 2: b }')

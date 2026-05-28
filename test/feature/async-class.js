@@ -13,6 +13,17 @@ test('async/class: async arrow', () => {
   is(parse('async (a, b) => a + b'), ['async', ['=>', ['()', [',', 'a', 'b']], ['+', 'a', 'b']]]);
 });
 
+test('async/class: async method shorthand', () => {
+  is(parse('class A { async m(a) { await a } }'), [
+    'class', 'A', null,
+    [':', 'm', ['async', ['=>', ['()', 'a'], ['await', 'a']]]]
+  ]);
+  is(parse('{ async m(a) { await a } }'), [
+    '{}',
+    [':', 'm', ['async', ['=>', ['()', 'a'], ['await', 'a']]]]
+  ]);
+});
+
 test('async/class: await', () => {
   is(parse('await x'), ['await', 'x']);
   is(parse('await f()'), ['await', ['()', 'f', null]]);
@@ -136,6 +147,10 @@ test('numbers: numeric separators', () => {
   is(parse('0x1_A_B_C'), [, 0x1ABC]);
   is(parse('0b1111_0000'), [, 0b11110000]);
   is(compile(parse('1_000 + 2_000'))(), 3000);
+});
+
+test('numbers: decimal member access', () => {
+  is(parse('0.95.toFixed(2)'), ['()', ['.', [, 0.95], 'toFixed'], [, 2]]);
 });
 
 test('numbers: bigint', () => {

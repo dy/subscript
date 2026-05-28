@@ -15,8 +15,9 @@ const strip = s => s.indexOf('_') < 0 ? s : s.replaceAll('_', '');
 // Supports numeric separators: 1_000_000 and BigInt suffix: 123n
 const num = a => {
   let str = strip(next(c =>
-    // . is decimal only if NOT followed by another . (range operator)
-    (c === PERIOD && cur.charCodeAt(idx + 1) !== PERIOD) ||
+    // . is decimal only if NOT range (..) and NOT member access (.name)
+    // Allows trailing decimal: 1. → 1, 0.95.toFixed → stops at second .
+    (c === PERIOD && (c = cur.charCodeAt(idx + 1)) !== PERIOD && !(parse.id(c) && c > _9)) ||
     (c >= _0 && c <= _9) ||
     c === UNDERSCORE ||
     ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)
@@ -37,7 +38,7 @@ const charTest = {
 parse.number = null;
 
 // .1 (but not .. range)
-lookup[PERIOD] = a => !a && cur.charCodeAt(idx + 1) !== PERIOD && num();
+lookup[PERIOD] = a => !a && cur.charCodeAt(idx + 1) >= _0 && cur.charCodeAt(idx + 1) <= _9 && num();
 
 // 0-9: check parse.number for prefix config
 for (let i = _0; i <= _9; i++) lookup[i] = a => a ? void 0 : num();

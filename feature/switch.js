@@ -10,7 +10,7 @@ let inSwitch = 0;
 // Reserve 'case' and 'default' as keywords that fail outside switch body
 // Allows property names like {case:1} ONLY when not in switch context
 const reserve = (w, l = w.length, c = w.charCodeAt(0), prev = lookup[c]) =>
-  lookup[c] = (a, prec, op) => (word(w) && !a && inSwitch) || prev?.(a, prec, op);
+  lookup[c] = (a, prec, op) => (word(w) && !a && inSwitch && (!parse.prop || parse.prop(idx + l))) || prev?.(a, prec, op);
 reserve('case');
 reserve('default');
 
