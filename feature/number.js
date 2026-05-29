@@ -17,7 +17,7 @@ const num = a => {
   let str = strip(next(c =>
     // . is decimal only if NOT range (..) and NOT member access (.name)
     // Allows trailing decimal: 1. → 1, 0.95.toFixed → stops at second .
-    (c === PERIOD && (c = cur.charCodeAt(idx + 1)) !== PERIOD && !(parse.id(c) && c > _9)) ||
+    (c === PERIOD && (c = cur.charCodeAt(idx + 1)) !== PERIOD && !(parse.id(c) && c > _9 && c !== _e && c !== _E)) ||
     (c >= _0 && c <= _9) ||
     c === UNDERSCORE ||
     ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)

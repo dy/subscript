@@ -128,6 +128,21 @@ test('parse: bad number', t => {
   throws(t => parse('.e-1'))
 })
 
+test('parse: trailing-dot exponent (1.e3)', t => {
+  // A trailing dot with no fractional digits, then an exponent, is one numeric
+  // literal in JS (`1.e3 === 1000`). The lexer currently stops at `1.` (= 1) and
+  // re-reads `e3` as a member access `(1).e3` → wrong value. These working forms
+  // are the regression guards; the trailing-dot-exponent ones are the bug.
+  is(parse('1.5e3'), [, 1500])     // fractional digits present — already correct
+  is(parse('1.'), [, 1])           // trailing dot, no exponent — already correct
+  is(parse('1e3'), [, 1000])       // no dot — already correct
+  is(parse('1.e3'), [, 1000])      // BUG: parses as ['.', [, 1], 'e3']
+  is(parse('0.e1'), [, 0])         // BUG: ['.', [, 0], 'e1']
+  is(parse('0.E1'), [, 0])         // BUG: ['.', [, 0], 'E1']
+  is(parse('1.e-3'), [, 1e-3])     // BUG: ['-', ['.', [, 1], 'e'], [, 3]]
+  is(parse('1.e+3'), [, 1000])     // BUG: ['+', ['.', [, 1], 'e'], [, 3]]
+})
+
 test('parse: intersecting binary', t => {
   is(parse('a | b'), ['|', 'a', 'b'], 'a|b')
   is(parse('a || b'), ['||', 'a', 'b'], 'a||b')
