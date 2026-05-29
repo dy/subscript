@@ -28,11 +28,10 @@ const num = a => {
 };
 
 // Char test for prefix base (with underscore support)
-const charTest = {
-  2: c => c === 48 || c === 49 || c === UNDERSCORE,
-  8: c => (c >= 48 && c <= 55) || c === UNDERSCORE,
-  16: c => (c >= _0 && c <= _9) || (c >= _a && c <= _f) || (c >= _A && c <= _F) || c === UNDERSCORE
-};
+const charTest = base => c =>
+  c === UNDERSCORE ||
+  (c >= _0 && c <= _9 && c - _0 < base) ||
+  (base === 16 && (c >= _a && c <= _f || c >= _A && c <= _F));
 
 // Default: no prefixes
 parse.number = null;
@@ -49,7 +48,7 @@ lookup[_0] = a => {
     for (const [pre, base] of Object.entries(cfg)) {
       if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
         skip(2);
-        const str = strip(next(charTest[base]));
+        const str = strip(next(charTest(base)));
         if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt('0' + pre[1] + str)]; }
         return [, parseInt(str, base)];
       }

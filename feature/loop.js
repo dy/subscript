@@ -21,29 +21,23 @@ keyword('for', STATEMENT + 1, () => {
 keyword('break', STATEMENT + 1, () => {
   parse.asi && (parse.newline = false);
   const from = idx;
-  parse.space();
-  const c = cur.charCodeAt(idx);
+  const c = parse.space();
   if (!c || c === CBRACE || c === SEMI || parse.newline) return ['break'];
   const label = next(parse.id);
   if (!label) return ['break'];
-  // Label must be followed by end/semicolon/newline, not another token
-  parse.space();
-  const cc = cur.charCodeAt(idx);
+  const cc = parse.space();
   if (!cc || cc === CBRACE || cc === SEMI || parse.newline) return ['break', label];
-  // Not a valid label - backtrack
   seek(from);
   return ['break'];
 });
 keyword('continue', STATEMENT + 1, () => {
   parse.asi && (parse.newline = false);
   const from = idx;
-  parse.space();
-  const c = cur.charCodeAt(idx);
+  const c = parse.space();
   if (!c || c === CBRACE || c === SEMI || parse.newline) return ['continue'];
   const label = next(parse.id);
   if (!label) return ['continue'];
-  parse.space();
-  const cc = cur.charCodeAt(idx);
+  const cc = parse.space();
   if (!cc || cc === CBRACE || cc === SEMI || parse.newline) return ['continue', label];
   seek(from);
   return ['continue'];

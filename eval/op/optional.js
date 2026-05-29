@@ -9,29 +9,15 @@ operator('?.()', (a, b) => {
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) :
     (b = compile(b), ctx => [b(ctx)]);
 
-  // Handle nested optional chain: a?.method?.() or a?.["method"]?.()
-  if (a[0] === '?.') {
-    const container = compile(a[1]);
-    const prop = a[2];
-    return unsafe(prop) ? () => undefined :
-      ctx => { const c = container(ctx); return c?.[prop]?.(...args(ctx)); };
+  // ?.() always null-short-circuits, so . and ?. produce identical code.
+  // The only real distinction is static key vs dynamic key.
+  if (a[0] === '.' || a[0] === '?.') {
+    const obj = compile(a[1]), key = a[2];
+    return unsafe(key) ? () => undefined : ctx => obj(ctx)?.[key]?.(...args(ctx));
   }
-  if (a[0] === '?.[]') {
-    const container = compile(a[1]);
-    const prop = compile(a[2]);
-    return ctx => { const c = container(ctx); const p = prop(ctx); return unsafe(p) ? undefined : c?.[p]?.(...args(ctx)); };
-  }
-  // Handle a?.() where a is a.method or a[method] - need to bind this
-  if (a[0] === '.') {
-    const obj = compile(a[1]);
-    const prop = a[2];
-    return unsafe(prop) ? () => undefined :
-      ctx => { const o = obj(ctx); return o?.[prop]?.(...args(ctx)); };
-  }
-  if (a[0] === '[]' && a.length === 3) {
-    const obj = compile(a[1]);
-    const prop = compile(a[2]);
-    return ctx => { const o = obj(ctx); const p = prop(ctx); return unsafe(p) ? undefined : o?.[p]?.(...args(ctx)); };
+  if ((a[0] === '[]' || a[0] === '?.[]') && a.length === 3) {
+    const obj = compile(a[1]), key = compile(a[2]);
+    return ctx => { const k = key(ctx); return unsafe(k) ? undefined : obj(ctx)?.[k]?.(...args(ctx)); };
   }
   const fn = compile(a);
   return ctx => fn(ctx)?.(...args(ctx));
