@@ -102,7 +102,7 @@ export let idx, cur,
     ) ||
     prev?.(a, curPrec, matched)),
 
-  binary = (op, p, right = false) => token(op, p, a => a && (b => b && [op, a, b])(expr(p - (right ? .5 : 0)))),
+  binary = (op, p, right = false) => token(op, p, (a, b) => a && (b = expr(p - (right ? .5 : 0))) && [op, a, b]),
 
   unary = (op, p, post) => token(op, p, a => post ? (a && [op, a]) : (!a && (a = expr(p - .5)) && [op, a])),
 
@@ -141,7 +141,7 @@ export let idx, cur,
 
   // member(op, p) - binary operator whose right side is a name, not an expression
   // (a.b, a::b, a->b). Same [op, a, b] shape as binary().
-  member = (op, p) => token(op, p, a => a && (b => b && [op, a, b])(propName(p))),
+  member = (op, p) => token(op, p, (a, b) => a && (b = propName(p)) && [op, a, b]),
 
   // keyword(op, p, fn) - prefix word token with property name support.
   // Records p in the prec registry (like token does) so dialects can
