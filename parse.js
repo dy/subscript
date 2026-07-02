@@ -82,25 +82,10 @@ export let idx, cur,
   prec = {},
 
   // create operator checker/mapper - for symbols and special cases
-  token = (
-    op,
-    p = SPACE,
-    map,
-    c = op.charCodeAt(0),
-    l = op.length,
-    prev = lookup[c],
-    word = op.toUpperCase() !== op,
-    matched, r
-  ) => (p = prec[op] = !prev && prec[op] || p, lookup[c] = (a, curPrec, curOp, from = idx) =>
-    (matched = curOp,
-      (curOp ?
-        op == curOp :
-        (l < 2 || (op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (l < 3 || cur.substr(idx, l) == op))) && (!word || !parse.id(cur.charCodeAt(idx + l))) && (matched = curOp = op)
-      ) &&
-      curPrec < p &&
-      (idx += l, (r = map(a)) ? loc(r, from) : (idx = from, matched = 0, !word && !prev && !a && err()), r)
-    ) ||
-    prev?.(a, curPrec, matched)),
+  token = (op, p = SPACE, map, c = op.charCodeAt(0)) => register({
+    op, l: op.length, p: prec[op] = !lookup[c] && prec[op] || p, map,
+    word: op.toUpperCase() !== op, kw: false
+  }),
 
   binary = (op, p, right = false) => token(op, p, (a, b) => a && (b = expr(p - (right ? .5 : 0))) && [op, a, b]),
 
@@ -147,17 +132,37 @@ export let idx, cur,
   // Records p in the prec registry (like token does) so dialects can
   // introspect keyword precedence. parse.prop set by collection.js to
   // prevent matching {keyword: value}.
-  keyword = (op, p, map, c = op.charCodeAt(0), l = op.length, prev = lookup[c], r) => (
-    prec[op] ??= p,
-    lookup[c] = (a, curPrec, curOp, from = idx) =>
-      !a &&
-      (curOp ? op == curOp : (l < 2 || cur.substr(idx, l) == op) && (curOp = op)) &&
-      curPrec < p &&
-      !parse.id(cur.charCodeAt(idx + l)) &&
-      (!parse.prop || parse.prop(idx + l)) &&
-      (seek(idx + l), (r = map()) ? loc(r, from) : seek(from), r) ||
-      prev?.(a, curPrec, curOp)
-  );
+  keyword = (op, p, map) => (prec[op] ??= p, register({
+    op, l: op.length, p, map, word: true, kw: true
+  }));
+
+// One dispatcher per first char: tries registered op descriptors newest-first,
+// then falls back to whatever handler the char had before token()/keyword()
+// (number, string, custom lookup[c] assignments). curOp carries a committed
+// text-match down the list: once an op's text matches, only same-name
+// descriptors (overrides) may retry, until a failed map resets the commitment.
+const dispatch = (ops, tail, fn = (a, curPrec, curOp, from = idx, r, d, i) => {
+  for (i = 0; (d = ops[i++]);) {
+    if (d.kw && a) continue;
+    if (curOp ? d.op !== curOp :
+      !((d.l < 2 || (d.op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (d.l < 3 || cur.substr(idx, d.l) === d.op))) &&
+        (!d.word || !parse.id(cur.charCodeAt(idx + d.l))) &&
+        (curOp = d.op))) continue;
+    if (curPrec >= d.p) continue;
+    if (d.kw && parse.prop && !parse.prop(idx + d.l)) continue;
+    idx += d.l;
+    if (r = d.map(a)) return loc(r, from);
+    idx = from, curOp = 0;
+    d.word || a || tail || ops[i] || err();
+  }
+  return tail?.(a, curPrec, curOp);
+}) => (fn.ops = ops, fn.tail = tail, fn);
+
+// prepend op descriptor for its first char; pre-token handler stays as tail.
+// Copy-on-write: each registration makes a fresh dispatcher, so a saved
+// lookup[c] restored later (tests, embedders) still excludes it.
+const register = (d, c = d.op.charCodeAt(0), fn = lookup[c]) =>
+  lookup[c] = fn?.ops ? dispatch([d, ...fn.ops], fn.tail) : dispatch([d], fn);
 
 // Skip space chars, return first non-space character.
 // Wrappers (comment, asi) compose by reading the previous parse.space first.
