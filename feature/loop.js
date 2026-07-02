@@ -13,14 +13,17 @@ keyword('do', STATEMENT + 1, b => (b = body(), parse.space(), skip(5), parse.spa
 // would parse as `(k in o) = x`, stranding the wrappers around the whole head.
 // Splice them back: descend the leftmost spine through looser-than-`in` ops to the
 // in/of node and swap it for its own right operand.
+const DECL = { let: 1, const: 1, var: 1 };
 const head = (h, spine = h, parent) => {
   // decl: `for (let k in o)` / `for (let k in o = x)` land as [let [in k o]] /
   // [let [= [in k o] x]] — re-associate the declarator, keep the declaration
-  // on the iteration variable.
-  if ((h?.[0] === 'let' || h?.[0] === 'const' || h?.[0] === 'var') && h.length === 2)
+  // on the iteration variable. A comma in the source (`let x in null, {k: 0}`)
+  // parses as EXTRA DECLARATORS ([let [in x null] {k:0}]) — those trailing
+  // "declarators" are really comma-continuations of the source expression.
+  if (DECL[h?.[0]] && Array.isArray(h[1]))
     return (spine = head(h[1]))?.[0] === 'in' || spine?.[0] === 'of'
-      ? [spine[0], [h[0], spine[1]], spine[2]] : h;
-  while (Array.isArray(spine) && prec[spine[0]] < prec.in) parent = spine, spine = spine[1];
+      ? [spine[0], [h[0], spine[1]], h.length > 2 ? [',', spine[2], ...h.slice(2)] : spine[2]] : h;
+  while (Array.isArray(spine) && prec[spine[0]] < prec.in && !DECL[spine[0]]) parent = spine, spine = spine[1];
   return parent && Array.isArray(spine) && (spine[0] === 'in' || spine[0] === 'of')
     ? (parent[1] = spine[2], [spine[0], spine[1], h]) : h;
 };

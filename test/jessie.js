@@ -501,6 +501,12 @@ test('jessie: for-in/of head re-association', () => {
   // decl capture: the declaration stays on the iteration variable
   is(parse('for (let x of a = xs) y'), ['for', ['of', ['let', 'x'], ['=', 'a', 'xs']], 'y'])
   is(parse('for (const x in a = xs) y'), ['for', ['in', ['const', 'x'], ['=', 'a', 'xs']], 'y'])
+  // a comma in a decl head parses as extra declarators — they are really
+  // comma-continuations of the source (`for (let x in null, {k: 0})`,
+  // test262 for-in/head-decl-expr)
+  is(parse('for (let x in null, {k: 0}) y'),
+    ['for', ['in', ['let', 'x'], [',', [, null], ['{}', [':', 'k', [, 0]]]]], 'y'])
+  is(parse('for (let k in a, b, c) y'), ['for', ['in', ['let', 'k'], [',', 'a', 'b', 'c']], 'y'])
   // 3-part heads and plain in-op expressions stay untouched
   is(parse('for (a = 1; a in b; a++) x')[1][0], ';')
   is(parse('for (x in obj) x'), ['for', ['in', 'x', 'obj'], 'x'])
