@@ -488,6 +488,21 @@ test('jessie: for-of', () => {
   is(ctx.sum, 6)
 })
 
+test('jessie: for-in/of head re-association', () => {
+  // The head's right side is a full expression: ops looser than `in`/`of`
+  // (assignment, sequence) must not steal the in/of node — `for (k in o = x)`
+  // iterates `o = x`, not assigns to `(k in o)`.
+  is(parse('for (s in cm = x) y'), ['for', ['in', 's', ['=', 'cm', 'x']], 'y'])
+  is(parse('for (s of a = xs) y'), ['for', ['of', 's', ['=', 'a', 'xs']], 'y'])
+  is(parse('for (s in a, b) y'), ['for', ['in', 's', [',', 'a', 'b']], 'y'])
+  // decl capture: the declaration stays on the iteration variable
+  is(parse('for (let x of a = xs) y'), ['for', ['of', ['let', 'x'], ['=', 'a', 'xs']], 'y'])
+  is(parse('for (const x in a = xs) y'), ['for', ['in', ['const', 'x'], ['=', 'a', 'xs']], 'y'])
+  // 3-part heads and plain in-op expressions stay untouched
+  is(parse('for (a = 1; a in b; a++) x')[1][0], ';')
+  is(parse('for (x in obj) x'), ['for', ['in', 'x', 'obj'], 'x'])
+})
+
 // === accessor get/set ===
 
 test('jessie: get accessor', () => {
