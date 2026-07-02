@@ -1,6 +1,6 @@
 {
   "name": "subscript",
-  "version": "10.4.18",
+  "version": "10.5.0",
   "description": "Modular expression parser & evaluator",
   "main": "subscript.js",
   "module": "subscript.js",
