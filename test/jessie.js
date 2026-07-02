@@ -495,6 +495,9 @@ test('jessie: for-in/of head re-association', () => {
   is(parse('for (s in cm = x) y'), ['for', ['in', 's', ['=', 'cm', 'x']], 'y'])
   is(parse('for (s of a = xs) y'), ['for', ['of', 's', ['=', 'a', 'xs']], 'y'])
   is(parse('for (s in a, b) y'), ['for', ['in', 's', [',', 'a', 'b']], 'y'])
+  // multi-level spine: the descent crosses every looser op, not just the top one
+  is(parse('for (k in a = b, c) y'), ['for', ['in', 'k', [',', ['=', 'a', 'b'], 'c']], 'y'])
+  is(parse('for (k in o == q) y'), ['for', ['in', 'k', ['==', 'o', 'q']], 'y'])
   // decl capture: the declaration stays on the iteration variable
   is(parse('for (let x of a = xs) y'), ['for', ['of', ['let', 'x'], ['=', 'a', 'xs']], 'y'])
   is(parse('for (const x in a = xs) y'), ['for', ['in', ['const', 'x'], ['=', 'a', 'xs']], 'y'])
