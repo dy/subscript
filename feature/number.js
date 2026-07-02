@@ -11,17 +11,18 @@ const _a = 97, _f = 102, _A = 65, _F = 70;
 // Strip underscores only if present (avoid allocation for common case)
 const strip = s => s.indexOf('_') < 0 ? s : s.replaceAll('_', '');
 
-// Decimal number - check for .. range operator (don't consume . if followed by .)
-// Supports numeric separators: 1_000_000 and BigInt suffix: 123n
+// Decimal digit test - . is decimal only if NOT range (..) and NOT member
+// access (.name); allows trailing decimal: 1. → 1, 0.95.toFixed → stops at
+// second . Supports numeric separators (1_000_000) and exponent (1e-3).
+const dec = c =>
+  (c === PERIOD && (c = cur.charCodeAt(idx + 1)) !== PERIOD && !(parse.id(c) && c > _9 && c !== _e && c !== _E)) ||
+  (c >= _0 && c <= _9) ||
+  c === UNDERSCORE ||
+  ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0);
+
+// Decimal number with BigInt suffix: 123n
 const num = a => {
-  let str = strip(next(c =>
-    // . is decimal only if NOT range (..) and NOT member access (.name)
-    // Allows trailing decimal: 1. → 1, 0.95.toFixed → stops at second .
-    (c === PERIOD && (c = cur.charCodeAt(idx + 1)) !== PERIOD && !(parse.id(c) && c > _9 && c !== _e && c !== _E)) ||
-    (c >= _0 && c <= _9) ||
-    c === UNDERSCORE ||
-    ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0)
-  ));
+  let str = strip(next(dec));
   // BigInt suffix
   if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt(str)]; }
   return (a = +str) != a ? err() : [, a];
@@ -41,17 +42,14 @@ lookup[PERIOD] = a => !a && cur.charCodeAt(idx + 1) >= _0 && cur.charCodeAt(idx 
 
 // 0-9: check parse.number for prefix config
 for (let i = _0; i <= _9; i++) lookup[i] = a => a ? void 0 : num();
-lookup[_0] = a => {
+lookup[_0] = (a, base) => {
   if (a) return;
-  const cfg = parse.number;
-  if (cfg) {
-    for (const [pre, base] of Object.entries(cfg)) {
-      if (pre[0] === '0' && cur[idx + 1]?.toLowerCase() === pre[1]) {
-        skip(2);
-        const str = strip(next(charTest(base)));
-        if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt('0' + pre[1] + str)]; }
-        return [, parseInt(str, base)];
-      }
+  for (const pre in parse.number) {
+    if (pre[0] === '0' && (cur.charCodeAt(idx + 1) | 32) === pre.charCodeAt(1)) {
+      skip(2);
+      const str = strip(next(charTest(base = parse.number[pre])));
+      if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt('0' + pre[1] + str)]; }
+      return [, parseInt(str, base)];
     }
   }
   return num();

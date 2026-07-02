@@ -5,7 +5,7 @@ import { body } from './if.js';
 const STATEMENT = 5, CBRACE = 125, SEMI = 59;
 
 keyword('while', STATEMENT + 1, () => (parse.space(), ['while', parens(), body()]));
-keyword('do', STATEMENT + 1, () => (b => (parse.space(), skip(5), parse.space(), ['do', b, parens()]))(body()));
+keyword('do', STATEMENT + 1, b => (b = body(), parse.space(), skip(5), parse.space(), ['do', b, parens()]));
 
 // for / for await
 keyword('for', STATEMENT + 1, () => {
