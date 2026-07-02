@@ -126,25 +126,25 @@ Parsing `a + b * c - d / e + f.g[0](h) + i.j`, 30k iterations:
 
 ```
 Parse:
-  new Function   8ms
-  subscript     34ms
-  cel-js        39ms
-  angular-expr  42ms
-  justin        51ms
-  jsep          54ms
-  jessie        76ms   ← JS subset (statements + functions)
-  expr-eval     81ms
-  oxc           84ms   ← full JS parser (native Rust)
-  mathjs       185ms
-  jexl         403ms
+  new Function   5ms
+  subscript     21ms
+  justin        28ms
+  cel-js        41ms
+  jsep          42ms
+  jessie        42ms   ← JS subset (statements + functions)
+  angular-expr  50ms
+  oxc           72ms   ← full JS parser (native Rust)
+  expr-eval     76ms
+  mathjs       123ms
+  jexl         282ms
 
 Eval:
-  subscript      3ms
-  new Function   4ms
-  cel-js        13ms
-  expression-eval 14ms
+  subscript      2ms
+  new Function   3ms
+  cel-js        10ms
   mathjs        17ms
-  angular-expr  62ms
+  expression-eval 26ms
+  angular-expr  48ms
 ```
 
 Run via `node --import ./test/https-loader.js test/benchmark.js`.
