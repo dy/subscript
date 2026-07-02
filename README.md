@@ -122,29 +122,29 @@ subscript('constructor.constructor("alert(1)")()')({})
 
 ## Performance
 
-Parsing `a + b * c - d / e + f.g[0](h) + i.j`, 30k iterations:
+Parsing `a + b * c - d / e + f.g[0](h) + i.j`, 30k iterations — each iteration parses an unseen source, so source-keyed compile caches (`new Function`, angular-expressions) don't help:
 
 ```
 Parse:
-  new Function   5ms
-  subscript     21ms
-  justin        28ms
-  cel-js        41ms
-  jsep          42ms
-  jessie        42ms   ← JS subset (statements + functions)
-  angular-expr  50ms
-  oxc           72ms   ← full JS parser (native Rust)
-  expr-eval     76ms
-  mathjs       123ms
-  jexl         282ms
+  subscript     26ms
+  justin        35ms
+  cel-js        45ms
+  jsep          46ms
+  jessie        51ms   ← JS subset (statements + functions)
+  expr-eval     74ms
+  oxc           86ms   ← full JS parser (native Rust)
+  mathjs       156ms
+  new Function 166ms
+  jexl         304ms
+  angular-expr  48s
 
 Eval:
-  subscript      2ms
-  new Function   3ms
+  new Function 0.2ms
+  subscript    1.7ms
   cel-js        10ms
-  mathjs        17ms
-  expression-eval 26ms
-  angular-expr  48ms
+  mathjs        10ms
+  expression-eval 24ms
+  angular-expr  44ms
 ```
 
 Run via `node --import ./test/https-loader.js test/benchmark.js`.

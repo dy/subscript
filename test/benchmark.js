@@ -17,12 +17,17 @@ const ctx = {
 const celExpr = `a + b * c - d / e + f.g[0] + i.j`;
 const celCtx = { a: 1n, b: 2n, c: 3n, d: 4n, e: 5n, f: { g: [11n] }, i: { j: 20n } };
 
+// Unique whitespace tail per iteration - defeats source-keyed compile caches (V8 new Function, angular-expressions)
+const pads = [];
+const pad = i => pads[i] ??= i.toString(2).replace(/0/g, ' ').replace(/1/g, '\t');
+for (let i = 0; i < RUNS + 1000; i++) pad(i); // precompute, so no bench pays memoization cost
+
 const bench = (name, fn) => {
-  // Warmup
-  for (let i = 0; i < 1000; i++) fn();
+  // Warmup (offset indices, so timed sources stay unseen by caches)
+  for (let i = 0; i < 1000; i++) fn(RUNS + i);
 
   const t = performance.now();
-  for (let i = 0; i < RUNS; i++) fn();
+  for (let i = 0; i < RUNS; i++) fn(i);
   const ms = performance.now() - t;
   console.log(`${name}: ${ms.toFixed(1)}ms`);
   return ms;
@@ -42,28 +47,28 @@ async function run() {
   try {
     const { parse } = await import('../subscript.js');
     parse(expr);
-    results.parse['expr'] = bench('expr', () => parse(expr));
+    results.parse['expr'] = bench('expr', i => parse(expr + pad(i)));
   } catch (e) { console.log('expr: SKIP -', e.message); }
 
   // justin
   try {
     const { parse } = await import('../justin.js');
     parse(expr);
-    results.parse['justin'] = bench('justin', () => parse(expr));
+    results.parse['justin'] = bench('justin', i => parse(expr + pad(i)));
   } catch (e) { console.log('justin: SKIP -', e.message); }
 
   // jessie
   try {
     const { parse } = await import('../jessie.js');
     parse(expr);
-    results.parse['jessie'] = bench('jessie', () => parse(expr));
+    results.parse['jessie'] = bench('jessie', i => parse(expr + pad(i)));
   } catch (e) { console.log('jessie: SKIP -', e.message); }
 
   // jsep
   try {
     const { default: jsep } = await cdn('jsep');
     jsep(expr);
-    results.parse['jsep'] = bench('jsep', () => jsep(expr));
+    results.parse['jsep'] = bench('jsep', i => jsep(expr + pad(i)));
   } catch (e) { console.log('jsep: SKIP -', e.message); }
 
   // expr-eval
@@ -72,14 +77,14 @@ async function run() {
     const p = new Parser();
     const eeExpr = 'a + b * c - d / e + h + 20';
     p.parse(eeExpr);
-    results.parse['expr-eval'] = bench('expr-eval', () => p.parse(eeExpr));
+    results.parse['expr-eval'] = bench('expr-eval', i => p.parse(eeExpr + pad(i)));
   } catch (e) { console.log('expr-eval: SKIP -', e.message); }
 
   // jexl
   try {
     const jexl = (await cdn('jexl')).default;
     jexl.compile(expr);
-    results.parse['jexl'] = bench('jexl', () => jexl.compile(expr));
+    results.parse['jexl'] = bench('jexl', i => jexl.compile(expr + pad(i)));
   } catch (e) { console.log('jexl: SKIP -', e.message); }
 
   // mathjs
@@ -87,56 +92,56 @@ async function run() {
     const { compile } = await cdn('mathjs');
     const mathExpr = 'a + b * c - d / e + h + 20';
     compile(mathExpr);
-    results.parse['mathjs'] = bench('mathjs', () => compile(mathExpr));
+    results.parse['mathjs'] = bench('mathjs', i => compile(mathExpr + pad(i)));
   } catch (e) { console.log('mathjs: SKIP -', e.message); }
 
   // new Function
   try {
     const vars = Object.keys(ctx).join(',');
     new Function(vars, `return ${expr}`);
-    results.parse['new Function'] = bench('new Function', () => new Function(vars, `return ${expr}`));
+    results.parse['new Function'] = bench('new Function', i => new Function(vars, `return ${expr}${pad(i)}`));
   } catch (e) { console.log('new Function: SKIP -', e.message); }
 
   // scopex - parse+eval combined
   try {
     const scopex = (await cdn('scopex')).default;
     scopex(ctx, expr);
-    results.parse['scopex'] = bench('scopex (parse+eval)', () => scopex(ctx, expr));
+    results.parse['scopex'] = bench('scopex (parse+eval)', i => scopex(ctx, expr + pad(i)));
   } catch (e) { console.log('scopex: SKIP -', e.message); }
 
   // define-function
   try {
     const { default: defineFunction } = await cdn('define-function');
     defineFunction(Object.keys(ctx), expr);
-    results.parse['define-function'] = bench('define-function', () => defineFunction(Object.keys(ctx), expr));
+    results.parse['define-function'] = bench('define-function', i => defineFunction(Object.keys(ctx), expr + pad(i)));
   } catch (e) { console.log('define-function: SKIP -', e.message); }
 
   // vastly/mavo
   try {
     const { default: Vastly } = await cdn('vastly');
     Vastly.parse(expr);
-    results.parse['vastly'] = bench('vastly', () => Vastly.parse(expr));
+    results.parse['vastly'] = bench('vastly', i => Vastly.parse(expr + pad(i)));
   } catch (e) { console.log('vastly: SKIP -', e.message); }
 
   // angular-expressions
   try {
     const ae = await cdn('angular-expressions');
     ae.compile(expr);
-    results.parse['angular-expr'] = bench('angular-expr', () => ae.compile(expr));
+    results.parse['angular-expr'] = bench('angular-expr', i => ae.compile(expr + pad(i)));
   } catch (e) { console.log('angular-expr: SKIP -', e.message); }
 
   // @marcbachmann/cel-js
   try {
     const { parse: celParse } = await cdn('@marcbachmann/cel-js');
     celParse(celExpr);
-    results.parse['cel-js'] = bench('cel-js', () => celParse(celExpr));
+    results.parse['cel-js'] = bench('cel-js', i => celParse(celExpr + pad(i)));
   } catch (e) { console.log('cel-js: SKIP -', e.message); }
 
   // oxc-parser (full JS parser, native Rust)
   try {
     const { parseSync } = await import('oxc-parser');
     parseSync('b.js', expr);
-    results.parse['oxc'] = bench('oxc', () => parseSync('b.js', expr));
+    results.parse['oxc'] = bench('oxc', i => parseSync('b.js', expr + pad(i)));
   } catch (e) { console.log('oxc: SKIP -', e.message); }
 
   console.log('\n=== EVAL ===\n');
@@ -151,10 +156,9 @@ async function run() {
 
   // new Function
   try {
-    const vars = Object.keys(ctx);
-    const fn = new Function(...vars, `return ${expr}`);
-    fn(...vars.map(v => ctx[v]));
-    results.eval['new Function'] = bench('new Function', () => fn(...vars.map(v => ctx[v])));
+    const fn = new Function(`{${Object.keys(ctx).join(',')}}`, `return ${expr}`);
+    fn(ctx);
+    results.eval['new Function'] = bench('new Function', () => fn(ctx));
   } catch (e) { console.log('new Function: SKIP -', e.message); }
 
   // expression-eval (jsep + eval)
@@ -220,13 +224,13 @@ async function run() {
   console.log('Parse (sorted):');
   const parseSorted = Object.entries(results.parse).sort((a, b) => a[1] - b[1]);
   for (const [name, ms] of parseSorted) {
-    console.log(`  ${name}: ${ms.toFixed(0)}ms`);
+    console.log(`  ${name}: ${ms < 10 ? ms.toFixed(1) : ms.toFixed(0)}ms`);
   }
 
   console.log('\nEval (sorted):');
   const evalSorted = Object.entries(results.eval).sort((a, b) => a[1] - b[1]);
   for (const [name, ms] of evalSorted) {
-    console.log(`  ${name}: ${ms.toFixed(0)}ms`);
+    console.log(`  ${name}: ${ms < 10 ? ms.toFixed(1) : ms.toFixed(0)}ms`);
   }
 }
 
