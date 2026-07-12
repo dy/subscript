@@ -1,10 +1,11 @@
 /**
- * Object accessor properties (getters/setters) - parse half
+ * Object accessor properties (getters/setters) + method shorthand - parse half
  *
  *   { get x() { body } }         → ['{}', ['get', 'x', body]]
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
+ *   { *g() { body } }            → ['{}', [':', 'g', ['function*', null, params, body]]]
  */
-import { token, expr, skip, next, parse, cur, idx } from '../parse.js';
+import { token, expr, skip, next, parse, cur, idx, prec } from '../parse.js';
 
 const ASSIGN = 20, TOKEN = 200;
 const LF = 10, CR = 13;
@@ -46,6 +47,29 @@ const accessor = (kind) => a => {
 
 token('get', ASSIGN - 1, accessor('get'));
 token('set', ASSIGN - 1, accessor('set'));
+
+// Generator method: { *g() {} } / class { *g() {} } / static *g() {}
+//   → [':', key, ['function*', null, params, body]]   (≡ g: function* () {})
+// Prefix-only: infix `*` falls through to multiplication. Registered at TOKEN
+// so it fires inside `static`'s operand (unary prec 175); prefix `*` is never
+// valid JS outside member position, so the wide precedence can't misparse.
+// token() re-registration would clobber prec['*'] (multiplication) in the
+// introspection registry (loop.js reads it) — save/restore.
+const multPrec = prec['*'];
+token('*', TOKEN, a => {
+  if (a) return; // infix — multiplication
+  const name = propertyKey();
+  if (!name) return false;
+  parse.space();
+  if (cur.charCodeAt(idx) !== OPAREN) return false;
+  skip();
+  const params = expr(0, CPAREN) || null;
+  parse.space();
+  if (cur.charCodeAt(idx) !== OBRACE) return false;
+  skip();
+  return [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
+});
+prec['*'] = multPrec;
 
 // Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }
 //   → [':', key, ['=>', ['()', params], body]]

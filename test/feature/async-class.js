@@ -213,3 +213,34 @@ test('statement: label (via colon)', () => {
   is(parse('foo: x'), [':', 'foo', 'x']);
   is(parse('foo: { x }'), [':', 'foo', ['{}', 'x']]);
 });
+
+test('generator: method shorthand', () => {
+  // { *g() {} } ≡ { g: function* () {} } — value is a function* expression
+  is(parse('{ *g() { yield 1 } }'), ['{}', [':', 'g', ['function*', null, null, ['yield', [, 1]]]]]);
+  is(parse('{ *gen(a, b) { yield a } }'), ['{}', [':', 'gen', ['function*', null, [',', 'a', 'b'], ['yield', 'a']]]]);
+  is(parse('class A { *g() { yield 1 } }'), ['class', 'A', null, [':', 'g', ['function*', null, null, ['yield', [, 1]]]]]);
+  is(parse('class A { static *g() { yield 1 } }'), ['class', 'A', null, ['static', [':', 'g', ['function*', null, null, ['yield', [, 1]]]]]]);
+  is(parse('{ *[k]() { yield 1 } }'), ['{}', [':', ['[]', 'k'], ['function*', null, null, ['yield', [, 1]]]]]);
+  // infix * stays multiplication
+  is(parse('a * b'), ['*', 'a', 'b']);
+  is(parse('x = a*b * c'), ['=', 'x', ['*', ['*', 'a', 'b'], 'c']]);
+});
+
+test('using: declarations (ERM)', () => {
+  is(parse('using f = open()'), ['using', ['=', 'f', ['()', 'open', null]]]);
+  is(parse('using a = x, b = y'), ['using', ['=', 'a', 'x'], ['=', 'b', 'y']]);
+  is(parse('async () => { await using f = open() }'),
+    ['async', ['=>', ['()', null], ['{}', ['await', ['using', ['=', 'f', ['()', 'open', null]]]]]]]);
+  // contextual: identifier positions untouched
+  is(parse('let using = 5'), ['let', ['=', 'using', [, 5]]]);
+  is(parse('using = 5'), ['=', 'using', [, 5]]);
+  is(parse('using == 5'), ['==', 'using', [, 5]]);
+  is(parse('using(x)'), ['()', 'using', 'x']);
+  is(parse('({using: 1})'), ['()', ['{}', [':', 'using', [, 1]]]]);
+  is(parse('using => using + 1'), ['=>', 'using', ['+', 'using', [, 1]]]);
+});
+
+test('switch: statement chains after block (ASI at })', () => {
+  is(parse('function f(){ switch (x) { case 1: y } return 1 }'),
+    ['function', 'f', null, [';', ['switch', 'x', ['case', [, 1], 'y']], ['return', [, 1]]]]);
+});

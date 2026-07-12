@@ -49,6 +49,10 @@ const switchBody = () => {
     }
   } finally { inSwitch--; }
   skip();
+  // switchBody consumes its `}` by hand (expr() never sees it), so fire the
+  // block-close hook expr() would have fired — ASI marks the implicit newline,
+  // letting `switch (x) {…} return y` chain like every other block statement.
+  parse.exit?.(0, CBRACE);
   return cases;
 };
 
