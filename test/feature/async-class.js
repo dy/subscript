@@ -224,6 +224,15 @@ test('generator: method shorthand', () => {
   // infix * stays multiplication
   is(parse('a * b'), ['*', 'a', 'b']);
   is(parse('x = a*b * c'), ['=', 'x', ['*', ['*', 'a', 'b'], 'c']]);
+  // consecutive members: `*` after a block boundary is a NEW member (class
+  // bodies have no separators); across a newline mid-expression it stays a product
+  is(parse('class C { m() { return 1 } *g() { yield 2 } static *s() { yield 3 } }'),
+    ['class', 'C', null, [';',
+      [':', 'm', ['=>', ['()', null], ['return', [, 1]]]],
+      [':', 'g', ['function*', null, null, ['yield', [, 2]]]],
+      ['static', [':', 's', ['function*', null, null, ['yield', [, 3]]]]]]]);
+  is(parse('let z = a\n* b'), ['let', ['=', 'z', ['*', 'a', 'b']]]);
+  is(parse('x = y\n*g(1)\n{ h }'), [';', ['=', 'x', ['*', 'y', ['()', 'g', [, 1]]]], ['{}', 'h']]);
 });
 
 test('using: declarations (ERM)', () => {

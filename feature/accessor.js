@@ -5,7 +5,7 @@
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
  *   { *g() { body } }            → ['{}', [':', 'g', ['function*', null, params, body]]]
  */
-import { token, expr, skip, next, parse, cur, idx, prec } from '../parse.js';
+import { token, expr, skip, next, parse, cur, idx, prec, seek } from '../parse.js';
 
 const ASSIGN = 20, TOKEN = 200;
 const LF = 10, CR = 13;
@@ -55,19 +55,34 @@ token('set', ASSIGN - 1, accessor('set'));
 // valid JS outside member position, so the wide precedence can't misparse.
 // token() re-registration would clobber prec['*'] (multiplication) in the
 // introspection registry (loop.js reads it) — save/restore.
+// A param list is method-shaped when every item could bind: identifier,
+// default, rest, or destructuring pattern — `(1)`, `(a+b)` are expressions.
+const paramish = n => n == null || typeof n === 'string' ||
+  (Array.isArray(n) && (n[0] === ',' ? n.slice(1).every(paramish) :
+    n[0] === '=' ? typeof n[1] === 'string' || paramish(n[1]) :
+    n[0] === '...' || n[0] === '{}' || n[0] === '[]'));
 const multPrec = prec['*'];
 token('*', TOKEN, a => {
-  if (a) return; // infix — multiplication
+  // Infix `*` is multiplication — EXCEPT at a member boundary: class bodies
+  // have no separators, so `ctor() {} *g() {}` reaches here with the previous
+  // member as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
+  // Only a newline/block boundary + the full method shape + a bindable param
+  // list reads as a new member, joined the way asi() would join it.
+  const boundary = a && parse.newline;
+  if (a && !boundary) return;
+  const from = idx;
   const name = propertyKey();
-  if (!name) return false;
+  if (!name) return a ? (seek(from), void 0) : false;
   parse.space();
-  if (cur.charCodeAt(idx) !== OPAREN) return false;
+  if (cur.charCodeAt(idx) !== OPAREN) return a ? (seek(from), void 0) : false;
   skip();
   const params = expr(0, CPAREN) || null;
+  if (a && !paramish(params)) return seek(from), void 0;
   parse.space();
-  if (cur.charCodeAt(idx) !== OBRACE) return false;
+  if (cur.charCodeAt(idx) !== OBRACE) return a ? (seek(from), void 0) : false;
   skip();
-  return [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
+  const node = [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
+  return a ? (a[0] === ';' ? (a.push(node), a) : [';', a, node]) : node;
 });
 prec['*'] = multPrec;
 
