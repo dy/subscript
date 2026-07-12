@@ -8,7 +8,12 @@ unary('await', PREFIX);
 
 // yield expr → ['yield', expr]
 // yield* expr → ['yield*', expr]
+// Restricted production: a LineTerminator after `yield` ends it (yields
+// undefined; the next line is its own statement) — the operand never spans.
+const LF = 10, CR = 13;
+const nlAhead = (i) => { let c; while ((c = cur.charCodeAt(i)) <= 32) { if (c === LF || c === CR) return true; i++ } return false };
 keyword('yield', PREFIX, () => {
+  if (nlAhead(idx)) return ['yield'];
   parse.space();
   if (cur[idx] === '*') {
     skip();
