@@ -156,8 +156,9 @@ Extends Justin with statements — practical JS subset (inspired by [Jessie](htt
 + `let x`, `const x = 1`, `var x = 1`, `const {a, b} = x`
 + `break`, `continue`, `return x` (inside functions only)
 + `throw x`, `try { } catch (e) { } finally { }`
-+ `function f(a, b) { }`, `async function`, `function*`, `await`, `yield`
-+ `class X { }`, `class X extends Y { }`
++ `function f(a, b) { }`, `async function`, `function*`, `await`, `yield`, `yield*`
++ `class X { }`, `class X extends Y { }`, `*gen() {}` methods, `static *gen() {}`
++ `using x = res` (explicit resource management; contextual — `using` stays a valid identifier)
 + `typeof x`, `void x`, `delete x`, `x instanceof Y`
 + `new X()`, `new X(a, b)`
 + `import`, `export`
