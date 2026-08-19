@@ -18,6 +18,7 @@ import './feature/regex.js'
 import './feature/template.js'
 import './feature/unit.js'
 import './feature/async-class.js'
+import './feature/bigint.js'
 
 
 // Unicode tests

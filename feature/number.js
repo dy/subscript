@@ -5,7 +5,7 @@
  */
 import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
 
-const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45, UNDERSCORE = 95, _n = 110;
+const PERIOD = 46, _0 = 48, _9 = 57, _E = 69, _e = 101, PLUS = 43, MINUS = 45, UNDERSCORE = 95;
 const _a = 97, _f = 102, _A = 65, _F = 70;
 
 // Strip underscores only if present (avoid allocation for common case)
@@ -20,11 +20,9 @@ const dec = c =>
   c === UNDERSCORE ||
   ((c === _E || c === _e) && ((c = cur.charCodeAt(idx + 1)) >= _0 && c <= _9 || c === PLUS || c === MINUS) ? 2 : 0);
 
-// Decimal number with BigInt suffix: 123n
+// Decimal number: 123, 1.5, 1e-3, 1_000
 const num = a => {
   let str = strip(next(dec));
-  // BigInt suffix
-  if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt(str)]; }
   return (a = +str) != a ? err() : [, a];
 };
 
@@ -48,7 +46,6 @@ lookup[_0] = (a, base) => {
     if (pre[0] === '0' && (cur.charCodeAt(idx + 1) | 32) === pre.charCodeAt(1)) {
       skip(2);
       const str = strip(next(charTest(base = parse.number[pre])));
-      if (cur.charCodeAt(idx) === _n) { skip(); return [, BigInt('0' + pre[1] + str)]; }
       return [, parseInt(str, base)];
     }
   }
