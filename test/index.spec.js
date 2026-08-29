@@ -81,6 +81,25 @@ test.describe('Subscript REPL', () => {
     await expect(result).toHaveText('8', { timeout: 2000 })
   })
 
+  test('does not expose host constructors in default contexts', async ({ page }) => {
+    const evalTab = page.locator('.output-tab[data-tab="eval"]')
+    const preset = page.locator('[data-testid="preset"]')
+    const input = page.locator('#input')
+    const result = page.locator('[data-testid="result"]')
+    const runBtn = page.locator('#runBtn')
+
+    await evalTab.click()
+    await input.fill('Object === undefined')
+    await runBtn.click()
+    await expect(result).toHaveText('true', { timeout: 2000 })
+
+    await preset.selectOption('minimal')
+    await expect(input).not.toHaveValue('Object === undefined', { timeout: 5000 })
+    await input.fill('constructor + ""')
+    await runBtn.click()
+    await expect(result).toHaveText('"undefined"', { timeout: 2000 })
+  })
+
   test('minimal preset restricts parser', async ({ page }) => {
     const preset = page.locator('[data-testid="preset"]')
     const input = page.locator('#input')

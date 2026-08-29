@@ -771,7 +771,7 @@ function buildWorkerSrc() {
     loop: ['BREAK', 'CONTINUE'],            // control flow symbols
     arrow: ['RETURN'],                       // return symbol (in eval/op/arrow.js)
     'var': ['destructure'],                  // destructuring
-    access: ['unsafe', 'isLval', 'prop'],
+    access: ['unsafe', 'toKey', 'unsafeName', 'isLval', 'prop'],
     accessor: ['ACC'],
     unit: ['unit']                           // wrapped unit() that registers parse + eval (overrides parse-side)
   }
@@ -853,7 +853,6 @@ var BUILTINS = {
   NaN: NaN,
   undefined: undefined,
   Array: Array,
-  Object: Object,
   String: String,
   Number: Number,
   Boolean: Boolean,
@@ -879,7 +878,7 @@ self.onmessage = function(e) {
       var ast = parse(data.code)
       var fn = compile(ast)
       // Merge builtins with user context (user context wins)
-      var ctx = Object.assign({}, BUILTINS, data.ctx)
+      var ctx = Object.assign(Object.create(null), BUILTINS, data.ctx)
       var result = fn(ctx)
       var evalTime = performance.now() - t0
       var serializable = typeof result === 'function'

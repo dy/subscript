@@ -111,14 +111,16 @@ See [docs.md](./docs.md) for full API.
 ## Safety
 
 Blocked by default:
-- `__proto__`, `__defineGetter__`, `__defineSetter__`
+- `__proto__` and any other `__*` property
 - `constructor`, `prototype`
-- Global access (only context is visible)
+- Globals outside the supplied context
 
 ```js
-subscript('constructor.constructor("alert(1)")()')({})
-// undefined (blocked)
+subscript('constructor')({})                          // undefined
+subscript('constructor.constructor("alert(1)")')({}) // undefined
 ```
+
+Context values are capabilities. Do not pass reflection helpers such as `Reflect.get` or `Object.getOwnPropertyDescriptor` to untrusted expressions.
 
 ## Performance
 

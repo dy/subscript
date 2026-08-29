@@ -9,18 +9,20 @@ operator('class', (name, base, body) => {
   base = base ? compile(base) : null;
   body = body ? compile(body) : null;
   return ctx => {
-    const Parent = base ? base(ctx) : Object;
+    const Parent = base?.(ctx);
     const cls = function(...args) {
       if (!(this instanceof cls)) return err('Class constructor must be called with new');
       const instance = base ? Reflect.construct(Parent, args, cls) : this;
       if (cls.prototype.__constructor__) cls.prototype.__constructor__.apply(instance, args);
       return instance;
     };
-    Object.setPrototypeOf(cls.prototype, Parent.prototype);
-    Object.setPrototypeOf(cls, Parent);
+    if (base) {
+      Object.setPrototypeOf(cls.prototype, Parent.prototype);
+      Object.setPrototypeOf(cls, Parent);
+    }
     if (body) {
       const methods = Object.create(ctx);
-      methods['super'] = Parent;
+      if (base) methods['super'] = Parent;
       const entries = body(methods);
       const items = Array.isArray(entries) && typeof entries[0]?.[0] === 'string' ? entries : [];
       for (const [k, v] of items) {

@@ -49,6 +49,11 @@ test('bundle: parse.js exports', async () => {
     is(typeof mod.token, 'function')
     is(typeof mod.binary, 'function')
     is(typeof mod.compile, 'function')
+    const compileId = mod.compile.id
+    mod.compile.id = node => () => `id:${node}`
+    is(mod.compile('name')({ name: 1 }), 'id:name')
+    mod.compile.id = compileId
+    is(mod.compile('name')({ name: 1 }), 1)
     is(typeof mod.operator, 'function')
   })
 })
@@ -101,6 +106,7 @@ test('bundle: feature/jessie.js (parse-only)', async () => {
 
 // Eval aggregators
 test('bundle: eval/subscript.js', () => bundleAndVerifySyntax('eval/subscript.js'))
+test('bundle: eval/prop.js', () => bundleAndVerifySyntax('eval/prop.js'))
 test('bundle: eval/justin.js', () => bundleAndVerifySyntax('eval/justin.js'))
 test('bundle: eval/jessie.js', () => bundleAndVerifySyntax('eval/jessie.js'))
 

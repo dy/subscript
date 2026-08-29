@@ -189,9 +189,12 @@ export const operator = (op, fn, prev = operators[op]) =>
 // Compile AST to evaluator function
 // Note: [, value] serializes to [null, value] in JSON, both forms accepted
 export const compile = node => (
-  !Array.isArray(node) ? (node === undefined ? () => undefined : ctx => ctx?.[node]) :
+  !Array.isArray(node) ? compile.id(node) :
   node[0] == null ? (v => () => v)(node[1]) :  // == catches both undefined and null
   operators[node[0]]?.(...node.slice(1)) ?? err(`Unknown operator: ${node[0]}`, node?.loc)
 );
+
+// Identifier compiler hook. Eval layers can replace context lookup policy.
+compile.id = node => node === undefined ? () => undefined : ctx => ctx?.[node];
 
 export default parse;

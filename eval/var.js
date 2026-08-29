@@ -1,5 +1,6 @@
 // Variable declarations: let, const, var - eval half
 import { operator, compile } from '../parse.js';
+import { toKey, unsafeName } from './access.js';
 
 // Flatten comma into array: [',', a, b, c] → [a, b, c]
 const flatten = items => items[0]?.[0] === ',' ? items[0].slice(1) : items;
@@ -15,7 +16,7 @@ export const destructure = (pattern, value, ctx) => {
       // Rest: {...rest}
       if (Array.isArray(item) && item[0] === '...') {
         const rest = {};
-        for (const k in value) if (!used.includes(k)) rest[k] = value[k];
+        for (const k in value) if (!used.includes(k) && !unsafeName(k)) rest[k] = value[k];
         ctx[item[1]] = rest;
         break;
       }
@@ -26,8 +27,8 @@ export const destructure = (pattern, value, ctx) => {
       if (typeof item === 'string') { key = binding = item }
       else if (item[0] === '=') { typeof item[1] === 'string' ? (key = binding = item[1]) : ([, key, binding] = item[1]); def = item[2] }
       else { [, key, binding] = item }
-      used.push(key);
-      let val = value[key];
+      used.push(key = toKey(key));
+      let val = unsafeName(key) ? undefined : value[key];
       if (val === undefined && def) val = compile(def)(ctx);
       destructure(binding, val, ctx);
     }

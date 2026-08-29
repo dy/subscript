@@ -35,6 +35,9 @@ export function propName(prec: number): AST;
 export const operators: Record<string, Operator>;
 export function operator(op: string, fn: Operator): void;
 export function compile(node: AST): Evaluator;
+export namespace compile {
+  let id: (node: Identifier | undefined) => Evaluator;
+}
 
 // Default export
 export default parse;

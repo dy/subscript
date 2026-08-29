@@ -1,23 +1,34 @@
 // Optional chaining operators - eval half
 import { operator, compile } from '../../parse.js';
-import { unsafe } from '../access.js';
+import { toKey, unsafeName } from '../access.js';
 
-operator('?.', (a, b) => (a = compile(a), unsafe(b) ? () => undefined : ctx => a(ctx)?.[b]));
-operator('?.[]', (a, b) => (a = compile(a), b = compile(b), ctx => { const k = b(ctx); return unsafe(k) ? undefined : a(ctx)?.[k]; }));
+operator('?.', (a, b) => (a = compile(a), b = toKey(b), unsafeName(b) ? () => undefined : ctx => a(ctx)?.[b]));
+operator('?.[]', (a, b) => (a = compile(a), b = compile(b), ctx => {
+  const obj = a(ctx);
+  if (obj == null) return undefined;
+  const key = toKey(b(ctx));
+  return unsafeName(key) ? undefined : obj[key];
+}));
 operator('?.()', (a, b) => {
   const args = !b ? () => [] :
     b[0] === ',' ? (b = b.slice(1).map(compile), ctx => b.map(arg => arg(ctx))) :
     (b = compile(b), ctx => [b(ctx)]);
 
-  // ?.() always null-short-circuits, so . and ?. produce identical code.
-  // The only real distinction is static key vs dynamic key.
+  // Preserve whether the member access itself is optional.
   if (a[0] === '.' || a[0] === '?.') {
-    const obj = compile(a[1]), key = a[2];
-    return unsafe(key) ? () => undefined : ctx => obj(ctx)?.[key]?.(...args(ctx));
+    const optional = a[0] === '?.', obj = compile(a[1]), key = toKey(a[2]);
+    return unsafeName(key) ? () => undefined : optional ?
+      ctx => obj(ctx)?.[key]?.(...args(ctx)) :
+      ctx => obj(ctx)[key]?.(...args(ctx));
   }
   if ((a[0] === '[]' || a[0] === '?.[]') && a.length === 3) {
-    const obj = compile(a[1]), key = compile(a[2]);
-    return ctx => { const k = key(ctx); return unsafe(k) ? undefined : obj(ctx)?.[k]?.(...args(ctx)); };
+    const optional = a[0] === '?.[]', obj = compile(a[1]), key = compile(a[2]);
+    return ctx => {
+      const value = obj(ctx);
+      if (optional && value == null) return undefined;
+      const k = toKey(key(ctx));
+      return unsafeName(k) ? undefined : value[k]?.(...args(ctx));
+    };
   }
   const fn = compile(a);
   return ctx => fn(ctx)?.(...args(ctx));
