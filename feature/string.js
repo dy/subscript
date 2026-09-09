@@ -13,31 +13,44 @@ const hex = c =>
   c >= 65 && c <= 70 ? c - 55 :
   c >= 97 && c <= 102 ? c - 87 : -1;
 
-// Decode the escape at idx (a BSLASH) → [decodedText, sourceCharsConsumed].
-// Malformed escapes fall back to the literal next char; line continuations
-// (\<LF>, \<CR><LF>) decode to ''. Shared by string literals and template
-// literal text chunks (feature/template.js) — cooked semantics are identical.
+// Read a numeric escape without changing parser state.
+const escapePoint = start => {
+  if (cur.charCodeAt(start) !== BSLASH) return;
+  const n = cur.charCodeAt(start + 1);
+  if (n === X || (n === U && cur.charCodeAt(start + 2) !== LBRACE)) {
+    const w = n === X ? 2 : 4;
+    let cp = 0, h;
+    for (let k = 0; k < w; k++) {
+      if ((h = hex(cur.charCodeAt(start + 2 + k))) < 0) return;
+      cp = cp * 16 + h;
+    }
+    return [cp, 2 + w];
+  }
+  if (n === U) {
+    let cp = 0, k = start + 3, h;
+    while ((h = hex(cur.charCodeAt(k))) >= 0) cp = cp * 16 + h, k++;
+    if (k > start + 3 && cp <= 0x10ffff && cur.charCodeAt(k) === RBRACE)
+      return [cp, k - start + 1];
+  }
+};
+
+// Decode one escape (or an adjacent surrogate pair). Shared with templates.
+// Pair before constructing text so Unicode encoders see one scalar value.
 const decodeEscape = () => {
   const n = cur.charCodeAt(idx + 1);
   if (n === LF) return ['', 2];
   if (n === CR) return ['', cur.charCodeAt(idx + 2) === LF ? 3 : 2];
-  // \xHH or \uHHHH
-  if (n === X || (n === U && cur.charCodeAt(idx + 2) !== LBRACE)) {
-    const w = n === X ? 2 : 4;
-    let cp = 0, h;
-    for (let k = 0; k < w; k++) {
-      if ((h = hex(cur.charCodeAt(idx + 2 + k))) < 0) return [cur[idx + 1], 2];
-      cp = cp * 16 + h;
+  const p = escapePoint(idx);
+  if (p) {
+    let [cp, w] = p;
+    if (cp >= 0xD800 && cp <= 0xDBFF) {
+      const q = escapePoint(idx + w);
+      if (q && q[0] >= 0xDC00 && q[0] <= 0xDFFF) {
+        cp = 0x10000 + (cp - 0xD800) * 1024 + q[0] - 0xDC00;
+        w += q[1];
+      }
     }
-    return [String.fromCharCode(cp), 2 + w];
-  }
-  // \u{H...H}
-  if (n === U) {
-    let cp = 0, k = idx + 3, h;
-    while ((h = hex(cur.charCodeAt(k))) >= 0) cp = cp * 16 + h, k++;
-    if (k > idx + 3 && cp <= 0x10ffff && cur.charCodeAt(k) === RBRACE)
-      return [String.fromCodePoint(cp), k - idx + 1];
-    return [cur[idx + 1], 2];
+    return [String.fromCodePoint(cp), w];
   }
   return [esc[cur[idx + 1]] || cur[idx + 1], 2];
 };

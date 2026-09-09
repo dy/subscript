@@ -134,3 +134,12 @@ test('jz: escaped identifier spelling survives tokenization', () => {
   is(result[0], 'let')
   is(result[1][1], '\\u0041BC')
 })
+
+
+test('jz: numeric string escapes pair surrogates before constructing text', () => {
+  for (const source of ['"\\uD83D\\uDE00"', '"\\u{D83D}\\u{DE00}"', '"\\uD83D\\u{DE00}"', '"\\u{1F600}"'])
+    is(run(source), '😀')
+  for (const source of ['"\\uD83D"', '"\\uDE00"', '"\\uD83D-\\uDE00"', '"\\uD83D\\u0041"'])
+    is(run(source), JSON.parse(source))
+  is(run('`\\uD83D\\uDE00`'), '😀')
+})
