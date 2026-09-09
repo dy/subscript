@@ -8,6 +8,14 @@ import '../jessie.js'
 
 const run = (code, ctx = {}) => compile(parse(code))(ctx)
 
+test('jz: failed member lookahead preserves multiplication before a newline', () => {
+  for (const gap of ['', ' ', '\n']) {
+    const source = `const q=1;\nconst r2=r${gap}*${gap}r;\n`
+    is(parse(source), [';', ['const', ['=', 'q', [, 1]]], ['const', ['=', 'r2', ['*', 'r', 'r']]]])
+    is(run(`(()=>{const q=1;\nconst r2=r${gap}*${gap}r;\nreturn r2})()`, { r: 3 }), 9)
+  }
+})
+
 test('jz: arrow block vs parenthesized object expression', () => {
   is(parse('x => { y }'), ['=>', 'x', ['{}', 'y']])
   is(parse('x => ({ y })'), ['=>', 'x', ['()', ['{}', 'y']]])

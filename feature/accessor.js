@@ -26,6 +26,15 @@ const isMethodKey = a =>
   typeof a === 'string' ||
   (Array.isArray(a) && (a[0] === undefined || a[0] === '[]'));
 
+// The token dispatcher rewinds idx on failure; speculative member parsing
+// must also restore the ASI flags before an expression handler retries.
+const speculate = handler => a => {
+  const newline = parse.newline, semi = parse.semi;
+  const node = handler(a);
+  if (!node) { parse.newline = newline; parse.semi = semi; }
+  return node;
+};
+
 // Shared parser for get/set — returns false if not valid accessor pattern (falls through to identifier)
 // Returns false (not undefined) to signal "fall through without setting reserved"
 const accessor = (kind) => a => {
@@ -45,8 +54,8 @@ const accessor = (kind) => a => {
   return [kind, name, params, expr(0, CBRACE)];
 };
 
-token('get', ASSIGN - 1, accessor('get'));
-token('set', ASSIGN - 1, accessor('set'));
+token('get', ASSIGN - 1, speculate(accessor('get')));
+token('set', ASSIGN - 1, speculate(accessor('set')));
 
 // Generator method: { *g() {} } / class { *g() {} } / static *g() {}
 //   → [':', key, ['function*', null, params, body]]   (≡ g: function* () {})
@@ -62,7 +71,7 @@ const paramish = n => n == null || typeof n === 'string' ||
     n[0] === '=' ? typeof n[1] === 'string' || paramish(n[1]) :
     n[0] === '...' || n[0] === '{}' || n[0] === '[]'));
 const multPrec = prec['*'];
-token('*', TOKEN, a => {
+token('*', TOKEN, speculate(a => {
   // Infix `*` is multiplication — EXCEPT at a member boundary: class bodies
   // have no separators, so `ctor() {} *g() {}` reaches here with the previous
   // member as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
@@ -83,14 +92,14 @@ token('*', TOKEN, a => {
   skip();
   const node = [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
   return a ? (a[0] === ';' ? (a.push(node), a) : [';', a, node]) : node;
-});
+}));
 prec['*'] = multPrec;
 
 // Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }
 //   → [':', key, ['=>', ['()', params], body]]
 // Accepts identifier, string-literal node [, "..."], ['async', key] from
 // async.js, or ['static', key] from unary('static').
-token('(', ASSIGN - 1, a => {
+token('(', ASSIGN - 1, speculate(a => {
   if (!a) return;
   // ['static', key] from unary('static'): unwrap, re-wrap the resulting method node.
   // ['async', key] from async.js: unwrap, wrap the method value in async.
@@ -108,4 +117,4 @@ token('(', ASSIGN - 1, a => {
   if (isAsync) value = ['async', value];
   const node = [':', a, value];
   return wrap ? [wrap, node] : node;
-});
+}));
