@@ -1,7 +1,7 @@
 // Async/await/yield: async function, async arrow, await, yield expressions - parse half
 import { parse, unary, expr, skip, seek, keyword, cur, idx, word, next } from '../parse.js';
 
-const PREFIX = 140, ASSIGN = 20, OPAREN = 40;
+const PREFIX = 140, ASSIGN = 20, OPAREN = 40, HASH = 35;
 
 // await expr → ['await', expr]
 unary('await', PREFIX);
@@ -31,12 +31,14 @@ keyword('async', PREFIX, () => {
   // async function - check for 'function' word
   if (word('function')) return ['async', expr(PREFIX)];
   // async name( → method shorthand (accessor.js handles params + body)
+  // async #name( → private method shorthand, the key spelled as class.js does
   // async name => → arrow with single param
   const from = idx;
+  const hash = cur.charCodeAt(idx) === HASH ? (skip(1), '#') : '';
   const name = next(parse.id);
   if (name) {
     parse.space();
-    if (cur.charCodeAt(idx) === OPAREN) return ['async', name];
+    if (cur.charCodeAt(idx) === OPAREN) return ['async', hash + name];
     seek(from); // backtrack for general arrow parsing
   }
   // async arrow: async () => or async x =>

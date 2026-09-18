@@ -107,6 +107,16 @@ test('async/class: static', () => {
   is(parse('static #x'), ['static', '#x']);
 });
 
+test('async/class: async private and static async methods', () => {
+  const m = ['async', ['=>', ['()', null], ['return', [, 1]]]];
+  is(parse('class A { async #m() { return 1 } }'), ['class', 'A', null, [':', '#m', m]]);
+  is(parse('class A { static async m() { return 1 } }'), ['class', 'A', null, ['static', [':', 'm', m]]]);
+  is(parse('class A { static async #m() { return 1 } }'), ['class', 'A', null, ['static', [':', '#m', m]]]);
+  is(parse('class A { static async = 1 }'), ['class', 'A', null, ['=', ['static', 'async'], [, 1]]]);
+  is(parse('class A { static async }'), ['class', 'A', null, ['static', 'async']]);
+  is(parse('class A { static async\n m() { return 1 } }'), ['class', 'A', null, [';', ['static', 'async'], [':', 'm', ['=>', ['()', null], ['return', [, 1]]]]]], 'a LineTerminator after async ends the field');
+});
+
 test('async/class: computed members', () => {
   is(parse('class A { ["x"] = 1 }'), [
     'class', 'A', null,
