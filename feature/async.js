@@ -42,6 +42,9 @@ keyword('async', PREFIX, () => {
     seek(from); // backtrack for general arrow parsing
   }
   // async arrow: async () => or async x =>
+  // async *g() / async *[k]() → the member's value is the async one:
+  // [':', key, ['async', function*]], the shape `async m()` takes
   const params = expr(ASSIGN - .5);
+  if (Array.isArray(params) && params[0] === ':' && params.length === 3) return [':', params[1], ['async', params[2]]];
   return params && ['async', params];
 });

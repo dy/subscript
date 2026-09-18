@@ -16,11 +16,11 @@ test('async/class: async arrow', () => {
 test('async/class: async method shorthand', () => {
   is(parse('class A { async m(a) { await a } }'), [
     'class', 'A', null,
-    [':', 'm', ['async', ['=>', ['()', 'a'], ['await', 'a']]]]
+    [':', 'm', ['async', ['function', null, 'a', ['await', 'a']]]]
   ]);
   is(parse('{ async m(a) { await a } }'), [
     '{}',
-    [':', 'm', ['async', ['=>', ['()', 'a'], ['await', 'a']]]]
+    [':', 'm', ['async', ['function', null, 'a', ['await', 'a']]]]
   ]);
 });
 
@@ -97,24 +97,24 @@ test('async/class: static', () => {
   is(parse('static x = 1'), ['=', ['static', 'x'], [, 1]]);
   is(parse('class A { static m(a) { return a } }'), [
     'class', 'A', null,
-    ['static', [':', 'm', ['=>', ['()', 'a'], ['return', 'a']]]]
+    ['static', [':', 'm', ['function', null, 'a', ['return', 'a']]]]
   ]);
   is(parse('class A { static ["m"]() { return 1 } }'), [
     'class', 'A', null,
-    ['static', [':', ['[]', [, 'm']], ['=>', ['()', null], ['return', [, 1]]]]]
+    ['static', [':', ['[]', [, 'm']], ['function', null, null, ['return', [, 1]]]]]
   ]);
   // private static field still works (regression guard)
   is(parse('static #x'), ['static', '#x']);
 });
 
 test('async/class: async private and static async methods', () => {
-  const m = ['async', ['=>', ['()', null], ['return', [, 1]]]];
+  const m = ['async', ['function', null, null, ['return', [, 1]]]];
   is(parse('class A { async #m() { return 1 } }'), ['class', 'A', null, [':', '#m', m]]);
   is(parse('class A { static async m() { return 1 } }'), ['class', 'A', null, ['static', [':', 'm', m]]]);
   is(parse('class A { static async #m() { return 1 } }'), ['class', 'A', null, ['static', [':', '#m', m]]]);
   is(parse('class A { static async = 1 }'), ['class', 'A', null, ['=', ['static', 'async'], [, 1]]]);
   is(parse('class A { static async }'), ['class', 'A', null, ['static', 'async']]);
-  is(parse('class A { static async\n m() { return 1 } }'), ['class', 'A', null, [';', ['static', 'async'], [':', 'm', ['=>', ['()', null], ['return', [, 1]]]]]], 'a LineTerminator after async ends the field');
+  is(parse('class A { static async\n m() { return 1 } }'), ['class', 'A', null, [';', ['static', 'async'], [':', 'm', ['function', null, null, ['return', [, 1]]]]]], 'a LineTerminator after async ends the field');
 });
 
 test('async/class: computed members', () => {
@@ -124,7 +124,7 @@ test('async/class: computed members', () => {
   ]);
   is(parse('class A { ["x"]() { return 1 } }'), [
     'class', 'A', null,
-    [':', ['[]', [, 'x']], ['=>', ['()', null], ['return', [, 1]]]]
+    [':', ['[]', [, 'x']], ['function', null, null, ['return', [, 1]]]]
   ]);
   is(parse('class A { get ["x"]() { return 1 } }'), [
     'class', 'A', null,
@@ -174,12 +174,12 @@ test('meta: new.target', () => {
 });
 
 test('object: method shorthand', () => {
-  is(parse('{ foo() {} }'), ['{}', [':', 'foo', ['=>', ['()', null], null]]]);
-  is(parse('{ add(a, b) { a + b } }'), ['{}', [':', 'add', ['=>', ['()', [',', 'a', 'b']], ['+', 'a', 'b']]]]);
+  is(parse('{ foo() {} }'), ['{}', [':', 'foo', ['function', null, null, null]]]);
+  is(parse('{ add(a, b) { a + b } }'), ['{}', [':', 'add', ['function', null, [',', 'a', 'b'], ['+', 'a', 'b']]]]);
   // String-literal key — kept as literal node, consistent with `{ "y": 2 }` → [':', [, 'y'], ...]
   is(parse('{ "x/y.js"(exports, module) { module.exports = {} } }'), [
     '{}',
-    [':', [, 'x/y.js'], ['=>', ['()', [',', 'exports', 'module']], ['=', ['.', 'module', 'exports'], ['{}', null]]]]
+    [':', [, 'x/y.js'], ['function', null, [',', 'exports', 'module'], ['=', ['.', 'module', 'exports'], ['{}', null]]]]
   ]);
   // Evaluation
   const obj = compile(parse('{ double(x) { x * 2 } }'))();
@@ -227,7 +227,7 @@ test('generator: method shorthand', () => {
   // bodies have no separators); across a newline mid-expression it stays a product
   is(parse('class C { m() { return 1 } *g() { yield 2 } static *s() { yield 3 } }'),
     ['class', 'C', null, [';',
-      [':', 'm', ['=>', ['()', null], ['return', [, 1]]]],
+      [':', 'm', ['function', null, null, ['return', [, 1]]]],
       [':', 'g', ['function*', null, null, ['yield', [, 2]]]],
       ['static', [':', 's', ['function*', null, null, ['yield', [, 3]]]]]]]);
   is(parse('let z = a\n* b'), ['let', ['=', 'z', ['*', 'a', 'b']]]);

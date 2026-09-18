@@ -4,6 +4,7 @@
  *   { get x() { body } }         → ['{}', ['get', 'x', body]]
  *   { set x(v) { body } }        → ['{}', ['set', 'x', 'v', body]]
  *   { *g() { body } }            → ['{}', [':', 'g', ['function*', null, params, body]]]
+ *   { m(p) { body } }            → ['{}', [':', 'm', ['function', null, params, body]]]
  */
 import { token, expr, skip, next, parse, cur, idx, prec, seek } from '../parse.js';
 
@@ -57,6 +58,14 @@ const accessor = (kind) => a => {
 token('get', ASSIGN - 1, speculate(accessor('get')));
 token('set', ASSIGN - 1, speculate(accessor('set')));
 
+// `static get x() {}` / `static set x(v) {}`: class.js's static handler reads
+// the accessor from the current position through this hook (the accessor
+// token sits below static's operand precedence); false where the shape is
+// not an accessor. A hook on `parse`, not an import: feature modules register
+// in load order, and an import from class.js would hoist this one ahead of
+// the `*` token's precedence bookkeeping.
+parse.accessor = kind => speculate(accessor(kind))(undefined);
+
 // Generator method: { *g() {} } / class { *g() {} } / static *g() {}
 //   → [':', key, ['function*', null, params, body]]   (≡ g: function* () {})
 // Prefix-only: infix `*` falls through to multiplication. Registered at TOKEN
@@ -96,7 +105,9 @@ token('*', TOKEN, speculate(a => {
 prec['*'] = multPrec;
 
 // Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }
-//   → [':', key, ['=>', ['()', params], body]]
+//   → [':', key, ['function', null, params, body]]   (≡ foo: function () {})
+// A function, not an arrow: the body is statement-shaped (`{ f() }` returns
+// undefined, an arrow's `f()` would be its value) and `this` is the receiver.
 // Accepts identifier, string-literal node [, "..."], ['async', key] from
 // async.js, or ['static', key] from unary('static').
 token('(', ASSIGN - 1, speculate(a => {
@@ -113,7 +124,7 @@ token('(', ASSIGN - 1, speculate(a => {
   // Not followed by { - not method shorthand, fall through
   if (cur.charCodeAt(idx) !== OBRACE) return;
   skip();
-  let value = ['=>', ['()', params], expr(0, CBRACE) || null];
+  let value = ['function', null, params, expr(0, CBRACE) || null];
   if (isAsync) value = ['async', value];
   const node = [':', a, value];
   return wrap ? [wrap, node] : node;
