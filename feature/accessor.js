@@ -55,22 +55,16 @@ const accessor = (kind) => a => {
   return [kind, name, params, expr(0, CBRACE)];
 };
 
-token('get', ASSIGN - 1, speculate(accessor('get')));
-token('set', ASSIGN - 1, speculate(accessor('set')));
-
-// `static get x() {}` / `static set x(v) {}`: class.js's static handler reads
-// the accessor from the current position through this hook (the accessor
-// token sits below static's operand precedence); false where the shape is
-// not an accessor. A hook on `parse`, not an import: feature modules register
-// in load order, and an import from class.js would hoist this one ahead of
-// the `*` token's precedence bookkeeping.
-parse.accessor = kind => speculate(accessor(kind))(undefined);
+// TOKEN, like `#` and `*`, so they fire inside `static`'s operand (unary prec
+// 175): static get x() {} → ['static', ['get', 'x', params, body]]
+token('get', TOKEN, speculate(accessor('get')));
+token('set', TOKEN, speculate(accessor('set')));
 
 // Generator method: { *g() {} } / class { *g() {} } / static *g() {}
 //   → [':', key, ['function*', null, params, body]]   (≡ g: function* () {})
 // Prefix-only: infix `*` falls through to multiplication. Registered at TOKEN
-// so it fires inside `static`'s operand (unary prec 175); prefix `*` is never
-// valid JS outside member position, so the wide precedence can't misparse.
+// so it fires inside `static`'s operand; prefix `*` is never valid JS outside
+// member position, so the wide precedence can't misparse.
 // token() re-registration would clobber prec['*'] (multiplication) in the
 // introspection registry (loop.js reads it) — save/restore.
 // A param list is method-shaped when every item could bind: identifier,

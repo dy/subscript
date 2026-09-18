@@ -1,7 +1,7 @@
 // Async/await/yield: async function, async arrow, await, yield expressions - parse half
-import { parse, unary, expr, skip, seek, keyword, cur, idx, word, next } from '../parse.js';
+import { parse, unary, expr, skip, seek, keyword, cur, idx, word, peek } from '../parse.js';
 
-const PREFIX = 140, ASSIGN = 20, OPAREN = 40, HASH = 35;
+const TOKEN = 200, PREFIX = 140, ASSIGN = 20, OPAREN = 40;
 
 // await expr → ['await', expr]
 unary('await', PREFIX);
@@ -26,25 +26,19 @@ keyword('yield', PREFIX, () => {
 // async function name() {} → ['async', ['function', name, params, body]]
 // async () => {} → ['async', ['=>', params, body]]
 // async x => {} → ['async', ['=>', x, body]]
-keyword('async', PREFIX, () => {
+// async key( → ['async', key] (accessor.js's `(` builds the method)
+// async *g() {} → [':', 'g', ['async', ['function*', ...]]]
+// Restricted production: a LineTerminator after `async` makes it an identifier.
+// TOKEN, like the other member-position prefixes, so it fires inside `static`.
+keyword('async', TOKEN, () => {
+  if (nlAhead(idx)) return;
   parse.space();
-  // async function - check for 'function' word
   if (word('function')) return ['async', expr(PREFIX)];
-  // async name( → method shorthand (accessor.js handles params + body)
-  // async #name( → private method shorthand, the key spelled as class.js does
-  // async name => → arrow with single param
+  // member head: key, #key, [key], "key", or a whole *g() {} method
   const from = idx;
-  const hash = cur.charCodeAt(idx) === HASH ? (skip(1), '#') : '';
-  const name = next(parse.id);
-  if (name) {
-    parse.space();
-    if (cur.charCodeAt(idx) === OPAREN) return ['async', hash + name];
-    seek(from); // backtrack for general arrow parsing
-  }
-  // async arrow: async () => or async x =>
-  // async *g() / async *[k]() → the member's value is the async one:
-  // [':', key, ['async', function*]], the shape `async m()` takes
-  const params = expr(ASSIGN - .5);
-  if (Array.isArray(params) && params[0] === ':' && params.length === 3) return [':', params[1], ['async', params[2]]];
-  return params && ['async', params];
+  let m = expr(TOKEN - .5);
+  if (m?.[0] === ':') return [':', m[1], ['async', m[2]]];
+  if (m && peek() === OPAREN) return ['async', m];
+  // arrow: async x => / async (...) =>
+  if ((m || peek() === OPAREN) && (seek(from), m = expr(ASSIGN - .5))?.[0] === '=>') return ['async', m];
 });

@@ -115,6 +115,24 @@ test('async/class: async private and static async methods', () => {
   is(parse('class A { static async = 1 }'), ['class', 'A', null, ['=', ['static', 'async'], [, 1]]]);
   is(parse('class A { static async }'), ['class', 'A', null, ['static', 'async']]);
   is(parse('class A { static async\n m() { return 1 } }'), ['class', 'A', null, [';', ['static', 'async'], [':', 'm', ['function', null, null, ['return', [, 1]]]]]], 'a LineTerminator after async ends the field');
+  const g = ['async', ['function*', null, null, ['yield', [, 1]]]];
+  is(parse('class A { async *g() { yield 1 } }'), ['class', 'A', null, [':', 'g', g]]);
+  is(parse('class A { static async *g() { yield 1 } }'), ['class', 'A', null, ['static', [':', 'g', g]]]);
+  is(parse('{ async *[k]() { yield 1 } }'), ['{}', [':', ['[]', 'k'], g]]);
+});
+
+test('async/class: async as identifier', () => {
+  is(parse('async = 1'), ['=', 'async', [, 1]]);
+  is(parse('async(1)'), ['()', 'async', [, 1]]);
+  is(parse('async\nfunction f() {}'), [';', 'async', ['function', 'f', null, null]], 'a LineTerminator after async ends the identifier');
+  is(parse('class A { async\n m() {} }'), ['class', 'A', null, [';', 'async', [':', 'm', ['function', null, null, null]]]]);
+});
+
+test('async/class: static accessors', () => {
+  is(parse('class A { static get x() { return 1 } }'), ['class', 'A', null, ['static', ['get', 'x', undefined, ['return', [, 1]]]]]);
+  is(parse('class A { static set x(v) { y = v } }'), ['class', 'A', null, ['static', ['set', 'x', 'v', ['=', 'y', 'v']]]]);
+  is(parse('class A { static get = 1 }'), ['class', 'A', null, ['=', ['static', 'get'], [, 1]]]);
+  is(parse('class A { static get\n x() { return 1 } }'), ['class', 'A', null, [';', ['static', 'get'], [':', 'x', ['function', null, null, ['return', [, 1]]]]]]);
 });
 
 test('async/class: computed members', () => {
