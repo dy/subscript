@@ -32,6 +32,24 @@ test('template: empty', t => {
   is(run('``'), '')
 })
 
+test('literal spans: empty, escaped boundaries, long text and reuse', () => {
+  const long = 'λ🙂abc'.repeat(2000)
+  for (const quote of ['"', "'", '`']) {
+    const cases = ['', 'a', long, '\\n' + long, long + '\\n', '\\n\\t',
+      long + '\\uD83D\\uDE00' + long, 'a\\\r\nb', '\\' + quote]
+    for (const text of cases) {
+      const src = quote + text + quote, expected = Function('return ' + src)()
+      is(parse(src), [, expected])
+      is(parse(src), [, expected], 'same input again')
+      is(parse(quote + 'other' + quote), [, 'other'], 'different input after it')
+    }
+    throws(() => parse(quote + long), /string|template/i)
+    throws(() => parse(quote + long + '\\'), /string|template/i)
+    is(parse(quote + quote), [, ''], 'empty input after errors')
+  }
+  is(parse('`a\\${x}${`b${y}`}c`'), ['`', [, 'a${x}'], ['`', [, 'b'], 'y', [, '']], [, 'c']])
+})
+
 test('template: nested', t => {
   is(run('`outer ${`inner ${x}`}`', { x: 1 }), 'outer inner 1')
 })

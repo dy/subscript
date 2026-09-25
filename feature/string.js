@@ -2,7 +2,7 @@
  * String literals with ES escape sequences.
  * Configurable via parse.string: { '"': true, "'": true }
  */
-import { parse, lookup, next, err, skip, idx, cur } from '../parse.js';
+import { parse, lookup, err, skip, idx, cur } from '../parse.js';
 
 const BSLASH = 92, DQUOTE = 34, SQUOTE = 39, U = 117, X = 120, LBRACE = 123, RBRACE = 125, LF = 10, CR = 13;
 const esc = { n: '\n', r: '\r', t: '\t', b: '\b', f: '\f', v: '\v', '0': '\0' };
@@ -55,15 +55,30 @@ const decodeEscape = () => {
   return [esc[cur[idx + 1]] || cur[idx + 1], 2];
 };
 
-// `s` is the closed-over accumulator shared with the escape handler.
+// Copy literal spans once. Joining decoded escapes once also stays linear on
+// engines with flat strings, where character-by-character concatenation copies
+// every prefix. Leave the closing quote or template interpolation to the caller.
+const scanString = (q, template = false) => {
+  let start = idx, parts, c;
+  while ((c = cur.charCodeAt(idx)) - q) {
+    if (template && (c === 0 || c === 36 && cur.charCodeAt(idx + 1) === LBRACE)) break;
+    if (c !== BSLASH) { skip(); continue; }
+    if (!parts) parts = [];
+    parts.push(cur.slice(start, idx));
+    const [text, width] = decodeEscape();
+    parts.push(text);
+    skip(width);
+    start = idx;
+  }
+  const tail = cur.slice(start, idx);
+  return parts ? (parts.push(tail), parts.join('')) : tail;
+};
+
 const parseString = q => (a, _, s = '', qc = String.fromCharCode(q)) => {
   if (a || !parse.string?.[qc]) return;
   skip();
 
-  const escape = () => { const [t, w] = decodeEscape(); s += t; return w; };
-
-  // c - q is 0 at close, NaN at EOF — both falsy, terminating the loop.
-  next(c => c - q && (c !== BSLASH ? (s += cur[idx], 1) : escape()));
+  s += scanString(q);
   cur[idx] === qc ? skip() : err('Bad string');
   return [, s];
 };
@@ -72,4 +87,4 @@ lookup[DQUOTE] = parseString(DQUOTE);
 lookup[SQUOTE] = parseString(SQUOTE);
 parse.string = { '"': true };
 
-export { esc, decodeEscape };
+export { esc, decodeEscape, scanString };

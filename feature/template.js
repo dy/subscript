@@ -4,9 +4,9 @@
  * Tagged: tag`...` → ['``', 'tag', ...]
  */
 import { parse, skip, err, expr, lookup, cur, idx } from '../parse.js';
-import { decodeEscape } from './string.js';
+import { scanString } from './string.js';
 
-const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123, BSLASH = 92;
+const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123;
 
 // Parse template body after opening ` — string and expression segments
 // strictly alternate (string, expr, string, …), so every interpolation is
@@ -16,13 +16,14 @@ const ACCESS = 170, BACKTICK = 96, DOLLAR = 36, OBRACE = 123, BSLASH = 92;
 // same code point as the '' literal.
 const parseBody = () => {
   const parts = [];
-  let s = '', c, e;
-  for (; (c = cur.charCodeAt(idx)) !== BACKTICK; )
-    !c ? err('Unterminated template') :
-    c === BSLASH ? (e = decodeEscape(), s += e[0], skip(e[1])) :
-    c === DOLLAR && cur.charCodeAt(idx + 1) === OBRACE ? (parts.push([, s]), s = '', skip(2), parts.push(expr(0, 125))) :
-    (s += cur[idx], skip());
-  return parts.push([, s]), skip(), parts;
+  for (;;) {
+    parts.push([, scanString(BACKTICK, true)]);
+    const c = cur.charCodeAt(idx);
+    if (c === BACKTICK) return skip(), parts;
+    if (c !== DOLLAR || cur.charCodeAt(idx + 1) !== OBRACE) err('Unterminated template');
+    skip(2);
+    parts.push(expr(0, 125));
+  }
 };
 
 // Collapse a single-part body to that part (string or expression); else keep as ['`', ...parts]
