@@ -475,6 +475,17 @@ test('jessie: export from', () => {
   is(ast[1][0], 'from')
 })
 
+test('jessie: from, as and of are names outside their clauses', () => {
+  for (const w of ['from', 'as', 'of'])
+    is(parse(`let a = 1\n${w}[0] = a`), [';', ['let', ['=', 'a', [, 1]]], ['=', ['[]', w, [, 0]], 'a']], w + ' starts a statement')
+  is(parse('a\nas(1)'), [';', 'a', ['()', 'as', [, 1]]])
+  is(parse('x = from + as + of'), ['=', 'x', ['+', ['+', 'from', 'as'], 'of']])
+  is(parse("import x\nfrom 'y'"), ['import', ['from', 'x', [, 'y']]])
+  is(parse("export { a as 'b c' }"), ['export', ['{}', ['as', 'a', [, 'b c']]]])
+  is(parse('for (const [a, of] of x) f(of)'), ['for', ['of', ['const', ['[]', [',', 'a', 'of']]], 'x'], ['()', 'f', 'of']])
+  throws(() => parse('a of b'))
+})
+
 // === for-of/for-in ===
 
 test('jessie: for-of', () => {

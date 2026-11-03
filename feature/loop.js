@@ -1,8 +1,13 @@
 // Loops: while, do-while, for, for await, break, continue, return - parse half
-import { expr, skip, parse, word, keyword, parens, idx, next, seek, prec } from '../parse.js';
+import { expr, skip, parse, word, keyword, parens, idx, next, seek, prec, token } from '../parse.js';
 import { body } from './if.js';
 
-const STATEMENT = 5, CBRACE = 125, SEMI = 59;
+const STATEMENT = 5, CBRACE = 125, SEMI = 59, COMP = 90;
+
+// `of` relates a for head's target to its source; elsewhere it is a name, as `case` is
+// outside a switch, so `a⏎of[0] = 1` is two statements.
+let inHead = 0;
+token('of', COMP, (a, b) => inHead && a && (b = expr(COMP)) && ['of', a, b]);
 
 keyword('while', STATEMENT + 1, () => (parse.space(), ['while', parens(), body()]));
 keyword('do', STATEMENT + 1, b => (b = body(), parse.space(), skip(5), parse.space(), ['do', b, parens()]));
@@ -28,15 +33,17 @@ const head = (h, spine = h, parent) => {
     ? (parent[1] = spine[2], [spine[0], spine[1], h]) : h;
 };
 
+const forHead = () => { inHead++; try { return head(parens()); } finally { inHead--; } };
+
 // for / for await
 keyword('for', STATEMENT + 1, () => {
   parse.space();
   // for await (x of y)
   if (word('await')) {
     skip(5);
-    return (parse.space(), ['for await', head(parens()), body()]);
+    return (parse.space(), ['for await', forHead(), body()]);
   }
-  return ['for', head(parens()), body()];
+  return ['for', forHead(), body()];
 });
 
 keyword('break', STATEMENT + 1, () => {
