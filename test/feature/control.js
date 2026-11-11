@@ -116,6 +116,28 @@ test('control: do-while', t => {
   ctx = { i: 10 }
   run('do { i += 1 } while (i < 3)', ctx)
   is(ctx.i, 11)
+  // a statement body: its `;` stands before `while`, on the line or across it
+  is(parse('do x++; while (c)'), ['do', ['++', 'x', null], 'c'])
+  is(parse('do x++;\nwhile (c)'), ['do', ['++', 'x', null], 'c'])
+  is(parse('do ; while (c)'), ['do', undefined, 'c'])
+  is(parse('do do x++; while (a) while (b)'), ['do', ['do', ['++', 'x', null], 'a'], 'b'])
+  is(parse('do if (a) b; else c; while (d)'), ['do', ['if', 'a', 'b', 'c'], 'd'])
+  is(parse('if (a) do b; while (c) else d'), ['if', 'a', ['do', 'b', 'c'], 'd'])
+  is(parse('a: do x++; while (c)'), [':', 'a', ['do', ['++', 'x', null], 'c']])
+  ctx = { i: 0 }
+  run('do i += 1; while (i < 3)', ctx)
+  is(ctx.i, 3)
+  // the test's `)` ends the statement: what follows on the line is the next one
+  is(parse('do { x } while (c) y'), [';', ['do', 'x', 'c'], 'y'])
+  is(parse('do x++; while (c); return x'), [';', ['do', ['++', 'x', null], 'c'], ['return', 'x']])
+  is(parse('x => { do x--; while (x) return x }'), ['=>', 'x', ['{}', [';', ['do', ['--', 'x', null], 'x'], ['return', 'x']]]])
+  is(parse('do { x } while (c) `t`'), [';', ['do', 'x', 'c'], [, 't']])
+  ctx = { i: 0 }
+  run('do { i += 1 } while (i < 3) i = -i', ctx)
+  is(ctx.i, -3)
+  // a body with no `while` behind it
+  throws(() => parse('do { x }'), /Expected while/)
+  throws(() => parse('do x; whilst (c)'), /Expected while/)
 })
 
 test('control: for-in', t => {

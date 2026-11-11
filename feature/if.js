@@ -16,11 +16,11 @@ export const body = () =>
 // would cause the upcoming else-body's parse.step to bail at the first
 // token (statement-precedence boundary), so we clear it once we've confirmed
 // `else` — the else opens a fresh sub-statement.
-const checkElse = () => {
-  const from = idx;
+// follows(w) - the same check for any word closing a body: a do's `while`.
+export const follows = (w, from = idx) => {
   if (parse.space() === SEMI) skip();
   parse.space();
-  if (word('else')) return skip(4), parse.semi = false, true;
+  if (word(w)) return skip(w.length), parse.semi = false, true;
   return seek(from), false;
 };
 
@@ -28,6 +28,6 @@ const checkElse = () => {
 keyword('if', STATEMENT + 1, () => {
   parse.space();
   const node = ['if', parens(), body()];
-  if (checkElse()) node.push(body());
+  if (follows('else')) node.push(body());
   return node;
 });

@@ -1,6 +1,6 @@
 // Loops: while, do-while, for, for await, break, continue, return - parse half
-import { expr, skip, parse, word, keyword, parens, idx, next, seek, prec, token } from '../parse.js';
-import { body } from './if.js';
+import { expr, skip, parse, word, keyword, parens, idx, next, seek, prec, token, err } from '../parse.js';
+import { body, follows } from './if.js';
 
 const STATEMENT = 5, CBRACE = 125, SEMI = 59, COMP = 90;
 
@@ -10,7 +10,11 @@ let inHead = 0;
 token('of', COMP, (a, b) => inHead && a && (b = expr(COMP)) && ['of', a, b]);
 
 keyword('while', STATEMENT + 1, () => (parse.space(), ['while', parens(), body()]));
-keyword('do', STATEMENT + 1, b => (b = body(), parse.space(), skip(5), parse.space(), ['do', b, parens()]));
+// A body's `;` stands before its `while` (`do x++; while (c)`), and the test's `)` ends
+// the statement as a `}` does: `do {} while (c) return x` is two statements.
+keyword('do', STATEMENT + 1, b => (
+  b = body(), follows('while') || err('Expected while'), parse.space(),
+  b = ['do', b, parens()], parse.asi && (parse.newline = true), b));
 
 // A for-in/of head is not a plain expression: the grammar makes everything right of
 // the keyword the iteration source, while expression precedence binds relational
