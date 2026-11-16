@@ -136,8 +136,9 @@ export let idx, cur,
     op, l: op.length, p, map, word: true, kw: true
   }));
 
-// One dispatcher per first char: tries registered op descriptors newest-first,
-// then falls back to whatever handler the char had before token()/keyword()
+// One dispatcher per first char: tries registered op descriptors longest-first
+// (newest-first within one length), then falls back to whatever handler the
+// char had before token()/keyword()
 // (number, string, custom lookup[c] assignments). curOp carries a committed
 // text-match down the list: once an op's text matches, only same-name
 // descriptors (overrides) may retry, until a failed map resets the commitment.
@@ -158,11 +159,15 @@ const dispatch = (ops, tail, fn = (a, curPrec, curOp, from = idx, r, d, i) => {
   return tail?.(a, curPrec, curOp);
 }) => (fn.ops = ops, fn.tail = tail, fn);
 
-// prepend op descriptor for its first char; pre-token handler stays as tail.
+// add op descriptor for its first char; pre-token handler stays as tail.
+// Longest first: the longest operator spelled at a position is the token there
+// (`<<` in `a < b << c`, not `<` cut short by its precedence), whatever order
+// features load in. The sort is stable, so within one length the newest stays
+// ahead: an override precedes what it overrides.
 // Copy-on-write: each registration makes a fresh dispatcher, so a saved
 // lookup[c] restored later (tests, embedders) still excludes it.
 const register = (d, c = d.op.charCodeAt(0), fn = lookup[c]) =>
-  lookup[c] = fn?.ops ? dispatch([d, ...fn.ops], fn.tail) : dispatch([d], fn);
+  lookup[c] = fn?.ops ? dispatch([d, ...fn.ops].sort((a, b) => b.l - a.l), fn.tail) : dispatch([d], fn);
 
 // Skip space chars, return first non-space character.
 // Wrappers (comment, asi) compose by reading the previous parse.space first.

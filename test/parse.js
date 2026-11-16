@@ -1,7 +1,7 @@
 // Core Pratt parser tests
 
 import test, { is, any, throws } from 'tst'
-import { binary, nary, unary, token, compile, parse } from '../subscript.js'
+import { binary, nary, unary, token, compile, parse, lookup } from '../subscript.js'
 
 const MULT = 120;
 
@@ -150,6 +150,23 @@ test('parse: intersecting binary', t => {
   is(parse('a && b'), ['&&', 'a', 'b'], 'a&&b')
 
   is(parse('a >> b'), ['>>', 'a', 'b'], 'a>>b')
+})
+
+// #41: the longest operator spelled at a position is the token there
+test('parse: longest operator first', t => {
+  is(parse('a < b << c'), ['<', 'a', ['<<', 'b', 'c']])
+  is(parse('a > b >> c'), ['>', 'a', ['>>', 'b', 'c']])
+  is(parse('a <= b << c'), ['<=', 'a', ['<<', 'b', 'c']])
+  is(parse('a >= b >> c'), ['>=', 'a', ['>>', 'b', 'c']])
+  is(parse('a<b<<c'), ['<', 'a', ['<<', 'b', 'c']])
+  is(parse('a << b < c'), ['<', ['<<', 'a', 'b'], 'c'])
+
+  // whatever the order of registration: a looser operator registered after a tighter one it begins
+  const at = lookup[64]
+  binary('@@', 100), binary('@', 90)
+  is(parse('a @ b @@ c'), ['@', 'a', ['@@', 'b', 'c']])
+  is(parse('a @@ b @ c'), ['@', ['@@', 'a', 'b'], 'c'])
+  lookup[64] = at
 })
 
 test('parse: signs', t => {
