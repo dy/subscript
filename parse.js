@@ -136,28 +136,34 @@ export let idx, cur,
     op, l: op.length, p, map, word: true, kw: true
   }));
 
-// One dispatcher per first char: tries registered op descriptors longest-first
-// (newest-first within one length), then falls back to whatever handler the
-// char had before token()/keyword()
-// (number, string, custom lookup[c] assignments). curOp carries a committed
-// text-match down the list: once an op's text matches, only same-name
+// One dispatcher per first char. Its op descriptors are filed by second char, so
+// a position tries only what can be spelled there: the ops whose second char is
+// the next one, longest first (newest first within one length), then the
+// one-char ops. After them comes whatever handler the char had before
+// token()/keyword() (number, string, custom lookup[c] assignments). curOp carries
+// a committed text-match down the list: once an op's text matches, only same-name
 // descriptors (overrides) may retry, until a failed map resets the commitment.
-const dispatch = (ops, tail, fn = (a, curPrec, curOp, from = idx, r, d, i) => {
-  for (i = 0; (d = ops[i++]);) {
-    if (d.kw && a) continue;
-    if (curOp ? d.op !== curOp :
-      !((d.l < 2 || (d.op.charCodeAt(1) === cur.charCodeAt(idx + 1) && (d.l < 3 || cur.substr(idx, d.l) === d.op))) &&
-        (!d.word || !parse.id(cur.charCodeAt(idx + d.l))) &&
-        (curOp = d.op))) continue;
-    if (curPrec >= d.p) continue;
-    if (d.kw && parse.prop && !parse.prop(idx + d.l)) continue;
-    idx += d.l;
-    if (r = d.map(a)) return loc(r, from);
-    idx = from, curOp = 0;
-    d.word || a || tail || ops[i] || err();
-  }
-  return tail?.(a, curPrec, curOp);
-}) => (fn.ops = ops, fn.tail = tail, fn);
+const dispatch = (ops, tail, by = [], one = ops.filter(d => d.l < 2),
+  fn = (a, curPrec, curOp, from = idx, r, d, i, list = by[cur.charCodeAt(idx + 1)] || one) => {
+    for (i = 0; (d = list[i++]);) {
+      if (d.kw && a) continue;
+      if (curOp ? d.op !== curOp :
+        !((d.l < 3 || cur.substr(idx, d.l) === d.op) &&
+          (!d.word || !parse.id(cur.charCodeAt(idx + d.l))) &&
+          (curOp = d.op))) continue;
+      if (curPrec >= d.p) continue;
+      if (d.kw && parse.prop && !parse.prop(idx + d.l)) continue;
+      idx += d.l;
+      if (r = d.map(a)) return loc(r, from);
+      idx = from, curOp = 0;
+      d.word || a || tail || list[i] || err();
+    }
+    return tail?.(a, curPrec, curOp);
+  }) => {
+  for (const d of ops) if (d.l > 1) (by[d.op.charCodeAt(1)] ||= []).push(d);
+  by.forEach(list => list.push(...one));
+  return fn.ops = ops, fn.tail = tail, fn;
+};
 
 // add op descriptor for its first char; pre-token handler stays as tail.
 // Longest first: the longest operator spelled at a position is the token there

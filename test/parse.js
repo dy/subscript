@@ -169,6 +169,23 @@ test('parse: longest operator first', t => {
   lookup[64] = at
 })
 
+// a position consults only the operators that can be spelled there
+test('parse: operators filed by second char', t => {
+  const at = lookup[64]
+  binary('@', 90), binary('@@', 100), binary('@=', 20)
+  let seen = []
+  for (const d of lookup[64].ops) {
+    const { op, kw } = d
+    Object.defineProperty(d, 'kw', { get: () => (seen.push(op), kw) })
+  }
+  is(parse('a @ b'), ['@', 'a', 'b'])
+  is(seen.filter(op => op !== '@'), [])
+  seen = []
+  is(parse('a @@ b'), ['@@', 'a', 'b'])
+  is(seen.includes('@@') && !seen.includes('@='), true)
+  lookup[64] = at
+})
+
 test('parse: signs', t => {
   is(parse('+-x'), ['+', ['-', 'x']])
   is(parse('a(+x)'), ['()', 'a', ['+', 'x']])
