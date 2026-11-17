@@ -267,6 +267,12 @@ test('generator: method shorthand', () => {
       ['static', [':', 's', ['function*', null, null, ['yield', [, 3]]]]]]]);
   is(parse('let z = a\n* b'), ['let', ['=', 'z', ['*', 'a', 'b']]]);
   is(parse('x = y\n*g(1)\n{ h }'), [';', ['=', 'x', ['*', 'y', ['()', 'g', [, 1]]]], ['{}', 'h']]);
+  is(parse('y\n*g(a).b + 1'), ['+', ['*', 'y', ['.', ['()', 'g', 'a'], 'b']], [, 1]]);
+  is(parse('y\n*typeof(x)'), ['*', 'y', ['typeof', ['()', 'x']]]);
+  // a field, then a generator method; one named by a word that reads otherwise as an operand
+  is(parse('class A { x\n*g(a) {} }'), ['class', 'A', null, [';', 'x', [':', 'g', ['function*', null, 'a', null]]]]);
+  is(parse('class A { x\n*typeof() {} }'), ['class', 'A', null, [';', 'x', [':', 'typeof', ['function*', null, null, null]]]]);
+  is(parse('class A { static {}\n*g() {} }'), ['class', 'A', null, [';', ['static', ['{}', null]], [':', 'g', ['function*', null, null, null]]]], 'the method follows the static block, not inside it');
 });
 
 test('using: declarations (ERM)', () => {

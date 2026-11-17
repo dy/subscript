@@ -98,30 +98,44 @@ const paramish = n => n == null || typeof n === 'string' ||
   (Array.isArray(n) && (n[0] === ',' ? n.slice(1).every(paramish) :
     n[0] === '=' ? typeof n[1] === 'string' || paramish(n[1]) :
     n[0] === '...' || n[0] === '{}' || n[0] === '[]'));
-const multPrec = prec['*'];
-token('*', TOKEN, speculate(a => {
-  // Infix `*` is multiplication — EXCEPT at a member boundary: class bodies
-  // have no separators, so `ctor() {} *g() {}` reaches here with the previous
-  // member as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
-  // Only a newline/block boundary + the full method shape + a bindable param
-  // list reads as a new member, joined the way asi() would join it.
-  const boundary = a && parse.newline;
-  if (a && !boundary) return;
-  const from = idx;
-  const name = propertyKey();
-  if (!name) return a ? (seek(from), void 0) : false;
-  parse.space();
-  if (cur.charCodeAt(idx) !== OPAREN) return a ? (seek(from), void 0) : false;
+// The rest of a generator method after `*` and its key: `(params) { body }`.
+const generator = (name, infix) => {
+  if (!name || parse.space() !== OPAREN) return;
   skip();
   const params = expr(0, CPAREN) || null;
-  if (a && !paramish(params)) return seek(from), void 0;
-  parse.space();
-  if (cur.charCodeAt(idx) !== OBRACE) return a ? (seek(from), void 0) : false;
+  if (infix && !paramish(params) || parse.space() !== OBRACE) return;
   skip();
-  const node = [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
-  return a ? (a[0] === ';' ? (a.push(node), a) : [';', a, node]) : node;
-}));
+  return [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
+};
+const multPrec = prec['*'];
+token('*', TOKEN, speculate(a => !a && generator(propertyKey()) || (a ? void 0 : false)));
 prec['*'] = multPrec;
+
+// Infix `*` is multiplication — EXCEPT at a member boundary: class bodies have
+// no separators, so `ctor() {} *g() {}` and `x⏎*g() {}` reach here with the
+// member before as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
+// With a key right after `*`, the right side is read once, as the product's: a
+// call of a key with a bindable param list and a body after it is a new member,
+// joined the way asi() would join it, and anything else is the product. Reading
+// the member first and then, with no body, the product read `g(…)` twice a
+// level (`y⏎*g(y⏎*g(…))`). A key that reads otherwise as an operand (`typeof`,
+// `1`, `true`) is read again as a key when a body follows.
+const STAR = 42;
+const plainKey = k => typeof k === 'string' || Array.isArray(k) &&
+  (k[0] === '[]' && k.length === 2 || k[0] === undefined && typeof k[1] === 'string');
+const star = lookup[STAR];
+lookup[STAR] = (a, prec, op, from = idx, c = cur.charCodeAt(from + 1)) => {
+  if (!a || !parse.newline || prec >= multPrec || !(parse.id(c) || computedKeyStart(c))) return star(a, prec, op);
+  skip();
+  const rhs = expr(multPrec), end = idx, newline = parse.newline, semi = parse.semi;
+  if (!rhs) return seek(from), star(a, prec, op);
+  let node;
+  if (parse.space() === OBRACE) {
+    if (rhs[0] === '()' && plainKey(rhs[1])) node = paramish(rhs[2]) && (skip(), [':', rhs[1], ['function*', null, rhs[2], expr(0, CBRACE) || null]]);
+    else if (!(seek(from + 1), node = generator(propertyKey(), true))) seek(end), parse.newline = newline, parse.semi = semi;
+  }
+  return !node ? loc(['*', a, rhs], from) : a[0] === ';' ? (a.push(node), loc(a, from)) : loc([';', a, node], from);
+};
 
 // Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }
 //   → [':', key, ['function', null, params, body]]   (≡ foo: function () {})

@@ -33,6 +33,10 @@ const forms = {
   'get[k](get[k](x))': [d => rep('get[k](', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['()', ['[]', 'get', 'k'], t])],
   'getter computed key ({ get [g(..)]() {} })': [d => rep('({ get [g(', d) + 'k' + rep(')]() {} })', d),
     d => nest(d, 'k', t => ['()', ['{}', ['get', ['[]', ['()', 'g', t]], undefined, undefined]]])],
+  // `*` across a line break: a product, or after a member a generator method
+  'product y⏎*g(y⏎*g(x))': [d => rep('y\n*g(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['*', 'y', ['()', 'g', t]])],
+  'generator after a member, default param': [d => rep('class A { m() {}\n*g(a = ', d) + '1' + rep(') {} }', d),
+    d => nest(d, [, 1], t => ['class', 'A', null, [';', [':', 'm', ['function', null, null, null]], [':', 'g', ['function*', null, ['=', 'a', t], null]]]])],
 }
 
 // Input JS rejects, at every depth: each throws where the innermost level fails.
