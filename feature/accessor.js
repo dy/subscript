@@ -6,7 +6,7 @@
  *   { *g() { body } }            → ['{}', [':', 'g', ['function*', null, params, body]]]
  *   { m(p) { body } }            → ['{}', [':', 'm', ['function', null, params, body]]]
  */
-import { token, expr, skip, next, parse, cur, idx, prec, seek } from '../parse.js';
+import { token, expr, skip, next, parse, cur, idx, prec, seek, lookup, loc } from '../parse.js';
 
 const ASSIGN = 20, TOKEN = 200;
 const LF = 10, CR = 13;
@@ -104,22 +104,23 @@ prec['*'] = multPrec;
 // undefined, an arrow's `f()` would be its value) and `this` is the receiver.
 // Accepts identifier, string-literal node [, "..."], ['async', key] from
 // async.js, or ['static', key] from unary('static').
-token('(', ASSIGN - 1, speculate(a => {
-  if (!a) return;
+// The head is a call, read once by the `(` rules before this one; a body after
+// it makes it a method. Reading the parameters here and declining without a
+// body made the call rule read them again: 2^depth for nested calls.
+// Below ASSIGN - 1 only: a member stands there, never an operand.
+const call = lookup[OPAREN];
+lookup[OPAREN] = (a, prec, op, from = idx) => {
+  const c = call(a, prec, op);
+  if (!a || prec >= ASSIGN - 1 || c?.[0] !== '()' || c[1] !== a) return c;
   // ['static', key] from unary('static'): unwrap, re-wrap the resulting method node.
   // ['async', key] from async.js: unwrap, wrap the method value in async.
-  let wrap, isAsync;
-  if (Array.isArray(a) && a[0] === 'static') wrap = 'static', a = a[1];
-  if (Array.isArray(a) && a[0] === 'async') isAsync = true, a = a[1];
-  // Accept identifier or string-literal node as key
-  if (!isMethodKey(a)) return;
-  const params = expr(0, CPAREN) || null;
-  parse.space();
-  // Not followed by { - not method shorthand, fall through
-  if (cur.charCodeAt(idx) !== OBRACE) return;
+  let key = a, wrap, isAsync;
+  if (Array.isArray(key) && key[0] === 'static') wrap = 'static', key = key[1];
+  if (Array.isArray(key) && key[0] === 'async') isAsync = true, key = key[1];
+  if (!isMethodKey(key) || parse.space() !== OBRACE) return c;
   skip();
-  let value = ['function', null, params, expr(0, CBRACE) || null];
+  let value = ['function', null, c[2], expr(0, CBRACE) || null];
   if (isAsync) value = ['async', value];
-  const node = [':', a, value];
-  return wrap ? [wrap, node] : node;
-}));
+  const node = [':', key, value];
+  return loc(wrap ? [wrap, node] : node, from);
+};
