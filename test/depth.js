@@ -46,6 +46,8 @@ const forms = {
     d => nest(d, [, 1], t => ['()', ['{}', ['set', 'in', ['=', 'v', t], undefined]]])],
   // `*` across a line break: a product, or after a member a generator method
   'product y⏎*g(y⏎*g(x))': [d => rep('y\n*g(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['*', 'y', ['()', 'g', t]])],
+  // `async *g(…)` is `async` times a call: the generator rule reads `g(…)` and declines
+  'product async *g(async *g(x))': [d => rep('async *g(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['*', 'async', ['()', 'g', t]])],
   'generator after a member, default param': [d => rep('class A { m() {}\n*g(a = ', d) + '1' + rep(') {} }', d),
     d => nest(d, [, 1], t => ['class', 'A', null, [';', [':', 'm', ['function', null, null, null]], [':', 'g', ['function*', null, ['=', 'a', t], null]]]])],
 }
@@ -53,6 +55,7 @@ const forms = {
 // Input JS rejects, held to the time only: the tree the parser gives it is no promise.
 const invalid = {
   'a⏎get x(a⏎get x(1)) with no body': [d => rep('a\nget x(', d) + '1' + rep(')', d)],
+  'a;⏎*g(a;⏎*g(x)) with no body': [d => rep('a;\n*g(', d) + 'x' + rep(')', d)],
 }
 
 for (const [name, [src, tree]] of Object.entries(forms)) test(`depth: ${name}, depths 1 to 12`, () => {

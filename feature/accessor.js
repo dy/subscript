@@ -106,13 +106,13 @@ const paramish = n => n == null || typeof n === 'string' ||
     n[0] === '=' ? typeof n[1] === 'string' || paramish(n[1]) :
     n[0] === '...' || n[0] === '{}' || n[0] === '[]'));
 // The rest of a generator method after `*` and its key: `(params) { body }`.
-const generator = (name, infix) => {
+// Without a body its `(…)` stays kept for the expression that reads `key(…)`:
+// `async *g(x)` is a product, and its call takes the kept contents.
+const generator = (name, infix, params) => {
   if (!name || parse.space() !== OPAREN) return;
-  skip();
-  const params = expr(0, CPAREN) || null;
+  params = args() || null;
   if (infix && !paramish(params) || parse.space() !== OBRACE) return;
-  skip();
-  return [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
+  return [':', name, ['function*', null, params, body() || null]];
 };
 const multPrec = prec['*'];
 token('*', TOKEN, speculate(a => !a && generator(propertyKey()) || (a ? void 0 : false)));
