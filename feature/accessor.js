@@ -76,20 +76,20 @@ const accessor = (kind) => a => {
 token('get', TOKEN, speculate(accessor('get')));
 token('set', TOKEN, speculate(accessor('set')));
 
-// get […]: the index of the name `get`, the call of that index when `(…)` follows
-// without a body, or an accessor's computed key when `(…) {` follows.
+// get […]: the index of the name `get`, or an accessor's computed key when
+// `(…) {` follows. Without a body the `(…)` is kept and the index returned: the
+// loop reads the `(…)` as its call, or ASI as a statement of its own, as after
+// any other name. Where the loop reads no call (`new`'s callee, at CALL) the
+// call is made here, the one `new` would read.
 const bracket = lookup[OBRACKET];
-lookup[OBRACKET] = (a, prec, op, from = idx, at = headAt, k, call) => {
+lookup[OBRACKET] = (a, prec, op, from = idx, at = headAt, k, call, nl, semi, params) => {
   if ((a !== 'get' && a !== 'set') || from !== head || cur !== headIn) return bracket(a, prec, op);
   skip();
-  k = expr(0, CBRACKET) || null;
-  if (parse.space() !== OPAREN) return loc(['[]', a, k], from);
-  call = idx;
-  skip();
-  const params = expr(0, CPAREN);
-  if (parse.space() !== OBRACE) return loc(['()', loc(['[]', a, k], from), params || null], call);
-  skip();
-  return loc([a, loc(['[]', k], from), params, expr(0, CBRACE)], at);
+  k = loc(['[]', a, expr(0, CBRACKET) || null], from);
+  if (parse.space() !== OPAREN) return k;
+  call = idx, nl = parse.newline, semi = parse.semi, params = args();
+  if (parse.space() === OBRACE) return loc([a, loc(['[]', k[2]], from), params, body()], at);
+  return prec < CALL ? (seek(call), parse.newline = nl, parse.semi = semi, k) : take(k, call);
 };
 
 // Generator method: { *g() {} } / class { *g() {} } / static *g() {}

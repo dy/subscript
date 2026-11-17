@@ -146,6 +146,11 @@ test('async/class: get and set as names', () => {
   is(parse('get[k]'), ['[]', 'get', 'k']);
   is(parse('set [k] = 1'), ['=', ['[]', 'set', 'k'], [, 1]]);
   is(parse('get[k](x).y'), ['.', ['()', ['[]', 'get', 'k'], 'x'], 'y']);
+  // a `(` on the next line after `get[k]` is what it is after any other name
+  is(parse('let a = get[k]\n(x)'), [';', ['let', ['=', 'a', ['[]', 'get', 'k']]], ['()', 'x']]);
+  is(parse('let a = b[k]\n(x)'), [';', ['let', ['=', 'a', ['[]', 'b', 'k']]], ['()', 'x']]);
+  is(parse('x = get[k]\n(y)'), ['()', ['=', 'x', ['[]', 'get', 'k']], 'y']);
+  is(parse('new get[k](x)'), ['new', ['()', ['[]', 'get', 'k'], 'x']]);
   is(parse('({ set [k](v) { x = v } })'), ['()', ['{}', ['set', ['[]', 'k'], 'v', ['=', 'x', 'v']]]]);
   // `get key(…)` heads an accessor only when a body follows; `in`, `instanceof`
   // and a for head's `of` read on from the name
