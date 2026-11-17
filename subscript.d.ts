@@ -19,7 +19,7 @@ export function loc<T>(node: T, at?: number): T;
 export function next(is: (c: number) => number, from?: number): string;
 export function skip(n?: number): string;
 export function seek(n: number): number;
-export function expr(prec?: number, end?: number): AST;
+export function expr(prec?: number, end?: number, token?: AST): AST;
 export const lookup: ((a: AST, prec: number, op?: string) => AST)[];
 export function token(op: string, prec?: number, map?: (a: AST) => AST): void;
 export function binary(op: string, prec: number, right?: boolean): void;
