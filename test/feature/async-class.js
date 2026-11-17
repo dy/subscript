@@ -124,6 +124,12 @@ test('async/class: async private and static async methods', () => {
 test('async/class: async as identifier', () => {
   is(parse('async = 1'), ['=', 'async', [, 1]]);
   is(parse('async(1)'), ['()', 'async', [, 1]]);
+  is(parse('async[k]'), ['[]', 'async', 'k']);
+  is(parse('async(x).y'), ['.', ['()', 'async', 'x'], 'y']);
+  is(parse('new async(x)'), ['new', ['()', 'async', 'x']]);
+  is(parse('async`${x}`'), ['``', 'async', [, ''], 'x', [, '']], 'a tag: reading the template first left the newline flag of its `}` up');
+  is(parse('async (x) => y'), ['async', ['=>', ['()', 'x'], 'y']]);
+  is(parse('async\n(x) => y'), ['=>', ['()', 'async', 'x'], 'y'], 'after a LineTerminator `(` calls async, also right after an async arrow with its `(` at the same offset');
   is(parse('async\nfunction f() {}'), [';', 'async', ['function', 'f', null, null]], 'a LineTerminator after async ends the identifier');
   is(parse('class A { async\n m() {} }'), ['class', 'A', null, [';', 'async', [':', 'm', ['function', null, null, null]]]]);
 });

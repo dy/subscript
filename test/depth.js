@@ -17,6 +17,16 @@ const forms = {
   'arrow argument g(x => g(x))': [d => rep('g(x => g(', d) + 'x' + rep('))', d), d => nest(d, 'x', t => ['()', 'g', ['=>', 'x', ['()', 'g', t]]])],
   'method default ({ m(a = g(..)) {} })': [d => rep('({ m(a = g(', d) + '1' + rep(')) {} })', d),
     d => nest(d, [, 1], t => ['()', ['{}', [':', 'm', ['function', null, ['=', 'a', ['()', 'g', t]], null]]]])],
+  // `async` as a name: its call, its index, a method named async
+  'async(async(x))': [d => rep('async(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['()', 'async', t])],
+  'async[async[x]]': [d => rep('async[', d) + 'x' + rep(']', d), d => nest(d, 'x', t => ['[]', 'async', t])],
+  'async`${async`${x}`}`': [d => rep('async`${', d) + 'x' + rep('}`', d), d => nest(d, 'x', t => ['``', 'async', [, ''], t, [, '']])],
+  'method named async ({ async(a = ..) {} })': [d => rep('({ async(a = ', d) + '1' + rep(') {} })', d),
+    d => nest(d, [, 1], t => ['()', ['{}', [':', 'async', ['function', null, ['=', 'a', t], null]]]])],
+  'async arrow argument g(async (x) => ..)': [d => rep('g(async (x) => ', d) + 'x' + rep(')', d),
+    d => nest(d, 'x', t => ['()', 'g', ['async', ['=>', ['()', 'x'], t]]])],
+  'async computed member ({ async [g(..)]() {} })': [d => rep('({ async [g(', d) + 'k' + rep(')]() {} })', d),
+    d => nest(d, 'k', t => ['()', ['{}', [':', ['[]', ['()', 'g', t]], ['async', ['function', null, null, null]]]]])],
 }
 
 for (const [name, [src, tree]] of Object.entries(forms)) test(`depth: ${name}, depths 1 to 12`, () => {

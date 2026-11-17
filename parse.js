@@ -46,9 +46,10 @@ export let idx, cur,
   // a + b - c. Pratt loop. Each iteration tries operator handlers via lookup,
   // then identifier (when no token yet). Dialect layers (e.g. ASI) override
   // step() to inject pre-empt or post-step decisions; default just inlines the
-  // op-then-id rule.
-  expr = (p = 0, end) => {
-    let cc, token, newNode;
+  // op-then-id rule. `token`, when given, is a left operand a rule has already
+  // read: the loop reads on from it, as it would have after reading it here.
+  expr = (p = 0, end, token) => {
+    let cc, newNode;
     if (end) parse.enter?.(p, end);
 
     while ((cc = parse.space()) && cc !== end && (newNode = parse.step(token, p, cc, expr))) token = newNode;
