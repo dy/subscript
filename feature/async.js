@@ -37,7 +37,9 @@ keyword('yield', PREFIX, () => {
 // call or index, until what follows makes it an arrow's or a member's head.
 // Reading the bracket here and declining made the name's call or index read it
 // again, at every level of nesting.
-// The mark names its source too: one left by an earlier parse never matches.
+// The mark keeps the source it was made in: one left in other text never
+// matches, and one left by an earlier parse of the same text names the bracket
+// this parse marks again.
 const arrowAhead = () => parse.space() === 61 && cur.charCodeAt(idx + 1) === 62;
 let head = -1, headAt, headIn;
 const marked = (a, at) => a === 'async' && at === head && cur === headIn;
