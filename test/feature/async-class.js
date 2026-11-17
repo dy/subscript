@@ -287,6 +287,15 @@ test('generator: method shorthand', () => {
   is(parse('class A { x\n*g(a) {} }'), ['class', 'A', null, [';', 'x', [':', 'g', ['function*', null, 'a', null]]]]);
   is(parse('class A { x\n*typeof() {} }'), ['class', 'A', null, [';', 'x', [':', 'typeof', ['function*', null, null, null]]]]);
   is(parse('class A { static {}\n*g() {} }'), ['class', 'A', null, [';', ['static', ['{}', null]], [':', 'g', ['function*', null, null, null]]]], 'the method follows the static block, not inside it');
+  // a generator named by a keyword after a member: `function` and `class` read
+  // their own way as operands, so the key is read as the member's first
+  const m = [':', 'm', ['function', null, null, null]];
+  is(parse('class A { m() {}\n*function() {} }'), ['class', 'A', null, [';', m, [':', 'function', ['function*', null, null, null]]]]);
+  is(parse('class A { m() {} *function() {} }'), ['class', 'A', null, [';', m, [':', 'function', ['function*', null, null, null]]]]);
+  is(parse('class A { x\n*class(a) {} }'), ['class', 'A', null, [';', 'x', [':', 'class', ['function*', null, 'a', null]]]]);
+  // inside an operand `*` after a line break is the product
+  is(parse('x = y\n*function(){}'), ['=', 'x', ['*', 'y', ['function', '', null, null]]]);
+  is(parse('x = y\n*g(a)\n{ h }'), [';', ['=', 'x', ['*', 'y', ['()', 'g', 'a']]], ['{}', 'h']]);
 });
 
 test('using: declarations (ERM)', () => {

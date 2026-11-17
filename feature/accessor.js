@@ -121,27 +121,31 @@ prec['*'] = multPrec;
 // Infix `*` is multiplication — EXCEPT at a member boundary: class bodies have
 // no separators, so `ctor() {} *g() {}` and `x⏎*g() {}` reach here with the
 // member before as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
-// With a key right after `*`, the right side is read once, as the product's: a
-// call of a key with a bindable param list and a body after it is a new member,
-// joined the way asi() would join it, and anything else is the product. Reading
-// the member first and then, with no body, the product read `g(…)` twice a
-// level (`y⏎*g(y⏎*g(…))`). A key that reads otherwise as an operand (`typeof`,
-// `1`, `true`) is read again as a key when a body follows.
+// A key, a bindable param list and a body make a new member, joined the way
+// asi() would join it; anything else is the product. A word key is read as the
+// member's, as the prefix rule reads it: as an operand a keyword reads its own
+// way (`*function() {}` is a function, `*class() {}` an error). Without a body
+// the product reads on from `*`, and its call takes the kept `(…)`. A computed,
+// string or private key reads the same as an operand: the right side is read
+// once, as the product's, and a call of the key with a body after it is the
+// member. Inside an operand (ASSIGN - 1 and up) a member starts only after a
+// block, the body of an arrow that ends a field (`x = () => {}⏎*g() {}`), and
+// never inside a prefix's operand (multPrec and up: `static {}⏎*g() {}`).
+// After any other operand it is the product: `x = y⏎*function() {}`.
 const STAR = 42;
 const plainKey = k => typeof k === 'string' || Array.isArray(k) &&
   (k[0] === '[]' && k.length === 2 || k[0] === undefined && typeof k[1] === 'string');
+const join = (a, node, from) => a[0] === ';' ? (a.push(node), loc(a, from)) : loc([';', a, node], from);
 const star = lookup[STAR];
-lookup[STAR] = (a, prec, op, from = idx, c = cur.charCodeAt(from + 1)) => {
-  if (!a || !parse.newline || prec >= multPrec || !(parse.id(c) || computedKeyStart(c))) return star(a, prec, op);
+lookup[STAR] = (a, prec, op, from = idx, c = cur.charCodeAt(from + 1), nl = parse.newline, semi = parse.semi, rhs, node) => {
+  if (!a || !nl || prec >= (a[0] === '{}' ? multPrec : ASSIGN - 1) || !(parse.id(c) || computedKeyStart(c))) return star(a, prec, op);
   skip();
-  const rhs = expr(multPrec), end = idx, newline = parse.newline, semi = parse.semi;
-  if (!rhs) return seek(from), star(a, prec, op);
-  let node;
-  if (parse.space() === OBRACE) {
-    if (rhs[0] === '()' && plainKey(rhs[1])) node = paramish(rhs[2]) && (skip(), [':', rhs[1], ['function*', null, rhs[2], expr(0, CBRACE) || null]]);
-    else if (!(seek(from + 1), node = generator(propertyKey(), true))) seek(end), parse.newline = newline, parse.semi = semi;
-  }
-  return !node ? loc(['*', a, rhs], from) : a[0] === ';' ? (a.push(node), loc(a, from)) : loc([';', a, node], from);
+  if (parse.id(c)) return (node = generator(next(parse.id), true)) ? join(a, node, from) :
+    (seek(from), parse.newline = nl, parse.semi = semi, star(a, prec, op));
+  if (!(rhs = expr(multPrec))) return seek(from), star(a, prec, op);
+  node = parse.space() === OBRACE && rhs[0] === '()' && plainKey(rhs[1]) && paramish(rhs[2]) &&
+    [':', rhs[1], ['function*', null, rhs[2], (skip(), expr(0, CBRACE)) || null]];
+  return node ? join(a, node, from) : loc(['*', a, rhs], from);
 };
 
 // Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }

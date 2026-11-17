@@ -50,6 +50,9 @@ const forms = {
   'product async *g(async *g(x))': [d => rep('async *g(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['*', 'async', ['()', 'g', t]])],
   'generator after a member, default param': [d => rep('class A { m() {}\n*g(a = ', d) + '1' + rep(') {} }', d),
     d => nest(d, [, 1], t => ['class', 'A', null, [';', [':', 'm', ['function', null, null, null]], [':', 'g', ['function*', null, ['=', 'a', t], null]]]])],
+  'generator named function after a member': [d => rep('class A { m() {}\n*function(a = ', d) + '1' + rep(') {} }', d),
+    d => nest(d, [, 1], t => ['class', 'A', null, [';', [':', 'm', ['function', null, null, null]], [':', 'function', ['function*', null, ['=', 'a', t], null]]]])],
+  'product y⏎*typeof(y⏎*typeof(x))': [d => rep('y\n*typeof(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['*', 'y', ['typeof', ['()', t]]])],
 }
 
 // Input JS rejects, held to the time only: the tree the parser gives it is no promise.
