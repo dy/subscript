@@ -6,11 +6,11 @@
  *   { *g() { body } }            → ['{}', [':', 'g', ['function*', null, params, body]]]
  *   { m(p) { body } }            → ['{}', [':', 'm', ['function', null, params, body]]]
  */
-import { token, expr, skip, next, parse, cur, idx, prec, seek, lookup, loc } from '../parse.js';
+import { token, expr, skip, next, parse, cur, idx, prec, seek, lookup, loc, err } from '../parse.js';
 
 const ASSIGN = 20, TOKEN = 200;
 const LF = 10, CR = 13;
-const DQUOTE = 34, HASH = 35, SQUOTE = 39, OPAREN = 40, CPAREN = 41, OBRACKET = 91, OBRACE = 123, CBRACE = 125;
+const DQUOTE = 34, HASH = 35, SQUOTE = 39, OPAREN = 40, CPAREN = 41, OBRACKET = 91, CBRACKET = 93, OBRACE = 123, CBRACE = 125;
 
 const hasLineTerminator = (from, to) => {
   while (from < to) {
@@ -36,29 +36,54 @@ const speculate = handler => a => {
   return node;
 };
 
+// An accessor's parameters and body, after its key and `(`. On one line
+// `get key(` is an accessor only: its body is required, not a reason to decline.
+const accessorBody = (kind, key) => {
+  skip();
+  const params = expr(0, CPAREN);
+  parse.space() === OBRACE || err('Expected {');
+  skip();
+  return [kind, key, params, expr(0, CBRACE)];
+};
+
 // Shared parser for get/set — returns false if not valid accessor pattern (falls through to identifier)
 // Returns false (not undefined) to signal "fall through without setting reserved"
+// Before `[` it marks the bracket and declines, as async does: `get` reads as a
+// name and the `[` rule below reads the bracket once.
+let head = -1, headAt, headIn;
 const accessor = (kind) => a => {
   if (a) return; // not prefix
   const from = idx;
   parse.space();
   if (parse.semi || hasLineTerminator(from, idx)) return false;
+  if (cur.charCodeAt(idx) === OBRACKET) return head = idx, headAt = from - 3, headIn = cur, false;
   const name = propertyKey();
   if (!name) return false; // no property name = not accessor (e.g. `{ get: 1 }`)
   parse.space();
   if (cur.charCodeAt(idx) !== OPAREN) return false; // not followed by ( = not accessor
-  skip();
-  const params = expr(0, CPAREN);
-  parse.space();
-  if (cur.charCodeAt(idx) !== OBRACE) return false;
-  skip();
-  return [kind, name, params, expr(0, CBRACE)];
+  return accessorBody(kind, name);
 };
 
 // TOKEN, like `#` and `*`, so they fire inside `static`'s operand (unary prec
 // 175): static get x() {} → ['static', ['get', 'x', params, body]]
 token('get', TOKEN, speculate(accessor('get')));
 token('set', TOKEN, speculate(accessor('set')));
+
+// get […]: the index of the name `get`, the call of that index when `(…)` follows
+// without a body, or an accessor's computed key when `(…) {` follows.
+const bracket = lookup[OBRACKET];
+lookup[OBRACKET] = (a, prec, op, from = idx, at = headAt, k, call) => {
+  if ((a !== 'get' && a !== 'set') || from !== head || cur !== headIn) return bracket(a, prec, op);
+  skip();
+  k = expr(0, CBRACKET) || null;
+  if (parse.space() !== OPAREN) return loc(['[]', a, k], from);
+  call = idx;
+  skip();
+  const params = expr(0, CPAREN);
+  if (parse.space() !== OBRACE) return loc(['()', loc(['[]', a, k], from), params || null], call);
+  skip();
+  return loc([a, loc(['[]', k], from), params, expr(0, CBRACE)], at);
+};
 
 // Generator method: { *g() {} } / class { *g() {} } / static *g() {}
 //   → [':', key, ['function*', null, params, body]]   (≡ g: function* () {})

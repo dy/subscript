@@ -1,5 +1,5 @@
 // Tests for async/await, class features, numeric separators, method shorthand
-import test, { is, ok } from 'tst';
+import test, { is, ok, throws } from 'tst';
 import { parse, compile } from '../../jessie.js';
 
 test('async/class: async function', () => {
@@ -139,6 +139,17 @@ test('async/class: static accessors', () => {
   is(parse('class A { static set x(v) { y = v } }'), ['class', 'A', null, ['static', ['set', 'x', 'v', ['=', 'y', 'v']]]]);
   is(parse('class A { static get = 1 }'), ['class', 'A', null, ['=', ['static', 'get'], [, 1]]]);
   is(parse('class A { static get\n x() { return 1 } }'), ['class', 'A', null, [';', ['static', 'get'], [':', 'x', ['function', null, null, ['return', [, 1]]]]]]);
+  is(parse('class A { static get [k]() { return 1 } }'), ['class', 'A', null, ['static', ['get', ['[]', 'k'], undefined, ['return', [, 1]]]]]);
+});
+
+test('async/class: get and set as names', () => {
+  is(parse('get[k]'), ['[]', 'get', 'k']);
+  is(parse('set [k] = 1'), ['=', ['[]', 'set', 'k'], [, 1]]);
+  is(parse('get[k](x).y'), ['.', ['()', ['[]', 'get', 'k'], 'x'], 'y']);
+  is(parse('({ set [k](v) { x = v } })'), ['()', ['{}', ['set', ['[]', 'k'], 'v', ['=', 'x', 'v']]]]);
+  // on one line `get x(` heads an accessor, which a body ends
+  throws(() => parse('get x(1)'), /Expected \{/);
+  throws(() => parse('a\nget x(1)'), /Expected \{/);
 });
 
 test('async/class: computed members', () => {
