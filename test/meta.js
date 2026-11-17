@@ -33,3 +33,18 @@ tst('metacircular: parse all source files', () => {
     is(r.ok, true, f + (r.error ? ': ' + r.error.split('\n')[0] : ''));
   }
 });
+
+// jz compiles this parser (its own compiler is built with it, and its jessie
+// bench), and a jz closure takes at most 8 parameters (MAX_CLOSURE_ARITY there).
+const params = p => p == null ? 0 : Array.isArray(p) && p[0] === ',' ? p.length - 1 : 1;
+const functions = (n, out = []) => {
+  if (!Array.isArray(n)) return out;
+  if (n[0] === '=>') out.push([params(n[1]?.[0] === '()' ? n[1][1] : n[1]), n.loc]);
+  if (n[0] === 'function' || n[0] === 'function*') out.push([params(n[2]), n.loc]);
+  for (let i = 1; i < n.length; i++) functions(n[i], out);
+  return out;
+};
+tst('metacircular: no function takes more than 8 parameters', () => {
+  for (const f of files) for (const [n, at] of functions(parse(fs.readFileSync(f, 'utf8'))))
+    is(n <= 8, true, `${f} at ${at}: ${n} parameters`);
+});

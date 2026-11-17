@@ -82,12 +82,13 @@ token('set', TOKEN, speculate(accessor('set')));
 // any other name. Where the loop reads no call (`new`'s callee, at CALL) the
 // call is made here, the one `new` would read.
 const bracket = lookup[OBRACKET];
-lookup[OBRACKET] = (a, prec, op, from = idx, at = headAt, k, call, nl, semi, params) => {
+lookup[OBRACKET] = (a, prec, op) => {
+  const from = idx, at = headAt;
   if ((a !== 'get' && a !== 'set') || from !== head || cur !== headIn) return bracket(a, prec, op);
   skip();
-  k = loc(['[]', a, expr(0, CBRACKET) || null], from);
+  const k = loc(['[]', a, expr(0, CBRACKET) || null], from);
   if (parse.space() !== OPAREN) return k;
-  call = idx, nl = parse.newline, semi = parse.semi, params = args();
+  const call = idx, nl = parse.newline, semi = parse.semi, params = args();
   if (parse.space() === OBRACE) return loc([a, loc(['[]', k[2]], from), params, body()], at);
   return prec < CALL ? (seek(call), parse.newline = nl, parse.semi = semi, k) : take(k, call);
 };
@@ -137,13 +138,17 @@ const plainKey = k => typeof k === 'string' || Array.isArray(k) &&
   (k[0] === '[]' && k.length === 2 || k[0] === undefined && typeof k[1] === 'string');
 const join = (a, node, from) => a[0] === ';' ? (a.push(node), loc(a, from)) : loc([';', a, node], from);
 const star = lookup[STAR];
-lookup[STAR] = (a, prec, op, from = idx, c = cur.charCodeAt(from + 1), nl = parse.newline, semi = parse.semi, rhs, node) => {
+lookup[STAR] = (a, prec, op) => {
+  const from = idx, c = cur.charCodeAt(from + 1), nl = parse.newline, semi = parse.semi;
   if (!a || !nl || prec >= (a[0] === '{}' ? multPrec : ASSIGN - 1) || !(parse.id(c) || computedKeyStart(c))) return star(a, prec, op);
   skip();
-  if (parse.id(c)) return (node = generator(next(parse.id), true)) ? join(a, node, from) :
-    (seek(from), parse.newline = nl, parse.semi = semi, star(a, prec, op));
-  if (!(rhs = expr(multPrec))) return seek(from), star(a, prec, op);
-  node = parse.space() === OBRACE && rhs[0] === '()' && plainKey(rhs[1]) && paramish(rhs[2]) &&
+  if (parse.id(c)) {
+    const node = generator(next(parse.id), true);
+    return node ? join(a, node, from) : (seek(from), parse.newline = nl, parse.semi = semi, star(a, prec, op));
+  }
+  const rhs = expr(multPrec);
+  if (!rhs) return seek(from), star(a, prec, op);
+  const node = parse.space() === OBRACE && rhs[0] === '()' && plainKey(rhs[1]) && paramish(rhs[2]) &&
     [':', rhs[1], ['function*', null, rhs[2], (skip(), expr(0, CBRACE)) || null]];
   return node ? join(a, node, from) : loc(['*', a, rhs], from);
 };
