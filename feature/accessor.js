@@ -6,9 +6,9 @@
  *   { *g() { body } }            → ['{}', [':', 'g', ['function*', null, params, body]]]
  *   { m(p) { body } }            → ['{}', [':', 'm', ['function', null, params, body]]]
  */
-import { token, expr, skip, next, parse, cur, idx, prec, seek, lookup, loc, err } from '../parse.js';
+import { token, expr, skip, next, parse, cur, idx, prec, seek, lookup, loc } from '../parse.js';
 
-const ASSIGN = 20, TOKEN = 200;
+const ASSIGN = 20, CALL = 160, ACCESS = 170, TOKEN = 200;
 const LF = 10, CR = 13;
 const DQUOTE = 34, HASH = 35, SQUOTE = 39, OPAREN = 40, CPAREN = 41, OBRACKET = 91, CBRACKET = 93, OBRACE = 123, CBRACE = 125;
 
@@ -36,20 +36,26 @@ const speculate = handler => a => {
   return node;
 };
 
-// An accessor's parameters and body, after its key and `(`. On one line
-// `get key(` is an accessor only: its body is required, not a reason to decline.
-const accessorBody = (kind, key) => {
-  skip();
-  const params = expr(0, CPAREN);
-  parse.space() === OBRACE || err('Expected {');
-  skip();
-  return [kind, key, params, expr(0, CBRACE)];
-};
+// A member head `key(…)` is a member only when a body follows its `(…)`. A rule
+// that reads the `(…)` and finds no body gives the span back, kept here: the
+// next `(` read at its offset, as the group or the call, takes these contents
+// instead of reading them again. Read again, the span doubled the work at
+// every level of nesting: 2^depth for `set in (set in (x))`.
+let kept = -1, keptIn, keptEnd, keptArgs, keptNl, keptSemi;
+// The `(…)` at idx: its contents, kept until a body is read after them.
+const args = (at = idx, a) => (skip(), a = expr(0, CPAREN),
+  kept = at, keptIn = cur, keptEnd = idx, keptArgs = a, keptNl = parse.newline, keptSemi = parse.semi, a);
+// The `{ body }` after kept contents: they belong to a member now.
+const body = () => (kept = -1, keptIn = keptArgs = null, skip(), expr(0, CBRACE));
+const take = (a, at, node = loc(a ? ['()', a, keptArgs || null] : ['()', keptArgs || null], at)) => (
+  seek(keptEnd), parse.newline = keptNl, parse.semi = keptSemi, kept = -1, keptIn = keptArgs = null, node);
 
 // Shared parser for get/set — returns false if not valid accessor pattern (falls through to identifier)
 // Returns false (not undefined) to signal "fall through without setting reserved"
 // Before `[` it marks the bracket and declines, as async does: `get` reads as a
 // name and the `[` rule below reads the bracket once.
+// Without a body `get key(…)` is an expression, `get in (o)`: the rule declines
+// and its `(…)` is kept for the expression's group.
 let head = -1, headAt, headIn;
 const accessor = (kind) => a => {
   if (a) return; // not prefix
@@ -61,7 +67,8 @@ const accessor = (kind) => a => {
   if (!name) return false; // no property name = not accessor (e.g. `{ get: 1 }`)
   parse.space();
   if (cur.charCodeAt(idx) !== OPAREN) return false; // not followed by ( = not accessor
-  return accessorBody(kind, name);
+  const params = args();
+  return parse.space() === OBRACE && [kind, name, params, body()];
 };
 
 // TOKEN, like `#` and `*`, so they fire inside `static`'s operand (unary prec
@@ -147,9 +154,11 @@ lookup[STAR] = (a, prec, op, from = idx, c = cur.charCodeAt(from + 1)) => {
 // it makes it a method. Reading the parameters here and declining without a
 // body made the call rule read them again: 2^depth for nested calls.
 // Below ASSIGN - 1 only: a member stands there, never an operand.
+// A `(…)` kept above is taken where the group (ACCESS) or the call (CALL) would
+// read it.
 const call = lookup[OPAREN];
 lookup[OPAREN] = (a, prec, op, from = idx) => {
-  const c = call(a, prec, op);
+  const c = from === kept && cur === keptIn && prec < (a ? CALL : ACCESS) ? take(a, from) : call(a, prec, op);
   if (!a || prec >= ASSIGN - 1 || c?.[0] !== '()' || c[1] !== a) return c;
   // ['static', key] from unary('static'): unwrap, re-wrap the resulting method node.
   // ['async', key] from async.js: unwrap, wrap the method value in async.

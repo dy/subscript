@@ -147,9 +147,18 @@ test('async/class: get and set as names', () => {
   is(parse('set [k] = 1'), ['=', ['[]', 'set', 'k'], [, 1]]);
   is(parse('get[k](x).y'), ['.', ['()', ['[]', 'get', 'k'], 'x'], 'y']);
   is(parse('({ set [k](v) { x = v } })'), ['()', ['{}', ['set', ['[]', 'k'], 'v', ['=', 'x', 'v']]]]);
-  // on one line `get x(` heads an accessor, which a body ends
-  throws(() => parse('get x(1)'), /Expected \{/);
-  throws(() => parse('a\nget x(1)'), /Expected \{/);
+  // `get key(…)` heads an accessor only when a body follows; `in`, `instanceof`
+  // and a for head's `of` read on from the name
+  is(parse('get in (x)'), ['in', 'get', ['()', 'x']]);
+  is(parse('set instanceof (X)'), ['instanceof', 'set', ['()', 'X']]);
+  is(parse('get in (o) + 1'), ['in', 'get', ['+', ['()', 'o'], [, 1]]]);
+  is(parse('x + get in (o)'), ['in', ['+', 'x', 'get'], ['()', 'o']]);
+  is(parse('-set in (o)'), ['in', ['-', 'set'], ['()', 'o']]);
+  is(parse('for (get of (xs)) {}'), ['for', ['of', 'get', ['()', 'xs']], null]);
+  is(parse('for (set in (o)) {}'), ['for', ['in', 'set', ['()', 'o']], null]);
+  is(parse('({ set in(v) {} })'), ['()', ['{}', ['set', 'in', 'v', undefined]]]);
+  is(parse('class A { static get instanceof() {} }'), ['class', 'A', null, ['static', ['get', 'instanceof', undefined, undefined]]]);
+  throws(() => parse('get x(1)'));
 });
 
 test('async/class: computed members', () => {

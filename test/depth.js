@@ -2,7 +2,7 @@
 // the next rule to read the same span again, and inside its own nesting that
 // doubles the work per level. Each form below reads in time linear in its depth:
 // depth 200 well under 20 ms, and depths 1 to 12 give the trees the grammar names.
-import test, { is, throws } from 'tst'
+import test, { is } from 'tst'
 import { parse } from '../jessie.js'
 
 const nest = (d, leaf, wrap) => d ? wrap(nest(d - 1, leaf, wrap)) : leaf
@@ -33,27 +33,32 @@ const forms = {
   'get[k](get[k](x))': [d => rep('get[k](', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['()', ['[]', 'get', 'k'], t])],
   'getter computed key ({ get [g(..)]() {} })': [d => rep('({ get [g(', d) + 'k' + rep(')]() {} })', d),
     d => nest(d, 'k', t => ['()', ['{}', ['get', ['[]', ['()', 'g', t]], undefined, undefined]]])],
+  // `get key(…)` with no body after it: the name, an operator, a group
+  'set in (set in (x))': [d => rep('set in (', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['in', 'set', ['()', t]])],
+  'get instanceof (get instanceof (X))': [d => rep('get instanceof (', d) + 'X' + rep(')', d),
+    d => nest(d, 'X', t => ['instanceof', 'get', ['()', t]])],
+  'x + get in (x + get in (o))': [d => rep('x + get in (', d) + 'o' + rep(')', d),
+    d => nest(d, 'o', t => ['in', ['+', 'x', 'get'], ['()', t]])],
+  'setter default ({ set in(v = ..) {} })': [d => rep('({ set in(v = ', d) + '1' + rep(') {} })', d),
+    d => nest(d, [, 1], t => ['()', ['{}', ['set', 'in', ['=', 'v', t], undefined]]])],
   // `*` across a line break: a product, or after a member a generator method
   'product y⏎*g(y⏎*g(x))': [d => rep('y\n*g(', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['*', 'y', ['()', 'g', t]])],
   'generator after a member, default param': [d => rep('class A { m() {}\n*g(a = ', d) + '1' + rep(') {} }', d),
     d => nest(d, [, 1], t => ['class', 'A', null, [';', [':', 'm', ['function', null, null, null]], [':', 'g', ['function*', null, ['=', 'a', t], null]]]])],
 }
 
-// Input JS rejects, at every depth: each throws where the innermost level fails.
-const errors = {
-  'get x(get x(1)) with no body': [d => rep('a\nget x(', d) + '1' + rep(')', d), /Expected \{/],
+// Input JS rejects, held to the time only: the tree the parser gives it is no promise.
+const invalid = {
+  'a⏎get x(a⏎get x(1)) with no body': [d => rep('a\nget x(', d) + '1' + rep(')', d)],
 }
 
 for (const [name, [src, tree]] of Object.entries(forms)) test(`depth: ${name}, depths 1 to 12`, () => {
   for (let d = 1; d <= 12; d++) is(parse(src(d)), tree(d))
 })
-for (const [name, [src, message]] of Object.entries(errors)) test(`depth: ${name}, depths 1 to 12`, () => {
-  for (let d = 1; d <= 12; d++) throws(() => parse(src(d)), message)
-})
 
 // A worker each: an exponential form never ends, and the timeout fails it.
 const url = new URL('../jessie.js', import.meta.url).href
-for (const [name, [src]] of Object.entries({ ...forms, ...errors }))
+for (const [name, [src]] of Object.entries({ ...forms, ...invalid }))
   test.fork(`depth: ${name}, depth 200 under 20 ms`, { timeout: 3000, data: { url, src: src(200) } }, async ({ ok }, { url, src }) => {
     const { parse } = await import(url)
     let best = Infinity
