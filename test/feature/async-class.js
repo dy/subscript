@@ -151,6 +151,16 @@ test('async/class: get and set as names', () => {
   is(parse('let a = b[k]\n(x)'), [';', ['let', ['=', 'a', ['[]', 'b', 'k']]], ['()', 'x']]);
   is(parse('x = get[k]\n(y)'), ['()', ['=', 'x', ['[]', 'get', 'k']], 'y']);
   is(parse('new get[k](x)'), ['new', ['()', ['[]', 'get', 'k'], 'x']]);
+  // `new` takes one call; what follows applies to the instance, as after any other name
+  const made = (k, x) => ['new', ['()', ['[]', k, 'k'], x]];
+  is(parse('new get[k](x).z'), ['.', made('get', 'x'), 'z']);
+  is(parse('new get[k](x)(y)'), ['()', made('get', 'x'), 'y']);
+  is(parse('new get[k](x)[0]'), ['[]', made('get', 'x'), [, 0]]);
+  is(parse('new get[k](x)`t`'), ['``', made('get', 'x'), [, 't']]);
+  is(parse('new get[k](x)?.z'), ['?.', made('get', 'x'), 'z']);
+  is(parse('new set[k](x)(y)'), ['()', made('set', 'x'), 'y']);
+  is(parse('new new get[k](x)(y)'), ['new', ['()', made('get', 'x'), 'y']]);
+  is(parse('new get[k](a)(b)(c)'), ['()', ['()', made('get', 'a'), 'b'], 'c']);
   is(parse('({ set [k](v) { x = v } })'), ['()', ['{}', ['set', ['[]', 'k'], 'v', ['=', 'x', 'v']]]]);
   // `get key(…)` heads an accessor only when a body follows; `in`, `instanceof`
   // and a for head's `of` read on from the name

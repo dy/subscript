@@ -32,6 +32,8 @@ const forms = {
   'set [set [x]]': [d => rep('set [', d) + 'x' + rep(']', d), d => nest(d, 'x', t => ['[]', 'set', t])],
   'get[k](get[k](x))': [d => rep('get[k](', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['()', ['[]', 'get', 'k'], t])],
   'new get[k](new get[k](x))': [d => rep('new get[k](', d) + 'x' + rep(')', d), d => nest(d, 'x', t => ['new', ['()', ['[]', 'get', 'k'], t]])],
+  'new get[k](new get[k](x).z).z': [d => rep('new get[k](', d) + 'x' + rep(').z', d),
+    d => nest(d, 'x', t => ['.', ['new', ['()', ['[]', 'get', 'k'], t]], 'z'])],
   'x = get[k]⏎(x = get[k]⏎(y))': [d => rep('x = get[k]\n(', d) + 'y' + rep(')', d),
     d => nest(d, 'y', t => ['()', ['=', 'x', ['[]', 'get', 'k']], t])],
   'getter computed key ({ get [g(..)]() {} })': [d => rep('({ get [g(', d) + 'k' + rep(')]() {} })', d),

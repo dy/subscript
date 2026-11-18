@@ -78,9 +78,8 @@ token('set', TOKEN, speculate(accessor('set')));
 
 // get […]: the index of the name `get`, or an accessor's computed key when
 // `(…) {` follows. Without a body the `(…)` is kept and the index returned: the
-// loop reads the `(…)` as its call, or ASI as a statement of its own, as after
-// any other name. Where the loop reads no call (`new`'s callee, at CALL) the
-// call is made here, the one `new` would read.
+// loop reads the `(…)` as its call, `new` as its one call, or ASI as a statement
+// of its own, as after any other name.
 const bracket = lookup[OBRACKET];
 lookup[OBRACKET] = (a, prec, op) => {
   const from = idx, at = headAt;
@@ -90,7 +89,7 @@ lookup[OBRACKET] = (a, prec, op) => {
   if (parse.space() !== OPAREN) return k;
   const call = idx, nl = parse.newline, semi = parse.semi, params = args();
   if (parse.space() === OBRACE) return loc([a, loc(['[]', k[2]], from), params, body()], at);
-  return prec < CALL ? (seek(call), parse.newline = nl, parse.semi = semi, k) : take(k, call);
+  return seek(call), parse.newline = nl, parse.semi = semi, k;
 };
 
 // Generator method: { *g() {} } / class { *g() {} } / static *g() {}
