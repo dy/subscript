@@ -32,6 +32,7 @@ if (typeof process !== 'undefined') {
   await import('./meta.js')
   await import('./bundle.js')
   await import('./perf.js')
+  await import('./depth.js')
 }
 
 // Error formatting demo

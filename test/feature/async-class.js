@@ -250,6 +250,9 @@ test('generator: method shorthand', () => {
       ['static', [':', 's', ['function*', null, null, ['yield', [, 3]]]]]]]);
   is(parse('let z = a\n* b'), ['let', ['=', 'z', ['*', 'a', 'b']]]);
   is(parse('x = y\n*g(1)\n{ h }'), [';', ['=', 'x', ['*', 'y', ['()', 'g', [, 1]]]], ['{}', 'h']]);
+  is(parse('x = y\n*g(a)\n{ h }'), [';', ['=', 'x', ['*', 'y', ['()', 'g', 'a']]], ['{}', 'h']], 'a bindable argument makes it no member inside an operand');
+  is(parse('class A { x\n*g(a) {} }'), ['class', 'A', null, [';', 'x', [':', 'g', ['function*', null, 'a', null]]]]);
+  is(parse('class A { static {}\n*g() {} }'), ['class', 'A', null, [';', ['static', ['{}', null]], [':', 'g', ['function*', null, null, null]]]], 'the method follows the static block, not inside it');
 });
 
 test('using: declarations (ERM)', () => {

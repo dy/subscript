@@ -74,28 +74,25 @@ const paramish = n => n == null || typeof n === 'string' ||
     n[0] === '=' ? typeof n[1] === 'string' || paramish(n[1]) :
     n[0] === '...' || n[0] === '{}' || n[0] === '[]'));
 const multPrec = prec['*'];
-token('*', TOKEN, speculate(a => {
-  // Infix `*` is multiplication — EXCEPT at a member boundary: class bodies
-  // have no separators, so `ctor() {} *g() {}` reaches here with the previous
-  // member as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
-  // Only a newline/block boundary + the full method shape + a bindable param
-  // list reads as a new member, joined the way asi() would join it.
-  const boundary = a && parse.newline;
-  if (a && !boundary) return;
-  const from = idx;
-  const name = propertyKey();
-  if (!name) return a ? (seek(from), void 0) : false;
-  parse.space();
-  if (cur.charCodeAt(idx) !== OPAREN) return a ? (seek(from), void 0) : false;
+// `key(params) { body }` after the `*`, or nothing where that shape is not there
+const generator = (member, name = propertyKey(), params) => {
+  if (!name || parse.space() !== OPAREN) return;
   skip();
-  const params = expr(0, CPAREN) || null;
-  if (a && !paramish(params)) return seek(from), void 0;
-  parse.space();
-  if (cur.charCodeAt(idx) !== OBRACE) return a ? (seek(from), void 0) : false;
+  params = expr(0, CPAREN) || null;
+  if (member && !paramish(params) || parse.space() !== OBRACE) return;
   skip();
-  const node = [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
-  return a ? (a[0] === ';' ? (a.push(node), a) : [';', a, node]) : node;
-}));
+  return [':', name, ['function*', null, params, expr(0, CBRACE) || null]];
+};
+token('*', TOKEN, speculate(a => !a && (generator() || false)));
+// Infix `*` is multiplication — EXCEPT at a member boundary: class bodies
+// have no separators, so `ctor() {} *g() {}` reaches here with the previous
+// member as `a` (ASI can't split on `*`: `x \n * y` must stay a product).
+// Only a newline/block boundary + the full method shape + a bindable param
+// list reads as a new member, joined the way asi() would join it. Below
+// ASSIGN - 1 only, where a member stands: inside an operand (`x = y⏎*g()`,
+// `static {}⏎*g() {}`) the `*` is the product's, or the next member's.
+token('*', ASSIGN - 1, speculate((a, node) =>
+  a && parse.newline && (node = generator(true)) && (a[0] === ';' ? (a.push(node), a) : [';', a, node])));
 prec['*'] = multPrec;
 
 // Method shorthand: { foo() {} } / { async foo() {} } / class { static foo() {} }
@@ -104,22 +101,22 @@ prec['*'] = multPrec;
 // undefined, an arrow's `f()` would be its value) and `this` is the receiver.
 // Accepts identifier, string-literal node [, "..."], ['async', key] from
 // async.js, or ['static', key] from unary('static').
-token('(', ASSIGN - 1, speculate(a => {
-  if (!a) return;
+// The head `key(params)` is the call the `(` rule has read; the body after it
+// makes it a method. (Reading the params here and declining without a body left
+// the call rule to read them again: 2^depth for nested calls.)
+const bracePrec = prec['{'];
+token('{', ASSIGN - 1, a => {
+  if (a?.[0] !== '()' || a.length < 3) return;
   // ['static', key] from unary('static'): unwrap, re-wrap the resulting method node.
   // ['async', key] from async.js: unwrap, wrap the method value in async.
-  let wrap, isAsync;
-  if (Array.isArray(a) && a[0] === 'static') wrap = 'static', a = a[1];
-  if (Array.isArray(a) && a[0] === 'async') isAsync = true, a = a[1];
+  let key = a[1], wrap, isAsync;
+  if (Array.isArray(key) && key[0] === 'static') wrap = 'static', key = key[1];
+  if (Array.isArray(key) && key[0] === 'async') isAsync = true, key = key[1];
   // Accept identifier or string-literal node as key
-  if (!isMethodKey(a)) return;
-  const params = expr(0, CPAREN) || null;
-  parse.space();
-  // Not followed by { - not method shorthand, fall through
-  if (cur.charCodeAt(idx) !== OBRACE) return;
-  skip();
-  let value = ['function', null, params, expr(0, CBRACE) || null];
+  if (!isMethodKey(key)) return;
+  let value = ['function', null, a[2], expr(0, CBRACE) || null];
   if (isAsync) value = ['async', value];
-  const node = [':', a, value];
+  const node = [':', key, value];
   return wrap ? [wrap, node] : node;
-}));
+});
+prec['{'] = bracePrec;
