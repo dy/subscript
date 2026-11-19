@@ -126,6 +126,7 @@ test('async/class: async as identifier', () => {
   is(parse('async(1)'), ['()', 'async', [, 1]]);
   is(parse('async\nfunction f() {}'), [';', 'async', ['function', 'f', null, null]], 'a LineTerminator after async ends the identifier');
   is(parse('class A { async\n m() {} }'), ['class', 'A', null, [';', 'async', [':', 'm', ['function', null, null, null]]]]);
+  is(parse('async`${x}`'), ['``', 'async', [, ''], 'x', [, '']], 'a tag: reading the template first left the newline flag of its `}` up');
 });
 
 test('async/class: static accessors', () => {

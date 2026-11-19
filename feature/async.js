@@ -35,10 +35,13 @@ keyword('async', TOKEN, () => {
   parse.space();
   if (word('function')) return ['async', expr(PREFIX)];
   // member head: key, #key, [key], "key", or a whole *g() {} method
-  const from = idx;
+  const from = idx, newline = parse.newline, semi = parse.semi;
   let m = expr(TOKEN - .5);
   if (m?.[0] === ':') return [':', m[1], ['async', m[2]]];
   if (m && peek() === OPAREN) return ['async', m];
   // arrow: async x => / async (...) =>
   if ((m || peek() === OPAREN) && (seek(from), m = expr(ASSIGN - .5))?.[0] === '=>') return ['async', m];
+  // `async` is a name here: what the tries read leaves no ASI flag behind
+  // (the `}` of a template's `${}` raises the newline flag: async`${x}`)
+  parse.newline = newline, parse.semi = semi;
 });
